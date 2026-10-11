@@ -1,11 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.3, October 11, 2026.
-**Open questions:** None.
+**Status:** Decision-complete. Version 1.4, October 11, 2026.
+**Open questions:** None. Section 8 records the owner decisions of version 1.4.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
-- `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
+- `(v1.4)` marks an item changed in version 1.4 (owner decisions, section 8). `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
 ---
@@ -17,10 +17,10 @@ The closest open source player (Strawberry) has many features the owner does not
 **Outcome:** a small, open source music player for Windows and Linux.
 - The user points it at one music folder.
 - It shows artist, album and song, and plays mp3, ogg and wav.
-- The UI is made of widgets. The user docks, resizes, hides and saves them as named layouts.
+- The UI is made of widgets. The user docks, resizes, hides and shows them. Three built-in layouts exist. `(v1.4)`
 - It adds artwork, lyrics and missing metadata.
 - It keeps playlists as portable files.
-- It takes its theme from one DESIGN.md file.
+- It takes its theme from one token file in the repo (`theme/tokens.json`), compiled at build time. `(v1.4)`
 - The music folder holds all user data. The app keeps only a disposable cache.
 
 ---
@@ -69,29 +69,28 @@ The closest open source player (Strawberry) has many features the owner does not
   - The Library widget can move and resize. It cannot be hidden or closed.
 - **R29 (v1.2).** Docking and layouts.
   - Free-form drag-and-drop docking inside the main window. The user drags a widget by its header and drops it on the edge of another widget or of the window. Splitters resize widgets.
-  - Tabbed groups, floating panels and pop-out windows are not in v1.
+  - `(v1.4)` Floating panels and pop-out windows are not in v1. Tabbed groups are allowed. The app adds no code to prevent them. The saved arrangement must round-trip a tabbed group.
   - **Built-in layouts:** Columns (default at first run), Tree and Top/bottom. Each sets the Library mode and a widget arrangement. `[D]` Built-in layouts cannot be changed or deleted.
   - `[D]` **Default arrangement:** Library in the main area, Search in a top bar, Now playing and Transport controls in a bottom bar. Playlists, Play queue and Lyrics are hidden and available in the Widgets menu. The Tree and Top/bottom layouts use the same arrangement with their own Library mode.
-  - **User-saved named layouts:** "Save layout as..." stores the current arrangement, widget visibility and Library mode under a name. The user can apply, rename and delete saved layouts. `[D]` Saving over an existing name asks for confirmation.
-  - `[D]` Each saved layout is one JSON file in a `layouts` folder in the OS config directory, per machine. Layout files do not store window size. They are versioned. Import and export are deferred.
+  - `(v1.4)` User-saved named layouts are deferred (section 7).
+  - `[D]` The current arrangement is one JSON file in the OS config directory, per machine. It does not store window size. It is versioned. Import and export are deferred.
   - `[D]` The current arrangement saves automatically and restores at startup. Applying a layout replaces the current arrangement.
   - `[D]` **Reset layout** applies the built-in Columns layout. The menu button offers it, and a documented keyboard shortcut also runs it. Layouts cannot hide either.
   - `[D]` **Non-drag path:** the menu button offers show and hide for each widget, switching the Library mode and applying layouts. Moving a widget needs drag in v1.
   - `[D]` Corrupt layout file: ignore it and log it. Unknown widget in a layout: ignore that widget. Layout without the Library widget: apply the built-in Columns layout.
-- **R30 (v1.3).** UI framework: Magic UI (https://github.com/magicuidesign/magicui).
-  - Magic UI is a copy-and-paste component library on React, Tailwind CSS and Motion, in the shadcn/ui style, under the MIT license. Using it fixes the UI layer: React, Tailwind CSS, Motion and the shadcn/ui conventions (`cn` helper, `components.json`). The docking library must offer React bindings. `[D]`
-  - `[D]` Standard controls (buttons, sliders, menus, dialogs, inputs) come from shadcn/ui. Magic UI supplies the animated components. Only components that serve a function in R5, R6 and R29 are copied into the repo. Decorative effects (backgrounds, marquees, shimmer, confetti) are out under the "few features" rule.
+- **R30 (v1.4).** UI framework: React, Tailwind CSS v4 and shadcn/ui components. Magic UI (https://github.com/magicuidesign/magicui) is optional.
+  - `[D]` A Magic UI component may be copied into the repo only when a named component serves a function in R5, R6 or R29. The docs (R17) list the copied components. If the list is empty, Motion is not a dependency. Decorative effects (backgrounds, marquees, shimmer, confetti) are out under the "few features" rule.
   - `[D]` Every animation honors the OS "reduce motion" setting. Animations never block input.
-  - `[D]` Theme tokens from the DESIGN.md file (R16) map to Tailwind CSS variables. The DESIGN.md CLI's `css-tailwind` export is the reference mapping.
-  - `[D]` Milestone 0 (R20) includes React, Tailwind, Motion and the copied components.
+  - `[D]` Theme tokens from `theme/tokens.json` (R31) map to Tailwind CSS variables at build time. The theme styles widget headers, splitters and drop zones with its color and radii tokens. The theme sets no layout.
+  - `[D]` Milestone 0 (R20) includes React, Tailwind, shadcn/ui and the docking library. It includes Motion only if the component list is not empty.
   - Copied components keep their MIT notice in the repo.
 - **R31 (v1.3).** Branding package (to be supplied by the owner later).
-  - The owner will deliver a branding package with icons and a DESIGN.md file. The app must accept it without code changes to features.
-  - `[D]` The repo has one `brand/` folder with: `DESIGN.md` (the built-in theme), `icon.svg` (the app icon source), and an optional UI icon set. The build generates platform icons (Windows `.ico`, Linux PNG sizes) from `icon.svg`.
-  - `[D]` The built-in dark theme (R15) is `brand/DESIGN.md`, compiled at build time. Until the branding package arrives, the repo ships a placeholder dark DESIGN.md and a placeholder icon. Dropping in the branding package replaces both.
+  - `(v1.4)` The branding package is in the repo: `docs/design.md` (design spec), `theme/tokens.json` (theme tokens), `docs/asset-manifest.md` (asset checklist) and `assets/reference/clawdio-approved-mockup.png` (reference). The app must accept brand changes without code changes to features.
+  - `[D] (v1.4)` The build generates platform icons (Windows `.ico`, Linux PNG sizes) from `assets/branding/export/clawdio-icon-full.svg`. Until that file exists, the repo ships a placeholder `icon.svg` and the build uses it.
+  - `[D] (v1.4)` The built-in dark theme (R15) is `theme/tokens.json`, compiled to CSS variables at build time.
   - `[D]` The app name, window title, bundle identifier and the User-Agent string (R8) read from one build config value, so the final name is a one-line change.
   - `[D]` UI icons default to the icon set shadcn/ui uses (Lucide). A brand icon set, if supplied, replaces individual icons by name.
-  - `[D]` A theme the user picks in Settings (R16) overrides the brand theme. Reset theme returns to the brand theme.
+  - `(v1.4)` A user-selected theme file (R16) is deferred.
 - **R6 (v1.2).** Playback: play/pause, stop, previous/next, seek, volume, shuffle, repeat and a play queue (add, remove, clear). Nothing else.
   - Stop is a requested control. `[D]` Stop ends playback, resets the position to the start and keeps the queue.
   - `[D]` Repeat modes: off, all, one. Shuffle applies to the queue.
@@ -115,7 +114,7 @@ The closest open source player (Strawberry) has many features the owner does not
 
 ### Online and sidecars
 
-- **R7.** One "Online lookups" switch in Settings. On by default. Off means zero network calls. First run shows a notice that the app writes sidecar files and contacts these services.
+- **R7 (v1.4).** One "Online lookups" switch in Settings. Off by default. Off means the app's own code makes zero network calls. The first run shows a notice that explains sidecar files and names the services. It offers "Turn on" and "Keep off". Turning the switch off cancels queued lookups and aborts in-flight requests.
 - **R8 (v1.1).** Artwork fetches automatically in the background for albums with no embedded art and no cover image file.
   - Sources: MusicBrainz and Cover Art Archive.
   - It saves `cover.jpg` in the album folder. It never overwrites existing art.
@@ -150,46 +149,37 @@ The closest open source player (Strawberry) has many features the owner does not
   - Writes use a temp file, then a rename.
   - Startup finds `.m3u8` files anywhere in the folder.
   - Rescan never edits playlists.
-- **R14 (v1.1).** Import M3U, M3U8, PLS, XSPF, Apple XML and Apple text.
+- **R14 (v1.4).** Import M3U, M3U8 and Apple XML. PLS, XSPF and Apple text are deferred (section 7).
   - The app writes a new `.m3u8` in `Playlists/`. The original file stays untouched.
-  - Apple XML is the playlist export from the Apple Music app or iTunes. Apple text is the plain-text or Unicode-text export (tab-delimited, with a header row). `[D]`
+  - Apple XML is the playlist export from the Apple Music app or iTunes. `[D]`
   - Matching order: relative to the playlist file (M3U family only), then longest path suffix, then file name, then name plus artist plus album against the library (when the source has them). `[D]`
-  - For Apple XML, convert each track's `file://` location to a path first. For Apple text, use the Location column when present. `[D]`
+  - For Apple XML, convert each track's `file://` location to a path first. `[D]`
   - Unmatched entries stay in the file as "missing" and appear in an import report.
   - `[D]` A track with no file location (for example a streaming-only track) appears in the import report only. The app does not write it to the `.m3u8`.
-  - Encodings: M3U8 is UTF-8. Legacy `.m3u` reads as UTF-8 first, then Windows-1252. Apple text reads UTF-16 (with byte order mark), then UTF-8, then Windows-1252. `[D]`
+  - Encodings: M3U8 is UTF-8. Legacy `.m3u` reads as UTF-8 first, then Windows-1252. `[D]`
   - `[D]` Entry point: a file picker. Matching searches only inside the library.
-  - Assumption to verify: MusicBee exports a format on this list. Only XSPF is confirmed (third-party source). Test M3U8 in the owner's version.
+  - Assumption to verify: MusicBee exports M3U8. Test in the owner's version.
 - **R26 (v1.2).** Favorites. A heart button on the Now playing widget and on song rows adds or removes the song in `Playlists/Favorites.m3u8`.
   - `[D]` The app creates the file on first use. It is a normal playlist and appears in the Playlists widget.
 
 ### Theme
 
 - **R15.** The app starts in a built-in dark theme.
-- **R16 (v1.2).** The theme is a Google DESIGN.md file (spec version alpha).
-  - The user picks the file in Settings. The app remembers the path and reloads on file change.
-  - The app reads colors, typography, rounded and spacing. It ignores components.
-  - It accepts `version: alpha` and warns on other versions.
-  - Fonts: locally installed only, with a fallback to the system font.
-  - Invalid file: keep the last good theme and show the error.
-  - Duplicate section heading: reject the file (per the spec).
-  - `[D]` Validate each token by type (color, dimension, font family). Ignore invalid tokens with a warning. Never load a `url()` or any remote resource from a theme file.
-  - `[D]` If primary text on the background has a contrast ratio below 3:1, reject the theme and keep the last good theme (or default dark). Show the error.
-  - `[D]` A "Reset theme" control always uses built-in colors, so a theme cannot hide it. A documented keyboard shortcut also resets the theme.
-  - `[D]` The theme styles widget headers, splitters and drop zones with its color, rounded and spacing tokens. The theme sets no layout.
-- **R17 (v1.2) `[D]`.** Docs list which tokens the app reads and which UI part each token controls, including widget headers, splitters and drop zones. Docs also describe the JSON sidecar schema (R10), the layout file schema (R29) and the `brand/` folder contents (R31). `(v1.3)` The repo includes a sample DESIGN.md of the default dark theme.
+- **R16 (v1.4).** Deferred. The v1 theme is `theme/tokens.json`, compiled at build time (R31). A user-selected theme file is deferred (section 7).
+  - Fonts: locally installed only, with a fallback to the system font. The owner may bundle one UI font under the SIL Open Font License.
+- **R17 (v1.4) `[D]`.** Docs list which tokens in `theme/tokens.json` the app reads and which UI part each token controls, including widget headers, splitters and drop zones. Docs also describe the JSON sidecar schema (R10), the arrangement file schema (R29), the brand inputs (R31) and the list of copied Magic UI components (R30).
 
 ### State, footprint and release
 
-- **R18.** Settings (music folder path, theme path, Online lookups switch) live in the OS config directory, per machine. `[D]` Window size is saved there too.
+- **R18 (v1.4).** Settings (music folder path, Online lookups switch) live in the OS config directory, per machine. `[D]` Window size is saved there too.
 - **R19 `[D]`.** The SQLite database is a rebuildable cache. Deleting it loses nothing. A schema change triggers a rebuild, with no migrations. The cache holds no lookup markers, so a rebuild causes no new lookups.
 - **R20 (v1.2).** Footprint targets, measured in the first build and adjustable:
   - Windows installer under 30 MB.
   - Linux `.deb` under 30 MB.
   - Idle memory under 200 MB across all processes with 50,000 tracks.
   - The AppImage is exempt (expected size is 70 MB or more).
-  - **Milestone 0 (before feature work):** a footprint spike. It includes the docking code and every widget populated with test data: the Library widget in all three modes with a virtualized 50,000-track list, 2,000 art thumbnails, Play queue, Playlists, Lyrics, Now playing, Transport controls and Search. Measure memory across all processes on Windows and Linux. `(v1.3)` The spike uses the real UI stack (React, Tailwind, Motion, Magic UI components, docking library).
-  - `[D]` If idle memory is more than 50% over target (above 300 MB), stop. The owner decides whether to switch to a native UI, drop Motion, or cut layout freedom.
+  - **Milestone 0 (before feature work):** a footprint spike. It includes the docking code and every widget populated with test data: the Library widget in all three modes with a virtualized 50,000-track list, 2,000 art thumbnails, Play queue, Playlists, Lyrics, Now playing, Transport controls and Search. Measure memory across all processes on Windows and Linux. `(v1.4)` The spike uses the real UI stack (React, Tailwind, shadcn/ui, docking library, and Motion only if R30 names a component).
+  - `[D]` If idle memory is more than 50% over target (above 300 MB), stop. The owner decides whether to switch to a native UI or cut layout freedom.
 - **R21 (v1.1).** Distribution: Windows installer, Linux `.deb` and AppImage. Build the AppImage on the oldest supported base system.
 - **R22 (v1.1) `[D]`.** Minimum OS: Windows 10 or later. Linux: any distro that ships WebKitGTK 4.1. The owner may tighten these.
 - **R23 (v1.1) `[D]`.** The app writes a log file to the OS log directory, with size-based rotation. Settings has an "Open log folder" command. Every "skip and log" event goes there (scan, playlists, sidecars, lookups, layouts).
@@ -201,9 +191,9 @@ The closest open source player (Strawberry) has many features the owner does not
 - "Similar to MusicBee" is a feel reference. It does not mean feature parity.
 - "See MusicBee" for the layout idea is a reference only. "Massively simpler" is a constraint (section 6).
 - "Look at Strawberry" is a reference only. Do not copy Strawberry code.
-- Magic UI is a requirement (R30). Which of its components to use is the implementer's choice within the rule in R30.
+- Magic UI is optional (R30). Which of its components to use, if any, follows the rule in R30. `(v1.4)`
 - `/music/` is an example path.
-- `markdown.md` is an example name. Any file name works if the content is valid DESIGN.md.
+- `markdown.md` was an example theme file name. The theme now comes from `theme/tokens.json` (R31). `(v1.4)`
 - MusicBee and Apple Music are example playlist sources. R14 lists the formats.
 - "Any system" means Windows and Linux only.
 - "All the basics" is defined by R5, R6, R24, R25, R26 and R27.
@@ -223,7 +213,7 @@ These are out under the owner's "few features" rule.
 - Multiple music folders.
 - Live folder watching.
 - Smart playlists, ratings and play counts. `[D]`
-- Tabbed widget groups, floating panels and pop-out windows (not selected for v1).
+- Floating panels and pop-out windows (not selected for v1). `(v1.4)` Tabbed groups are allowed (R29).
 - Per-view layout overrides. `[D]`
 
 ---
@@ -245,8 +235,6 @@ These are out under the owner's "few features" rule.
 - **Playlist entry with no file:** shown as "missing" and skipped in playback. It is never removed automatically.
 - **Unreadable playlist file:** skip it and log it.
 - **Playlist write failure:** show the error. The old file stays intact (temp file, then rename).
-- **Theme file missing at startup:** use default dark and show a notice.
-- **Theme rejected for low contrast or invalid content `[D]`:** keep the last good theme and show the error. Reset theme always works.
 - **Layout problems `[D]`:** a corrupt layout file, an unknown widget or a missing Library widget follow R29.
 - **Controls or Search hidden `[D]`:** keyboard shortcuts (R25) and media keys (R24) still work. Reset layout restores the default.
 - **Window smaller than a saved layout needs `[D]`:** the app enforces a minimum window size and a minimum size per widget. It clamps the layout to fit.
@@ -260,10 +248,10 @@ These are out under the owner's "few features" rule.
 
 ## 6. Confirmed constraints
 
-- **Stack:** Tauri v2 with a Rust backend (audio decoding and playback), SQLite, and a React UI with Tailwind CSS, Motion and Magic UI (owner's choice, R30). Revisit if Milestone 0 fails (R20).
-- **Branding `[D]`:** no feature code depends on the placeholder name, icon or theme. All brand inputs live in `brand/` (R31).
-- **Docking `[D]`:** a docking library may be used if its license is MIT or compatible, it has React bindings and it passes Milestone 0. One example is the MIT Dockview with its React package. Do not use commercial add-ons (Dockview Enterprise is commercial). Turn off tabs, floating panels and pop-out windows (section 4).
-- **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no tabbed groups, no floating panels, no pop-out windows and no layout import or export in v1. Adding any of these needs an owner decision.
+- **Stack:** Tauri v2 with a Rust backend (audio decoding and playback), SQLite, and a React UI with Tailwind CSS and shadcn/ui (R30). Magic UI and Motion only by named component. Revisit if Milestone 0 fails (R20). `(v1.4)`
+- **Branding `[D]`:** no feature code depends on the placeholder name, icon or theme. All brand inputs are the files named in R31. `(v1.4)`
+- **Docking `[D]`:** a docking library may be used if its license is MIT or compatible, it has React bindings and it passes Milestone 0. One example is the MIT Dockview with its React package. Do not use commercial add-ons (Dockview Enterprise is commercial). Turn off floating panels and pop-out windows (section 4). Tabbed groups stay on (R29). `(v1.4)`
+- **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no named layouts, no floating panels, no pop-out windows and no layout import or export in v1. `(v1.4)` Adding any of these needs an owner decision.
 - **Audio engine `[D]`:** design it so gapless playback can be added later (decode the next track ahead of time). Gapless is not in v1.
 - **License:** MIT unless a dependency forces GPL. Strawberry is GPL-3.0, so do not copy its code into an MIT project.
 - **Platforms:** Windows and Linux (R22).
@@ -271,7 +259,7 @@ These are out under the owner's "few features" rule.
 - **Source of truth:** the music folder.
 - **Audio files:** never modified.
 - **Network:** only the R7 services. No accounts and no API keys.
-- **Theme spec:** DESIGN.md at alpha, which can change.
+- **Theme source:** `theme/tokens.json`, compiled at build time (R31). `(v1.4)`
 
 ---
 
@@ -284,20 +272,34 @@ These are out under the owner's "few features" rule.
 - Customizable keyboard shortcuts.
 - Moving widgets by keyboard.
 - Layout import and export.
-- Tabbed groups, floating panels and pop-out windows.
+- Floating panels and pop-out windows. `(v1.4)`
+- Named layouts: save, apply, rename and delete. `(v1.4)`
+- User-selected theme file (R16). `(v1.4)`
+- Playlist import of PLS, XSPF and Apple text. `(v1.4)`
 - Playlist rename and reorder.
 - Playlist export UI (the files are already M3U8 and can be copied).
 - Bundled themes or a light/dark toggle.
 - `components` tokens in themes.
 - Accessibility work beyond platform defaults and R25.
 - Multiple music folders (likely the first growth request).
-- Light theme variant of the brand DESIGN.md.
+- Light theme variant of the brand tokens.
 
 ---
 
 ## 8. Open questions
 
-None.
+None. The owner made these decisions on October 11, 2026 (version 1.4):
+
+1. **Shell:** the docking shell (R29) stays. `docs/design.md` section 5 must be rewritten to name the R5 widgets and the R28 modes instead of sidebar views (separate task).
+2. **Online lookups (R7):** off by default, with a first-run choice.
+3. **Metadata fill (R10):** kept as specified.
+4. **Playlist import (R14):** M3U, M3U8 and Apple XML. PLS, XSPF and Apple text are deferred.
+5. **Theme (R16):** the user-selected theme is deferred. The build compiles `theme/tokens.json`.
+6. **Named layouts (R29):** deferred. Built-in layouts and auto-save stay.
+7. **Tabbed groups (R29, section 6):** allowed.
+8. **Magic UI and Motion (R30):** optional. No Motion unless a named component needs it.
+
+Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, and the R20 Milestone 0 outcome. Other findings of the requirements review (`docs/REQUIREMENTS_REVIEW.md`, section G) are not yet applied.
 
 ---
 
@@ -306,19 +308,19 @@ None.
 1. **Footprint spike (Milestone 0):** passes the R20 targets or triggers the owner decision.
 2. **Responsiveness:** the UI stays responsive during a startup scan of a 50,000-track test library.
 3. **Playlist interop:** a playlist written by the app opens in at least one other player (MusicBee or VLC) with all paths intact.
-4. **Import:** real exports import with a correct matched/missing report. Use one Apple XML, one Apple text, one MusicBee playlist and one legacy `.m3u`.
+4. **Import:** real exports import with a correct matched/missing report. Use one Apple XML, one MusicBee M3U8 and one legacy `.m3u`. `(v1.4)`
 5. **Lyrics:** a song named "01 - Title.mp3" finds lyrics through the cleaned title and the decoded duration.
 6. **Artwork:** an album folder named "1973 - Album (Remastered)" matches after normalization. "Set cover" and "Retry lookup" both work.
-7. **Theme lockout:** a theme with text color equal to background color is rejected. Reset theme works.
+7. **Theme build `(v1.4)`:** changing a color in `theme/tokens.json` and rebuilding changes the UI. (Replaces the theme lockout check. R16 is deferred.)
 8. **Missing folder:** startup with the folder missing loses no data. Change folder works.
 9. **Cache rebuild:** deleting the cache restores the same library and playlists, with no new lookups for albums that have a "no match" marker.
 10. **Audio device:** unplugging the output device mid-song pauses playback with a message.
 11. **Docking:** in each Library mode, the user can dock, resize, hide and show widgets. The arrangement survives a restart.
-12. **Named layouts:** save, apply, rename and delete work. Built-in layouts cannot be changed or deleted.
+12. **Built-in layouts `(v1.4)`:** applying each built-in layout works. A tabbed group survives a restart. (Named layouts are deferred.)
 13. **Layout lockout:** with Transport controls and Search hidden, keyboard shortcuts and media keys still work. Reset layout restores the default.
 14. **Library widget:** it cannot be closed. Switching its mode keeps the selection and search text.
-15. **Branding swap `(v1.3)`:** replacing the files in `brand/` and rebuilding changes the app icon, theme and name with no other code changes.
-16. **Reduced motion `(v1.3)`:** with the OS reduce-motion setting on, no Magic UI animation plays.
+15. **Branding swap `(v1.4)`:** replacing `theme/tokens.json` and the icon source and rebuilding changes the theme and the app icon with no other code changes.
+16. **Reduced motion `(v1.4)`:** with the OS reduce-motion setting on, no animation plays. Applies to Magic UI components only if R30 names any.
 
 ---
 
@@ -340,6 +342,10 @@ None.
 
 ## Change log
 
+- **1.4 (October 11, 2026):** owner decisions after the requirements review (`docs/REQUIREMENTS_REVIEW.md`).
+  - **Owner decisions (section 8):** docking shell stays (R29). Online lookups off by default with a first-run choice (R7). R10 kept. Import limited to M3U, M3U8 and Apple XML (R14). User-selected theme deferred; build-time `theme/tokens.json` (R16, R31). Named layouts deferred (R29). Tabbed groups allowed (R29, section 6). Magic UI optional and Motion only by named component (R30).
+  - **Updated:** outcome bullets (section 1), R17, R18, R20, section 3, section 4, section 5 (theme cases removed), section 6, section 7, acceptance checks 4, 7, 12, 15 and 16.
+  - **Not applied:** the other review findings in section G of the review. They wait for a separate owner pass.
 - **1.3 (October 11, 2026):** UI framework and branding.
   - **Owner decisions:** Magic UI as the UI framework (R30), which fixes React, Tailwind CSS and Motion. A branding package (icons and DESIGN.md) will be supplied later (R31).
   - **From the mockups:** status line text (R5), layout switch collapses to a dropdown when narrow (R28).
