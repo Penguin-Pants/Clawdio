@@ -7,6 +7,11 @@ pub enum CoreError {
     /// An id that the index never issued or that a rescan removed (D46).
     #[error("unknown {kind} id {id}")]
     UnknownId { kind: &'static str, id: u32 },
+    /// Input from the webview that the core refuses.
+    #[error("{0}")]
+    Invalid(String),
+    #[error("{0}")]
+    Io(String),
 }
 
 impl CoreError {
@@ -14,6 +19,8 @@ impl CoreError {
     pub fn code(&self) -> &'static str {
         match self {
             CoreError::UnknownId { .. } => "unknown_id",
+            CoreError::Invalid(_) => "invalid",
+            CoreError::Io(_) => "io",
         }
     }
 }

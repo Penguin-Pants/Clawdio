@@ -1,6 +1,6 @@
 // Mocked IPC for the e2e build (P2.15). All mock code and data stay in tests/e2e/ (AGENTS.md Edits rule 9).
 // The page URL picks the data: "?data=library" serves a small library, else the app starts empty.
-import { mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
+import { mockConvertFileSrc, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import app from "./data/app.json";
 import { library } from "./library-data";
 import { createPlayer } from "./mock-player";
@@ -37,6 +37,9 @@ const settings = JSON.parse(
     ),
 );
 
+/** The saved layout persists over reloads like `layout.json` (P9). */
+const LAYOUT_KEY = "e2e-layout";
+
 function saveSettings(change: Record<string, unknown>) {
   Object.assign(settings, change);
   sessionStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -55,6 +58,16 @@ function settingsCommand(command: string, args: Args): unknown {
       return saveSettings({ folderName: "music", folderState: "ready" });
     case "rescan":
       document.body.dataset.rescans = String(Number(document.body.dataset.rescans ?? 0) + 1);
+      return null;
+    case "layout_load":
+      return sessionStorage.getItem(LAYOUT_KEY);
+    case "layout_save":
+      // Tests read the saves from the page and the next load restores the last one (P9).
+      sessionStorage.setItem(LAYOUT_KEY, args.json as string);
+      document.body.dataset.layoutSaves = String(Number(document.body.dataset.layoutSaves ?? 0) + 1);
+      return null;
+    case "plugin:window|destroy":
+      document.body.dataset.destroyed = "true";
       return null;
     case "cancel_job":
     case "open_log_folder":
@@ -117,6 +130,7 @@ function libraryCommand(command: string, args: Args): unknown {
   throw new Error(`e2e: no mock for command ${command}`);
 }
 
+mockWindows("main");
 mockConvertFileSrc("linux");
 // The browser cannot load thumb:// URLs, so they map to the test thumbnails in tests/e2e/public/.
 (

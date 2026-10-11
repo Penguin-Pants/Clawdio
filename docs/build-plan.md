@@ -73,7 +73,7 @@ A phase is Done when all of these are true:
 | P6 | Library widget and search | P5 | Done with exceptions |
 | P7 | Playback engine and Play queue | P6 | Done with exceptions |
 | P8 | OS media integration | P7 | Done with exceptions |
-| P9 | Persistence: state, arrangement and instance | P8 | Not started |
+| P9 | Persistence: state, arrangement and instance | P8 | Done with exceptions |
 | P10 | Local artwork and thumbnails | P9 | Not started |
 | P11 | Playlists and Favorites | P10 | Not started |
 | P12 | Playlist import | P11 | Not started |
@@ -585,6 +585,55 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Reviewer, none hold: main-thread re-entry, souvlaki's `unwrap` on a wake read, a wake deadlock, an exit hang, a missing window handle, the lowercase name in a test (D34 is case sensitive), lock order, and tests that pass inverted.
 
 **Follow-ups:** F-13 (open).
+
+---
+
+#### P9. Persistence: state, arrangement and instance (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5f7c1ef`. Messages start with `P9:`.
+- **Packages:** `tauri-plugin-single-instance` 2.5.3 (section 6.2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P9-AC1 | Pass | `state.rs` tests: round trip, capture and resolve, missing entries dropped after a complete traversal, a missing current entry. `engine.rs`: a restored queue is paused at the saved position, and Play starts there. Manual Linux (release build, 50,000 tracks): after a restart the queue (50,000 entries), the current song and the Tree mode came back, paused. |
+| P9-AC2 | Pass | `tests/e2e/persistence.spec.ts`: in each mode a hidden Transport, a shown Play queue and the Library width survive a reload. |
+| P9-AC3 | Pass | E2E: a tabbed group survives a reload. Each built-in layout applies (P2-AC4). |
+| P9-AC4 | Pass | `src/shell/persistence.test.ts` with fixture files: corrupt JSON, version 2, an unknown and a missing `libraryMode`, a file without Library and a dock that cannot load apply Columns with one log line; an unknown widget is removed with one log line. |
+| P9-AC5 | Pass | E2E: Ctrl+Shift+L after a reload with a saved layout restores the default. |
+| P9-AC6 | Pass (Linux) | Manual Linux: a second launch exited with code 0 and one process remained. Windows not verified (E1). |
+| P9-AC7 | Exception (E1) | Manual Linux: `state.json` and `layout.json` are in `data/config` of the portable folder. The copy to another drive letter is Windows only. |
+| P9-AC8 | Pass | Vitest: the saved object has `version`, `libraryMode` and `dock` only. N2. |
+| P9-AC9 | Pass | E2E: a layout saved at 1600 x 1000 with six widgets restored at 800 x 560 fits, each group at its minimum or the D45 floor. |
+| P9-AC10 | Pass | Manual Linux: with the cache deleted the log shows "queue entries wait for the scan", then "restored 50000 queue entries" after the scan. With the music folder missing, `state.json` had the same SHA-256 after the app exited. Rust: `missing_entries_wait_for_a_complete_traversal_then_go`. |
+| P9-AC11 | Pass | E2E: a change and the close request in one task: the layout with the change is saved before the window is destroyed. |
+
+**Notes**
+
+- N1: a 50,000-entry queue makes a 3.4 MB `state.json`. Position ticks no longer start a save; queue and state changes do, and the exit saves the last position. The file is compact JSON, and an unchanged state is not written again.
+- N2: `layout.json` has the Dockview grid `width` and `height`. They are the dock size when saved, not the window size; the restore fits the grid to the current window (P9.4 step 5).
+- N3: the close request needs `core:window:allow-destroy` in the capability: `onCloseRequested` destroys the window after the save (P9.3). D13 is unchanged: no filesystem, HTTP, shell or dialog permission.
+- N4: Dockview can report a layout change after the close request, so the close writes the current layout even with no save pending.
+- N5: a queue or volume change before the restore resolves drops the saved queue; the user's action wins.
+- N6: the disk allowance of the container ran out during validation; old build output was deleted and the checks ran again.
+
+**Exceptions**
+
+- E1: no Windows desktop: P9-AC6 on Windows and P9-AC7 (another drive letter) are for P18. P9-AC6 on Linux checked the process only; the X server had no window manager, so focus and raise were not visible.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 2, F3 0, F4 4. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F1: saving `state.json` on each position tick wrote 3.4 MB every 2 s with a 50,000-entry queue (N1).
+- F2: the close flush waited for a pending change that Dockview had not reported yet (N4). The unit test for the close path asserted the old behavior (updated).
+- F4:
+  - The saved queue could replace a queue the user started during the scan: a user action first drops it (N5).
+  - The restore event could count as a user action: the store is ready before the Restore command goes out.
+  - Paths over IPC: the layout commands carry JSON text only; the config path is fixed in Rust (D13).
+  - Position 0 after a restore with the current entry missing: R27 drops missing entries; the next entry starts at 0.
+
+**Follow-ups:** F-13 (open), F-14 (open).
 
 ---
 

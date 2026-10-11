@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 97 | 125 | 26 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 35 | 21 | 8 | 11 | 0 | 1 | 0 |
+| Requirements | 301 | 111 | 114 | 23 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 36 | 20 | 8 | 11 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -101,15 +101,15 @@
 | R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Done (P6) |
 | R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Done (P2) |
 | R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
-| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Planned |
+| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Done (P9) |
 | R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Done (P2) |
 | R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Done (P2) |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
-| R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Planned |
-| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Planned |
+| R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9) |
+| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9) |
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
-| R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Planned |
+| R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
@@ -149,8 +149,8 @@
 | R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Done (P2) |
 | R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Planned |
 | R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Planned |
-| R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Planned (D25) |
-| R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Planned |
+| R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
+| R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
 
 ### 1.5 Section 2: online and sidecars (R7 to R11)
@@ -288,7 +288,7 @@
 |---|---|---|---|---|---|---|
 | E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Done (P4) |
 | E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Planned |
-| E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned (D30) |
+| E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9, D30) |
 | E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5, D16) |
 | E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5) |
 | E-6 | Missing tags: R4 fallbacks | §5 | P5.7 | P5-AC1, P5-AC10 | UT | Done (P5) |
@@ -306,9 +306,9 @@
 | E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Planned |
 | E-19 | Unreadable playlist file: skip and log | §5 | P11.2 | P11-AC6 | IT | Planned |
 | E-20 | Playlist write failure: show the error; old file intact | §5 | P11.1, P11.8 | P11-AC3 | IT | Planned |
-| E-21 | Layout problems follow R29 | §5 | P9.4 | P9-AC4 | UT | Planned |
+| E-21 | Layout problems follow R29 | §5 | P9.4 | P9-AC4 | UT | Done (P9) |
 | E-22 | Transport controls hidden: keys and media keys work; Reset layout restores | §5 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W, MAN-L | Planned |
-| E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Planned (D45) |
+| E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Done (P9, D45) |
 | E-24 | Empty Play queue, Playlists or Lyrics show a hint | §5 | P2.9 | P2-AC12 | E2E | Done (P2) |
 | E-25 | Output stream error: stop with a message; next Play opens the default device | §5 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
@@ -366,8 +366,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
 | DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Planned |
 | DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Done (P0) |
-| DEC-6 | Named layouts deferred; built-ins and auto-save stay | §8.6 | P2.4, P9.3 | P9-AC2 | E2E | Planned |
-| DEC-7 | Tabbed groups allowed | §8.7 | P2.1 | P9-AC3 | E2E | Planned |
+| DEC-6 | Named layouts deferred; built-ins and auto-save stay | §8.6 | P2.4, P9.3 | P9-AC2 | E2E | Done (P9) |
+| DEC-7 | Tabbed groups allowed | §8.7 | P2.1 | P9-AC3 | E2E | Done (P9) |
 | DEC-8 | Magic UI optional; no Motion unless a component needs it | §8.8 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DEC-9 | Portable mode and Windows portable zip | §8.9 | P4.1, P18.2 | P4-AC4, P18-AC4 | MAN-W | Planned |
 | DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Done (P2) |
@@ -395,11 +395,11 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Planned |
 | AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Planned |
 | AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Planned |
-| AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned |
+| AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9) |
 | AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Planned |
 | AC-10 | Unplugging the device stops playback with a message; Play resumes on the default device | §9.10 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
-| AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Planned |
-| AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Planned |
+| AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Done (P9) |
+| AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Done (P9) |
 | AC-13 | Transport hidden: keys and media keys work; Reset layout restores | §9.13 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W | Planned |
 | AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Done (P6) |
 | AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Planned |
@@ -444,7 +444,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.1 | Six widgets; headers with grip, title and close (hideable only); drag docking; show and hide | §5 | P2.1, P2.2, P2.3, P2.6 | P2-AC1, P2-AC2, P2-AC3, P2-AC4 | E2E | Done (P2) |
 | DES-5.2 | Fixed chrome: status line and top-right menu button; no layout hides them | §5 | P2.5, P2.6, P2.7 | P2-AC6 | E2E | Done (P2, C14) |
 | DES-5.3 | Library widget: mode switch, search in header, dropdown when narrow | §5 | P2.8 | P2-AC5 | E2E | Done (P2) |
-| DES-5.4 | Default arrangement, auto-save, Reset layout, tabbed groups, no floating or pop-out | §5 | P2.4, P9.3 | P2-AC1, P9-AC2, P9-AC3 | E2E | Planned |
+| DES-5.4 | Default arrangement, auto-save, Reset layout, tabbed groups, no floating or pop-out | §5 | P2.4, P9.3 | P2-AC1, P9-AC2, P9-AC3 | E2E | Done (P9) |
 | DES-5.5 | Main area prioritizes browsing, metadata and art | §5 | P2.4, P6.4 | P2-AC1 | E2E | Planned |
 | DES-5.6 | Persistent, reachable transport controls; keys and media keys when Transport is hidden | §5 | P7.7, P7.11, P8.2 | P7-AC5, P8-AC4 | E2E, MAN-W | Planned |
 | DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Planned |

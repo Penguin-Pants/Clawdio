@@ -29,6 +29,9 @@ export const commands = {
   libraryTree: (query: string) => invoke<TreeArtist[]>("library_tree", { query }),
   albumArt: (track: number) => invoke<string | null>("album_art", { track }),
   queueGet: () => invoke<QueueSnapshot>("queue_get"),
+  /** The saved `layout.json` text, or null (P9.2). */
+  layoutLoad: () => invoke<string | null>("layout_load"),
+  layoutSave: (json: string) => invoke<void>("layout_save", { json }),
   playerState: () => invoke<PlayerSnapshot>("player_state"),
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),

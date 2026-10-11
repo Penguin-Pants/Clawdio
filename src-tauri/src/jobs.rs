@@ -12,6 +12,7 @@ use clawdio_core::scan::{self, ScanReport};
 use tauri::{AppHandle, Manager};
 
 use crate::events::{emit, JOB_PROGRESS, LIBRARY_CHANGED, STATUS_MESSAGE};
+use crate::persist::StateStore;
 use crate::player::PlayerHandle;
 use crate::state::{AppState, Library};
 
@@ -165,10 +166,13 @@ fn run_scan(
                 }
                 emit(app, LIBRARY_CHANGED, ());
             }
+            // Every saved entry may be in the cache already (P9.1).
+            app.state::<StateStore>().try_restore(app, false);
         }
         ScanKind::NewFolder => {
             // The old folder's entries leave the player first, then the index and the cache.
             // This runs even when the scan is canceled before it starts (P5-AC13).
+            app.state::<StateStore>().new_folder();
             app.state::<PlayerHandle>().clear();
             if let Some(Err(error)) = cache.as_mut().map(Cache::clear) {
                 log::warn!("cache: cannot clear: {error}");
@@ -201,6 +205,9 @@ fn run_scan(
         report.covers_decoded
     );
     emit(app, STATUS_MESSAGE, text);
+    // Missing saved entries go only after a complete traversal (P9.1).
+    let complete = !report.canceled && !report.failed;
+    app.state::<StateStore>().try_restore(app, complete);
     // Settings keeps the counts of the last complete scan (R2).
     if report.canceled || report.failed {
         return;

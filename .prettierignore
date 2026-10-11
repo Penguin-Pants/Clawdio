@@ -11,3 +11,4 @@ theme/tokens.json
 dist-e2e/
 test-results/
 playwright-report/
+src/shell/layout-fixtures/corrupt.json

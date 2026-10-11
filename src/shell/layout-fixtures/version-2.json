@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "libraryMode": "tree",
+  "dock": {
+    "grid": {
+      "root": {
+        "type": "branch",
+        "data": [
+          {
+            "type": "leaf",
+            "data": {
+              "views": ["library"],
+              "activeView": "library",
+              "id": "0"
+            },
+            "size": 100
+          }
+        ],
+        "size": 800
+      },
+      "width": 1200,
+      "height": 800,
+      "orientation": "VERTICAL"
+    },
+    "panels": {
+      "library": {
+        "id": "library",
+        "contentComponent": "library",
+        "tabComponent": "library",
+        "title": "library"
+      }
+    },
+    "activeGroup": "0"
+  }
+}

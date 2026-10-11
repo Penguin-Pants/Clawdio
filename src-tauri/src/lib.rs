@@ -4,6 +4,7 @@ mod commands;
 mod events;
 mod jobs;
 mod media_controls;
+mod persist;
 mod player;
 mod state;
 mod thumbs;
@@ -71,6 +72,10 @@ fn log_builder(folder: &Path, max_bytes: u128) -> tauri_plugin_log::Builder {
 /// Builds and runs the app until it quits.
 pub fn run() -> tauri::Result<()> {
     tauri::Builder::default()
+        // First plugin (P9.5): a second launch focuses the first window and exits.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            window::bring_to_front(app);
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         // Thumbnails load by name from the thumbnail folder only (D41, D13).
@@ -108,6 +113,9 @@ pub fn run() -> tauri::Result<()> {
                 resolve,
             );
 
+            // The saved queue waits for the library; the saver starts now (P9.1).
+            app.manage(persist::StateStore::load(dirs.config.clone()));
+            persist::StateStore::spawn_saver(app.handle().clone());
             app.manage(AppState {
                 dirs,
                 base,
@@ -131,6 +139,8 @@ pub fn run() -> tauri::Result<()> {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::layout::layout_load,
+            commands::layout::layout_save,
             commands::library::library_artists,
             commands::library::library_artist_rows,
             commands::library::library_albums,
@@ -175,6 +185,7 @@ pub fn run() -> tauri::Result<()> {
         .run(|app, event| {
             // Stop the audio thread before the process ends.
             if let tauri::RunEvent::Exit = event {
+                app.state::<persist::StateStore>().flush(app);
                 media_controls::detach();
                 app.state::<PlayerHandle>().send(player::Command::Shutdown);
             }

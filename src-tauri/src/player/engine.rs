@@ -37,6 +37,13 @@ pub enum Command {
     Clear(Sender<()>),
     GetQueue(Sender<QueueSnapshot>),
     GetState(Sender<PlayerSnapshot>),
+    /// The saved queue at startup (P9.1): paused at the position, with nothing loaded.
+    Restore {
+        ids: Vec<u32>,
+        current: Option<usize>,
+        position_ms: u32,
+        volume: u8,
+    },
     Shutdown,
 }
 
@@ -51,6 +58,9 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     volume: u8,
     /// Files in a row that could not play (R6).
     failures: u32,
+    /// Set after a restore: Paused with no file loaded. Play loads the current entry and
+    /// seeks here (P9.1).
+    resume_at: Option<u32>,
 }
 
 impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
@@ -71,6 +81,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             position_ms: 0,
             volume: 100,
             failures: 0,
+            resume_at: None,
         }
     }
 
@@ -119,6 +130,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     /// Plays the entry at `index`. A file that cannot open is skipped to the next entry; after
     /// MAX_FAILURES in a row playback stops (R6, D32 rule a).
     fn play_index(&mut self, mut index: usize) {
+        self.resume_at = None;
         loop {
             let Some(&id) = self.queue.entries().get(index) else {
                 self.halt();
@@ -179,6 +191,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
 
     /// Stops playback and resets the position. The queue stays (R6 Stop).
     fn halt(&mut self) {
+        self.resume_at = None;
         self.output.stop();
         self.status = PlayerStatus::Stopped;
         self.position_ms = 0;
@@ -193,6 +206,25 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         self.halt();
     }
 
+    /// The saved queue, paused at the saved position, and the saved volume (P9.1, R27).
+    pub fn restore(&mut self, ids: Vec<u32>, current: Option<usize>, position_ms: u32, volume: u8) {
+        self.set_volume(volume);
+        match current.and_then(|start| self.queue.replace(ids.clone(), start)) {
+            Some(_) => {
+                self.status = PlayerStatus::Paused;
+                self.position_ms = position_ms;
+                self.resume_at = Some(position_ms);
+            }
+            None => {
+                // No current entry: the queue only, stopped.
+                self.queue.clear();
+                self.queue.append(&ids);
+            }
+        }
+        self.announce_queue();
+        self.announce();
+    }
+
     /// Replaces the queue with `ids` and plays from `start` (R6 queue rule).
     pub fn play_list(&mut self, ids: Vec<u32>, start: usize) {
         if let Some(start) = self.queue.replace(ids, start) {
@@ -205,6 +237,15 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         match self.status {
             PlayerStatus::Playing => {}
             PlayerStatus::Paused => {
+                if let Some(at) = self.resume_at.take() {
+                    // A restored queue: load the current entry, then go to the saved position.
+                    self.failures = 0;
+                    self.play_index(self.queue.current().unwrap_or(0));
+                    if at > 0 && self.status == PlayerStatus::Playing {
+                        self.seek(Duration::from_millis(u64::from(at)));
+                    }
+                    return;
+                }
                 self.output.resume();
                 self.status = PlayerStatus::Playing;
                 self.announce();
@@ -253,6 +294,15 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     }
 
     pub fn seek(&mut self, to: Duration) {
+        let at = to.as_millis().min(u32::MAX as u128) as u32;
+        if self.resume_at.is_some() {
+            // Nothing is loaded yet: Play starts there.
+            self.resume_at = Some(at);
+            self.position_ms = at;
+            self.events.position(at);
+            self.announce();
+            return;
+        }
         if self.status != PlayerStatus::Stopped && self.output.seek(to) {
             self.position_ms = to.as_millis().min(u32::MAX as u128) as u32;
             self.events.position(self.position_ms);
@@ -386,6 +436,12 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             Command::GetState(reply) => {
                 let _ = reply.send(self.state());
             }
+            Command::Restore {
+                ids,
+                current,
+                position_ms,
+                volume,
+            } => self.restore(ids, current, position_ms, volume),
             Command::Shutdown => return false,
         }
         true
@@ -691,6 +747,43 @@ mod tests {
         engine.seek(Duration::from_millis(700));
         assert!(recorder.has("state Paused"));
         assert_eq!(engine.state().position_ms, 700);
+    }
+
+    #[test]
+    fn a_restored_queue_is_paused_and_play_starts_at_the_saved_position() {
+        let (mut engine, _) = engine();
+        engine.restore(vec![0, 1, 2], Some(1), 400, 60);
+        assert_eq!(engine.state().status, PlayerStatus::Paused);
+        assert_eq!(engine.state().position_ms, 400);
+        assert_eq!(engine.state().volume, 60);
+        assert_eq!(engine.queue().current, Some(1));
+        assert_eq!(
+            engine.output_mut().position(),
+            Duration::ZERO,
+            "nothing loaded"
+        );
+        engine.seek(Duration::from_millis(600));
+        assert_eq!(engine.state().position_ms, 600);
+        engine.play();
+        assert_eq!(engine.state().status, PlayerStatus::Playing);
+        assert_eq!(engine.output_mut().position(), Duration::from_millis(600));
+        assert_eq!(engine.queue().current, Some(1));
+    }
+
+    #[test]
+    fn next_after_a_restore_plays_the_next_entry_from_the_start() {
+        let (mut engine, _) = engine();
+        engine.restore(vec![0, 1], Some(0), 400, 100);
+        engine.next();
+        assert_eq!(engine.queue().current, Some(1));
+        assert_eq!(engine.output_mut().position(), Duration::ZERO);
+        engine.pause();
+        engine.play();
+        assert_eq!(
+            engine.output_mut().position(),
+            Duration::ZERO,
+            "no old seek"
+        );
     }
 
     #[test]

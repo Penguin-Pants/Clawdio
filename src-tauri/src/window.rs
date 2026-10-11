@@ -89,6 +89,20 @@ pub fn create_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     Ok(window)
 }
 
+/// Unminimizes, shows and focuses the main window (a second launch, P9.5).
+pub fn bring_to_front(app: &AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let shown = window
+        .unminimize()
+        .and_then(|()| window.show())
+        .and_then(|()| window.set_focus());
+    if let Err(error) = shown {
+        log::warn!("window: cannot bring the window to the front: {error}");
+    }
+}
+
 /// Saves the size 1 s after the last resize, and at once when the window closes.
 fn watch_size(app: &AppHandle, window: &WebviewWindow) {
     let pending: Arc<Mutex<Option<Instant>>> = Arc::default();

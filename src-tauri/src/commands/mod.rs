@@ -1,6 +1,7 @@
 //! Commands: thin wrappers over the core (section 6.5). IPC carries ids and names, never paths
 //! from the webview (D13).
 
+pub mod layout;
 pub mod library;
 pub mod measure;
 pub mod player;

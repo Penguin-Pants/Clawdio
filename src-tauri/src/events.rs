@@ -1,9 +1,10 @@
 //! Event names and the player's event sink (section 6.7).
 
 use clawdio_core::api::{PlayerSnapshot, QueueSnapshot};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::media_controls::{self, Publisher};
+use crate::persist::StateStore;
 use crate::player::PlayerEvents;
 
 pub const LIBRARY_CHANGED: &str = "library-changed";
@@ -38,6 +39,9 @@ impl AppEvents {
 
 impl PlayerEvents for AppEvents {
     fn state(&self, player: PlayerSnapshot) {
+        if let Some(store) = self.app.try_state::<StateStore>() {
+            store.player(&player);
+        }
         if let Some(update) = self.media.state(&player) {
             media_controls::apply(&self.app, update);
         }
@@ -45,6 +49,9 @@ impl PlayerEvents for AppEvents {
     }
 
     fn queue(&self, queue: &QueueSnapshot) {
+        if let Some(store) = self.app.try_state::<StateStore>() {
+            store.queue(queue);
+        }
         if let Some(update) = self
             .media
             .queue(queue, |id| media_controls::song(&self.app, id))
@@ -55,6 +62,9 @@ impl PlayerEvents for AppEvents {
     }
 
     fn position(&self, position_ms: u32) {
+        if let Some(store) = self.app.try_state::<StateStore>() {
+            store.position(position_ms);
+        }
         if let Some(update) = self.media.position(position_ms) {
             media_controls::apply(&self.app, update);
         }

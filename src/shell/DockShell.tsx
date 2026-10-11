@@ -6,11 +6,13 @@ import {
   type DockviewTheme,
   type IDockviewPanelProps,
 } from "dockview-react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useUiStore } from "@/store/ui";
 import { applyClamp } from "./clamp";
 import { waitForPopulated } from "./measure";
 import { commands } from "@/lib/ipc/commands";
 import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
+import { UNKNOWN_COMPONENT, restoreLayout, watchLayout } from "./persistence";
 import { LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
@@ -42,9 +44,37 @@ function widgetComponent(id: WidgetId) {
   return Widget;
 }
 
-const COMPONENTS: Record<string, FunctionComponent<IDockviewPanelProps>> = Object.fromEntries(
-  WIDGET_IDS.map((id) => [id, widgetComponent(id)]),
-);
+const COMPONENTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
+  ...Object.fromEntries(WIDGET_IDS.map((id) => [id, widgetComponent(id)])),
+  // A saved panel of a widget this version does not know; removed right after the load (P9.4).
+  [UNKNOWN_COMPONENT]: () => null,
+};
+
+/**
+ * The arrangement at start: the measurement layout in measurement mode (not saved, P3.1),
+ * else the saved layout (P9.4). Then layout changes save, and a close request writes a
+ * pending save first (P9.3).
+ */
+async function startArrangement(api: DockviewApi, container: HTMLElement | null): Promise<void> {
+  const mode = await commands.measureMode().catch(() => null);
+  if (mode) {
+    applyMeasureLayout(mode, api);
+    // The measurement scripts wait for this signal before the idle period (P3.5, D28).
+    waitForPopulated(async () => !(await commands.scanRunning())).then(() => commands.measureReady(), console.error);
+    return;
+  }
+  const text = await commands.layoutLoad().catch(() => null);
+  restoreLayout(api, text, {
+    width: container?.clientWidth ?? api.width,
+    height: container?.clientHeight ?? api.height,
+  });
+  const watcher = watchLayout(api);
+  try {
+    await getCurrentWindow().onCloseRequested(() => watcher.flush());
+  } catch {
+    // No app window (tests outside the shell): nothing to flush on close.
+  }
+}
 const TAB_COMPONENTS = { widget: WidgetTab, library: LibraryTab };
 
 /**
@@ -72,20 +102,7 @@ export function DockShell() {
       api.onDidLayoutFromJSON(sync);
       defaultArrangement(api);
       sync();
-      commands.measureMode().then(
-        (mode) => {
-          if (!mode) return;
-          applyMeasureLayout(mode, api);
-          // The measurement scripts wait for this signal before the idle period (P3.5, D28).
-          waitForPopulated(async () => !(await commands.scanRunning())).then(
-            () => commands.measureReady(),
-            console.error,
-          );
-        },
-        () => {
-          // No app shell: no measurement mode.
-        },
-      );
+      void startArrangement(api, containerRef.current);
     },
     [setVisibleWidgets],
   );
