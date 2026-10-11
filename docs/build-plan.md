@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.2, October 11, 2026 (after the two-pass review and two automated review rounds, section 12).
+**Version:** 1.3, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -789,7 +789,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - The core `LibraryIndex` (D46) is filled with 1,000 artists, 5,000 albums and 50,000 songs with deterministic names (including accents and numbers).
   - The real query commands serve it: `library_artists`, `library_albums`, `library_song_ids`, `library_rows` and `library_tree`, with search (signatures as in section 6.7). This matches D14, so the gate measures the real memory profile.
   - The app writes 2,000 album thumbnails (96 px JPEG, generated colors and numbers) into the thumbnail folder.
-  - With `CLAWDIO_MEASURE_MODE` set to `tree`, `columns` or `topBottom`, the app applies a fixture arrangement that shows all six widgets (Playlists, Play queue and Lyrics docked beside the default arrangement) in that Library mode.
+  - Outside the `fixtures` feature, so release builds keep it: with `CLAWDIO_MEASURE_MODE` set to `tree`, `columns` or `topBottom`, the app applies an arrangement that shows all six widgets (Playlists, Play queue and Lyrics docked beside the default arrangement) in that Library mode. It does not save that arrangement.
 - **P3.2** Asset protocol (D41): enable it. Grant the thumbnail folder at runtime. Set `requireLiteralLeadingDot` to false so `~/.cache` paths load on Linux. Use `convertFileSrc` for image URLs.
 - **P3.3** Library views with fixture data, all virtualized (section 6.2):
   - Tree: flattened rows (artist, album, song) with expand and collapse.
@@ -798,7 +798,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - Album rows show the 40 px thumbnail.
   - Search calls the real query commands.
 - **P3.4** Other widgets with fixture data: Play queue (500 entries), Playlists (20 playlists with 30 entries each), Lyrics (60 lines), Now playing (art, title, artist, album, heart), Transport (static position and duration).
-- **P3.5** `scripts/measure-memory.sh` (Linux) and `scripts/measure-memory.ps1` (Windows). Method per D28. Each script runs the app once per Library mode with `CLAWDIO_MEASURE_MODE`, so every widget is mounted and populated. The gate value per OS is the worst of the three modes. Output JSON: per-process values, total per mode, environment.
+- **P3.5** `scripts/measure-memory.sh` (Linux) and `scripts/measure-memory.ps1` (Windows). Method per D28. Each script runs the app three times per Library mode with `CLAWDIO_MEASURE_MODE`, so every widget is mounted and populated. The value per mode is the median of its three runs (D28). The gate value per OS is the worst mode. Output JSON: per-process values, total per mode, environment.
 - **P3.6** `.github/workflows/measure.yml` (triggers: `workflow_dispatch` and pushes to `measure/**` branches). Build release with `--features fixtures` on ubuntu-22.04 (under `xvfb-run`) and windows-latest. Run the scripts. Build NSIS and `.deb` bundles without fixtures and report their sizes. Upload results as artifacts.
 - **P3.7** `docs/milestone-0.md`: method, environment, numbers per OS, bundle sizes, verdict and notes on scroll behavior.
 - **P3.8** Verdict per R20: under 200 MB passes. 200 to 300 MB continues and the owner is told the number. Over 300 MB on either OS stops the plan: set P3 to Blocked and write the owner decision request (native UI or less layout freedom). Package size: under 30 MB passes. Over 30 MB, the owner is told and decides, because R20 calls the targets adjustable. A size result alone does not block P4.
@@ -879,11 +879,11 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P5.6** Grouping in `library/group.rs` (R3): artist = first folder, album = second folder, deeper folders fold into the album, artist-level files go to "Unknown Album", root files go to "Unknown Album" under "Unknown Artist". Display names are folder names unchanged. Unknown groups sort last.
 - **P5.7** Titles and order in `library/title.rs` (R4): title = tag, else file name without extension and without the prefix (regex `^\d{1,3}(?:[-.]\d{1,3})?[ ._-]+`). Track number = tag, else the number taken from the prefix. Disc order = disc tag, else the natural-order position of the song's sub-folder, else 0 for files directly in the album folder. Song order: disc order, track number, file name (case-insensitive).
 - **P5.8** Cache in `cache.rs` (R19): `library.sqlite` in `DataDirs.cache`. `PRAGMA user_version` holds the schema version. A different version deletes the file and rebuilds. Paths are relative to the music folder root. The D44 flags are cache columns. No lookup markers. Deleting the file rebuilds the same library on the next start.
-- **P5.9** Music folder changed (section 5): stop playback, reset the position, clear the queue and the cache, scan the new folder, reload playlists (hook used by P11). No entry from the old folder remains.
+- **P5.9** Music folder changed (section 5): cancel any running scan or online job and wait for it to end, then stop playback, reset the position, clear the queue and the cache, store the new root, scan the new folder and reload playlists (hook used by P11). No entry from the old folder remains.
 - **P5.10** Music folder missing at startup (D30): the Library body shows "Music folder not found: <path>" and "Change folder". The cache file and `state.json` are not touched. "Change folder" works from this screen.
 - **P5.11** Edge-case seeds in the P4.11 folder: `tone-opus.ogg`, `tone-float.wav`, `tone-adpcm.wav`, `tone-alaw.wav`, `corrupt.mp3` (random bytes), `truncated.mp3` (a file with a Xing header, cut in the middle) and `damaged.ogg` (a Vorbis file with bytes overwritten in the middle). All seeds together stay under 100 KB. Add the ffmpeg commands to the README.
 - **P5.12** Fixture builder `crates/clawdio-core/tests/common/tree.rs`: builds a temp music folder with: two-disc album (tags and sub-folders), album without disc tags, artist-level file, root file, hidden folder, hidden file, folder symlink loop (Linux) or junction (Windows), symbolic link to an audio file (Linux), case-different folders (Linux), accented and non-Latin names, numbered file names for every R4 example, a deep path over 260 characters (Windows).
-- **P5.13** Generator option `--edge-cases` for P4.12: mixes the P5.11 files into 1 percent of albums and adds two-disc albums. P6-AC6 and P18.5 use the 50,000-track library it makes.
+- **P5.13** Generator option `--edge-cases` for P4.12: mixes the P5.11 files into 1 percent of albums and adds two-disc albums. Option `--covers N` writes a generated `cover.jpg` into N albums. P6-AC6 and P18.5 use the 50,000-track library it makes.
 - **P5.14** Audio hash guard (R11) in `crates/clawdio-core/tests/common/guard.rs`: hash every audio file in a fixture tree before a test and compare after it. Every integration test from P5 onward that writes into a music folder calls it.
 
 **Acceptance criteria.**
@@ -900,7 +900,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P5-AC10** Every R4 prefix example ("01 - ", "01. ", "1-01 ", "001_") is removed. "1984.mp3" keeps its name.
 - **P5-AC11** The two-disc album orders disc 1 then disc 2 by track number, with and without disc tags (AC-18 order part).
 - **P5-AC12** With the folder missing at startup the message and "Change folder" show. The cache file and `state.json` are unchanged. "Change folder" opens the picker and scans the chosen folder (AC-8).
-- **P5-AC13** After a folder change, no track from the old folder is in the cache or the queue.
+- **P5-AC13** After a folder change, also one made while the startup scan of the old folder runs, no track from the old folder is in the cache, the index or the queue.
 - **P5-AC14** Non-ASCII names work on Linux and Windows. A path over 260 characters works on Windows. A non-UTF-8 name on Linux is skipped and logged.
 - **P5-AC15** A file added while the app runs appears only after Rescan or a restart. The app does not watch the folder.
 - **P5-AC16** The cache holds the D44 flags. A second startup with no changes decodes no cover file (counter in the test).
@@ -925,7 +925,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P6.4** Rows (design.md §6): song rows show title, the tag artist when it differs from the folder artist, album (Columns and Top/bottom only) and duration (`.tabular`). Album rows show a 40 px thumbnail slot (ArtPlaceholder until P10), the album name and the artist name. Selected rows use `--color-state-selected` and a 2 px `text.primary` bar at the left edge (D10). The playing song shows a Lucide `AudioLines` icon and an accessible "Playing" label.
 - **P6.5** Selection: single click selects. Double-click or Enter on a song calls `player_play_list` with the list it appears in (R6 queue rule: the album in Tree mode, the Songs list as shown in Columns and Top/bottom). Double-click or Enter on an album row plays the album from its first song.
 - **P6.6** Keyboard (R25): lists use `role="listbox"` and the tree uses `role="tree"`, with `aria-activedescendant`, `aria-setsize`, `aria-posinset` and `aria-selected`; tree rows also carry `aria-level` and `aria-expanded`. The active row shows a 2 px inset `text.primary` outline while the list has focus. The virtualizer's `rangeExtractor` keeps the active row rendered when it scrolls out of view. Up and Down move. Right expands and Left collapses in Tree mode. Shift+F10 and the ContextMenu key open the context menu for the active row. Ctrl+F activates the Library tab when it is in a tabbed group and focuses the search field. Esc clears the search and moves focus to the Library list.
-- **P6.7** Remove the `fixtures` feature and its data generator (D35). The query commands stay. Playwright mocks stay.
+- **P6.7** Remove the `fixtures` feature and its data generator (D35). The query commands and `CLAWDIO_MEASURE_MODE` stay. Playwright mocks stay. Switch `measure.yml` to the production setup that P18.5 uses: a release build without fixtures, a portable folder with a pre-written `settings.json` that points at a 50,000-track library made by P4.12 and P5.13 (with `--covers 2000`, which writes `cover.jpg` into 2,000 albums), and the same three-mode runs.
 - **P6.8** Responsiveness probe (AC-2): when the environment variable `CLAWDIO_PERF=1` is set, a release build records, for each key and pointer event, the time from the event to the next paint. WebView2 uses the Event Timing API (`duration`). WebKitGTK uses the time to a `MessageChannel` callback queued from the next animation frame. Every 10 s the app logs the maximum and the number of events over 100 ms.
 
 **Acceptance criteria.**
@@ -1040,7 +1040,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P9.2** Commands `layout_load` and `layout_save(json)`: Rust reads and atomically writes `layout.json` in `DataDirs.config`.
 - **P9.3** `src/shell/persistence.ts`: the saved object is `{ "version": 1, "libraryMode": ..., "dock": <Dockview toJSON> }`. Save 500 ms after a layout or mode change. No window size. On a window close request (`onCloseRequested`), write any pending save before the window closes.
 - **P9.4** Restore order:
-  1. Parse error, unknown version or a missing `dock` key: log a warning and apply Columns.
+  1. Parse error, unknown version, a missing `dock` object, or a `libraryMode` that is missing or not one of `tree`, `columns`, `topBottom`: log a warning and apply Columns.
   2. Unknown widget ids: Dockview `fromJSON` throws on an unknown component name. Before the call, rewrite each unknown component name to a registered `unknown` placeholder and log the id. After the call, remove those panels.
   3. No Library panel: apply Columns.
   4. Any error thrown by `fromJSON`: log it and apply Columns.
@@ -1053,7 +1053,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P9-AC1** After a restart the queue, current song, position (paused) and volume return. Entries for deleted files are gone with no message.
 - **P9-AC2** In each Library mode, a docked, resized and hidden arrangement survives a restart (AC-11).
 - **P9-AC3** Each built-in layout applies. A tabbed group survives a restart (AC-12).
-- **P9-AC4** Corrupt JSON, version 2, an unknown widget id and a file without Library each give the specified result and one log line (unit tests with fixture files).
+- **P9-AC4** Corrupt JSON, version 2, an unknown or missing `libraryMode`, an unknown widget id and a file without Library each give the specified result and one log line (unit tests with fixture files).
 - **P9-AC5** Reset layout restores the default after a restart with a saved custom layout (AC-13 Reset part).
 - **P9-AC6** A second launch focuses the first window and leaves one process.
 - **P9-AC7** In portable mode `state.json` and `layout.json` are in `data/config`. The queue survives a copy of the portable folder and the music folder to another drive letter (AC-17 state part, Windows).
@@ -1111,7 +1111,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 - **P11.1** `playlist/m3u.rs`: read UTF-8 (BOM removed). Write `#EXTM3U`, then for each entry `#EXTINF:<seconds>,<artist> - <title>` and the path relative to the playlist file with forward slashes. Write to a temp file in the same folder, then rename. A rewrite keeps entries and drops other comment lines. `docs/file-formats.md` states this.
 - **P11.2** Discovery: the scan collects `.m3u8` files anywhere in the music folder (hidden names skipped). Entries resolve relative to the playlist file. An entry that is not a library track is "missing". An unreadable file is skipped and logged. `.m3u` and `.pls` files are not listed. A rescan never writes a playlist.
-- **P11.3** `playlist/name.rs`: the R12 rule (no `/`, `\`, `..`, `< > : " | ? *`; no leading or trailing space or dot; not CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9 in any case; not "Favorites" in any case) plus D21. Each rejection has a message.
+- **P11.3** `playlist/name.rs`: the R12 rule (no `/`, `\`, `..`, `< > : " | ? *`; no leading or trailing space or dot; not CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9 in any case, also when followed by a dot and more text ("CON.mix"), because Windows reserves those names with any extension; not "Favorites" in any case) plus D21. Each rejection has a message.
 - **P11.4** Commands: `playlists_list`, `playlist_entries`, `playlist_create`, `playlist_add`, `playlist_remove_entry`, `playlist_delete`, `favorite_toggle`. Event `playlists-changed`.
 - **P11.5** Playlists widget (tree role, with the P6.6 keyboard and ARIA pattern):
   - Playlists in natural name order. Each expands to its entries. Up and Down move, Right expands and Left collapses.
@@ -1128,7 +1128,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 **Acceptance criteria.**
 
-- **P11-AC1** Each forbidden name in R12 is rejected with a message, including "favorites" in any letter case. Valid names, including non-Latin ones, are accepted.
+- **P11-AC1** Each forbidden name in R12 is rejected with a message, including "favorites" in any letter case and device names with an extension ("CON.mix", "com1.roadtrip"). Valid names, including non-Latin ones, are accepted.
 - **P11-AC2** Create, add (with a duplicate), remove and delete (after confirmation) give files that match golden text byte for byte.
 - **P11-AC3** A failed write shows the error. The old file is unchanged (hash).
 - **P11-AC4** Missing entries show as "missing", are skipped in playback and stay in the file after every action.
@@ -1186,17 +1186,18 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 **Tasks.**
 
 - **P13.1** `lyrics.rs` `load(track)`: `<base name>.lrc` next to the song, else `<base name>.txt`, else embedded lyrics (lofty `ItemKey::UnsyncLyrics` and `ItemKey::Lyrics`; this covers ID3v2 USLT and Vorbis `LYRICS` and `UNSYNCEDLYRICS`). Text decoding per D26.
-- **P13.2** LRC cleanup: remove every leading `[mm:ss.xx]` stamp on a line, drop tag lines (`[ar:]`, `[ti:]`, `[al:]`, `[au:]`, `[by:]`, `[length:]`, `[offset:]`, `[re:]`, `[ve:]`), keep the file's line order and blank lines. No line highlighting (deferred).
-- **P13.3** Command `lyrics_get(track_id)`. Event `lyrics-changed` when the playing song changes or a lyrics file is written.
+- **P13.2** LRC cleanup: remove every leading time stamp on a line in any common form (`[mm:ss]`, `[mm:ss.x]`, `[mm:ss.xx]`, `[mm:ss.xxx]`, also with `:` before the fraction; regex `\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]`), drop tag lines (`[ar:]`, `[ti:]`, `[al:]`, `[au:]`, `[by:]`, `[length:]`, `[offset:]`, `[re:]`, `[ve:]`), keep the file's line order and blank lines. No line highlighting (deferred).
+- **P13.3** Command `lyrics_get(track_id)`. Event `lyrics-changed` when the playing song changes, when the app writes a lyrics file, or when a completed scan finds that the playing song's lyrics source changed (section 5: folder edits appear after Rescan).
 - **P13.4** Lyrics widget: scrollable, selectable text, 14 px, line height 1.6. The empty hint when there are no lyrics. A "Fetch lyrics" button shows only when no source exists. In P13 it is disabled. P15 enables it.
 
 **Acceptance criteria.**
 
 - **P13-AC1** Source order tests: `.lrc` beats `.txt` beats embedded.
-- **P13-AC2** LRC stamps and tag lines do not show.
+- **P13-AC2** LRC stamps in every form of P13.2 and tag lines do not show.
 - **P13-AC3** An MP3 with an ID3 USLT frame and no lyrics file shows the embedded lyrics (AC-21).
 - **P13-AC4** Ogg files with `LYRICS` or `UNSYNCEDLYRICS` show their lyrics.
 - **P13-AC5** "Fetch lyrics" shows only when no source exists. The empty hint shows when nothing plays or no lyrics exist.
+- **P13-AC6** Adding, editing or removing the playing song's `.lrc` file outside the app, then Rescan, updates the widget without a song change.
 
 **Verification.** Rust tests with generated fixture files (lofty writes the tags into copies of the seed files). Playwright (P13-AC5). Manual Linux: P13-AC3 with real playback.
 
@@ -1219,9 +1220,10 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P14.5** Artwork job. Candidates come from the scan flags (D44), so startup reads no audio or image file. A candidate has a real album folder (not "Unknown Artist" or "Unknown Album"), no valid cover file, no `cover.jpg` at all (a broken `cover.jpg` blocks the save and is logged), no embedded picture in any song, a readable `sidecar.json` or none, no no-match marker and a writable folder (checked by creating and removing a temp file; a read-only folder is logged and skipped). Steps:
   1. Search MusicBrainz release groups: `query=releasegroup:"<album>" AND artist:"<artist>"` with Lucene escaping, `fmt=json`.
   2. Keep results whose normalized title equals the normalized album folder name and whose normalized artist credit equals the normalized artist folder name.
-  3. Exactly one: request `https://coverartarchive.org/release-group/<id>/front-500`. Check the content type, the magic bytes (JPEG or PNG), the size (10 MB or less) and that the image decodes. Convert PNG to JPEG. Write `cover.jpg` only if no file exists (create new, never overwrite).
+  3. Exactly one: request `https://coverartarchive.org/release-group/<id>/front-500`. Check the content type, the magic bytes (JPEG or PNG), the size (10 MB or less) and that the image decodes. Convert PNG to JPEG. Write `cover.jpg` only if no file exists (create new, never overwrite). Then set the album's cover state to valid, remove its old thumbnails, request new ones and emit `art-ready`, so the UI and the OS panel update at once (P10.5).
   4. Zero or two or more: write the no-match marker.
-  5. Network error, 404 from CAA after a match, 429 or 503: no marker. The album is retried at the next startup.
+  5. A 404 from Cover Art Archive after a unique match: write the marker with status `no-art`. "Retry lookup" clears it like a no-match marker.
+  6. Network error, 429 or 503: no marker. The album is retried at the next startup.
 - **P14.6** Scheduling: with the switch on, the job runs after the startup scan completes a full traversal and after each later scan. Before each request the job checks the album folder on disk again (cover file names, and the D44 flags of files that changed) and skips the album if art now exists. One album at a time. The status line shows "Fetching artwork: N of M albums" with Cancel. Cancel uses a per-job cancellation token: it drops the active request and stops the queue, and no file is written after Cancel. Turning the switch on starts the job. Turning the switch off cancels the queue and drops in-flight requests (R7).
 - **P14.7** "Retry lookup" on the album context menu (disabled when the switch is off): clear the marker and look up that album now.
 - **P14.8** Tests with `httpmock` for every rule in P14.1 to P14.7.
@@ -1288,7 +1290,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 **Tasks.**
 
-- **P16.1** Before the lookup, check that the album folder is writable (temp file create and remove). If not, show the read-only error (section 6.14) and stop. "Missing" per song and field: the embedded tag is absent or empty for title, track number or year. File-name fallbacks do not count as filled (R10).
+- **P16.1** Nothing is written before Confirm, not even a probe file (R10). Before the lookup, read the folder's permissions without writing; if they show the folder is read-only, show the read-only error (section 6.14) and stop. On Confirm, a failed write shows the same error and leaves the folder unchanged. "Missing" per song and field: the embedded tag is absent or empty for title, track number or year. File-name fallbacks do not count as filled (R10).
 - **P16.2** Lookup (D42): search MusicBrainz releases with `release:"<album>" AND artist:"<artist>"`. Keep results that match by the P14.4 normalization. Then apply the D42 steps: a second search by album and artist tags when needed, and title scoring across the candidates. Scoring fetches `/ws/2/release/<id>?inc=recordings&fmt=json` for at most 5 candidate releases, through the rate limiter. No audio fingerprinting.
 - **P16.3** Map songs to tracks: by disc and track number when both are known (tag or file name), else by folded title, else no proposal for that song.
 - **P16.4** Preview dialog: a table of song, field and proposed value, for missing fields only. Confirm writes. Cancel writes nothing. A corrupt existing sidecar is named in the dialog and replaced on Confirm.
@@ -1306,7 +1308,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P16-AC5** A corrupt sidecar is replaced only after Confirm.
 - **P16-AC6** Sidecar entries for missing songs are ignored and not deleted.
 - **P16-AC7** No fingerprinting code or dependency exists (review of `Cargo.lock`).
-- **P16-AC8** With a read-only album folder, the action shows the error before any request and writes nothing.
+- **P16-AC8** With a read-only album folder, the action shows the error and writes nothing. Before Confirm, a file-system watch on the album folder records no event at all.
 - **P16-AC9** An album whose folder name finds no release but whose album tag does gets a proposal. Two releases with the same title score give no proposal (D42).
 
 **Verification.** Rust tests with `httpmock` and generated folders. Playwright (preview dialog). Review (P16-AC7).
@@ -1542,7 +1544,7 @@ The plan went through a two-pass critical review on October 11, 2026, before the
 
 ### 12.1 Automated review rounds on the pull request
 
-The Codex review bot reviewed the draft (`93e65b6`, round X) and version 1.1 (`c1f73fe`, round Y). Each comment was checked against the plan and the sources like a Pass 1 finding.
+The Codex review bot reviewed the draft (`93e65b6`, round X), version 1.1 (`c1f73fe`, round Y) and version 1.2 (`0702739`, round Z). Each comment was checked against the plan and the sources like a Pass 1 finding.
 
 | ID | Bot label | Finding | Verdict | Change |
 |---|---|---|---|---|
@@ -1569,6 +1571,23 @@ The Codex review bot reviewed the draft (`93e65b6`, round X) and version 1.1 (`c
 
 Result: 20 comments. 14 confirmed and fixed in 1.2. 5 already fixed in 1.1. 1 already covered by D45.
 
+Round Z reviewed version 1.2 (`0702739`).
+
+| ID | Bot label | Finding | Verdict | Change |
+|---|---|---|---|---|
+| Z1 | P2 | A Cover Art Archive 404 after a unique match retries forever | Confirmed | P14.5 (`no-art` marker) |
+| Z2 | P2 | A downloaded cover does not refresh the UI and OS panel | Confirmed | P14.5 |
+| Z3 | P2 | `measure.yml` breaks when P6 removes the `fixtures` feature | Confirmed | P3.1, P6.7 |
+| Z4 | P2 | Only one LRC time stamp form is removed | Confirmed | P13.2, P13-AC2 |
+| Z5 | P2 | Folder change races a running scan | Confirmed | P5.9, P5-AC13 |
+| Z6 | P2 | Device names with an extension pass the name rule | Confirmed | P11.3, P11-AC1 |
+| Z7 | P2 | One run per mode cannot give the D28 median | Confirmed | P3.5 |
+| Z8 | P2 | The writability probe writes before Confirm | Confirmed | P16.1, P16-AC8 |
+| Z9 | P2 | `libraryMode` is not validated on restore | Confirmed | P9.4, P9-AC4 |
+| Z10 | P2 | Lyrics files edited outside the app do not refresh after Rescan | Confirmed | P13.3, P13-AC6 |
+
+Result: 10 comments. 10 confirmed and fixed in 1.3.
+
 **What did not change.** All contrast ratios in sections 5.1 and 6.12 were confirmed by two reviewers. The R3 order, R4 prefix regex, R13, R14 matching, R18.1, R22, R29 and Milestone 0 thresholds were confirmed against the source. The phase order P7 to P10, P8 to P10, P7 to P11, P13 to P15 and P14 to P16 was confirmed.
 
 **Proposed follow-up work** from the review is in section 11. F-03 was removed because A1 moved it into P7.
@@ -1577,6 +1596,7 @@ Result: 20 comments. 14 confirmed and fixed in 1.2. 5 already fixed in 1.1. 1 al
 
 ## 13. Change log
 
+- **1.3 (October 11, 2026):** automated review round Z applied (section 12.1). Added P13-AC6 and tightened P3, P5, P6, P9, P11, P13, P14 and P16.
 - **1.2 (October 11, 2026):** automated review rounds X and Y applied (section 12.1). Revised D32, D42 and K14. Added P9-AC11, P14-AC15 and P16-AC9 and tightened P3, P5, P10, P14, P16 and P18 criteria.
 - **1.1 (October 11, 2026):** two-pass review applied (section 12). Added C17, C18, D44 to D48, Q7, Q8, K19, K20, tasks P0.0, P4.11, P4.12 and new criteria in P2, P5, P6, P7, P9, P11, P14 and P16. Revised D10, D17, D19, D20 and D32.
 - **1.0 (October 11, 2026):** first version. Built from requirements v1.5, `design.md`, the branding prompt, the asset manifest and `theme/tokens.json`, with package facts checked on the same date.

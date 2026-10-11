@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.2, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.2. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.3, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.3. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -312,7 +312,7 @@
 | E-25 | Output stream error: stop with a message; next Play opens the default device | §5 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
 | E-27 | Closing the window quits; media keys only while running | §5 | P8.5 | P8-AC5 | MAN-L, MAN-W | Planned |
-| E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3 | P5-AC15 | IT | Planned |
+| E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3, P13.3 | P5-AC15, P13-AC6 | IT | Planned |
 
 ### 1.11 Section 6: constraints
 
