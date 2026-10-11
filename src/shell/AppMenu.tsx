@@ -1,5 +1,6 @@
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -28,9 +29,14 @@ export function AppMenu() {
   const setMode = useLibraryStore((state) => state.setMode);
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Menu" />}>
-        <Icon name="menu" />
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={<DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Menu" />} />}
+        >
+          <Icon name="menu" />
+        </TooltipTrigger>
+        <TooltipContent>Menu</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Widgets</DropdownMenuLabel>

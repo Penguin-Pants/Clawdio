@@ -6,7 +6,7 @@ param(
   [Parameter(Mandatory = $true)][string]$Binary,
   [string]$Output = "memory-windows.json",
   [int]$Runs = 3,
-  [int]$StartupSeconds = 15,
+  [int]$StartupSeconds = 60,
   [int]$IdleSeconds = 60
 )
 $ErrorActionPreference = "Stop"
@@ -41,9 +41,22 @@ $worst = 0
 foreach ($mode in $modes) {
   $totals = @()
   for ($run = 1; $run -le $Runs; $run++) {
+    $ready = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
     $env:CLAWDIO_MEASURE_MODE = $mode
+    $env:CLAWDIO_MEASURE_READY = $ready
     $app = Start-Process -FilePath $Binary -PassThru
-    Start-Sleep -Seconds ($StartupSeconds + $IdleSeconds)
+    # The app writes the ready file once all six widgets show data.
+    $waited = 0
+    while (-not (Test-Path $ready)) {
+      if ($app.HasExited -or $waited -ge $StartupSeconds) {
+        Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+        throw "$mode run ${run}: the app did not show populated widgets within $StartupSeconds s"
+      }
+      Start-Sleep -Seconds 1
+      $waited++
+    }
+    Remove-Item $ready
+    Start-Sleep -Seconds $IdleSeconds
     # A run where the app exited early would sum to zero. Fail instead of recording it.
     if ($app.HasExited) { throw "$mode run ${run}: the app exited before the sample" }
     $processes = Get-PrivateWorkingSet (Get-TreeIds $app.Id)

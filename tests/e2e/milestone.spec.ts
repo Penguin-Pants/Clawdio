@@ -22,6 +22,8 @@ test("P3-AC1: the measurement arrangement shows all six widgets with data", asyn
   await expect(widget(page, "transport")).toContainText("2:04");
   await widget(page, "playlists").getByRole("treeitem", { name: /Mix 1/ }).click();
   await expect(widget(page, "playlists")).toContainText("missing");
+  // The app signals the measurement scripts once every widget shows data (P3.5).
+  await expect(page.locator("body")).toHaveAttribute("data-measure-ready", "true");
 });
 
 test("P3-AC1: Columns filters by artist and album and scrolls the songs", async ({ page }) => {
@@ -72,6 +74,31 @@ test("P3: a tree album selection also selects its artist, so Columns shows that 
   await expect(library.getByRole("listbox", { name: "Songs" }).getByRole("option").first()).toContainText(
     "Song 1 of Album B0",
   );
+});
+
+test("P3: a tree song selection also selects its artist and album", async ({ page }) => {
+  await open(page, "tree");
+  const library = widget(page, "library");
+  const tree = library.getByRole("tree", { name: "Library" });
+  await tree.getByRole("treeitem", { name: "Artist 00", exact: true }).click();
+  await tree.getByRole("treeitem", { name: "Album A0", exact: true }).click();
+  await tree.getByRole("treeitem", { name: "Album B0", exact: true }).click();
+  await tree.getByRole("treeitem", { name: /Song 2 of Album A0/ }).click();
+  await openMenu(page);
+  await page.getByRole("menuitemradio", { name: "Columns" }).click();
+  await closeMenu(page);
+  const songs = library.getByRole("listbox", { name: "Songs" });
+  await expect(songs.getByRole("option", { name: /Song 2 of Album A0/ })).toHaveAttribute("aria-selected", "true");
+});
+
+test("P3: F6 leaves a focused Library list", async ({ page }) => {
+  await open(page, "columns");
+  await widget(page, "library").getByRole("listbox", { name: "Songs" }).focus();
+  await page.keyboard.press("F6");
+  const focused = await page.evaluate(() =>
+    document.activeElement?.closest("[data-widget]")?.getAttribute("data-widget"),
+  );
+  expect(focused).not.toBe("library");
 });
 
 test("P3: axe finds no serious or critical violation with data", async ({ page }) => {

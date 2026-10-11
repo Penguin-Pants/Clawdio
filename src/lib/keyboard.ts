@@ -7,9 +7,11 @@ export function isResetShortcut(event: KeyboardEvent): boolean {
   return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.code === "KeyL";
 }
 
-/** Keys inside open menus and dialogs belong to those controls (D17). */
+/** Keys inside open menus, dialogs and select popups belong to those controls (D17). */
 function inMenuOrDialog(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest('[role="menu"], [role="dialog"], [role="listbox"]') !== null;
+  return (
+    target instanceof Element && target.closest('[role="menu"], [role="dialog"], [data-slot="select-content"]') !== null
+  );
 }
 
 /**

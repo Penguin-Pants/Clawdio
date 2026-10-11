@@ -53,6 +53,7 @@ pub fn run() -> tauri::Result<()> {
             commands::widgets::playlist_entries,
             commands::widgets::lyrics_get,
             commands::measure::measure_mode,
+            commands::measure::measure_ready,
         ])
         .run(tauri::generate_context!())
 }

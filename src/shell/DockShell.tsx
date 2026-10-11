@@ -8,6 +8,7 @@ import {
 } from "dockview-react";
 import { useUiStore } from "@/store/ui";
 import { applyClamp } from "./clamp";
+import { waitForPopulated } from "./measure";
 import { commands } from "@/lib/ipc/commands";
 import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
 import { LibraryTab, WidgetTab } from "./WidgetTab";
@@ -73,7 +74,10 @@ export function DockShell() {
       sync();
       commands.measureMode().then(
         (mode) => {
-          if (mode) applyMeasureLayout(mode, api);
+          if (!mode) return;
+          applyMeasureLayout(mode, api);
+          // The measurement scripts wait for this signal before the idle period (P3.5).
+          waitForPopulated().then(() => commands.measureReady(), console.error);
         },
         () => {
           // No app shell: no measurement mode.

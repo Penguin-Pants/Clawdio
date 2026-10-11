@@ -69,6 +69,9 @@ mockIPC((command, args) => {
       return app.version;
     case "measure_mode":
       return new URLSearchParams(window.location.search).get("measure");
+    case "measure_ready":
+      document.body.dataset.measureReady = "true";
+      return null;
     default:
       return libraryCommand(command, (args ?? {}) as Args);
   }

@@ -14,7 +14,7 @@ This file records the R20 Milestone 0 spike (build plan P3): the method, the env
 - **Data.** The `fixtures` feature fills the real library index with 1,000 artists, 5,000 albums and 50,000 songs with accented and numbered names. The real query commands serve it (D14). The app writes 2,000 album thumbnails (96 px JPEG) into the thumbnail folder and loads them through the asset protocol (D41). Play queue: 500 entries. Playlists: 20 with 30 entries each. Lyrics: 60 lines. Now playing and Transport controls show the current entry.
 - **Arrangement.** `CLAWDIO_MEASURE_MODE` (`tree`, `columns` or `topBottom`) shows all six widgets in that Library mode. The arrangement is not saved.
 - **Metric (D28).** Linux: the sum of PSS over the app process tree (the app, `WebKitWebProcess` and `WebKitNetworkProcess`). Windows: the sum of the private working set over the app process tree, WebView2 processes included.
-- **Timing.** 15 s for start-up, then 60 s idle with the window visible and no playback.
+- **Timing.** The app writes a ready file once all six widgets show data (`CLAWDIO_MEASURE_READY`, at most 60 s). Then 60 s idle with the window visible and no playback. A run fails when the app exits or never signals.
 - **Runs.** 3 runs per mode. The value per mode is the median. The gate value per OS is the worst mode.
 - **Scripts.** `scripts/measure-memory.sh` (Linux) and `scripts/measure-memory.ps1` (Windows). Each writes a JSON file with the per-process values, the total per run, the median per mode and the environment.
 

@@ -30,4 +30,5 @@ export const commands = {
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
   measureMode: () => invoke<LibraryMode | null>("measure_mode"),
+  measureReady: () => invoke<void>("measure_ready"),
 };

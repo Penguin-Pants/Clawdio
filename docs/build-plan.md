@@ -306,9 +306,10 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** B8.
 
-**TWO-PASS REVIEW:** F1 0, F2 5, F3 0, F4 7.
+**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 7.
 
 - F2 (Codex review of `fdc1db1`): artist and album lists loaded every row at once, against D14; they now load ids, then rows for the visible window (`library_artist_rows`, `library_album_rows`). A tree album selection kept the old artist; it now selects its artist too. `album_art` returned no art for an unknown track; it now returns `unknown_id` (D46). `measure-memory.sh` and `.ps1` now fail when the app exits before the sample. The first Windows run failed: `$runs` and the `-Runs` parameter are one variable in PowerShell (renamed `$runRecords`).
+- F2 (Codex review of `b71e28c`): a tree song selection kept the old artist and album; it now sets all three. The scripts sampled after a fixed delay; the UI now writes a ready file once all six widgets show data (`measure_ready`, `CLAWDIO_MEASURE_READY`) and the scripts wait for it. F6 stayed in a focused Library list; only select popups keep F6 now. The Menu and dialog close buttons had no tooltip.
 - F2: the song row cache had no limit; scrolling 50,000 rows kept every row. Now capped (N4). The fixture `widgets` assignment failed `clippy` with the feature on; CI now lints and tests with `--features clawdio/fixtures`.
 - F4:
   - Album rows return an absolute thumbnail path: D13 forbids paths from the webview; this path goes to it, for `convertFileSrc` (P3.2).

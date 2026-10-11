@@ -3,13 +3,14 @@
 # WebKit processes included. Each Library mode runs RUNS times; the value per mode is the
 # median. The gate value is the worst mode. Needs a display (use xvfb-run on CI).
 # Usage: scripts/measure-memory.sh <app binary> [output.json]
-# Environment: RUNS (default 3), STARTUP_SECONDS (default 15), IDLE_SECONDS (default 60).
+# Environment: RUNS (default 3), STARTUP_SECONDS (default 60, the longest wait for the app to
+# signal that all six widgets show data), IDLE_SECONDS (default 60).
 set -euo pipefail
 
 BINARY=${1:?usage: measure-memory.sh <app binary> [output.json]}
 OUTPUT=${2:-memory-linux.json}
 RUNS=${RUNS:-3}
-STARTUP_SECONDS=${STARTUP_SECONDS:-15}
+STARTUP_SECONDS=${STARTUP_SECONDS:-60}
 IDLE_SECONDS=${IDLE_SECONDS:-60}
 MODES=(tree columns topBottom)
 
@@ -40,9 +41,22 @@ worst=0
 for mode in "${MODES[@]}"; do
   totals=()
   for run in $(seq 1 "$RUNS"); do
-    CLAWDIO_MEASURE_MODE=$mode "$BINARY" >/dev/null 2>&1 &
+    ready=$(mktemp -u)
+    CLAWDIO_MEASURE_MODE=$mode CLAWDIO_MEASURE_READY=$ready "$BINARY" >/dev/null 2>&1 &
     app=$!
-    sleep $((STARTUP_SECONDS + IDLE_SECONDS))
+    # The app writes the ready file once all six widgets show data.
+    waited=0
+    until [ -f "$ready" ]; do
+      if ! kill -0 "$app" 2>/dev/null || [ "$waited" -ge "$STARTUP_SECONDS" ]; then
+        echo "$mode run $run: the app did not show populated widgets within ${STARTUP_SECONDS} s" >&2
+        kill "$app" 2>/dev/null || true
+        exit 1
+      fi
+      sleep 1
+      waited=$((waited + 1))
+    done
+    rm -f "$ready"
+    sleep "$IDLE_SECONDS"
     # A run where the app exited early would sum to zero. Fail instead of recording it.
     if ! kill -0 "$app" 2>/dev/null; then
       echo "$mode run $run: the app exited before the sample" >&2

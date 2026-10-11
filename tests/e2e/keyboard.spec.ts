@@ -36,3 +36,16 @@ test("P2-AC10: a widget in a hidden tab is skipped", async ({ page }) => {
   }
   expect([...seen].sort()).toEqual(["library", "nowPlaying", "transport"]);
 });
+
+test("icon-only buttons show their tooltip on keyboard focus", async ({ page }) => {
+  await openApp(page);
+  await page.keyboard.press("Tab");
+  const menu = page.getByRole("button", { name: "Menu" });
+  await menu.focus();
+  await expect(page.getByText("Menu", { exact: true }).last()).toBeVisible();
+  await menu.press("Enter");
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  const close = page.getByRole("dialog").getByRole("button", { name: "Close" });
+  await close.focus();
+  await expect(page.getByText("Close", { exact: true }).last()).toBeVisible();
+});

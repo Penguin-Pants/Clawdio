@@ -112,7 +112,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
 type TreeLine =
   | { kind: "artist"; id: number; name: string; expanded: boolean }
   | { kind: "album"; id: number; artist: number; name: string; expanded: boolean }
-  | { kind: "song"; id: number };
+  | { kind: "song"; id: number; artist: number; album: number };
 
 /** One expandable artist, album and song tree (R28). Song rows load for the visible window. */
 export function TreeList() {
@@ -132,7 +132,8 @@ export function TreeList() {
       for (const album of artist.albums) {
         const albumOpen = openAlbums.has(album.id);
         result.push({ kind: "album", id: album.id, artist: artist.id, name: album.name, expanded: albumOpen });
-        if (albumOpen) album.songs.forEach((id) => result.push({ kind: "song", id }));
+        if (albumOpen)
+          album.songs.forEach((id) => result.push({ kind: "song", id, artist: artist.id, album: album.id }));
       }
     }
     return result;
@@ -170,7 +171,7 @@ export function TreeList() {
               style={style}
               className="pl-12"
               selected={selection.song === line.id}
-              onSelect={() => setSelection({ song: line.id })}
+              onSelect={() => setSelection({ artist: line.artist, album: line.album, song: line.id })}
             >
               <SongCells song={row(line.id)} showAlbum={false} />
             </Row>
