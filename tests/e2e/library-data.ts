@@ -1,0 +1,88 @@
+// A small generated library for e2e tests (P3): 20 artists, 3 albums each, 10 songs each.
+// The handlers answer the library commands like the Rust index does, without folding.
+import type { AlbumRow } from "../../src/lib/ipc/bindings/AlbumRow";
+import type { ArtistRow } from "../../src/lib/ipc/bindings/ArtistRow";
+import type { PlaylistEntry } from "../../src/lib/ipc/bindings/PlaylistEntry";
+import type { PlaylistRow } from "../../src/lib/ipc/bindings/PlaylistRow";
+import type { SongRow } from "../../src/lib/ipc/bindings/SongRow";
+import type { SongScope } from "../../src/lib/ipc/bindings/SongScope";
+import type { TreeArtist } from "../../src/lib/ipc/bindings/TreeArtist";
+
+const artists: ArtistRow[] = [];
+const albums: AlbumRow[] = [];
+const songs: SongRow[] = [];
+for (let a = 0; a < 20; a += 1) {
+  const artist = { id: a, name: `Artist ${String(a).padStart(2, "0")}` };
+  artists.push(artist);
+  for (let b = 0; b < 3; b += 1) {
+    const album: AlbumRow = {
+      id: a * 3 + b,
+      artistId: a,
+      name: `Album ${String.fromCharCode(65 + b)}${a}`,
+      artistName: artist.name,
+      thumb: null,
+    };
+    albums.push(album);
+    for (let s = 1; s <= 10; s += 1) {
+      songs.push({
+        id: songs.length,
+        artistId: a,
+        albumId: album.id,
+        title: `Song ${s} of ${album.name}`,
+        artistName: artist.name,
+        albumName: album.name,
+        tagArtist: s === 3 ? `${artist.name} feat. Guest` : null,
+        durationMs: 120_000 + s * 1_000,
+      });
+    }
+  }
+}
+
+const hit = (query: string, ...texts: string[]) =>
+  query === "" || texts.some((text) => text.toLowerCase().includes(query.toLowerCase()));
+const songHits = (query: string, song: SongRow) => hit(query, song.title, song.albumName, song.artistName);
+
+export const library = {
+  artists: (query: string) =>
+    artists.filter((artist) => songs.some((s) => s.artistId === artist.id && songHits(query, s))),
+  albums: (artist: number | null, query: string) =>
+    albums.filter(
+      (album) =>
+        (artist === null || album.artistId === artist) &&
+        songs.some((s) => s.albumId === album.id && songHits(query, s)),
+    ),
+  songIds: (scope: SongScope, query: string) =>
+    songs
+      .filter(
+        (s) =>
+          (scope.artist === null || s.artistId === scope.artist) &&
+          (scope.album === null || s.albumId === scope.album) &&
+          songHits(query, s),
+      )
+      .map((s) => s.id),
+  rows: (ids: number[]) => ids.map((id) => songs[id]),
+  tree: (query: string): TreeArtist[] =>
+    artists
+      .map((artist) => ({
+        id: artist.id,
+        name: artist.name,
+        albums: albums
+          .filter((album) => album.artistId === artist.id)
+          .map((album) => ({
+            id: album.id,
+            name: album.name,
+            songs: songs.filter((s) => s.albumId === album.id && songHits(query, s)).map((s) => s.id),
+          }))
+          .filter((album) => album.songs.length > 0),
+      }))
+      .filter((artist) => artist.albums.length > 0),
+  queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
+  player: { status: "paused", positionMs: 83_000, volume: 80 },
+  playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
+    { id: p, name: `Mix ${p + 1}`, entryCount: 6 },
+    Array.from({ length: 6 }, (_, e) =>
+      e === 5 ? { track: null, label: `../Missing/Song ${e}.mp3` } : { track: p * 10 + e, label: "" },
+    ),
+  ]),
+  lyrics: { text: Array.from({ length: 60 }, (_, line) => `Lyric line ${line + 1}`).join("\n") },
+};

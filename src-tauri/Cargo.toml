@@ -12,8 +12,15 @@ name = "clawdio_lib"
 [build-dependencies]
 tauri-build = { version = "=2.7.2", features = [] }
 
+[features]
+# Milestone 0 test data (D35, C19). Off by default; never in a release bundle. P6.7 deletes it.
+fixtures = ["dep:image"]
+
 [dependencies]
-tauri = { version = "=2.12.3", features = [] }
+clawdio-core = { path = "../crates/clawdio-core" }
+image = { version = "=0.25.10", default-features = false, features = ["jpeg"], optional = true }
+serde = { version = "=1.0.229", features = ["derive"] }
+tauri = { version = "=2.12.3", features = ["protocol-asset"] }
 
 [target.'cfg(windows)'.dependencies]
 log = "=0.4.34"

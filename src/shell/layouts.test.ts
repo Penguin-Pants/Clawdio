@@ -4,6 +4,7 @@ import { useLibraryStore } from "@/store/library";
 import {
   LAYOUTS,
   applyLayout,
+  applyMeasureLayout,
   attachDock,
   defaultArrangement,
   guardLibrary,
@@ -115,6 +116,17 @@ describe("applyLayout and resetLayout (P2.4)", () => {
 
   it("does nothing without a dock", () => {
     expect(() => resetLayout()).not.toThrow();
+  });
+});
+
+describe("applyMeasureLayout (P3.1)", () => {
+  it("shows all six widgets in the given mode", () => {
+    const { api } = dockStandIn();
+    guardLibrary(api);
+    defaultArrangement(api);
+    applyMeasureLayout("topBottom", api);
+    expect(visibleWidgets(api)).toEqual(["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"]);
+    expect(useLibraryStore.getState().mode).toBe("topBottom");
   });
 });
 

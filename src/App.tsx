@@ -5,10 +5,14 @@ import { installKeyboard } from "@/lib/keyboard";
 import { AppHeader } from "@/shell/AppHeader";
 import { DockShell } from "@/shell/DockShell";
 import { StatusLine } from "@/shell/StatusLine";
+import { usePlayerStore } from "@/store/player";
 
 /** The app shell: header strip, dock and status line. No layout hides the header or the status line (R29). */
 export function App() {
   useEffect(() => installKeyboard(), []);
+  useEffect(() => {
+    void usePlayerStore.getState().load();
+  }, []);
   return (
     <TooltipProvider delay={500}>
       <div className="flex h-screen flex-col overflow-hidden bg-bg-canvas">

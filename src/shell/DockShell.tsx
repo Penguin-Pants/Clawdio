@@ -8,7 +8,8 @@ import {
 } from "dockview-react";
 import { useUiStore } from "@/store/ui";
 import { applyClamp } from "./clamp";
-import { attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
+import { commands } from "@/lib/ipc/commands";
+import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
 import { LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
@@ -70,6 +71,14 @@ export function DockShell() {
       api.onDidLayoutFromJSON(sync);
       defaultArrangement(api);
       sync();
+      commands.measureMode().then(
+        (mode) => {
+          if (mode) applyMeasureLayout(mode, api);
+        },
+        () => {
+          // No app shell: no measurement mode.
+        },
+      );
     },
     [setVisibleWidgets],
   );

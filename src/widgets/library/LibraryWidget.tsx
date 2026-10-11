@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import { AlbumList, ArtistList, SongList, TreeList } from "./lists";
 
 /** Below this widget width the mode switch becomes a dropdown (R28). */
 export const NARROW_WIDTH = 360;
@@ -85,40 +86,53 @@ function SearchField() {
   );
 }
 
-/** A labeled list frame. P3 fills the lists. */
-function ListFrame({ label, className }: { label: string; className?: string }) {
+/** A labeled list column. */
+function ListFrame({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
     <div className={`flex min-h-0 min-w-0 flex-col border-border ${className ?? ""}`}>
-      <div className="px-2 py-1 text-[13px] text-text-secondary">{label}</div>
+      <div aria-hidden="true" className="px-2 py-1 text-[13px] text-text-secondary">
+        {label}
+      </div>
+      {children}
     </div>
   );
 }
 
-/** The mode-specific body. Lists arrive in P3. */
+/** The mode-specific body (R28). */
 function LibraryBody({ mode }: { mode: LibraryMode }) {
   if (mode === "tree") {
     return (
-      <div data-library-body="tree" className="flex min-h-0 flex-1">
-        <ListFrame label="Artists, albums and songs" className="flex-1" />
+      <div data-library-body="tree" className="flex min-h-0 flex-1 flex-col">
+        <TreeList />
       </div>
     );
   }
+  const artistAndAlbum = (
+    <>
+      <ListFrame label="Artist" className="flex-1 border-r">
+        <ArtistList />
+      </ListFrame>
+      <ListFrame label="Album" className={mode === "columns" ? "flex-1 border-r" : "flex-1"}>
+        <AlbumList />
+      </ListFrame>
+    </>
+  );
   if (mode === "columns") {
     return (
       <div data-library-body="columns" className="flex min-h-0 flex-1">
-        <ListFrame label="Artist" className="flex-1 border-r" />
-        <ListFrame label="Album" className="flex-1 border-r" />
-        <ListFrame label="Songs" className="flex-[2]" />
+        {artistAndAlbum}
+        <ListFrame label="Songs" className="flex-[2]">
+          <SongList showAlbum />
+        </ListFrame>
       </div>
     );
   }
   return (
     <div data-library-body="topBottom" className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 border-b">
-        <ListFrame label="Artist" className="flex-1 border-r" />
-        <ListFrame label="Album" className="flex-1" />
-      </div>
-      <ListFrame label="Songs" className="flex-1" />
+      <div className="flex min-h-0 flex-1 border-b">{artistAndAlbum}</div>
+      <ListFrame label="Songs" className="flex-1">
+        <SongList showAlbum />
+      </ListFrame>
     </div>
   );
 }

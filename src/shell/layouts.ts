@@ -83,6 +83,19 @@ export function applyLayout(id: LayoutId, api: DockviewApi | null = dock): void 
   useLibraryStore.getState().setMode(id);
 }
 
+/**
+ * The measurement arrangement (P3.1): the default arrangement plus Playlists, Play queue and
+ * Lyrics, in the given Library mode. It is not saved.
+ */
+export function applyMeasureLayout(mode: LibraryMode, api: DockviewApi | null = dock): void {
+  if (!api) return;
+  replaceArrangement(api, (target) => {
+    defaultArrangement(target);
+    for (const id of ["playlists", "queue", "lyrics"] as const) setWidgetVisible(id, true, target);
+  });
+  useLibraryStore.getState().setMode(mode);
+}
+
 export function resetLayout(api: DockviewApi | null = dock): void {
   applyLayout(RESET_LAYOUT, api);
 }
