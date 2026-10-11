@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,9 +28,11 @@ export function AppMenu() {
   const setSettingsOpen = useUiStore((state) => state.setSettingsOpen);
   const mode = useLibraryStore((state) => state.mode);
   const setMode = useLibraryStore((state) => state.setMode);
+  // The tooltip would cover the open menu, so it is off while the menu shows.
+  const [open, setOpen] = useState(false);
   return (
-    <DropdownMenu>
-      <Tooltip>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <Tooltip disabled={open}>
         <TooltipTrigger
           render={<DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Menu" />} />}
         >

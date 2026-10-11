@@ -43,8 +43,16 @@ test("icon-only buttons show their tooltip on keyboard focus", async ({ page }) 
   const menu = page.getByRole("button", { name: "Menu" });
   await menu.focus();
   await expect(page.getByText("Menu", { exact: true }).last()).toBeVisible();
+  // Keyboard only: WebKit shows focus-visible on a scripted focus only after keyboard input.
   await menu.press("Enter");
-  await page.getByRole("menuitem", { name: "Settings" }).click();
+  const settings = page.getByRole("menuitem", { name: "Settings" });
+  await expect(settings).toBeVisible();
+  // The Menu tooltip would cover the open menu.
+  await expect(page.getByText("Menu", { exact: true })).toHaveCount(0);
+  for (let step = 0; step < 20 && (await settings.getAttribute("data-highlighted")) === null; step += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await page.keyboard.press("Enter");
   const close = page.getByRole("dialog").getByRole("button", { name: "Close" });
   await close.focus();
   await expect(page.getByText("Close", { exact: true }).last()).toBeVisible();

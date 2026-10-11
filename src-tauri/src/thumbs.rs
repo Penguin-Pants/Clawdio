@@ -63,10 +63,11 @@ mod tests {
 
     #[test]
     fn serves_a_thumbnail_and_refuses_everything_else() {
-        let folder = std::env::temp_dir().join(format!("thumb-scheme-{}", std::process::id()));
+        let root = tempfile::tempdir().unwrap();
+        let folder = root.path().join("thumbs");
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join("x.jpg"), b"jpeg").unwrap();
-        std::fs::write(folder.parent().unwrap().join("outside.jpg"), b"no").unwrap();
+        std::fs::write(root.path().join("outside.jpg"), b"no").unwrap();
         let ok = respond(&folder, "/x.jpg");
         assert_eq!(ok.status(), StatusCode::OK);
         assert_eq!(ok.headers()[header::CONTENT_TYPE], "image/jpeg");
@@ -79,7 +80,5 @@ mod tests {
             respond(&folder, "/../outside.jpg").status(),
             StatusCode::NOT_FOUND
         );
-        std::fs::remove_dir_all(&folder).unwrap();
-        std::fs::remove_file(folder.parent().unwrap().join("outside.jpg")).unwrap();
     }
 }
