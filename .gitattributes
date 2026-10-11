@@ -1,0 +1,3 @@
+# ts-rs writes LF on every OS. Keep the generated IPC types LF in the work tree too, so the
+# bindings check (build plan section 1.2) stays clean on Windows, where Git converts to CRLF.
+src/lib/ipc/bindings/** text eol=lf

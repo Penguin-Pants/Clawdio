@@ -99,7 +99,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| P0-AC1 | Pass on Linux. CI pending at push. | `npm run check` (63 tests), `cargo fmt`, `cargo clippy` (also for target `x86_64-pc-windows-msvc`, no link), `cargo test` (3 tests), bindings check. CI runs ubuntu-22.04 and windows-latest. |
+| P0-AC1 | Pass on Linux. Windows CI pending at push (N7). | `npm run check` (63 tests), `cargo fmt`, `cargo clippy` (also for target `x86_64-pc-windows-msvc`, no link), `cargo test` (3 tests), bindings check. CI run 38160684257: `frontend`, `rust (ubuntu-22.04)` and both `tauri-build` jobs pass. `rust (windows-latest)` failed the bindings check (N7). |
 | P0-AC2 | Pass (Xvfb) | `npm run tauri dev`: one window titled "Clawdio", 1200 x 800, minimum 800 x 560, 960,000 px of `#0B0B0B`. |
 | P0-AC3 | Pass (Xvfb) | With `colors.bg.canvas` set to `#123456`, the window showed `#123456`. `git status` showed no other change. A unit test shows that only the canvas line of the generated CSS changes. |
 | P0-AC4 | Pass | Vitest: without `colors.text.muted`, `npm run tokens` exits 1 with "colors.text.muted is missing". |
@@ -116,7 +116,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N3 (P0.9): Geist is imported in `main.tsx` only. The init also added an import to `globals.css`. That copy was removed.
 - N4: jsdom is 29.1.1, because jsdom 30 needs Node 22.22.2 or later.
 - N5 (P0.12): `tauri dev` loads and renders with the configured CSP, so `devCsp` is not set.
-- N6: the CI action versions (`actions/checkout@v5`, `actions/setup-node@v5`, `Swatinem/rust-cache@v2`) could not be checked here: GitHub API access is limited to this repository. The first CI run verifies them.
+- N6: the CI action versions (`actions/checkout@v5`, `actions/setup-node@v5`, `Swatinem/rust-cache@v2`) could not be checked here: GitHub API access is limited to this repository. CI run 38160684257 ran all three.
+- N7 (P0-AC1): `rust (windows-latest)` failed the bindings check. Root cause: Windows runners check out with `core.autocrlf=true`, so `AppInfo.ts` has CRLF line ends. ts-rs rewrites it with LF, and `git status` reports a change. Reproduced locally with `core.autocrlf=true`. Fix: `.gitattributes` keeps `src/lib/ipc/bindings/**` LF on every OS. The rule does not touch `CLAUDE.md` or other owner files.
 
 **Exceptions**
 
@@ -127,13 +128,13 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** B6 (section 5.4), closed during the phase.
 
-**TWO-PASS REVIEW:** F1 1, F2 6, F3 3, F4 11.
+**TWO-PASS REVIEW:** F1 2, F2 6, F3 3, F4 11.
 
-- F1: the `shadcn init` output broke P0.10: generated colors, `outline-ring/50` and a `.dark` block. Fixed before commit.
-- F2: `.gitattributes` would renormalize the owner's CRLF `CLAUDE.md` (removed). Button `destructive` and `link` variants used red 14 px text against D10 (now `text-foreground`). Duplicate Geist import (removed). `shadcn` CLI in the runtime dependencies (moved). Caret ranges from the init (pinned). jsdom 30 engine mismatch (pinned 29.1.1).
+- F1: the `shadcn init` output broke P0.10: generated colors, `outline-ring/50` and a `.dark` block. Fixed before commit. The Windows bindings check failed in CI (N7). Fixed.
+- F2: a repository-wide `.gitattributes` would renormalize the owner's CRLF `CLAUDE.md` (removed; N7 adds a rule for the bindings only). Button `destructive` and `link` variants used red 14 px text against D10 (now `text-foreground`). Duplicate Geist import (removed). `shadcn` CLI in the runtime dependencies (moved). Caret ranges from the init (pinned). jsdom 30 engine mismatch (pinned 29.1.1).
 - F3: F-06, F-07 and F-08 (section 11).
 - F4:
-  - Script entry checks could differ in drive-letter case on Windows: Node derives both paths from one resolved path, and the Windows `tauri-build` job runs both scripts.
+  - Script entry checks could differ in drive-letter case on Windows: Node derives both paths from one resolved path. The Windows `tauri-build` job ran both scripts and passed.
   - The forced-colors rule on `[aria-selected="true"]` also hits tabs: no such element exists yet. P2-AC16 and P17 test it.
   - `applyAppName` hides errors: outside the Tauri runtime the failure is expected, and the native title is the product name (D2).
   - `NOTICE` lists Geist only: P0.2 asks for the table and Geist. P18.4 builds the full list (P18-AC7).
@@ -143,7 +144,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Bundle targets stay "all": package targets are P18.1 work.
   - Prettier skips Markdown: `AGENTS.md` assigns mdformat to instruction files, and docs keep their format.
   - `dark:` input fills are faint: borders and fills are decoration (D10 rule 6). P2-AC14 tests focus contrast.
-  - Unverified action versions: see N6. CI verifies them.
+  - Unverified action versions: see N6. CI ran them.
 
 **Follow-ups:** F-06, F-07, F-08.
 
