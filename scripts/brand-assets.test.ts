@@ -22,10 +22,19 @@ function load(path: string): Document {
 /** Fill of each top-level group, in document order. */
 const groupFills = (doc: Document) => [...doc.documentElement.children].map((group) => group.getAttribute("fill"));
 
-/** Horizontal extent of a path made of M and L commands. */
-function pathWidth(d: string): number {
+/** Horizontal range of a path made of M and L commands. */
+function pathRange(d: string): [number, number] {
   const xs = [...d.matchAll(/[ML]\s*(-?[\d.]+)\s+-?[\d.]+/g)].map((match) => Number(match[1]));
-  return Math.max(...xs) - Math.min(...xs);
+  return [Math.min(...xs), Math.max(...xs)];
+}
+
+/** Horizontal ranges of the wordmark bars, left to right, and the view height. */
+function barRanges(doc: Document): { ranges: [number, number][]; viewHeight: number } {
+  const viewHeight = Number(doc.documentElement.getAttribute("viewBox")?.split(/\s+/)[3]);
+  const ranges = [...doc.documentElement.children[2].children]
+    .map((bar) => pathRange(bar.getAttribute("d") ?? ""))
+    .sort((a, b) => a[0] - b[0]);
+  return { ranges, viewHeight };
 }
 
 describe("wordmark", () => {
@@ -41,11 +50,16 @@ describe("wordmark", () => {
     );
   });
 
-  it("has bars at least 1 px wide at the 20 px header height (P1.1)", () => {
-    const doc = load("export/clawdio-wordmark-primary.svg");
-    const viewHeight = Number(doc.documentElement.getAttribute("viewBox")?.split(/\s+/)[3]);
-    const widths = [...doc.documentElement.children[2].children].map((bar) => pathWidth(bar.getAttribute("d") ?? ""));
+  it("has bars at least 1 px wide at the 20 px header height (P1-AC4)", () => {
+    const { ranges, viewHeight } = barRanges(load("export/clawdio-wordmark-primary.svg"));
+    const widths = ranges.map(([left, right]) => right - left);
     expect(Math.min(...widths) * (20 / viewHeight)).toBeGreaterThanOrEqual(1);
+  });
+
+  it("has bar gaps of at least 1 px at the 72 px README height (P1-AC4, owner decision B7)", () => {
+    const { ranges, viewHeight } = barRanges(load("export/clawdio-wordmark-primary.svg"));
+    const gaps = ranges.slice(1).map(([left], index) => left - ranges[index][1]);
+    expect(Math.min(...gaps) * (72 / viewHeight)).toBeGreaterThanOrEqual(1);
   });
 
   it("uses steel dio in the light variant, and both colors reach 3:1 on white (P1-AC4)", () => {

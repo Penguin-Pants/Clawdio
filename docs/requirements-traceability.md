@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.8, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.8. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.9, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.9. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -25,10 +25,10 @@
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
 | Requirements | 301 | 8 | 199 | 37 | 7 | 8 | 42 | 0 |
-| design.md | 76 | 10 | 34 | 11 | 15 | 5 | 1 | 0 |
-| Branding prompt | 39 | 15 | 14 | 3 | 5 | 1 | 1 | 0 |
-| Asset manifest | 18 | 8 | 4 | 3 | 1 | 2 | 0 | 0 |
-| tokens.json | 20 | 6 | 12 | 1 | 0 | 1 | 0 | 0 |
+| design.md | 76 | 16 | 34 | 10 | 15 | 0 | 1 | 0 |
+| Branding prompt | 39 | 16 | 14 | 3 | 5 | 0 | 1 | 0 |
+| Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
+| tokens.json | 20 | 7 | 12 | 1 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
@@ -419,25 +419,25 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-0 | Dark-only theme (front matter) | front matter | P0.7 | P0-AC2 | MAN-L | Done (P0) |
 | DES-1.1 | Local-first player for MP3, WAV, OGG with metadata, art, lyrics and standard controls; not streaming, radio or podcasts | §1 | P4.5, P7.2, P10.1, P13.1 | P4-AC3, P13-AC1 | IT | Planned |
 | DES-1.2 | Primary rule: practical minimalist player; style never makes playback harder | §1 | P17.1, P17.8 | P17-AC1, P17-AC8 | E2E, REV | Planned (D10) |
-| DES-1.3 | Cat silhouette, narrow red eyes, pointed ears, minimal whiskers | §1 | P1.2 | P1-AC3 | MAN-L | Planned (Q6) |
-| DES-1.4 | Wordmark: angled red "Claw", metallic "dio", bars in the final "o" | §1 | P1.1 | P1-AC4 | REV | Gate (B7) |
+| DES-1.3 | Cat silhouette, narrow red eyes, pointed ears, minimal whiskers | §1 | P1.2 | P1-AC3 | MAN-L | Done (P1) |
+| DES-1.4 | Wordmark: angled red "Claw", metallic "dio", bars in the final "o" | §1 | P1.1 | P1-AC4 | REV | Done (P1) |
 | DES-1.5 | Secondary angular C with cat eye and audio bars | §1 | P1.3 | P1-AC1 | UT, REV | Done (P1) |
 | DES-1.6 | Deep black shell, sparse red controls, monochrome utility icons | §1 | P0.7, P2.10 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-1.7 | Lair imagery is promotional, not a feature | §1 | none | none | REV | Resolved (C9) |
 | DES-1.8 | Rebuild assets as original vectors; no tracing or embedded crops; recognizable at 16 to 32 px; no third-party copies | §1 | P1.1, P1.2, P1.3, P1.5, P1.7 | P1-AC1, P1-AC3, P1-AC7 | UT, MAN-L, REV | Done (P1) |
 | DES-2.1 | Name Clawdio; publisher Dr. Claw Development; positioning; message | §2 | P0.2, P0.4, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
 | DES-2.2 | Attributes: minimalist, precise, theatrical, self-contained, technical, controlled | §2 | none | none | REV | Reference |
-| DES-2.3 | Logo 1: primary wordmark, transparent background | §2 | P1.1, P1.4 | P1-AC4 | REV | Gate (B7) |
+| DES-2.3 | Logo 1: primary wordmark, transparent background | §2 | P1.1, P1.4 | P1-AC4 | REV | Done (P1) |
 | DES-2.4 | Logo 2: app icon with cat, faint arc and bars on a dark square; legible at 16 px | §2 | P1.4, P1.7 | P1-AC3 | MAN-L | Done (P1) |
 | DES-2.5 | Logo 3: secondary symbol for micro sizes | §2 | P1.3, P1.4 | P1-AC1 | REV | Done (P1) |
-| DES-2.6 | Logo 4: monochrome and high-contrast variants | §2 | P1.4 | P1-AC1, P1-AC4 | REV | Gate (B7) |
+| DES-2.6 | Logo 4: monochrome and high-contrast variants | §2 | P1.4 | P1-AC1, P1-AC4 | REV | Done (P1) |
 | DES-2.7 | No raster mockup as the icon; no repeated full mascot in the UI | §2 | P1.6, P17.8 | P1-AC2, P17-AC8 | REV | Planned |
 | DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Done (P0) |
 | DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Resolved (C13) |
 | DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
-| DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Gate (B7) |
+| DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Done (P1) |
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
 | DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Planned |
 | DES-4.5 | Sentence case; uppercase spaced text only for brand collateral | §4 | P17.7 | P17-AC8 | REV | Planned |
@@ -481,7 +481,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-9.3 | No macOS window buttons in production | §9 | P4.2 | P0-AC2 | MAN-L | Resolved (C9) |
 | DES-9.4 | Run without install where possible; single file, no installer and portable data are distinct | §9 | P4.1, P18.2, P18.3 | P18-AC4, P18-AC5, P18-AC10 | MAN-W, MAN-L | Planned |
 | DES-9.5 | Data paths follow the requirements; no silent profile-path assumptions | §9 | P4.1 | P4-AC4 | IT | Planned |
-| DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3, P1-AC4 | MAN-L | Gate (B7) |
+| DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3, P1-AC4 | MAN-L | Done (P1) |
 | DES-10.2 | Icons exported and configured for Windows and Linux | §10 | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-W, MAN-L | Planned |
 | DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Planned |
 | DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Planned |
@@ -507,7 +507,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-1.4 | Check React and Tailwind compatibility for Magic UI | Phase 1.4 | P0.10 | P0-AC1 | REV | Done (P0, C8) |
 | BRD-1.5 | Read the current Magic UI docs before using components | Phase 1.5 | P2.16 | P18-AC13 | REV | Planned (D6) |
 | BRD-1.6 | Name risks; choose the smallest safe change set; ask only on destructive, licensing or architecture issues | Phase 1.6 | P0.1 | P0-AC7 | REV | Done (P0) |
-| BRD-2.1 | Original SVG wordmark: red "Claw", steel "dio", bars in the "o" | Phase 2.1 | P1.1 | P1-AC4 | UT, REV | Gate (B7) |
+| BRD-2.1 | Original SVG wordmark: red "Claw", steel "dio", bars in the "o" | Phase 2.1 | P1.1 | P1-AC4 | UT, REV | Done (P1) |
 | BRD-2.2 | Original black cat head with narrow red eyes, ears, minimal whiskers | Phase 2.2 | P1.2 | P1-AC3 | MAN-L | Done (P1) |
 | BRD-2.3 | Angular C, cat eye and equalizer secondary mark | Phase 2.3 | P1.3 | P1-AC1 | UT | Done (P1) |
 | BRD-2.4 | Full-color, monochrome, PNG and launcher icons; check toolchain formats; test small sizes | Phase 2.4 | P1.4, P1.6, P1.7 | P1-AC2, P1-AC3 | CI, MAN-L | Done (P1, D9) |
@@ -547,10 +547,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 |---|---|---|---|---|---|---|
 | AST-0 | The mockup is a reference, not a finished logo | Intro | P1.1, P1.2 | P1-AC7 | REV | Done (P1, C9) |
 | AST-S | Proposed structure, adapted to the repo | Structure | P1.4, P1.6 | P1-AC2 | REV | Done (P1, C5, C7) |
-| AST-1 | Original wordmark SVG: red "Claw", steel "dio", bars in the "o" | Checklist | P1.1 | P1-AC4 | UT, REV | Gate (B7) |
-| AST-2 | Original red-eyed cat SVG, clear at 16 and 32 px | Checklist | P1.2, P1.7 | P1-AC3 | MAN-L | Planned (Q6) |
-| AST-3 | Angular C, eye and bars monogram SVG | Checklist | P1.3 | P1-AC1 | UT | Planned (Q6) |
-| AST-4 | Full-color and monochrome variants for dark and light backgrounds | Checklist | P1.4 | P1-AC1, P1-AC4 | UT, REV | Gate (B7) |
+| AST-1 | Original wordmark SVG: red "Claw", steel "dio", bars in the "o" | Checklist | P1.1 | P1-AC4 | UT, REV | Done (P1) |
+| AST-2 | Original red-eyed cat SVG, clear at 16 and 32 px | Checklist | P1.2, P1.7 | P1-AC3 | MAN-L | Done (P1) |
+| AST-3 | Angular C, eye and bars monogram SVG | Checklist | P1.3 | P1-AC1 | UT | Done (P1) |
+| AST-4 | Full-color and monochrome variants for dark and light backgrounds | Checklist | P1.4 | P1-AC1, P1-AC4 | UT, REV | Done (P1) |
 | AST-5 | Vector masters have a viewBox and no embedded raster | Checklist | P1.5 | P1-AC1 | UT | Done (P1) |
 | AST-6 | PNG icons 16 to 1024 px where packaging needs them | Checklist | P1.6 | P1-AC2 | CI | Done (P1, C5) |
 | AST-7 | Multi-resolution Windows ICO and Linux launcher icon | Checklist | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-L | Planned |
@@ -573,7 +573,7 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 | ID | Token | Value | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | TOK-1 | `colors.brand.red` | `#E10606` | P0.6, P2.10, P7.7 | P0-AC5, P2-AC7 | UT, E2E | Planned (D10) |
-| TOK-2 | `colors.brand.steel` | `#4A4A4A` | P0.6, P1.4 | P1-AC4 | UT, REV | Gate (B7) |
+| TOK-2 | `colors.brand.steel` | `#4A4A4A` | P0.6, P1.4 | P1-AC4 | UT, REV | Done (P1, D10) |
 | TOK-3 | `colors.bg.canvas` | `#0B0B0B` | P0.6, P0.7 | P0-AC2, P0-AC3 | MAN-L | Done (P0) |
 | TOK-4 | `colors.bg.surface` | `#111111` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
 | TOK-5 | `colors.bg.elevated` | `#171717` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
@@ -627,6 +627,4 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B2 Milestone 0 gate | R20-5, R20-6, AC-1, VER-3 | P3 measurements on Windows and Linux | Agent runs P3; over 300 MB raises the target (D49) |
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
 | B4, Q5 Real exports | R14-12, AC-4, VER-2 | The owner's exports for the formats they have (Apple XML, MusicBee M3U8, legacy `.m3u`). Missing formats stay "not verified". | Owner supplies files at P12 |
-| Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets. P2 waits for the sign-off. | Owner, after P1 |
-| B7 Wordmark bar gaps | DES-1.4, DES-2.3, DES-2.6, DES-4.2, DES-10.1, BRD-2.1, AST-1, AST-4, TOK-2 | A choice from plan F-09: the P1.1 geometry cannot show separate bars at 20 px (P1-AC4). | Owner, with Q6 |
 | B5 Test machines | All MAN-W and MAN-L rows | The owner has a Windows 10 or 11 machine only. MAN-L rows stay "not verified" and P18 records them as exceptions. | Owner runs the MAN-W checks by P18 |

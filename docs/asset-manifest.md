@@ -35,7 +35,7 @@ assets/branding/
 ```
 
 ## Production checklist
-- [ ] Original wordmark SVG: red `Claw`, steel `dio`, equalizer bars in `o`
+- [x] Original wordmark SVG: red `Claw`, steel `dio`, equalizer bars in `o`
 - [x] Original red-eyed cat silhouette SVG, clear at 16 and 32 px
 - [x] Angular C/eye/audio-bar monogram SVG
 - [x] Full-color and monochrome variants for dark and light backgrounds
