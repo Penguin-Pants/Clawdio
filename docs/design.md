@@ -69,23 +69,27 @@ Use red for playback emphasis, current navigation, focused controls and critical
 - Use tabular numerals for track times. Keep labels sentence case in UI. Uppercase spaced text is reserved for brand collateral and very small decorative headings.
 
 ## 5. Layout and density
-- Desktop-first responsive shell; no forced oversized dashboard.
-- Sidebar only if it is useful for actual implemented views. Suggested narrow left sidebar: Library, Artists, Albums, Tracks, Playlists, with optional Folders and Settings as supported by requirements.
+The shell is a set of dockable widgets (requirements R5, R28, R29). There is no sidebar and no separate Artists, Albums or Tracks views.
+
+- **Widgets:** Library (mandatory, cannot be hidden), Transport controls, Now playing, Playlists, Play queue and Lyrics. Each widget has a header with a drag grip, its title and, for hideable widgets, a close button. The user drags a header to the edge of another widget or of the window to dock it. Splitters resize. Widgets can be hidden and shown from the menu.
+- **Fixed chrome:** a status line at the bottom edge ("Ready", scan and lookup progress with cancel, short confirmations such as "Added to queue") and a menu button in the top-right corner (Widgets, Layouts, Settings, Rescan). No layout can hide either.
+- **Library widget:** one widget with a mode switch in its header: Tree (one expandable artist, album, song tree), Columns (Artist, Album and Songs side by side) and Top/bottom (Artist and Album on top, Songs below). The search field sits in the Library header. When the header is narrow, the switch collapses to a dropdown.
+- **Default arrangement (first run, "Columns" built-in layout):** Library fills the main area. Now playing and Transport controls form a bottom bar. Playlists, Play queue and Lyrics are hidden and listed in the Widgets menu. The Tree and Top/bottom built-in layouts use the same arrangement with their own Library mode. The current arrangement saves automatically and restores at start. Reset layout returns to the Columns layout. Tabbed groups are allowed; floating panels and pop-out windows are not.
 - Main area prioritizes track browsing, metadata and cover artwork.
-- Persistent, reachable play/pause, previous, next, progress seek and volume controls.
-- Clear active state, keyboard focus and disabled states.
-- Support small or resized windows without losing transport controls.
-- Empty or missing artwork uses a quiet brand placeholder, not a large illustration.
+- Persistent, reachable play/pause, stop, previous, next, progress seek and volume controls. Keyboard shortcuts and OS media keys work even when the Transport widget is hidden.
+- Clear active state, keyboard focus and disabled states, including on widget headers, splitters and drop zones.
+- Support small or resized windows: the app enforces a minimum window size and a minimum size per widget and clamps the arrangement to fit.
+- Empty widgets (Play queue, Playlists, Lyrics) show a short hint, not a blank area. Empty or missing artwork uses a quiet brand placeholder, not a large illustration.
 - Lyrics only where supported by the actual feature requirements. Do not fabricate lyric fetching.
 
 ## 6. Components
 | Component | Guidance |
 |---|---|
 | App shell | Matte canvas, subtle panel boundaries, stable desktop resizing |
-| Sidebar | Flat rows; selected background is dark red; icons are neutral |
+| Widget header | Drag grip, title and close button (hideable widgets only); flat; drop zones and splitters use the border and hover surfaces, red only for the active drop target |
 | Track rows | Dense, easy to scan; title, artist, album and duration as appropriate |
 | Album cards | Cover, title, artist; unobtrusive hover |
-| Transport | Large central play/pause, neutral skip controls, clear focus ring |
+| Transport | Large central play/pause, neutral stop and skip controls, shuffle and repeat toggles, clear focus ring |
 | Timeline | Charcoal track, red progress, accessible keyboard seeking |
 | Volume | Neutral icon, clearly defined mute and level |
 | Search | Dark field, visible focus, no animated distractions |
