@@ -298,3 +298,31 @@ Wording is ready to insert. "Must" marks a requirement.
 - **Add check 20.** "First run shows the folder prompt. After choosing a folder, the user can play a song before the scan ends."
 - **Add check 21.** "A song with ID3 USLT lyrics and no lyric file shows the embedded lyrics."
 - **Remove** checks 7 and 12 if R16 and named layouts are deferred. Make check 16 conditional (see R30).
+
+---
+
+## H. Addendum: branding package on `main`
+
+While this review was in progress, `main` received a branding package (commit "Add files via upload"): `docs/design.md`, `docs/asset-manifest.md`, `docs/claude-code-implementation-prompt.md`, `theme/tokens.json` and `assets/reference/clawdio-approved-mockup.png`. It changes the R16, R30 and R31 findings and adds a shell decision. The requirements document still says in R31 that the package "will be supplied later". It is here now.
+
+| Priority | Requirement / source | Finding | Evidence | Recommendation | Effort |
+|---|---|---|---|---|---|
+| High | R16, R31, section 6 vs `docs/design.md` and `theme/tokens.json` | The delivered brand theme is not a Google DESIGN.md file. The token source is a plain JSON file with colors, radii and motion. R31's "brand/DESIGN.md compiled at build time" and R16's spec handling have no input in that format. | `docs/design.md` front matter has product, owner, document, status, reference and theme keys. It has no `version: alpha`, `colors` or `typography` keys. `theme/tokens.json` is a custom structure. | **Rewrite R31:** the brand theme is `theme/tokens.json`, mapped to Tailwind CSS variables at build time. **Defer R16.** This is simpler than the original plan and removes the alpha-spec dependency. | S |
+| High | R5, R28, R29 vs `docs/design.md` sections 5 and 6 and the mockup | The two documents describe different shells. The design spec and the mockup show a fixed layout: a left sidebar (Library, Artists, Albums, Tracks, Playlists), a now-playing panel with art, title, artist, elapsed and total time, and a transport bar. The requirements specify dockable widgets with three Library modes and no sidebar views. | `docs/design.md` section 5: "Suggested narrow left sidebar: Library, Artists, Albums, Tracks, Playlists". R28 has no Artists, Albums or Tracks views. The mockup shows no Play queue, Lyrics widget or dock chrome. The design spec marks itself "subject to repository review". | **Owner decision:** pick one shell. The fixed shell in the mockup is the smaller build. It removes the docking library, named layouts, the R29 edge cases and acceptance checks 11 to 14. If docking stays, rewrite `docs/design.md` section 5 to name the R5 widgets and the R28 modes instead of sidebar views. | Saves L with the fixed shell |
+| Medium | R6 vs the mockup | The mockup transport has shuffle, previous, play/pause, next and repeat. It has no Stop button. R6 requires Stop. | Mockup, bottom-left panel. | **Clarify:** keep Stop (owner request in R6) and add it to `docs/design.md` section 6, or remove it from R6. | S |
+| Medium | R30 vs `docs/design.md` section 7 | The design spec agrees with the R30 finding: "A normal CSS transition is preferable to a full motion dependency." It names Blur Fade (About or empty state) and Magic Card as the only candidates. Both are decorative under R30's own rule. | `docs/design.md` section 7. | **Clarify R30:** Magic UI is optional. Motion is not a dependency unless the owner names a component that needs it. | S |
+| Medium | R16 vs `docs/design.md` section 4 | The design spec names Geist Sans or Inter for the UI font. R16 allows locally installed fonts only. A bundled UI font is a build decision. | `docs/design.md` section 4. R16: "Fonts: locally installed only". | **Add to R31:** bundle one UI font (Inter or Geist Sans, both under the SIL Open Font License) or use the system font. Record the choice. | S |
+| Low | R31 paths | R31 defines one `brand/` folder. The package uses `docs/`, `theme/` and `assets/`. The asset checklist proposes `assets/branding/`. | `docs/asset-manifest.md`. | **Rewrite R31** to the package paths. Drop the placeholder step. Update acceptance check 15 to the new paths. | S |
+| Low | R18, R21 vs `docs/design.md` section 9 | The design spec states the same three portability properties as section E and says "do not silently assume user-profile paths". The requirements still lack a portable mode. | `docs/design.md` section 9. | Supports R18.1 and the R21 rewrite in section G. | S |
+| Low | `docs/claude-code-implementation-prompt.md` | The implementation prompt assumes an existing working player, an `AGENTS.md` file and existing tests. The repository has none yet. It also forbids playlist editing and Favorites "unless supported by existing requirements". R12 and R26 support them. | Prompt phases 1 and 3. `docs/design.md` section 11. | **Clarify sequencing:** build v1 with the brand inputs from the start. Add `AGENTS.md` or drop the reference. State in the prompt that R12 and R26 are in scope. | S |
+
+**Notes.**
+- The design spec requires original vector artwork and forbids copies of third-party characters or logos. Keep that rule. It protects open-source distribution.
+- The mockup shows macOS window controls. The design spec already calls them conceptual. Windows and Linux use native title bars.
+- The mockup's elapsed and total time display matches the R5 addition in section G.
+
+**Changes to sections D, F and G from this addendum.**
+- Section D: the "R16 runtime theme" row now also removes the build-time DESIGN.md compile. The build maps `theme/tokens.json` to CSS variables instead.
+- Section F: "Theme: brand DESIGN.md at build time" becomes "Theme: `theme/tokens.json` mapped at build time".
+- Section G, R31 rewrite: "R31. Brand inputs: `docs/design.md` (design spec), `theme/tokens.json` (theme tokens), `assets/branding/` (icon and wordmark sources and exports). The build maps `theme/tokens.json` to Tailwind CSS variables and generates platform icons from `assets/branding/export/clawdio-icon-full.svg`. The app name, window title, bundle identifier and User-Agent read from one build config value."
+- Section G, acceptance check 15: "Replacing `theme/tokens.json` and the icon sources and rebuilding changes the theme and the app icon with no other code changes."
