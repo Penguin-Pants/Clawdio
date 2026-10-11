@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.3, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
+**Version:** 1.4, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -225,8 +225,8 @@ None of these blocks work. Each has a default.
 | ID | Question | Default | Needed by |
 |---|---|---|---|
 | Q1 | Copyright holder and publisher name. design.md says "Dr. Claw Development". Dr. Claw is a character name owned by a third party (risk K7). | Use the design.md value. | Before P18 release |
-| Q2 | Bundle identifier. Changing it after release moves user settings. | `io.github.penguinpants.clawdio` | Before P4 |
-| Q3 | Bundle Geist Sans, or use system fonts only. | Bundle Geist Sans | Before P0.9 |
+| Q2 | Bundle identifier. Changing it after release moves user settings. | **Answered October 11, 2026:** use `io.github.penguinpants.clawdio` | Closed |
+| Q3 | Bundle Geist Sans, or use system fonts only. | **Answered October 11, 2026:** bundle Geist Sans | Closed |
 | Q4 | Name any Magic UI component that serves R5, R6 or R29. | None | Any time |
 | Q5 | Supply real exports for AC-4: one Apple XML, one MusicBee M3U8, one legacy `.m3u`. | Synthetic fixtures until supplied | P12 sign-off |
 | Q6 | Sign off the wordmark, app icon and monogram. | Assets stand until changed | After P1 |
@@ -1596,6 +1596,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.4 (October 11, 2026):** owner answered Q2 (keep the identifier in D2) and Q3 (bundle Geist Sans as in D7). Both questions are closed.
 - **1.3 (October 11, 2026):** automated review round Z applied (section 12.1). Added P13-AC6 and tightened P3, P5, P6, P9, P11, P13, P14 and P16.
 - **1.2 (October 11, 2026):** automated review rounds X and Y applied (section 12.1). Revised D32, D42 and K14. Added P9-AC11, P14-AC15 and P16-AC9 and tightened P3, P5, P10, P14, P16 and P18 criteria.
 - **1.1 (October 11, 2026):** two-pass review applied (section 12). Added C17, C18, D44 to D48, Q7, Q8, K19, K20, tasks P0.0, P4.11, P4.12 and new criteria in P2, P5, P6, P7, P9, P11, P14 and P16. Revised D10, D17, D19, D20 and D32.

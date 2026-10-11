@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.3, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.3. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.4, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.4. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -626,8 +626,8 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
 | B4, Q5 Real exports | R14-12, AC-4, VER-2 | One Apple XML, one MusicBee M3U8, one legacy `.m3u` | Owner supplies files |
 | Q1 Publisher name | DES-2.1 | Confirm "Dr. Claw Development" or give another holder | Owner, before P18 |
-| Q2 Identifier | R31-4 | Confirm `io.github.penguinpants.clawdio` | Owner, before P4 |
-| Q3 Font | R16-2, DES-4.1 | Confirm bundled Geist Sans | Owner, before P0.9 |
+| Q2 Identifier | R31-4 | Closed October 11, 2026: owner confirmed `io.github.penguinpants.clawdio` | Done |
+| Q3 Font | R16-2, DES-4.1 | Closed October 11, 2026: owner confirmed bundled Geist Sans | Done |
 | Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets | Owner, after P1 |
 | Q7 Set cover overwrite | R8-9 | Confirm "ask, then replace" (C17) | Owner, before P10 |
 | Q8 Small icon layers | DES-2.4, AST-2, AST-13 | Allow the 16 and 24 px layers from the simple icon if the full icon fails | Owner, after P1 |
