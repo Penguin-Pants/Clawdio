@@ -28,7 +28,7 @@
 | Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
 | Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
 | tokens.json | 20 | 16 | 4 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 2 | 0 | 0 | 2 | 0 | 0 | 0 |
+| AGENTS.md | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
 
@@ -598,8 +598,8 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Resolved (B1) |
-| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Resolved (B1) |
+| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Planned |
+| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Planned |
 
 ---
 
