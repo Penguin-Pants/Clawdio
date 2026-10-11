@@ -9,7 +9,7 @@
 - The repository holds documents, brand inputs and the owner's `AGENTS.md`. No code or tests exist yet.
 - The plan has 19 phases (P0 to P18). P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
-- No genuine blocker stops P0. Gates and owner inputs are in section 5.4.
+- No genuine blocker stops P0. Owner inputs are in section 5.3 and gates in section 5.4. P2 waits for the owner's Q6 brand sign-off.
 
 ---
 
@@ -224,7 +224,7 @@ The sources leave these details open. The owner may change any of them. Section 
 
 ### 5.3 Owner confirmations
 
-None of these blocks work. Each has a default.
+None of these blocks work, except Q6: P2 waits for the Q6 sign-off (owner answer, October 11, 2026). Each other question has a default.
 
 | ID | Question | Default | Needed by |
 |---|---|---|---|
