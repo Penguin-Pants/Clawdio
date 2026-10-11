@@ -551,7 +551,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| P8-AC1 | Not verified (E1) | No Windows desktop. The Windows build passes in CI; the window handle goes to souvlaki (P8.1). |
+| P8-AC1 | Not verified (E1) | No Windows desktop. The window handle goes to souvlaki (P8.1). The Windows CI job failed clippy on `ed0b76a` (an unneeded cast); the fix is in the next commit. |
 | P8-AC2 | Pass with exception (E2) | Manual Linux (Xvfb, a private D-Bus session, release build): `playerctl -l` lists `io_github_penguinpants_clawdio`; `play`, `pause`, `play-pause`, `next`, `previous` and `stop` changed the app, and the app showed the same song and state; `playerctl metadata` showed title, artist and album. Unit: `media_controls.rs` (event map, D-Bus name, metadata on track change, state, position once per second). |
 | P8-AC3 | Pass | Manual Linux: with `DBUS_SESSION_BUS_ADDRESS=unix:path=/nonexistent` the log has "media: cannot attach the media controls" and a double-click plays. |
 | P8-AC4 | Exception (E1) | OS events go straight to the player thread (`media_controls.rs` `attach`); no widget is involved. Manual Windows not done. |
@@ -571,16 +571,18 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 1, F2 1, F3 0, F4 5. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 3, F2 2, F3 1, F4 13. Sources: own audit and a reviewer agent.
 
 - F1: souvlaki's D-Bus thread fell behind by one update per second, so the OS state lagged the app (N2, fixed with the wake thread).
 - F2: rodio printed a note on stderr at each exit (N4).
+- Reviewer agent (fixed in the commit after `ed0b76a`): F1: the HWND cast failed Windows clippy (CI red on `ed0b76a`); the record claimed a Windows CI pass that had not run. F2: a seek while paused did not reach the OS position until the next state change (the engine now announces the state on each seek; tested). F3: F-14 (no MPRIS `Seeked` signal on an app seek).
 - F4:
   - The player thread reads the library lock for metadata: the scan holds the write lock only briefly per batch.
   - A souvlaki thread that stops makes the next update fail: the app logs it once and stops sending.
   - The wake read after the controls went away: it fails and is logged at debug level.
   - D34: the display name comes from the package info and the D-Bus name from the identifier.
   - Exit: `RunEvent::Exit` runs on the main thread, where the controls live, and detaches them.
+  - Reviewer, none hold: main-thread re-entry, souvlaki's `unwrap` on a wake read, a wake deadlock, an exit hang, a missing window handle, the lowercase name in a test (D34 is case sensitive), lock order, and tests that pass inverted.
 
 **Follow-ups:** F-13 (open).
 
@@ -1966,6 +1968,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.

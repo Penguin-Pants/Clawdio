@@ -108,7 +108,7 @@ pub fn attach(app: &AppHandle, window: &WebviewWindow) {
     let display = app.package_info().name.clone();
     #[cfg(windows)]
     let hwnd = match window.hwnd() {
-        Ok(hwnd) => Some(hwnd.0 as *mut std::ffi::c_void),
+        Ok(hwnd) => Some(hwnd.0),
         Err(error) => {
             log::warn!("media: no window handle: {error}");
             return;

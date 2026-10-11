@@ -256,6 +256,8 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         if self.status != PlayerStatus::Stopped && self.output.seek(to) {
             self.position_ms = to.as_millis().min(u32::MAX as u128) as u32;
             self.events.position(self.position_ms);
+            // The state carries the new position to the OS controls, also while paused (P8.3).
+            self.announce();
         }
     }
 
@@ -678,6 +680,17 @@ mod tests {
         engine.seek(Duration::from_millis(500));
         assert_eq!(engine.state().position_ms, 500);
         assert_eq!(engine.output_mut().position(), Duration::from_millis(500));
+    }
+
+    #[test]
+    fn a_seek_while_paused_announces_the_state_with_the_new_position() {
+        let (mut engine, recorder) = engine();
+        engine.play_list(vec![0], 0);
+        engine.pause();
+        recorder.0.lock().unwrap().clear();
+        engine.seek(Duration::from_millis(700));
+        assert!(recorder.has("state Paused"));
+        assert_eq!(engine.state().position_ms, 700);
     }
 
     #[test]
