@@ -233,28 +233,22 @@ test("P2-AC15: the pressed mode, the active tab and the highlighted menu item sh
   await page.getByRole("button", { name: "Menu" }).focus();
   await page.keyboard.press("Enter");
   await page.keyboard.press("ArrowDown");
+  // Disabled items (Library) can take keyboard focus and show at half opacity; the check is
+  // about an enabled item.
   const highlighted = page.locator("[role^='menuitem'][data-highlighted]");
+  for (let step = 0; step < 5 && (await highlighted.getAttribute("data-disabled")) !== null; step += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
   await expect(highlighted).toHaveCount(1);
+  await expect(highlighted).not.toHaveAttribute("data-disabled");
   const name = (await highlighted.textContent()) ?? "";
-  const other = page.locator("[role^='menuitem']:not([data-highlighted])").filter({ hasNotText: name }).first();
+  const other = page
+    .locator("[role^='menuitem']:not([data-highlighted]):not([data-disabled])")
+    .filter({ hasNotText: name })
+    .first();
   const lit = await grayProfile(page, highlighted);
   const plain = await grayProfile(page, other);
-  // The details name the item and its styles when an engine draws it differently.
-  const details = await highlighted.evaluate((element) => {
-    const style = getComputedStyle(element);
-    const box = element.getBoundingClientRect();
-    return JSON.stringify({
-      text: element.textContent,
-      focused: document.activeElement === element,
-      box: [box.x, box.y, box.width, box.height],
-      boxShadow: style.boxShadow,
-      outline: `${style.outlineStyle} ${style.outlineWidth} ${style.outlineOffset} ${style.outlineColor}`,
-      background: style.backgroundColor,
-    });
-  });
-  expect(lit.left - plain.left, `${details} lit ${JSON.stringify(lit)} plain ${JSON.stringify(plain)}`).toBeGreaterThan(
-    100,
-  );
+  expect(lit.left - plain.left).toBeGreaterThan(100);
 });
 
 test("P2-AC16: forced colors keep focus rings, mask icons and the art placeholder visible", async ({
