@@ -1,7 +1,7 @@
 # Clawdio Build Plan
 
 **Version:** 1.8, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
-**Status:** Ready for execution. No phase has started.
+**Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
@@ -64,7 +64,7 @@ A phase is Done when all of these are true:
 
 | Phase | Name | Depends on | Status |
 |---|---|---|---|
-| P0 | Foundation and conventions | none | Not started |
+| P0 | Foundation and conventions | none | Done with exceptions |
 | P1 | Brand identity assets and icon pipeline | P0 | Not started |
 | P2 | Themed docking shell | P1, Q6 sign-off | Not started |
 | P3 | Milestone 0 footprint gate | P2 | Not started |
@@ -90,7 +90,63 @@ Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
 Each phase adds one entry here when it ends: date, commit range, criteria results, review counts (F1 to F4), exceptions, blockers and proposed follow-ups.
 
-_No entries yet._
+#### P0. Foundation and conventions (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/happy-gates-m2ikwy`, base `21da212`. Messages start with `P0:`.
+- **Environment (P0.0):** Ubuntu 24.04 container, Node 22.22.0, npm 10.9.4, Rust 1.97 (`rust-toolchain.toml`). The section 6.17 Linux packages were present (environment setup script). Chromium for Playwright is preinstalled. WebKit is not installed here (exception E2).
+- **Prompt Phase 1 audit:** framework React 19.3, Vite 8.3, TypeScript 6.0. Wrapper Tauri 2.12.3 with Rust. Native OS integration: WebView2 accelerator keys only (D37). Styling: Tailwind CSS 4.3, shadcn/ui (Base UI primitives, style `base-nova`), token variables. Brand files: `theme/tokens.json`, `docs/design.md`, `docs/asset-manifest.md`, the mockup and the placeholder icon. Old product names: none. Risks: K4 (Windows check open), K19 (focus rule test), K20 (packages present here).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P0-AC1 | Pass | Local Linux: `npm run check` (63 tests), `cargo fmt`, `cargo clippy` (also for target `x86_64-pc-windows-msvc`, no link), `cargo test` (3 tests), bindings check. CI run 38160684257 failed `rust (windows-latest)` at the bindings check (N7). After the fix, CI runs 38162065518 (push) and 38162069020 (pull request) on `9111ece` pass all five jobs on ubuntu-22.04 and windows-latest. |
+| P0-AC2 | Pass (Xvfb) | `npm run tauri dev`: one window titled "Clawdio", 1200 x 800, minimum 800 x 560, 960,000 px of `#0B0B0B`. |
+| P0-AC3 | Pass (Xvfb) | With `colors.bg.canvas` set to `#123456`, the window showed `#123456`. `git status` showed no other change. A unit test shows that only the canvas line of the generated CSS changes. |
+| P0-AC4 | Pass | Vitest: without `colors.text.muted`, `npm run tokens` exits 1 with "colors.text.muted is missing". |
+| P0-AC5 | Pass | `src/styles/contrast.test.ts`, 27 cases. Note N1. |
+| P0-AC6 | Pass | `npm run check:sources` passes. Vitest: `#fff` in `src/` and the product name in `crates/` make it fail. |
+| P0-AC7 | Pass | `AGENTS.md`: 69 lines added, 0 removed, eight project rules (the six architecture lines and the six commands are each split into two lists of three, Output rule 05). `mdformat --number --check` passes. `LICENSE` is MIT. `NOTICE` lists Geist with the OFL 1.1 text. |
+| P0-AC8 | Not verified | No Windows machine (E1). The module passes clippy for `x86_64-pc-windows-msvc`. CI builds it on windows-latest. |
+| P0-AC9 | Pass (review) | The capability file grants only `core:default`. The CSP equals section 6.13. A release build under Xvfb renders the stylesheet. `dist/index.html` has no inline script or style, so Tauri adds no nonce. Chromium with the same CSP header: 0 `securitypolicyviolation` events. |
+
+**Notes**
+
+- N1 (P0.15): the rule "Excluded pairs must stay below the threshold" fails for `state.redActive` on canvas (3.16) and surface (3.03). Section 6.12 lists that row as "3.16 to 2.70". The test applies the rule to the row as one role: its worst surface must stay below 3:1. Proposal F-06.
+- N2 (P0.10): `shadcn init` downloads from `ui.shadcn.com`. The environment denied the host (B6) until the owner allowed it. The CLI asks for a preset, so the init ran with `-p nova` (Lucide, Geist). The token mapping replaced the generated colors, the chart and sidebar variables and the `.dark` block. `index.html` sets `class="dark"`, so shadcn dark styles apply in the dark-only app. `shadcn` and `tw-animate-css` are dev dependencies (build-time CSS).
+- N3 (P0.9): Geist is imported in `main.tsx` only. The init also added an import to `globals.css`. That copy was removed.
+- N4: jsdom is 29.1.1, because jsdom 30 needs Node 22.22.2 or later.
+- N5 (P0.12): `tauri dev` loads and renders with the configured CSP, so `devCsp` is not set.
+- N6: the CI action versions (`actions/checkout@v5`, `actions/setup-node@v5`, `Swatinem/rust-cache@v2`) could not be checked here: GitHub API access is limited to this repository. CI run 38160684257 ran all three.
+- N7 (P0-AC1): `rust (windows-latest)` failed the bindings check. Root cause: Windows runners check out with `core.autocrlf=true`, so `AppInfo.ts` has CRLF line ends. ts-rs rewrites it with LF, and `git status` reports a change. Reproduced locally with `core.autocrlf=true`. Fix: `.gitattributes` keeps `src/lib/ipc/bindings/**` LF on every OS. The rule does not touch `CLAUDE.md` or other owner files.
+
+**Exceptions**
+
+- E1: P0-AC8 not verified: no Windows machine in this environment (B5).
+- E2: WebKit Playwright tests run in CI only. This environment has Chromium only.
+- E3: P0-AC2 and P0-AC3 ran on an Xvfb display, not on a desktop session.
+- E4: the Windows part of P0-AC1 ran in CI only.
+
+**Blockers:** B6 (section 5.4), closed during the phase.
+
+**TWO-PASS REVIEW:** F1 2, F2 6, F3 3, F4 11.
+
+- F1: the `shadcn init` output broke P0.10: generated colors, `outline-ring/50` and a `.dark` block. Fixed before commit. The Windows bindings check failed in CI (N7). Fixed.
+- F2: a repository-wide `.gitattributes` would renormalize the owner's CRLF `CLAUDE.md` (removed; N7 adds a rule for the bindings only). Button `destructive` and `link` variants used red 14 px text against D10 (now `text-foreground`). Duplicate Geist import (removed). `shadcn` CLI in the runtime dependencies (moved). Caret ranges from the init (pinned). jsdom 30 engine mismatch (pinned 29.1.1).
+- F3: F-06, F-07 and F-08 (section 11).
+- F4:
+  - Script entry checks could differ in drive-letter case on Windows: Node derives both paths from one resolved path. The Windows `tauri-build` job ran both scripts and passed.
+  - The forced-colors rule on `[aria-selected="true"]` also hits tabs: no such element exists yet. P2-AC16 and P17 test it.
+  - `applyAppName` hides errors: outside the Tauri runtime the failure is expected, and the native title is the product name (D2).
+  - `NOTICE` lists Geist only: P0.2 asks for the table and Geist. P18.4 builds the full list (P18-AC7).
+  - `lucide-react` and `src/lib/utils.ts` have no import yet: both come from the init, `components.json` names them and P2 uses them.
+  - No `devCsp`: `tauri dev` renders under the configured CSP (N5).
+  - `icons.mjs` deletes unknown files in `src-tauri/icons/`: D9 says to delete other outputs, and the folder holds generated files only.
+  - Bundle targets stay "all": package targets are P18.1 work.
+  - Prettier skips Markdown: `AGENTS.md` assigns mdformat to instruction files, and docs keep their format.
+  - `dark:` input fills are faint: borders and fills are decoration (D10 rule 6). P2-AC14 tests focus contrast.
+  - Unverified action versions: see N6. CI ran them.
+
+**Follow-ups:** F-06, F-07, F-08.
 
 ---
 
@@ -246,6 +302,7 @@ None of these blocks work, except Q6: P2 waits for the Q6 sign-off (owner answer
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
 | B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
+| B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 
 ---
 
@@ -1468,6 +1525,9 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
+| F-06 | Change the P0.15 wording: an "Excluded" row that names one role on several surfaces (the `state.redActive` row) stays excluded while its worst surface is below the threshold. | Section 6.12 lists `state.redActive` at 3.16:1 on canvas and 3.03:1 on surface, so the per-pair rule fails P0-AC5. The test applies the row rule (P0 note N1). | P0 review |
+| F-07 | Add a source guard against Tailwind default palette classes (for example `bg-red-500` or `text-white`) in `src/`, or reset the default palette in `globals.css` and give the shadcn overlay color a token. | The hex guard (D34) does not catch palette classes, so a color from outside `theme/tokens.json` can enter the UI (design.md §10). | P0 review |
+| F-08 | Set `color-scheme: dark` on `:root` in `globals.css`. | Native scrollbars and form controls follow the color scheme. Without it they can render light in the dark-only app (DES-0). | P0 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 

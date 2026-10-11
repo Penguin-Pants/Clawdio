@@ -10,6 +10,7 @@
 - **Verify** codes: UT unit test, IT integration test, E2E Playwright with mocked IPC, CI pipeline job, MAN-L manual on Linux, MAN-W manual on Windows, MEAS measurement, REV review of code or docs.
 - **Status** values:
   - Planned: mapped to tasks and criteria. Not started.
+  - Done (Pn): every task and criterion of the row passed. Pn is the last phase. A decision or conflict ID stays in the brackets.
   - Planned (Dn): the plan fixes an open detail with decision Dn.
   - Planned (Qn): the task needs owner input Qn to finish.
   - Resolved (Cn): a conflict between sources, resolved as section 5.1 of the plan states.
@@ -21,14 +22,14 @@
 
 ## Coverage summary
 
-| Source | Rows | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
-|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 205 | 38 | 8 | 8 | 42 | 0 |
-| design.md | 76 | 47 | 12 | 16 | 0 | 1 | 0 |
-| Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
-| Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
-| tokens.json | 20 | 16 | 4 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 3 | 2 | 0 | 1 | 0 | 0 | 0 |
+| Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
+|---|---|---|---|---|---|---|---|---|
+| Requirements | 301 | 7 | 199 | 38 | 7 | 8 | 42 | 0 |
+| design.md | 76 | 6 | 44 | 10 | 15 | 0 | 1 | 0 |
+| Branding prompt | 39 | 10 | 18 | 4 | 6 | 0 | 1 | 0 |
+| Asset manifest | 18 | 0 | 11 | 3 | 4 | 0 | 0 | 0 |
+| tokens.json | 20 | 6 | 12 | 2 | 0 | 0 | 0 | 0 |
+| AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
 
@@ -45,7 +46,7 @@
 | S1-3 | Widget UI: dock, resize, hide, show; three built-in layouts | §1 | P2.1, P2.4, P2.6 | P2-AC2, P2-AC4 | E2E | Planned |
 | S1-4 | Adds artwork, lyrics and missing metadata | §1 | P14.5, P15.1, P16.2 | P14-AC4, P15-AC1, P16-AC3 | IT | Planned |
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
-| S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Planned |
+| S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
 
 ### 1.2 Section 2: library (R1 to R4)
@@ -109,7 +110,7 @@
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Planned |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Planned |
-| R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Planned |
+| R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
 | R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Planned |
@@ -117,7 +118,7 @@
 | R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Planned |
 | R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Planned |
 | R31-2 | Build generates platform icons from `clawdio-icon-full.svg`; placeholder until it exists | §2 R31 | P0.11, P1.6 | P1-AC2, P1-AC5, P1-AC6 | CI, MAN-L | Planned (D9) |
-| R31-3 | Built-in dark theme is `theme/tokens.json` compiled at build time | §2 R31 | P0.6, P0.7 | P0-AC2, P0-AC3 | UT, MAN-L | Planned |
+| R31-3 | Built-in dark theme is `theme/tokens.json` compiled at build time | §2 R31 | P0.6, P0.7 | P0-AC2, P0-AC3 | UT, MAN-L | Done (P0) |
 | R31-4 | Name, window title, bundle identifier and User-Agent from one build value | §2 R31 | P0.4, P0.8 | P0-AC6, P14-AC6, P18-AC11 | UT, REV | Resolved (C10) |
 | R31-5 | Lucide icons by default; a brand icon replaces an icon by name | §2 R31 | P2.13 | P2-AC11 | UT, MAN-L | Planned |
 | R31-6 | User-selected theme file | §2 R31 | none | none | REV | Deferred |
@@ -220,9 +221,9 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R15-1 | Starts in a built-in dark theme | §2 R15 | P0.7 | P0-AC2 | MAN-L | Planned |
+| R15-1 | Starts in a built-in dark theme | §2 R15 | P0.7 | P0-AC2 | MAN-L | Done (P0) |
 | R16-1 | User-selected theme file | §2 R16 | none | none | REV | Deferred |
-| R16-2 | Fonts installed locally with a system fallback; the owner may bundle one OFL font | §2 R16 | P0.9 | P0-AC7 | REV | Resolved (C4) |
+| R16-2 | Fonts installed locally with a system fallback; the owner may bundle one OFL font | §2 R16 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
 | R17-1 | Docs: tokens the app reads and the UI part each controls, including headers, splitters and drop zones | §2 R17 | P0.17, P2.16 | P18-AC13 | REV | Planned |
 | R17-2 | Docs: sidecar schema | §2 R17 | P14.9, P16.8 | P18-AC13 | REV | Planned |
 | R17-3 | Docs: arrangement file schema | §2 R17 | P9.6 | P18-AC13 | REV | Planned |
@@ -329,7 +330,7 @@
 | CON-9 | The music folder is the source of truth | §6 | P5.3 | P5-AC4 | IT | Planned |
 | CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Planned |
 | CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Planned |
-| CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Planned |
+| CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
 
 ### 1.12 Section 7: deferred ideas
 
@@ -364,7 +365,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Planned |
 | DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
 | DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Planned |
-| DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Planned |
+| DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DEC-6 | Named layouts deferred; built-ins and auto-save stay | §8.6 | P2.4, P9.3 | P9-AC2 | E2E | Planned |
 | DEC-7 | Tabbed groups allowed | §8.7 | P2.1 | P9-AC3 | E2E | Planned |
 | DEC-8 | Magic UI optional; no Motion unless a component needs it | §8.8 | P2.16 | P18-AC13 | REV | Resolved (C8) |
@@ -415,7 +416,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| DES-0 | Dark-only theme (front matter) | front matter | P0.7 | P0-AC2 | MAN-L | Planned |
+| DES-0 | Dark-only theme (front matter) | front matter | P0.7 | P0-AC2 | MAN-L | Done (P0) |
 | DES-1.1 | Local-first player for MP3, WAV, OGG with metadata, art, lyrics and standard controls; not streaming, radio or podcasts | §1 | P4.5, P7.2, P10.1, P13.1 | P4-AC3, P13-AC1 | IT | Planned |
 | DES-1.2 | Primary rule: practical minimalist player; style never makes playback harder | §1 | P17.1, P17.8 | P17-AC1, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-1.3 | Cat silhouette, narrow red eyes, pointed ears, minimal whiskers | §1 | P1.2 | P1-AC3 | MAN-L | Planned |
@@ -431,11 +432,11 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-2.5 | Logo 3: secondary symbol for micro sizes | §2 | P1.3, P1.4 | P1-AC1 | REV | Planned |
 | DES-2.6 | Logo 4: monochrome and high-contrast variants | §2 | P1.4 | P1-AC1, P1-AC4 | REV | Planned |
 | DES-2.7 | No raster mockup as the icon; no repeated full mascot in the UI | §2 | P1.6, P17.8 | P1-AC2, P17-AC8 | REV | Planned |
-| DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Planned |
-| DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Planned |
+| DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Done (P0) |
+| DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Done (P0) |
 | DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Resolved (C13) |
-| DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Resolved (C4) |
+| DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
 | DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Planned |
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
 | DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Planned |
@@ -469,7 +470,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-7.4 | No marquees, border beams, animated gradients, confetti, particles or per-track animation | §7 | P17.8 | P17-AC3 | REV, E2E | Planned (D6) |
 | DES-7.5 | CSS transitions over a motion dependency | §7 | P0.7 | P2-AC13 | E2E | Planned (D6) |
 | DES-7.6 | Check Magic UI docs before choosing components | §7 | none | none | REV | Planned (D6) |
-| DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Planned (D6) |
+| DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Done (P0, D6) |
 | DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Planned |
 | DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Planned |
 | DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
@@ -484,7 +485,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-10.2 | Icons exported and configured for Windows and Linux | §10 | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-W, MAN-L | Planned |
 | DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Planned |
 | DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Planned |
-| DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Planned (D34) |
+| DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Done (P0, D34) |
 | DES-10.6 | No loss of audio, playlist, library, lyric or metadata behavior | §10 | P0.16 | P0-AC1 | CI | Resolved (C1) |
 | DES-10.7 | Offline startup and operation | §10 | P14.1 | P14-AC1, P14-AC13 | IT | Planned |
 | DES-10.8 | No unnecessary dependencies or decorative features | §10 | P18.4 | P18-AC8 | CI, REV | Planned (D6) |
@@ -500,18 +501,18 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 |---|---|---|---|---|---|---|
 | BRD-M1 | Use design.md, asset-manifest, tokens.json and the mockup | Mission | P0.6, P1.1, P2.10 | P0-AC3, P1-AC1 | REV | Planned |
 | BRD-M2 | Follow AGENTS.md and the repo structure; read the requirements in full | Mission | P0.1 | P0-AC7 | REV | Resolved (C1) |
-| BRD-1.1 | Inspect README, requirements, AGENTS.md, source, UI, manifests, scripts, icon pipeline, docs, tests | Phase 1.1 | P0.17 | P0-AC7 | REV | Planned |
-| BRD-1.2 | Identify framework, wrapper, OS integration, styling, brand files, old names | Phase 1.2 | P0.4 | P0-AC1 | REV | Planned |
+| BRD-1.1 | Inspect README, requirements, AGENTS.md, source, UI, manifests, scripts, icon pipeline, docs, tests | Phase 1.1 | P0.17 | P0-AC7 | REV | Done (P0) |
+| BRD-1.2 | Identify framework, wrapper, OS integration, styling, brand files, old names | Phase 1.2 | P0.4 | P0-AC1 | REV | Done (P0) |
 | BRD-1.3 | Map package paths into the repo without duplication | Phase 1.3 | P1.4, P1.6 | P1-AC2, P1-AC6 | REV | Resolved (C5) |
-| BRD-1.4 | Check React and Tailwind compatibility for Magic UI | Phase 1.4 | P0.10 | P0-AC1 | REV | Resolved (C8) |
+| BRD-1.4 | Check React and Tailwind compatibility for Magic UI | Phase 1.4 | P0.10 | P0-AC1 | REV | Done (P0, C8) |
 | BRD-1.5 | Read the current Magic UI docs before using components | Phase 1.5 | P2.16 | P18-AC13 | REV | Planned (D6) |
-| BRD-1.6 | Name risks; choose the smallest safe change set; ask only on destructive, licensing or architecture issues | Phase 1.6 | P0.1 | P0-AC7 | REV | Planned |
+| BRD-1.6 | Name risks; choose the smallest safe change set; ask only on destructive, licensing or architecture issues | Phase 1.6 | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-2.1 | Original SVG wordmark: red "Claw", steel "dio", bars in the "o" | Phase 2.1 | P1.1 | P1-AC4 | UT, REV | Planned |
 | BRD-2.2 | Original black cat head with narrow red eyes, ears, minimal whiskers | Phase 2.2 | P1.2 | P1-AC3 | MAN-L | Planned |
 | BRD-2.3 | Angular C, cat eye and equalizer secondary mark | Phase 2.3 | P1.3 | P1-AC1 | UT | Planned |
 | BRD-2.4 | Full-color, monochrome, PNG and launcher icons; check toolchain formats; test small sizes | Phase 2.4 | P1.4, P1.6, P1.7 | P1-AC2, P1-AC3 | CI, MAN-L | Planned (D9) |
 | BRD-2.5 | No copies of third-party character art; flat SVG, no filters or raster | Phase 2.5 | P1.5 | P1-AC1, P1-AC7 | UT, REV | Planned |
-| BRD-3.1 | Tokens map to the styling system as semantic tokens; no scattered hex | Phase 3.1 | P0.6, P0.7, P0.14 | P0-AC6 | UT | Planned |
+| BRD-3.1 | Tokens map to the styling system as semantic tokens; no scattered hex | Phase 3.1 | P0.6, P0.7, P0.14 | P0-AC6 | UT | Done (P0) |
 | BRD-3.2 | Rename consistently in UI, metadata, READMEs and launchers; leave dependencies alone | Phase 3.2 | P0.4, P1.9, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
 | BRD-3.3 | Dark matte UI, restrained red, muted surfaces, legible type | Phase 3.3 | P0.7 | P0-AC5, P17-AC8 | UT, REV | Planned (D10) |
 | BRD-3.4 | Style shell, library and album views, now playing, controls, dialogs, lyrics and art views | Phase 3.4 | P2.10, P6.4, P7.7, P10.3, P13.4 | P2-AC7, P17-AC1 | E2E | Planned |
@@ -520,10 +521,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-3.7 | Promo art, invented song data and reference-only menus are not requirements | Phase 3.7 | none | none | REV | Resolved (C9) |
 | BRD-3.8 | No streaming, radio, podcasts, accounts or other new features | Phase 3.8 | P0.1 | P14-AC11 | REV | Non-goal |
 | BRD-3.9 | Keep library parsing, playback, queues, lyrics, metadata, settings and portable offline use working | Phase 3.9 | P0.16 | P0-AC1 | CI | Resolved (C1) |
-| BRD-4.1 | Run format, lint, typecheck, tests and builds | Phase 4.1 | P0.5, P0.16 | P0-AC1 | CI | Planned |
+| BRD-4.1 | Run format, lint, typecheck, tests and builds | Phase 4.1 | P0.5, P0.16 | P0-AC1 | CI | Done (P0) |
 | BRD-4.2 | Verify SVG syntax, exports, icon sizes and app metadata | Phase 4.2 | P1.5, P1.6, P18.1 | P1-AC1, P1-AC2, P18-AC11 | UT, CI | Planned |
 | BRD-4.3 | Check normal and narrow windows, contrast, state and small-icon legibility | Phase 4.3 | P17.4, P1.7 | P17-AC4, P1-AC3 | MAN-L | Planned |
-| BRD-4.4 | Two-pass critical self-review; fix confirmed problems only | Phase 4.4 | P0.1 | P0-AC7 | REV | Planned |
+| BRD-4.4 | Two-pass critical self-review; fix confirmed problems only | Phase 4.4 | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-4.5 | Validate Windows and Linux artifacts; report checks not performed | Phase 4.5 | P18.7 | P18-AC12 | MAN-W, MAN-L | Planned |
 | BRD-4.6 | Update design.md only for justified implementation differences | Phase 4.6 | P17.9 | P17-AC7 | REV | Planned |
 | BRD-FD1 | Final summary: changes with paths | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
@@ -533,10 +534,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-FD5 | Final summary: limitations and unverified platform checks | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
 | BRD-FD6 | Final summary: deviations from the reference and why | Final deliverable | P18.9, P17.9 | P17-AC7 | REV | Planned |
 | BRD-X1 | Do not rewrite the player architecture for branding | Constraints | none | none | REV | Resolved (C1) |
-| BRD-X2 | Do not claim tests that did not run | Constraints | P0.1 | P0-AC7 | REV | Planned |
-| BRD-X3 | Respect AGENTS.md | Constraints | P0.1 | P0-AC7 | REV | Planned |
+| BRD-X2 | Do not claim tests that did not run | Constraints | P0.1 | P0-AC7 | REV | Done (P0) |
+| BRD-X3 | Respect AGENTS.md | Constraints | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-X4 | No unnecessary libraries, animations or features | Constraints | P18.4 | P18-AC8 | REV | Planned (D6) |
-| BRD-X5 | Commit or open PRs only when the workflow requires it | Constraints | P0.1 | P0-AC7 | REV | Resolved (C15) |
+| BRD-X5 | Commit or open PRs only when the workflow requires it | Constraints | P0.1 | P0-AC7 | REV | Done (P0, C15) |
 
 ---
 
@@ -573,18 +574,18 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 |---|---|---|---|---|---|---|
 | TOK-1 | `colors.brand.red` | `#E10606` | P0.6, P2.10, P7.7 | P0-AC5, P2-AC7 | UT, E2E | Planned (D10) |
 | TOK-2 | `colors.brand.steel` | `#4A4A4A` | P0.6, P1.4 | P1-AC4 | UT, REV | Planned (D10) |
-| TOK-3 | `colors.bg.canvas` | `#0B0B0B` | P0.6, P0.7 | P0-AC2, P0-AC3 | MAN-L | Planned |
+| TOK-3 | `colors.bg.canvas` | `#0B0B0B` | P0.6, P0.7 | P0-AC2, P0-AC3 | MAN-L | Done (P0) |
 | TOK-4 | `colors.bg.surface` | `#111111` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
 | TOK-5 | `colors.bg.elevated` | `#171717` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
 | TOK-6 | `colors.bg.hover` | `#1D1D1D` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
 | TOK-7 | `colors.border.default` | `#292929` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
 | TOK-8 | `colors.border.strong` | `#343434` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
-| TOK-9 | `colors.text.primary` | `#EDEDED` | P0.6, P0.7 | P0-AC5 | UT | Planned |
-| TOK-10 | `colors.text.secondary` | `#B7B7B7` | P0.6 | P0-AC5 | UT | Planned |
-| TOK-11 | `colors.text.muted` | `#999999` | P0.6 | P0-AC4, P0-AC5 | UT | Planned |
+| TOK-9 | `colors.text.primary` | `#EDEDED` | P0.6, P0.7 | P0-AC5 | UT | Done (P0) |
+| TOK-10 | `colors.text.secondary` | `#B7B7B7` | P0.6 | P0-AC5 | UT | Done (P0) |
+| TOK-11 | `colors.text.muted` | `#999999` | P0.6 | P0-AC4, P0-AC5 | UT | Done (P0) |
 | TOK-12 | `colors.state.selected` | `#5B1010` | P0.6, P6.4 | P0-AC5 | UT, E2E | Planned |
-| TOK-13 | `colors.state.redHover` | `#F01C1C` | P0.6 | P0-AC5 | UT | Planned (D10) |
-| TOK-14 | `colors.state.redActive` | `#C40404` | P0.6, P0.7 | P0-AC5 | UT | Planned (D10) |
+| TOK-13 | `colors.state.redHover` | `#F01C1C` | P0.6 | P0-AC5 | UT | Done (P0, D10) |
+| TOK-14 | `colors.state.redActive` | `#C40404` | P0.6, P0.7 | P0-AC5 | UT | Done (P0, D10) |
 | TOK-15 | `radii.control` | `10px` | P0.6, P0.7 | P2-AC7 | E2E | Planned |
 | TOK-16 | `radii.card` | `12px` | P0.6 | P2-AC7 | E2E | Planned |
 | TOK-17 | `radii.dialog` | `16px` | P0.6 | P2-AC7 | E2E | Planned |
@@ -598,8 +599,8 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Planned |
-| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Planned |
+| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Done (P0) |
+| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Done (P0) |
 | AGT-3 | Mock data only in tests (Edits rule 9); the Milestone 0 `fixtures` feature is an approved exception | Edits rule 9 | P0.1, P2.15, P3.1, P6.7 | P0-AC7, P2-AC19, P6-AC8 | REV, E2E | Resolved (C19) |
 
 ---
