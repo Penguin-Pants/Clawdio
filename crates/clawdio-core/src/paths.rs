@@ -176,12 +176,12 @@ mod tests {
 
     #[test]
     fn relative_paths_walk_up_and_down() {
-        let rel = |a: &str, b: &str| {
-            relative_to(Path::new(a), Path::new(b)).map(|p| p.to_string_lossy().into_owned())
-        };
-        assert_eq!(rel("/a/b/music", "/a/b").as_deref(), Some("music"));
-        assert_eq!(rel("/a/music", "/a/b/app").as_deref(), Some("../../music"));
-        assert_eq!(rel("/a/b", "/a/b").as_deref(), Some("."));
+        // Compare paths, not text: the separator differs per system.
+        let rel = |a: &str, b: &str| relative_to(Path::new(a), Path::new(b));
+        let path = |parts: &[&str]| Some(parts.iter().collect::<PathBuf>());
+        assert_eq!(rel("/a/b/music", "/a/b"), path(&["music"]));
+        assert_eq!(rel("/a/music", "/a/b/app"), path(&["..", "..", "music"]));
+        assert_eq!(rel("/a/b", "/a/b"), path(&["."]));
     }
 
     #[test]

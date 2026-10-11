@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:4173",
     viewport: { width: 1200, height: 800 },
+    // A failed test keeps its page image, so CI shows what WebKit drew.
+    screenshot: "only-on-failure",
   },
   webServer: {
     command: "npx vite preview -c vite.e2e.config.ts",
