@@ -816,7 +816,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 **Verification.** CI workflow `measure.yml` plus local Linux runs. Manual: scroll each mode, open each widget. The owner gets the numbers in the phase report.
 
-**Phase checkpoint.** The gate verdict is in `docs/milestone-0.md` and in section 2. P4 starts only on a pass or an owner decision.
+**Phase checkpoint.** The gate verdict is in `docs/milestone-0.md` and in section 2. P4 starts once the verdict is recorded: under 200 MB passes, 200 to 300 MB continues after the owner is told the number, and over 300 MB continues with the raised target for that OS (D49).
 
 ---
 
@@ -1379,7 +1379,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - Complete `docs/file-formats.md` and `docs/theming-and-brand.md` (every R17 item).
   - `docs/release-checklist.md`: all 21 checks, the platform matrix and the results.
 - **P18.7** Run AC-1 to AC-21 on Windows 10 or 11 and Ubuntu 22.04, and install the `.deb` on Debian 12. Repeat every "Done with exceptions" item from earlier phases. Record pass, fail or "not run" with the reason (prompt Phase 4.5).
-- **P18.8** Brand swap demo (AC-15): replace `theme/tokens.json` and `clawdio-icon-full.svg` with test versions, rebuild and confirm the theme and the icon change with no other source file change (only the generated `src-tauri/icons/` files differ). Revert.
+- **P18.8** Brand swap demo (AC-15): replace `theme/tokens.json` and `clawdio-icon-full.svg` with test versions, rebuild and confirm the theme and the icon change with no other source file change (only the generated `src-tauri/icons/` files differ). If the Q8 fallback is on, replace `clawdio-icon-simple.svg` too and confirm that the 16 and 24 px layers change. Revert.
 - **P18.9** Final reconciliation:
   - Update section 2, the traceability Status column and the `docs/asset-manifest.md` boxes.
   - Write a final summary in the phase record. It covers the prompt's final deliverable list: changes with paths; assets and export sizes; Magic UI (none, with the reason); tests and builds run with results; limitations and unverified platform checks; deviations from the reference with reasons.
@@ -1397,7 +1397,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P18-AC9** The brand swap demo passes (AC-15).
 - **P18-AC10** After a copy of the portable folder and the music folder to another drive letter, settings, the arrangement and the queue survive (AC-17).
 - **P18-AC11** The window title, Windows executable metadata, installer, Linux desktop entry and About show "Clawdio". The icon shows in the Windows taskbar and the GNOME app grid.
-- **P18-AC12** `docs/release-checklist.md` records a result for each of the 21 checks. Every check that ran passes. A check may be "not run" only when its platform was not available, recorded as an exception. A failed check blocks P18. AC-1 may instead carry an owner-accepted value (R20 targets are adjustable).
+- **P18-AC12** `docs/release-checklist.md` records a result for each of the 21 checks. Every check that ran passes. A check may be "not run" only when its platform was not available, or for AC-4, when the owner could not supply that export format (Q5). Each one is recorded as an exception. A failed check blocks P18. AC-1 may instead carry an owner-accepted value (R20 targets are adjustable).
 - **P18-AC13** The docs cover every R17 item: token use, sidecar schema, arrangement schema, brand inputs and the (empty) Magic UI list.
 
 **Verification.** CI release workflow (P18-AC1, P18-AC2, P18-AC8). Manual Windows (P18-AC3, P18-AC4, P18-AC10, P18-AC11). Manual Linux (P18-AC5, P18-AC11). Measurement (P18-AC6). Review (P18-AC7, P18-AC12, P18-AC13).
