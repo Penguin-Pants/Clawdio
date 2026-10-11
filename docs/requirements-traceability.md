@@ -24,10 +24,10 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 111 | 114 | 23 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 36 | 20 | 8 | 11 | 0 | 1 | 0 |
+| Requirements | 301 | 113 | 113 | 22 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 38 | 19 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
-| Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
+| Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
@@ -90,7 +90,7 @@
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
-| R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Planned (D27) |
+| R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
 | R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
@@ -235,7 +235,7 @@
 | R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Done (P5) |
 | R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Done (P5) |
 | R19-3 | No lookup markers in the cache; a rebuild causes no new lookups | §2 R19 | P14.3 | P14-AC8 | IT | Planned |
-| R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Planned |
+| R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Done (P10) |
 | R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
 | R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
 | R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Planned (D28) |
@@ -449,12 +449,12 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.6 | Persistent, reachable transport controls; keys and media keys when Transport is hidden | §5 | P7.7, P7.11, P8.2 | P7-AC5, P8-AC4 | E2E, MAN-W | Planned |
 | DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Planned |
 | DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D45) |
-| DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Planned |
+| DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Done (P10) |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Planned |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Done (P6) |
-| DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Resolved (C11) |
+| DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Done (P10, C11) |
 | DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Done (P7) |
 | DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Done (P7) |
 | DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Done (P7, C3) |
@@ -558,7 +558,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AST-9 | App title, executable metadata, manifests and About show Clawdio | Checklist | P0.4, P4.10, P18.1 | P18-AC11 | MAN-W, MAN-L | Resolved (C6) |
 | AST-10 | Icon works in the Windows taskbar and Linux launchers | Checklist | P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
 | AST-11 | Fonts and illustrations compatible with open-source redistribution | Checklist | P0.9, P18.4 | P18-AC7 | REV | Planned (D7) |
-| AST-12 | Missing-artwork placeholder with quiet branding | Checklist | P1.8, P10.3 | P10-AC4 | E2E | Planned |
+| AST-12 | Missing-artwork placeholder with quiet branding | Checklist | P1.8, P10.3 | P10-AC4 | E2E | Done (P10) |
 | AST-13 | Logo legible at real icon sizes | Checklist | P1.7 | P1-AC3 | MAN-L | Done (P1) |
 | AST-14 | Test light backgrounds and high contrast | Checklist | P1.4, P17.6, P2.13 | P1-AC4, P17-AC6, P2-AC16 | REV, MAN-W | Planned |
 | AST-15 | No copyrighted MAD or Inspector Gadget artwork | Checklist | P1.1, P1.2, P1.3 | P1-AC7 | REV | Done (P1) |

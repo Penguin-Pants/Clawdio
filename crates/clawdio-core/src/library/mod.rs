@@ -99,8 +99,6 @@ pub struct Album {
     pub name: String,
     pub key: String,
     pub tracks: Vec<TrackId>,
-    /// File name of the album thumbnail in the thumbnail folder, if one exists.
-    pub thumb: Option<String>,
     pub cover: CoverInfo,
 }
 
@@ -200,7 +198,6 @@ impl LibraryIndex {
         self.skipped.clear();
         for album in &mut self.albums {
             album.cover = CoverInfo::default();
-            album.thumb = None;
         }
     }
 
@@ -310,7 +307,6 @@ impl LibraryIndex {
             name: name.to_owned(),
             key: fold(name),
             tracks: Vec::new(),
-            thumb: None,
             cover: CoverInfo::default(),
         });
         self.artists[artist as usize].albums.push(id);

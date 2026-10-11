@@ -74,7 +74,7 @@ A phase is Done when all of these are true:
 | P7 | Playback engine and Play queue | P6 | Done with exceptions |
 | P8 | OS media integration | P7 | Done with exceptions |
 | P9 | Persistence: state, arrangement and instance | P8 | Done with exceptions |
-| P10 | Local artwork and thumbnails | P9 | Not started |
+| P10 | Local artwork and thumbnails | P9 | Done with exceptions |
 | P11 | Playlists and Favorites | P10 | Not started |
 | P12 | Playlist import | P11 | Not started |
 | P13 | Local lyrics | P12 | Not started |
@@ -639,6 +639,50 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - F4: `layout.json` holds the dock size in the Dockview grid: it is not the window size, which is only in `settings.json` (N2); Dockview needs it for the proportions. Track ids after a cache restore, a channel deadlock, the missing-folder path, pending entries, concurrent layout writes, the destroy permission, the P9.4 order, the single instance and lock times: none hold.
 
 **Follow-ups:** F-13, F-14 and F-15 (open).
+
+---
+
+#### P10. Local artwork and thumbnails (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5b9c82a`. Messages start with `P10:`.
+- **Packages:** none added.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P10-AC1 | Pass | `crates/clawdio-core/src/artwork.rs`: cover files rank `COVER.JPG`, `cover.png`, `Folder.PNG`, `front.jpg` (names without case); `cover.jpg` beats `folder.png` and embedded art; the third song's embedded art shows when it is the only art; a front cover beats an earlier picture of another type. |
+| P10-AC2 | Pass | `a_broken_cover_file_is_skipped_for_embedded_art`: the broken cover logs a warning and the embedded art shows. |
+| P10-AC3 | Pass | `src-tauri/src/thumbs.rs` service tests: files appear in the thumbnail folder on request and again after the folder is deleted. Manual Linux: `data/cache/thumbs` filled with 96 px and 512 px files for the visible albums, and again after the cache was deleted. |
+| P10-AC4 | Pass | `tests/e2e/art.spec.ts`: rows and Now playing show the art; "Lemonade" (no art) shows the placeholder in its row and in Now playing. |
+| P10-AC5 | Pass with exception (E1) | Rust: a PNG becomes a JPEG `cover.jpg`; a file that is not an image is refused; a read-only folder writes nothing (runs for non-root users: CI). E2E: "Set cover" is on the album menu and a read-only error shows in the status line. |
+| P10-AC6 | Pass with exception (E2) | Manual Linux: `playerctl metadata mpris:artUrl` gave the `file://` URL of the 512 px file after the cache was deleted. Unit: the metadata goes out again when the current album's art is ready, once. |
+| P10-AC7 | Pass | E2E: 61 albums; the first view asked art for fewer than 30, and after a scroll to the end the last album was asked while the total stayed below 61. |
+
+**Notes**
+
+- N1: `ArtService` keeps a request queue (newest first, at most 512) and two worker threads. The cache key is a stable FNV-1a hash of the album folder and the name, size and modified time of each art source, so changed art gets new files. Albums with no art are remembered for the session.
+- N2: cover files decode by content, so a PNG named `cover.jpg` shows. F-16 aligns the scan's D44 cover state.
+- N3: the `thumb` field left `Album` and `AlbumRow`, and `album_of` went: the rows ask `album_art(album, size)` for the visible window only.
+- N4: "Set cover" checks that the folder is writable before the picker opens, so a read-only folder fails before the user picks a file.
+
+**Exceptions**
+
+- E1: P10-AC5 manual: the GTK file picker under Xvfb shows no files, and the container runs as root, which can write a read-only folder. The conversion, refusal and confirmation paths are unit tested; the read-only test runs in CI.
+- E2: P10-AC6 on Windows: no Windows desktop (P18).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 2, F3 1, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F1: a PNG saved as `cover.jpg` did not decode, because the format came from the extension (now by content).
+- F2: `album_of` and the `thumb` field had no caller after the change (removed). The art test helper asserted a tag on a song with no picture.
+- F3: F-16 (the scan's cover state decodes by extension).
+- F4:
+  - A paths leak in `set_cover` errors: the messages are fixed texts (D13).
+  - Blocking dialogs in `set_cover`: it is an async command, off the main thread.
+  - Many art requests while scrolling: the queue keeps the newest 512 and drops the rest.
+
+**Follow-ups:** F-13, F-14, F-15 and F-16 (open).
 
 ---
 
@@ -2022,6 +2066,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-16 | The scan's cover state (D44) decodes by file extension; the art source decodes by content. A PNG named `cover.jpg` is "broken" for online lookups but shows as art. Decode by content in `scan::update_covers` too. | Two decode rules for one file. | P10 review |
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |

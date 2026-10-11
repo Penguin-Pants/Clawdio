@@ -27,7 +27,10 @@ export const commands = {
   librarySongIds: (scope: SongScope, query: string) => invoke<number[]>("library_song_ids", { scope, query }),
   libraryRows: (ids: number[]) => invoke<SongRow[]>("library_rows", { ids }),
   libraryTree: (query: string) => invoke<TreeArtist[]>("library_tree", { query }),
-  albumArt: (track: number) => invoke<string | null>("album_art", { track }),
+  /** The art file name of an album at 96 or 512 px, or null while it is made (P10.2). */
+  albumArt: (album: number, size: 96 | 512) => invoke<string | null>("album_art", { album, size }),
+  /** "Set cover" (P10.4): false when the user cancels. */
+  setCover: (album: number) => invoke<boolean>("set_cover", { album }),
   queueGet: () => invoke<QueueSnapshot>("queue_get"),
   /** The saved `layout.json` text, or null (P9.2). */
   layoutLoad: () => invoke<string | null>("layout_load"),

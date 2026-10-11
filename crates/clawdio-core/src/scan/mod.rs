@@ -64,7 +64,7 @@ fn stamp_of(metadata: &std::fs::Metadata) -> FileStamp {
 }
 
 /// The rank of a cover file name (lower is preferred), or None for other files.
-fn cover_rank(file_name: &str) -> Option<usize> {
+pub(crate) fn cover_rank(file_name: &str) -> Option<usize> {
     let (stem, ext) = file_name.rsplit_once('.')?;
     let name = COVER_NAMES
         .iter()

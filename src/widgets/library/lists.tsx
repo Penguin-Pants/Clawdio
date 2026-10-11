@@ -52,6 +52,23 @@ function rowItems(play: (() => void) | null, add: () => void): RowMenuItem[] | n
   return [{ label: "Play", run: play }, { label: "Add to queue", run: add }, { label: "Add to playlist" }];
 }
 
+/**
+ * "Set cover" (P10.4): Rust opens the picker and asks before it replaces `cover.jpg`. An
+ * error (a read-only folder) shows in the status line; the new art arrives by `art-ready`.
+ */
+function setCover(album: number) {
+  void commands.setCover(album).catch((error: unknown) => {
+    const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+    useUiStore.getState().showMessage(message || "Cannot set the cover");
+  });
+}
+
+/** The album row menu: the Library items and "Set cover". */
+function albumItems(album: number, play: (() => void) | null, add: () => void): RowMenuItem[] | null {
+  const items = rowItems(play, add);
+  return items && [...items, { label: "Set cover", run: () => setCover(album) }];
+}
+
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
 export function ArtistList() {
   const search = useLibraryStore((state) => state.search);
@@ -127,7 +144,8 @@ export function AlbumList() {
   const select = (id: number | null) => setSelection({ album: id, song: null });
   // An album row plays the album from its first song (P6.5).
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
-  const items = (id: number | null) => rowItems(play(id), () => addScope({ artist: null, album: id }));
+  const items = (id: number | null) =>
+    id === null ? null : albumItems(id, play(id), () => addScope({ artist: null, album: id }));
   // A search or an artist change that hides the selected album selects "All".
   useEffect(() => {
     if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
@@ -318,11 +336,14 @@ export function TreeList() {
     if (line?.kind === "album") return () => playScope({ artist: null, album: line.id });
     return null;
   };
-  const items = (line: TreeLine | undefined) =>
-    rowItems(play(line), () => {
+  const items = (line: TreeLine | undefined) => {
+    if (line?.kind === "album") {
+      return albumItems(line.id, play(line), () => addScope({ artist: null, album: line.id }));
+    }
+    return rowItems(play(line), () => {
       if (line?.kind === "song") addToQueue([line.id]);
-      else if (line?.kind === "album") addScope({ artist: null, album: line.id });
     });
+  };
   const active = lines.findIndex((line) =>
     selection.song !== null
       ? line.kind === "song" &&

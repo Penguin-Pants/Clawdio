@@ -23,7 +23,8 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use events::AppEvents;
 use player::output::RodioOutput;
 use player::{PlayerHandle, Resolve};
-use state::{AppState, Library, MusicRoot, Thumbs};
+use state::{AppState, Library, MusicRoot};
+use thumbs::ArtService;
 
 /// Log file size before rotation, and rotated files kept (D40).
 const LOG_FILE_BYTES: u128 = 1_000_000;
@@ -80,8 +81,8 @@ pub fn run() -> tauri::Result<()> {
         .plugin(tauri_plugin_opener::init())
         // Thumbnails load by name from the thumbnail folder only (D41, D13).
         .register_uri_scheme_protocol(thumbs::SCHEME, |ctx, request| {
-            let folder = ctx.app_handle().state::<Thumbs>();
-            thumbs::respond(&folder.0, request.uri().path())
+            let service = ctx.app_handle().state::<ArtService>();
+            thumbs::respond(service.folder(), request.uri().path())
         })
         .setup(|app| {
             let (dirs, base) = data_dirs(app.handle())?;
@@ -124,7 +125,9 @@ pub fn run() -> tauri::Result<()> {
             });
             app.manage(library);
             app.manage(music_root);
-            app.manage(Thumbs(thumbs));
+            app.manage(ArtService::new(thumbs));
+            app.manage(media_controls::Publisher::default());
+            ArtService::spawn_workers(app.handle());
             app.manage(widgets);
             app.manage(player);
             let window = window::create_main(app.handle())?;
@@ -148,7 +151,8 @@ pub fn run() -> tauri::Result<()> {
             commands::library::library_song_ids,
             commands::library::library_rows,
             commands::library::library_tree,
-            commands::library::album_art,
+            commands::art::album_art,
+            commands::art::set_cover,
             commands::player::player_play_list,
             commands::player::player_play,
             commands::player::player_pause,
@@ -187,6 +191,7 @@ pub fn run() -> tauri::Result<()> {
             if let tauri::RunEvent::Exit = event {
                 app.state::<persist::StateStore>().flush(app);
                 media_controls::detach();
+                app.state::<ArtService>().stop();
                 app.state::<PlayerHandle>().send(player::Command::Shutdown);
             }
         });

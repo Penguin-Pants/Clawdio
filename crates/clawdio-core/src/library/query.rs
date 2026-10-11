@@ -185,7 +185,6 @@ impl LibraryIndex {
                     artist_id: artist.id,
                     name: album.name.clone(),
                     artist_name: artist.name.clone(),
-                    thumb: album.thumb.clone(),
                 })
             })
             .collect()
@@ -285,17 +284,6 @@ impl LibraryIndex {
                 })
             })
             .collect()
-    }
-
-    /// The album of a track, for the Now playing art. An unknown or removed id is an error (D46).
-    pub fn album_of(&self, id: TrackId) -> Result<&Album, CoreError> {
-        let track = self
-            .track(id)
-            .ok_or(CoreError::UnknownId { kind: "track", id })?;
-        self.album(track.album).ok_or(CoreError::UnknownId {
-            kind: "album",
-            id: track.album,
-        })
     }
 }
 
@@ -433,17 +421,6 @@ mod tests {
                 kind: "track",
                 id: 0
             })
-        );
-        assert_eq!(
-            index.album_of(0).err(),
-            Some(CoreError::UnknownId {
-                kind: "track",
-                id: 0
-            })
-        );
-        assert_eq!(
-            index.album_of(1).map(|album| album.name.as_str()),
-            Ok("Lemonade")
         );
         let id = index.insert(track("New", "Album", "Song", 1));
         assert_eq!(id, 5);

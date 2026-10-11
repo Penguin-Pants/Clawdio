@@ -1,4 +1,5 @@
 import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
+import { useAlbumArt } from "@/lib/art";
 import { thumbUrl } from "@/lib/thumbs";
 import { IconButton } from "@/components/icon-button";
 import { commands, type SongRow } from "@/lib/ipc/commands";
@@ -13,11 +14,8 @@ export function NowPlayingWidget() {
     null,
     [track],
   );
-  const art = useCommand<string | null>(
-    () => (track === null ? Promise.resolve(null) : commands.albumArt(track)),
-    null,
-    [track],
-  );
+  // The 512 px display art (P10.3); the placeholder while it is made or when there is none.
+  const art = useAlbumArt(song?.albumId ?? null, 512);
   return (
     <div className="flex h-full items-center gap-3 p-2">
       {art ? (

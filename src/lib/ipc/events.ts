@@ -4,6 +4,8 @@ import type { JobProgress, PlayerSnapshot, QueueSnapshot, SettingsView } from ".
 
 interface EventPayloads {
   "library-changed": null;
+  /** An album's art file exists now: the album id (P10.2). */
+  "art-ready": number;
   "job-progress": JobProgress;
   "status-message": string;
   "player-state": PlayerSnapshot;

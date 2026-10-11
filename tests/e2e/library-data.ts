@@ -21,7 +21,6 @@ for (let a = 0; a < 20; a += 1) {
       artistId: a,
       name: `Album ${String.fromCharCode(65 + b)}${a}`,
       artistName: artist.name,
-      thumb: "album.jpg",
     };
     albums.push(album);
     for (let s = 1; s <= 10; s += 1) {
@@ -47,7 +46,6 @@ for (let a = 0; a < 20; a += 1) {
     artistId: artist.id,
     name: "Lemonade",
     artistName: artist.name,
-    thumb: null,
   };
   albums.push(album);
   for (const title of ["Pray You Catch Me", "Hold Up", "Sorry"]) {
@@ -106,6 +104,8 @@ export const library = {
           .filter((album) => album.songs.length > 0),
       }))
       .filter((artist) => artist.albums.length > 0),
+  /** The art file of an album: "Lemonade" has none (P10-AC4). */
+  art: (id: number): string | null => (albums[id]?.name === "Lemonade" ? null : "album.jpg"),
   queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
   player: { status: "paused" as const, positionMs: 83_000, volume: 80, shuffle: false, repeat: "off" as const },
   playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [

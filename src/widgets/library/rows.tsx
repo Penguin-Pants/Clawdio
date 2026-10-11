@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
 import { Icon } from "@/components/icons";
 import type { RowFrame } from "@/components/virtual-list";
+import { useAlbumArt } from "@/lib/art";
 import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
@@ -110,8 +111,12 @@ export function SongCells({
   );
 }
 
-/** A 40 px album thumbnail through the `thumb://` scheme (D27, D41), or the placeholder. */
-export function AlbumThumb({ src }: { src: string | null }) {
+/**
+ * A 40 px album thumbnail (the 96 px file) through the `thumb://` scheme (D27, D41), or the
+ * placeholder while it is made or when the album has no art (P10.3).
+ */
+export function AlbumThumb({ album }: { album: number }) {
+  const src = useAlbumArt(album, 96);
   if (!src) return <ArtPlaceholder className="size-10 shrink-0" />;
   return <img src={thumbUrl(src)} alt="" className="size-10 shrink-0 rounded-card object-cover" draggable={false} />;
 }
@@ -119,7 +124,7 @@ export function AlbumThumb({ src }: { src: string | null }) {
 export function AlbumCells({ album }: { album: AlbumRow }) {
   return (
     <>
-      <AlbumThumb src={album.thumb} />
+      <AlbumThumb album={album.id} />
       <span className="flex min-w-0 flex-col">
         <span className="truncate">{album.name}</span>
         <span className="truncate text-[13px] text-text-secondary">{album.artistName}</span>

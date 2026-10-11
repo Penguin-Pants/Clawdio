@@ -17,9 +17,6 @@ pub struct Library(pub Arc<RwLock<LibraryIndex>>);
 #[derive(Default, Clone)]
 pub struct MusicRoot(pub Arc<RwLock<Option<PathBuf>>>);
 
-/// The thumbnail folder in the cache folder (D27, D41).
-pub struct Thumbs(pub PathBuf);
-
 /// Data folders, the base folder for the R18.1 path rule, and the settings.
 pub struct AppState {
     pub dirs: DataDirs,

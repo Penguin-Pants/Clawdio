@@ -118,8 +118,18 @@ function libraryCommand(command: string, args: Args): unknown {
       return library.rows(args.ids as number[]);
     case "library_tree":
       return library.tree(args.query as string);
-    case "album_art":
-      return "album.jpg";
+    case "album_art": {
+      // Tests count the art requests (P10-AC7).
+      const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];
+      calls.push(args.album as number);
+      document.body.dataset.artRequests = JSON.stringify(calls);
+      return library.art(args.album as number);
+    }
+    case "set_cover":
+      document.body.dataset.setCover = String(args.album);
+      // Album C0 stands for a read-only album folder (P10-AC5).
+      if (args.album === 2) throw { code: "set_cover", message: "The album folder is read-only" };
+      return true;
     case "playlists_list":
       return library.playlists.map(([row]) => row);
     case "playlist_entries":

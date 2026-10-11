@@ -66,8 +66,6 @@ pub struct AlbumRow {
     pub artist_id: u32,
     pub name: String,
     pub artist_name: String,
-    /// Thumbnail file name, loaded through the `thumb://` scheme (D41). Null when none exists.
-    pub thumb: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]

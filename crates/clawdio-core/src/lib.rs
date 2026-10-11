@@ -2,6 +2,7 @@
 //! No Tauri and no audio device (D1).
 
 pub mod api;
+pub mod artwork;
 pub mod atomic;
 pub mod cache;
 pub mod config;

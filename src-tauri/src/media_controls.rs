@@ -16,6 +16,7 @@ use tauri::{AppHandle, Manager, WebviewWindow};
 
 use crate::player::{Command, PlayerHandle};
 use crate::state::Library;
+use crate::thumbs::ArtService;
 
 /// The playing position goes to the OS this often. MPRIS reads the last value, so the OS
 /// position stays within this of the app (P8-AC1, P8-AC2: 2 s).
@@ -161,14 +162,24 @@ pub fn detach() {
 #[derive(Default)]
 struct Sent {
     track: Option<u32>,
+    /// The current song, and whether its cover went out.
+    song: Option<SongRow>,
+    cover_sent: bool,
     status: Option<PlayerStatus>,
     position_at: Option<Instant>,
+}
+
+/// The current song for the OS panel, with the `file://` URL of its 512 px art (P10.5).
+#[derive(Debug, Clone, PartialEq)]
+pub struct NowPlaying {
+    pub song: SongRow,
+    pub cover_url: Option<String>,
 }
 
 /// One update for the OS controls.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Update {
-    Metadata(Option<SongRow>),
+    Metadata(Option<NowPlaying>),
     Playback(MediaPlayback),
 }
 
@@ -180,11 +191,13 @@ pub struct Publisher {
 }
 
 impl Publisher {
-    /// The current track changed or not. `row` looks up the song of an id.
+    /// The current track changed or not. `row` looks up the song of an id, `cover` the art
+    /// URL of an album (none while the file is made).
     pub fn queue(
         &self,
         queue: &QueueSnapshot,
         row: impl Fn(u32) -> Option<SongRow>,
+        cover: impl Fn(u32) -> Option<String>,
     ) -> Option<Update> {
         let track = queue
             .current
@@ -194,7 +207,29 @@ impl Publisher {
             return None;
         }
         sent.track = track;
-        Some(Update::Metadata(track.and_then(row)))
+        let now = track.and_then(row).map(|song| NowPlaying {
+            cover_url: cover(song.album_id),
+            song,
+        });
+        sent.song = now.as_ref().map(|now| now.song.clone());
+        sent.cover_sent = now.as_ref().is_some_and(|now| now.cover_url.is_some());
+        Some(Update::Metadata(now))
+    }
+
+    /// An album's art file appeared (`art-ready`): the current song's metadata goes out again
+    /// with the cover when it is that album and had none (P10.5).
+    pub fn art_ready(&self, album: u32, cover: impl Fn(u32) -> Option<String>) -> Option<Update> {
+        let mut sent = self.sent.lock().ok()?;
+        let song = sent.song.clone().filter(|song| song.album_id == album)?;
+        if sent.cover_sent {
+            return None;
+        }
+        let cover_url = cover(album)?;
+        sent.cover_sent = true;
+        Some(Update::Metadata(Some(NowPlaying {
+            song,
+            cover_url: Some(cover_url),
+        })))
     }
 
     pub fn state(&self, player: &PlayerSnapshot) -> Option<Update> {
@@ -228,7 +263,7 @@ impl Publisher {
 }
 
 /// Sends an update to the controls on the main thread.
-pub fn apply(app: &AppHandle, update: Update) {
+pub fn apply<R: tauri::Runtime>(app: &AppHandle<R>, update: Update) {
     let result = app.run_on_main_thread(move || {
         CONTROLS.with(|slot| {
             let mut slot = slot.borrow_mut();
@@ -236,13 +271,12 @@ pub fn apply(app: &AppHandle, update: Update) {
                 return;
             };
             let result = match &update {
-                Update::Metadata(Some(song)) => controls.set_metadata(MediaMetadata {
-                    title: Some(&song.title),
-                    artist: Some(&song.artist_name),
-                    album: Some(&song.album_name),
-                    // The cover comes with the 512 px cache image in P10.
-                    cover_url: None,
-                    duration: Some(Duration::from_millis(u64::from(song.duration_ms))),
+                Update::Metadata(Some(now)) => controls.set_metadata(MediaMetadata {
+                    title: Some(&now.song.title),
+                    artist: Some(&now.song.artist_name),
+                    album: Some(&now.song.album_name),
+                    cover_url: now.cover_url.as_deref(),
+                    duration: Some(Duration::from_millis(u64::from(now.song.duration_ms))),
                 }),
                 Update::Metadata(None) => controls.set_metadata(MediaMetadata::default()),
                 Update::Playback(playback) => controls.set_playback(playback.clone()),
@@ -266,8 +300,24 @@ pub fn apply(app: &AppHandle, update: Update) {
     }
 }
 
+/// The `file://` URL of an album's 512 px art (P10.5), or None while it is made.
+pub fn cover_url<R: tauri::Runtime>(app: &AppHandle<R>, album: u32) -> Option<String> {
+    let path = app.try_state::<ArtService>()?.display_path(app, album)?;
+    tauri::Url::from_file_path(path).ok().map(String::from)
+}
+
+/// An album's art is ready: republish the current song when it needs the cover.
+pub fn art_ready<R: tauri::Runtime>(app: &AppHandle<R>, album: u32) {
+    let Some(publisher) = app.try_state::<Publisher>() else {
+        return;
+    };
+    if let Some(update) = publisher.art_ready(album, |album| cover_url(app, album)) {
+        apply(app, update);
+    }
+}
+
 /// The song row of a track id from the library, for metadata.
-pub fn song(app: &AppHandle, id: u32) -> Option<SongRow> {
+pub fn song<R: tauri::Runtime>(app: &AppHandle<R>, id: u32) -> Option<SongRow> {
     let library = app.state::<Library>();
     let index = library.0.read().ok()?;
     index.rows(&[id]).ok()?.into_iter().next()
@@ -330,18 +380,50 @@ mod tests {
             entries: vec![4, 5],
             current: Some(0),
         };
-        assert_eq!(publisher.queue(&queue, row), Some(Update::Metadata(row(4))));
-        assert_eq!(publisher.queue(&queue, row), None, "same track");
+        let now = |id| {
+            row(id).map(|song| NowPlaying {
+                song,
+                cover_url: None,
+            })
+        };
+        let no_cover = |_| None;
+        assert_eq!(
+            publisher.queue(&queue, row, no_cover),
+            Some(Update::Metadata(now(4)))
+        );
+        assert_eq!(publisher.queue(&queue, row, no_cover), None, "same track");
         let next = QueueSnapshot {
             current: Some(1),
             ..queue
         };
-        assert_eq!(publisher.queue(&next, row), Some(Update::Metadata(row(5))));
         assert_eq!(
-            publisher.queue(&QueueSnapshot::default(), row),
+            publisher.queue(&next, row, no_cover),
+            Some(Update::Metadata(now(5)))
+        );
+        assert_eq!(
+            publisher.queue(&QueueSnapshot::default(), row, no_cover),
             Some(Update::Metadata(None)),
             "an empty queue clears the OS entry"
         );
+    }
+
+    /// P10.5: art made after the track started goes out without a track change.
+    #[test]
+    fn the_cover_goes_out_when_the_current_album_art_is_ready() {
+        let publisher = Publisher::default();
+        let queue = QueueSnapshot {
+            entries: vec![4],
+            current: Some(0),
+        };
+        publisher.queue(&queue, row, |_| None);
+        let url = |_| Some("file:///art.jpg".to_owned());
+        assert_eq!(publisher.art_ready(7, url), None, "another album");
+        let Some(Update::Metadata(Some(now))) = publisher.art_ready(0, url) else {
+            panic!("no republish");
+        };
+        assert_eq!(now.cover_url.as_deref(), Some("file:///art.jpg"));
+        assert_eq!(now.song.id, 4);
+        assert_eq!(publisher.art_ready(0, url), None, "sent once");
     }
 
     #[test]

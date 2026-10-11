@@ -1,3 +1,4 @@
+import { artReady, forgetArt } from "@/lib/art";
 import { commands } from "@/lib/ipc/commands";
 import { on } from "@/lib/ipc/events";
 import { useLibraryStore } from "@/store/library";
@@ -10,7 +11,11 @@ import { useUiStore } from "@/store/ui";
  */
 export function connectAppEvents(): () => void {
   const subscriptions = [
-    on("library-changed", () => useLibraryStore.getState().bumpVersion()),
+    on("library-changed", () => {
+      forgetArt();
+      useLibraryStore.getState().bumpVersion();
+    }),
+    on("art-ready", (album) => artReady(album)),
     on("settings-changed", (view) => useSettingsStore.getState().set(view)),
     on("player-state", (player) => usePlayerStore.getState().applyState(player)),
     on("queue-changed", (queue) => usePlayerStore.getState().applyQueue(queue)),

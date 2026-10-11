@@ -14,9 +14,15 @@ pub const PLAYER_STATE: &str = "player-state";
 pub const PLAYER_POSITION: &str = "player-position";
 pub const QUEUE_CHANGED: &str = "queue-changed";
 pub const SETTINGS_CHANGED: &str = "settings-changed";
+/// An album's art files exist now; the payload is the album id (P10.2).
+pub const ART_READY: &str = "art-ready";
 
 /// Emits an event and logs a failure instead of failing the caller.
-pub fn emit<S: serde::Serialize + Clone>(app: &AppHandle, event: &str, payload: S) {
+pub fn emit<R: tauri::Runtime, S: serde::Serialize + Clone>(
+    app: &AppHandle<R>,
+    event: &str,
+    payload: S,
+) {
     if let Err(error) = app.emit(event, payload) {
         log::warn!("events: cannot emit {event}: {error}");
     }
@@ -25,15 +31,16 @@ pub fn emit<S: serde::Serialize + Clone>(app: &AppHandle, event: &str, payload: 
 /// The player's events go to the webview and to the OS media controls (P8.3).
 pub struct AppEvents {
     app: AppHandle,
-    media: Publisher,
 }
 
 impl AppEvents {
+    /// The app also manages a [`Publisher`] for the OS media controls.
     pub fn new(app: AppHandle) -> Self {
-        AppEvents {
-            app,
-            media: Publisher::default(),
-        }
+        AppEvents { app }
+    }
+
+    fn media(&self) -> Option<tauri::State<'_, Publisher>> {
+        self.app.try_state::<Publisher>()
     }
 }
 
@@ -42,7 +49,7 @@ impl PlayerEvents for AppEvents {
         if let Some(store) = self.app.try_state::<StateStore>() {
             store.player(&player);
         }
-        if let Some(update) = self.media.state(&player) {
+        if let Some(update) = self.media().and_then(|media| media.state(&player)) {
             media_controls::apply(&self.app, update);
         }
         emit(&self.app, PLAYER_STATE, player);
@@ -52,10 +59,13 @@ impl PlayerEvents for AppEvents {
         if let Some(store) = self.app.try_state::<StateStore>() {
             store.queue(queue);
         }
-        if let Some(update) = self
-            .media
-            .queue(queue, |id| media_controls::song(&self.app, id))
-        {
+        if let Some(update) = self.media().and_then(|media| {
+            media.queue(
+                queue,
+                |id| media_controls::song(&self.app, id),
+                |album| media_controls::cover_url(&self.app, album),
+            )
+        }) {
             media_controls::apply(&self.app, update);
         }
         emit(&self.app, QUEUE_CHANGED, queue.clone());
@@ -65,7 +75,7 @@ impl PlayerEvents for AppEvents {
         if let Some(store) = self.app.try_state::<StateStore>() {
             store.position(position_ms);
         }
-        if let Some(update) = self.media.position(position_ms) {
+        if let Some(update) = self.media().and_then(|media| media.position(position_ms)) {
             media_controls::apply(&self.app, update);
         }
         emit(&self.app, PLAYER_POSITION, position_ms);
