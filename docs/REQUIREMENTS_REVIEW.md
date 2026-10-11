@@ -97,6 +97,12 @@
 | Low | R12, R13 | The playlist name is the file name with no validation. Path separators, '..', Windows-invalid characters and reserved names break or escape `Playlists/`. 'Favorites' collides with R26. | R13: "The file name is the playlist name." | **Add** a name rule (section G). | S |
 | Low | R14 | The matching order has no tie rule. Two library tracks named `01 - Intro.mp3` match the same entry at the file-name stage. | R14 matching order bullet. | **Add:** require a unique match per stage; report ambiguous entries. | S |
 | Low | R21, R22 | "Any distro that ships WebKitGTK 4.1" is not testable for the AppImage, which inherits the glibc floor of its build system. | Tauri AppImage docs (verified): "Building on a newer base system can raise the minimum glibc version required by your app." | **Clarify:** name a glibc and distribution baseline (section G, R22). | S |
+| Low | R1 | "wav" is unqualified. The container carries PCM, ADPCM, A-law, mu-law and MPEG encodings. | Symphonia README (verified): PCM and ADPCM supported. | **Clarify:** list the supported WAV encodings; report the rest as unsupported codec. | S |
+| Low | R3 | A root-level file gets an artist but no album. Every view and the queue rule assume an album. | R3: "A file at the root goes to 'Unknown Artist'." | **Clarify:** 'Unknown Album' under 'Unknown Artist'. | S |
+| Low | R6 | Removing the playing entry or clearing the queue during playback is undefined. | R6: "play queue (add, remove, clear)". | **Add** the queue-edit rule (section G). | S |
+| Low | R7 | Turning the switch off during an artwork batch has no cancellation rule. | R7: "Off means zero network calls." | **Add:** cancel queued and in-flight work. | S |
+| Low | R8, section 5 | No uniqueness rule for artwork matches. No writability check for a read-only album folder inside a writable library. A corrupt cover file blocks all other art. | R8 matching bullet. Section 5 "Existing art". | **Add:** exactly one match or no match; check writability first; a cover file that fails to decode does not count. | S |
+| Low | R14 | Imported paths from another OS (drive letters, backslashes) do not match without normalization. | R14 matching order bullet. | **Add** the normalization rule (section G). | S |
 | Low | R24 | No fail-soft rule when OS media controls cannot register (no D-Bus session on Linux). | souvlaki (verified) needs `dbus_name` on Linux and an HWND on Windows. | **Add:** log and continue. | S |
 | Low | R12 | Duplicate entries in playlists are undefined. | R12. | **Clarify:** duplicates allowed; Favorites toggles. | S |
 
@@ -212,12 +218,13 @@ Wording is ready to insert. "Must" marks a requirement.
 
 ### Section 2. Library
 
+- **Add to R1.** "WAV: PCM integer and float, and ADPCM, as the pinned decoder supports. A WAV file with another encoding is skipped and reported as unsupported codec, like an Ogg file with a non-Vorbis codec."
 - **Add R1.1.** "First run: if no music folder is set, the main area shows a 'Choose music folder' button. Other widgets show their empty hints. Transport controls are disabled until a folder is set."
 - **Add to R2.** "The scan skips files and folders whose names start with '.'. The scan does not follow symbolic links or junctions to folders. If a scan is running, Rescan does nothing."
 - **Add to R2.** "The scan removes missing files only after a complete traversal of the folder. A canceled or failed scan keeps what it added and removes nothing."
 - **Add to R2.** "If the root folder is readable and empty, the scan removes all tracks. This is accepted. Playlists and Favorites are files and are not affected."
 - **Rewrite R2 report.** "The status line shows counts (added, removed, skipped) when a scan ends. Settings shows the last counts and an 'Open log folder' button. The log holds the per-file reasons."
-- **Add to R3.** "Display names are folder names, unchanged. Artist and album lists sort by folder name. The sort ignores case and accents and uses natural numeric order (2 before 10). Names that compare equal after this normalization sort by their exact name in byte order. 'Unknown Artist' and 'Unknown Album' sort last."
+- **Add to R3.** "Display names are folder names, unchanged. Artist and album lists sort by folder name. The sort ignores case and accents and uses natural numeric order (2 before 10). Names that compare equal after this normalization sort by their exact name in byte order. 'Unknown Artist' and 'Unknown Album' sort last. A file at the root of the music folder goes to 'Unknown Album' under 'Unknown Artist'."
 - **Rewrite R4 prefix rule.** "A track-number prefix is: one to three digits, then an optional group of a separator ('-' or '.') and one to three more digits, then one or more of space, '.', '-' or '_'. Examples: '01 - ', '01. ', '1-01 ', '001_'."
 - **Rewrite R4 order.** "Songs in an album sort by: (1) disc order, (2) the track number, (3) the file name. Disc order is the disc number tag when present. Otherwise it is the position of the song's sub-folder in a natural-order sort of the album's sub-folders. Files directly in the album folder sort as disc 0. Comparison ignores case."
 
@@ -235,6 +242,7 @@ Wording is ready to insert. "Must" marks a requirement.
 ### Section 2. Playback
 
 - **Add to R6.** "Play (context menu) and double-click replace the queue with the list the song appears in and start at that song. Add to queue appends to the end and does not change the playing song."
+- **Add to R6.** "Queue edits: removing the playing entry stops it and starts the next entry, or stops playback at the end of the queue. Removing an entry before the playing one keeps the playing song and its position. Clear stops playback and empties the queue."
 - **Add to R6.** "Repeat off: playback stops after the last queue entry; the position shows the start of the last song. Repeat all: after the last entry, playback continues from the first. Repeat one: the current song restarts when it ends. Next and Previous still move through the queue."
 - **Add to R6.** "Shuffle on: the app plays the remaining entries in random order. Each entry plays once before any entry repeats. The queue display keeps its order. Shuffle off: playback continues in queue order from the current song."
 - **Add to R6.** "Previous: if the position is more than 3 seconds, Previous restarts the current song. Otherwise it goes to the previous entry in play order. With shuffle on, the previous entry is the last song played in this shuffle run. With no previous entry, Previous restarts the current song."
@@ -247,8 +255,8 @@ Wording is ready to insert. "Must" marks a requirement.
 
 ### Section 2. Online and sidecars
 
-- **Rewrite R7.** "One 'Online lookups' switch in Settings. Off by default. Off means the app's own code makes zero network calls. The first run shows a notice that explains sidecar files and names the services. It offers 'Turn on' and 'Keep off'."
-- **Add to R8.** "The app never looks up 'Unknown Artist' or 'Unknown Album' groups, or an album whose songs are directly in the artist folder. It queries a MusicBrainz release group by artist and album and requests the Cover Art Archive front image at 500 px."
+- **Rewrite R7.** "One 'Online lookups' switch in Settings. Off by default. Off means the app's own code makes zero network calls. The first run shows a notice that explains sidecar files and names the services. It offers 'Turn on' and 'Keep off'. Turning the switch off cancels queued lookups and aborts in-flight requests before any further request or redirect."
+- **Add to R8.** "The app never looks up 'Unknown Artist' or 'Unknown Album' groups, or an album whose songs are directly in the artist folder. It queries a MusicBrainz release group by artist and album and requests the Cover Art Archive front image at 500 px. A lookup counts as a match only when exactly one release group matches after normalization. Two or more matches count as no match. Before a lookup, the app checks that the album folder is writable. If it is not, the app skips the album and logs it."
 - **Add to R9.** "Lyrics sources in order: a `.lrc` file with the song's base name next to the song, then a `.txt` file with the same base name, then embedded lyrics (ID3v2 USLT, Vorbis comment LYRICS or UNSYNCEDLYRICS). The Fetch lyrics button shows only when none exists."
 - **Rewrite R10 (recommended).** "R10 (deferred). Metadata fill is deferred. The album sidecar `sidecar.json` holds only the artwork lookup marker (R8)." Update R11 and R17 to match.
 - **If R10 stays, add.** "The sidecar file name is `sidecar.json` in the album folder."
@@ -259,6 +267,7 @@ Wording is ready to insert. "Must" marks a requirement.
 - **Add to R12 and R13.** "A playlist name must not contain a path separator ('/' or '\\'), the sequence '..', or a character that Windows rejects (< > : \" | ? *). It must not start or end with a space or a dot. It must not be a Windows reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9). 'Favorites' is reserved (R26). The app rejects such a name with a message."
 - **Add to R13.** "The app lists `.m3u8` files it finds. Entries resolve relative to the playlist file. Other playlist files (`.m3u`, `.pls`) are not listed; use Import."
 - **Add to R14.** "Each matching stage must yield exactly one library track. If a stage yields more than one, the next stage runs on those candidates only. If the last stage still yields more than one, the entry is reported as ambiguous and stays in the file as missing."
+- **Add to R14.** "Before matching, the app normalizes each entry path: backslashes become slashes, a drive letter or UNC prefix is removed, the text is Unicode NFC normalized, and comparison ignores case."
 - **Rewrite R14 (recommended).** "Import M3U, M3U8 and Apple XML. PLS, XSPF and Apple text are deferred." Remove the Apple text encoding bullet. Update acceptance check 4 to "one Apple XML, one MusicBee M3U8 and one legacy `.m3u`".
 
 ### Section 2. Theme
@@ -278,10 +287,11 @@ Wording is ready to insert. "Must" marks a requirement.
 ### Section 5. Edge cases
 
 - **Add.** "No music folder set: R1.1 applies."
-- **Add.** "Music folder changed in Settings: the app stops playback, resets the position, clears the queue, rescans and reloads playlists from the new folder."
+- **Add.** "Music folder changed in Settings: the app stops playback, resets the position, clears the queue and the cache, then scans the new folder and reloads its playlists. Entries from the old folder never remain in the cache."
 - **Rewrite** "Audio device unplugged": "On an output stream error, the app stops playback and shows a message. The next Play opens the current default device."
 - **Rewrite** "Read-only music folder": "Fetch features, playlist edits and Favorites show an error. Playback and browsing work."
 - **Add.** "File name that is not valid UTF-8 (Linux): skip it and log it."
+- **Add.** "Cover image file that fails to decode: log it and ignore it. Embedded art and, when enabled, the online lookup still apply."
 - **Add.** "Decode error during playback: R6 applies."
 - **Remove** "Controls or Search hidden" and the three theme cases if the related changes above are accepted.
 
