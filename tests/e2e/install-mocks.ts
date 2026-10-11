@@ -1,5 +1,6 @@
 // Mocked IPC for the e2e build (P2.15). All mock code and data stay in tests/e2e/ (AGENTS.md Edits rule 9).
 // The page URL picks the data: "?data=library" serves a small library, else the app starts empty.
+import { emit } from "@tauri-apps/api/event";
 import { mockConvertFileSrc, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import app from "./data/app.json";
 import { library } from "./library-data";
@@ -36,6 +37,10 @@ const settings = JSON.parse(
           },
     ),
 );
+
+/** The album whose art is made after the first request (Album B5). */
+const PENDING_ART = 16;
+let pendingArtMade = false;
 
 /** The saved layout persists over reloads like `layout.json` (P9). */
 const LAYOUT_KEY = "e2e-layout";
@@ -123,6 +128,14 @@ function libraryCommand(command: string, args: Args): unknown {
       const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];
       calls.push(args.album as number);
       document.body.dataset.artRequests = JSON.stringify(calls);
+      // Album B5 is not made yet on the first request: art-ready follows (P10.2).
+      if (args.album === PENDING_ART && !pendingArtMade) {
+        setTimeout(() => {
+          pendingArtMade = true;
+          void emit("art-ready", PENDING_ART);
+        }, 300);
+        return null;
+      }
       return library.art(args.album as number);
     }
     case "set_cover":

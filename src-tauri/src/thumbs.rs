@@ -49,13 +49,17 @@ impl ArtService {
         &self.folder
     }
 
-    /// The album's art input and key, or None for an unknown album or no music folder.
-    fn input<R: Runtime>(app: &AppHandle<R>, album: AlbumId) -> Option<(ArtInput, String)> {
+    /// The album's art input and key, or None for an unknown album or no music folder. The
+    /// library lock covers the index read only; the folder listing runs after it.
+    pub fn input<R: Runtime>(app: &AppHandle<R>, album: AlbumId) -> Option<(ArtInput, String)> {
         let root = app.state::<MusicRoot>().0.read().ok()?.clone()?;
-        let library = app.state::<Library>();
-        let index = library.0.read().ok()?;
-        let input = artwork::album_input(&index, &root, album)?;
-        let key = artwork::cache_key(&input);
+        let sources = {
+            let library = app.state::<Library>();
+            let index = library.0.read().ok()?;
+            artwork::album_sources(&index, album)?
+        };
+        let input = artwork::album_input(&root, sources);
+        let key = artwork::cache_key(&input, &root);
         Some((input, key))
     }
 
@@ -101,7 +105,10 @@ impl ArtService {
         let Some((input, key)) = Self::input(app, album) else {
             return;
         };
-        if self.folder.join(artwork::thumb_name(&key, 512)).is_file() {
+        let all_made = artwork::SIZES
+            .iter()
+            .all(|size| self.folder.join(artwork::thumb_name(&key, *size)).is_file());
+        if all_made {
             emit(app, ART_READY, album);
             crate::media_controls::art_ready(app, album);
             return;

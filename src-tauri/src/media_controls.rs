@@ -162,9 +162,9 @@ pub fn detach() {
 #[derive(Default)]
 struct Sent {
     track: Option<u32>,
-    /// The current song, and whether its cover went out.
+    /// The current song, and the cover URL that went out with it.
     song: Option<SongRow>,
-    cover_sent: bool,
+    cover_url: Option<String>,
     status: Option<PlayerStatus>,
     position_at: Option<Instant>,
 }
@@ -212,20 +212,21 @@ impl Publisher {
             song,
         });
         sent.song = now.as_ref().map(|now| now.song.clone());
-        sent.cover_sent = now.as_ref().is_some_and(|now| now.cover_url.is_some());
+        sent.cover_url = now.as_ref().and_then(|now| now.cover_url.clone());
         Some(Update::Metadata(now))
     }
 
     /// An album's art file appeared (`art-ready`): the current song's metadata goes out again
-    /// with the cover when it is that album and had none (P10.5).
+    /// when it is that album and its cover URL changed: new art, or art after "Set cover",
+    /// whose old file is gone (P10.5).
     pub fn art_ready(&self, album: u32, cover: impl Fn(u32) -> Option<String>) -> Option<Update> {
         let mut sent = self.sent.lock().ok()?;
         let song = sent.song.clone().filter(|song| song.album_id == album)?;
-        if sent.cover_sent {
+        let cover_url = cover(album)?;
+        if sent.cover_url.as_deref() == Some(cover_url.as_str()) {
             return None;
         }
-        let cover_url = cover(album)?;
-        sent.cover_sent = true;
+        sent.cover_url = Some(cover_url.clone());
         Some(Update::Metadata(Some(NowPlaying {
             song,
             cover_url: Some(cover_url),
@@ -424,6 +425,12 @@ mod tests {
         assert_eq!(now.cover_url.as_deref(), Some("file:///art.jpg"));
         assert_eq!(now.song.id, 4);
         assert_eq!(publisher.art_ready(0, url), None, "sent once");
+        // "Set cover" makes a new file with a new name: it goes out again.
+        let new_url = |_| Some("file:///new.jpg".to_owned());
+        let Some(Update::Metadata(Some(now))) = publisher.art_ready(0, new_url) else {
+            panic!("no republish after a new cover");
+        };
+        assert_eq!(now.cover_url.as_deref(), Some("file:///new.jpg"));
     }
 
     #[test]

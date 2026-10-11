@@ -8,6 +8,8 @@ export type ArtSize = 96 | 512;
 const known = new Map<string, string>();
 /** Albums whose art file just appeared, for the rows that show them. */
 const listeners = new Set<(album: number) => void>();
+/** A listener value for every album. */
+const ALL = -1;
 
 const keyOf = (album: number, size: ArtSize) => `${album}-${size}`;
 
@@ -18,9 +20,10 @@ export function artReady(album: number): void {
   listeners.forEach((listener) => listener(album));
 }
 
-/** A library change can change art sources: names are asked again on the next mount. */
+/** A library change can change art sources: mounted rows ask again. */
 export function forgetArt(): void {
   known.clear();
+  listeners.forEach((listener) => listener(ALL));
 }
 
 /**
@@ -34,7 +37,7 @@ export function useAlbumArt(album: number | null, size: ArtSize): string | null 
   useEffect(() => {
     if (album === null) return;
     const listener = (changed: number) => {
-      if (changed === album) setReady((count) => count + 1);
+      if (changed === album || changed === ALL) setReady((count) => count + 1);
     };
     listeners.add(listener);
     return () => {

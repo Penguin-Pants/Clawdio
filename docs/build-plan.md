@@ -672,7 +672,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 1, F2 2, F3 1, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 2, F2 8, F3 2, F4 13. Sources: own audit (in `75cc228`) and a reviewer agent (fixed in the next commit).
 
 - F1: a PNG saved as `cover.jpg` did not decode, because the format came from the extension (now by content).
 - F2: `album_of` and the `thumb` field had no caller after the change (removed). The art test helper asserted a tag on a song with no picture.
@@ -681,8 +681,13 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - A paths leak in `set_cover` errors: the messages are fixed texts (D13).
   - Blocking dialogs in `set_cover`: it is an async command, off the main thread.
   - Many art requests while scrolling: the queue keeps the newest 512 and drops the rest.
+- Reviewer:
+  - F1: after "Set cover" the OS panel kept the URL of the deleted 512 px file (the publisher now republishes when the URL changes; tested).
+  - F2: `album_art` listed the album folder on the main thread and under the library lock (now async, and the folder listing runs after the lock). "Set cover" did not see `Cover.JPG` on a case-sensitive file system and wrote a second cover (any letter case now asks first, and the old name goes after the rename; tested). With only the 512 px file left, a row and a worker looped on `art-ready` (the worker now checks every size). Mounted rows kept old names after a rescan (a library change now refreshes them). The cache key hashed absolute paths, against D27 (now relative to the music folder; tested). The embedded-order test passed with "last picture wins" (now a later song has other art). The `art-ready` refresh had no e2e test (added with a pending album in the mock).
+  - F3: F-17 (old thumbnail files stay; two workers can make one album).
+  - F4: the source order, blocking dialogs, D19, the read-only path, D13, D41, media lock order, album ids after a rescan, frontend memory and the Set cover invalidation hold.
 
-**Follow-ups:** F-13, F-14, F-15 and F-16 (open).
+**Follow-ups:** F-13 to F-17 (open).
 
 ---
 
@@ -2066,6 +2071,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-17 | Remove thumbnail files whose key no longer matches an album (a changed cover or a rescan leaves old files), for example at the end of a complete scan. Mark an album "in progress" so two workers do not make it twice. | The thumbnail folder grows with each art change; duplicate work costs CPU only. | P10 review |
 | F-16 | The scan's cover state (D44) decodes by file extension; the art source decodes by content. A PNG named `cover.jpg` is "broken" for online lookups but shows as art. Decode by content in `scan::update_covers` too. | Two decode rules for one file. | P10 review |
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |

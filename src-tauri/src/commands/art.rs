@@ -6,13 +6,14 @@ use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use super::{lock_error, CommandResult};
-use crate::state::{Library, MusicRoot};
+use crate::state::MusicRoot;
 use crate::thumbs::ArtService;
 
 /// The art file name of an album at `size` (96 or 512), or null while it is made or when
 /// the album has no art. `art-ready` follows a made file (P10.2).
+/// Async, so the folder listing never runs on the main thread.
 #[tauri::command]
-pub fn album_art(
+pub async fn album_art(
     app: AppHandle,
     service: State<'_, ArtService>,
     album: u32,
@@ -40,30 +41,19 @@ fn cover_error(error: CoverError) -> IpcError {
 /// nothing is written.
 #[tauri::command]
 pub async fn set_cover(app: AppHandle, album: u32) -> CommandResult<bool> {
-    let (folder, old_key) = {
-        let root = app
-            .state::<MusicRoot>()
-            .0
-            .read()
-            .map_err(|_| lock_error())?
-            .clone();
-        let library = app.state::<Library>();
-        let index = library.0.read().map_err(|_| lock_error())?;
-        let input = root
-            .as_ref()
-            .and_then(|root| artwork::album_input(&index, root, album));
-        let folder = root.zip(input.as_ref().and_then(|input| input.folder.clone()));
-        let Some((root, folder)) = folder else {
-            return Err(IpcError {
-                code: "set_cover".into(),
-                message: "This album has no album folder".into(),
-            });
-        };
-        (
-            root.join(folder),
-            input.map(|input| artwork::cache_key(&input)),
-        )
+    let no_folder = || IpcError {
+        code: "set_cover".into(),
+        message: "This album has no album folder".into(),
     };
+    let root = app
+        .state::<MusicRoot>()
+        .0
+        .read()
+        .map_err(|_| lock_error())?
+        .clone()
+        .ok_or_else(no_folder)?;
+    let (input, old_key) = ArtService::input(&app, album).ok_or_else(no_folder)?;
+    let folder = root.join(input.folder.ok_or_else(no_folder)?);
     // A read-only folder fails before the picker opens, so the user picks nothing in vain.
     artwork::check_writable(&folder).map_err(cover_error)?;
     let picked = app
@@ -75,7 +65,8 @@ pub async fn set_cover(app: AppHandle, album: u32) -> CommandResult<bool> {
         return Ok(false);
     };
     let jpeg = artwork::cover_jpeg(&picked).map_err(cover_error)?;
-    if folder.join(COVER_FILE).exists() {
+    // Any letter case: `Cover.JPG` is the cover file too (D19).
+    if !artwork::existing_covers(&folder).is_empty() {
         let replace = app
             .dialog()
             .message(format!("Replace the {COVER_FILE} file of this album?"))
@@ -92,6 +83,6 @@ pub async fn set_cover(app: AppHandle, album: u32) -> CommandResult<bool> {
     }
     artwork::write_cover(&folder, &jpeg).map_err(cover_error)?;
     app.state::<ArtService>()
-        .refresh(&app, album, old_key.as_deref());
+        .refresh(&app, album, Some(&old_key));
     Ok(true)
 }

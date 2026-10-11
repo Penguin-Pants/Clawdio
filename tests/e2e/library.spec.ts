@@ -252,6 +252,8 @@ test("P6-AC4: in Tree a song plays its whole album, and Enter on an album row pl
   // A search narrows the Tree, not the queue: the album plays whole (R6).
   await mode(page, "Tree");
   await search(page, "Song 7 of Album A1");
+  // The search is debounced: wait for the filtered tree before a click opens a row.
+  await expect(tree(page).getByRole("treeitem", { name: "Artist 00", exact: true })).toHaveCount(0);
   await tree(page).getByRole("treeitem", { name: "Artist 01", exact: true }).click();
   await tree(page).getByRole("treeitem", { name: "Album A1", exact: true }).click();
   await expect(tree(page).getByRole("treeitem", { level: 3 })).toHaveCount(1);

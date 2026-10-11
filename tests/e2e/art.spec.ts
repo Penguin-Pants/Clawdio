@@ -29,6 +29,18 @@ test("P10-AC4: albums with art show it; an album with none shows the placeholder
   await expect(widget(page, "nowPlaying").locator("[data-slot='art-placeholder-mark']")).toBeVisible();
 });
 
+test("P10.2: art made after the first request shows on art-ready", async ({ page }) => {
+  await openLibrary(page);
+  await widget(page, "library")
+    .getByRole("listbox", { name: "Artists" })
+    .getByRole("option", { name: "Artist 05" })
+    .click();
+  const row = albums(page).getByRole("option", { name: /Album B5/ });
+  await expect(row.locator("img")).toHaveAttribute("src", /album\.jpg$/);
+  // The row asked once (null), then again after art-ready.
+  expect((await artRequests(page)).filter((album) => album === 16).length).toBeGreaterThanOrEqual(2);
+});
+
 test("P10-AC7: album art is requested only for the visible rows plus overscan", async ({ page }) => {
   await openLibrary(page);
   await expect(

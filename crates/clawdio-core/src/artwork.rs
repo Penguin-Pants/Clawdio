@@ -76,8 +76,17 @@ pub fn cover_files(folder: &Path) -> Vec<(PathBuf, FileStamp)> {
         .collect()
 }
 
-/// The art input of an album, or None for an unknown album.
-pub fn album_input(index: &LibraryIndex, root: &Path, album: AlbumId) -> Option<ArtInput> {
+/// What the index knows about an album's art: its folder and its songs with an embedded
+/// picture. No file is read, so this runs under the library lock.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AlbumSources {
+    pub folder: Option<String>,
+    /// Songs with an embedded picture: path relative to the music folder and stamp.
+    pub pictured: Vec<(String, FileStamp)>,
+}
+
+/// The art sources of an album from the index, or None for an unknown album.
+pub fn album_sources(index: &LibraryIndex, album: AlbumId) -> Option<AlbumSources> {
     let ids = index
         .song_ids(
             crate::api::SongScope {
@@ -91,20 +100,30 @@ pub fn album_input(index: &LibraryIndex, root: &Path, album: AlbumId) -> Option<
     let folder = tracks
         .first()
         .and_then(|track| album_folder(track.rel_path()));
-    let covers = folder
-        .as_ref()
-        .map(|folder| cover_files(&root.join(folder)))
-        .unwrap_or_default();
     let pictured = tracks
         .iter()
         .filter(|track| track.data.has_picture)
-        .map(|track| (root.join(track.rel_path()), track.data.stamp))
+        .map(|track| (track.rel_path().to_owned(), track.data.stamp))
         .collect();
-    Some(ArtInput {
-        folder,
+    Some(AlbumSources { folder, pictured })
+}
+
+/// The art input: lists the album folder's cover files. Run it without the library lock.
+pub fn album_input(root: &Path, sources: AlbumSources) -> ArtInput {
+    let covers = sources
+        .folder
+        .as_ref()
+        .map(|folder| cover_files(&root.join(folder)))
+        .unwrap_or_default();
+    ArtInput {
         covers,
-        pictured,
-    })
+        pictured: sources
+            .pictured
+            .into_iter()
+            .map(|(rel_path, stamp)| (root.join(rel_path), stamp))
+            .collect(),
+        folder: sources.folder,
+    }
 }
 
 /// FNV-1a, 64 bit: stable across builds, so cache names survive an update.
@@ -116,15 +135,20 @@ fn fnv(bytes: &[u8], mut hash: u64) -> u64 {
     hash
 }
 
-/// The cache key (D27): the album folder, and the name, size and modified time of each art
-/// source. Any change gives a new key, so new art regenerates.
-pub fn cache_key(input: &ArtInput) -> String {
+/// The cache key (D27): the album folder relative to the music folder `root`, and the
+/// relative path, size and modified time of each art source. Any change gives a new key, so
+/// new art regenerates; a moved music folder keeps its keys.
+pub fn cache_key(input: &ArtInput, root: &Path) -> String {
     let mut hash = fnv(
         input.folder.as_deref().unwrap_or("").as_bytes(),
         0xcbf2_9ce4_8422_2325,
     );
     for (path, stamp) in input.covers.iter().chain(&input.pictured) {
-        hash = fnv(path.to_string_lossy().as_bytes(), hash);
+        let relative = path.strip_prefix(root).unwrap_or(path);
+        hash = fnv(
+            relative.to_string_lossy().replace('\\', "/").as_bytes(),
+            hash,
+        );
         hash = fnv(&stamp.size.to_le_bytes(), hash);
         hash = fnv(&stamp.modified_ms.to_le_bytes(), hash);
     }
@@ -237,13 +261,43 @@ pub fn check_writable(folder: &Path) -> Result<(), CoverError> {
         .map_err(|_| CoverError::ReadOnly)
 }
 
-/// Writes `cover.jpg` into `folder` atomically: a temp file, then a rename (D19).
+/// Files in `folder` named `cover.jpg` in any letter case.
+pub fn existing_covers(folder: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(folder) else {
+        return Vec::new();
+    };
+    entries
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_str()
+                .is_some_and(|name| name.eq_ignore_ascii_case(COVER_FILE))
+        })
+        .map(|entry| entry.path())
+        .collect()
+}
+
+/// Writes `cover.jpg` into `folder` atomically: a temp file, then a rename (D19). A cover
+/// file in another letter case (`Cover.JPG`) goes after the rename, so the new one wins.
 pub fn write_cover(folder: &Path, jpeg: &[u8]) -> Result<(), CoverError> {
     check_writable(folder)?;
-    write_atomic(&folder.join(COVER_FILE), jpeg).map_err(|error| {
+    let target = folder.join(COVER_FILE);
+    write_atomic(&target, jpeg).map_err(|error| {
         log::warn!("art: cannot write the cover: {error}");
         CoverError::Write
-    })
+    })?;
+    // Two entries exist only on a case-sensitive file system; with one entry, the old name
+    // is the new file and stays.
+    let covers = existing_covers(folder);
+    for other in covers.iter().filter(|_| covers.len() > 1) {
+        if other.file_name() != target.file_name() {
+            if let Err(error) = std::fs::remove_file(other) {
+                log::warn!("art: cannot remove {}: {error}", other.display());
+            }
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -350,6 +404,8 @@ mod tests {
                 "3.mp3",
                 &[(PictureType::CoverFront, png(GREEN))],
             ),
+            // A later song's art does not win: the first in album order does.
+            song(dir.path(), "4.mp3", &[(PictureType::CoverFront, png(RED))]),
         ];
         let input = ArtInput {
             folder: Some("A/B".into()),
@@ -419,12 +475,16 @@ mod tests {
             covers: vec![(PathBuf::from("/m/A/B/cover.jpg"), FileStamp::default())],
             pictured: Vec::new(),
         };
-        let key = cache_key(&input);
+        let key = cache_key(&input, Path::new("/m"));
         assert_eq!(key.len(), 16);
-        assert_eq!(key, cache_key(&input.clone()), "stable");
+        assert_eq!(key, cache_key(&input.clone(), Path::new("/m")), "stable");
         let mut changed = input.clone();
         changed.covers[0].1.size = 5;
-        assert_ne!(cache_key(&changed), key);
+        assert_ne!(cache_key(&changed, Path::new("/m")), key);
+        // The same library in another place keeps its key.
+        let mut moved = input.clone();
+        moved.covers[0].0 = PathBuf::from("/other/A/B/cover.jpg");
+        assert_eq!(cache_key(&moved, Path::new("/other")), key);
     }
 
     #[test]
@@ -489,5 +549,35 @@ mod tests {
         assert_eq!(write_cover(&folder, b"jpeg"), Err(CoverError::ReadOnly));
         assert!(std::fs::read_dir(&folder).unwrap().next().is_none());
         std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    #[test]
+    fn set_cover_replaces_a_cover_in_another_letter_case() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("Cover.JPG"), png(RED)).unwrap();
+        assert_eq!(existing_covers(dir.path()).len(), 1);
+        write_cover(
+            dir.path(),
+            &jpeg(
+                &DynamicImage::ImageRgb8(RgbImage::from_pixel(8, 8, Rgb(GREEN))),
+                90,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let names: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        // On a case-insensitive file system both names are one file.
+        assert_eq!(names.len(), 1, "{names:?}");
+        let cover = cover_files(dir.path());
+        let shown = load(&ArtInput {
+            folder: None,
+            covers: cover,
+            pictured: Vec::new(),
+        })
+        .unwrap();
+        assert!(color(&shown)[1] > 150, "the new cover shows");
     }
 }
