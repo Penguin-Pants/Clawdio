@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.0, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.0. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.1, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.1. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -23,7 +23,7 @@
 
 | Source | Rows | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|
-| Requirements | 301 | 208 | 36 | 6 | 9 | 42 | 0 |
+| Requirements | 301 | 205 | 37 | 8 | 9 | 42 | 0 |
 | design.md | 76 | 46 | 13 | 16 | 0 | 1 | 0 |
 | Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
 | Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
@@ -56,13 +56,13 @@
 | R1-2 | Ogg means Vorbis; skip and report Opus and other codecs | §2 R1 | P5.2 | P5-AC2 | IT | Planned |
 | R1-3 | WAV: PCM integer and float and ADPCM as the pinned decoder supports; others are "unsupported codec" | §2 R1 | P5.2 | P5-AC2 | IT | Planned (D3) |
 | R1.1-1 | First run: "Choose music folder" in the main area; other widgets show hints; transport disabled | §2 R1.1 | P4.6, P2.9 | P4-AC2, P2-AC12 | E2E | Planned |
-| R2-1 | Startup sync adds new files and removes missing files; the folder wins | §2 R2 | P5.3 | P5-AC4 | IT | Planned |
+| R2-1 | Startup sync adds new files and removes missing files; the folder wins | §2 R2 | P5.3 | P5-AC4, P5-AC15 | IT | Planned |
 | R2-2 | Incremental scan by path, size and modified time | §2 R2 | P5.3 | P5-AC7 | IT | Planned |
 | R2-3 | The scan does not block the UI | §2 R2 | P4.7, P6.8 | P6-AC6 | MEAS, MAN-L, MAN-W | Planned |
 | R2-4 | Manual Rescan command | §2 R2 | P5.4, P2.6 | P5-AC5, P5-AC6 | IT, E2E | Planned |
-| R2-5 | Target 50,000 tracks | §2 R2 | P5.13, P3.1 | P3-AC1, P6-AC6, P18-AC6 | MEAS | Planned |
+| R2-5 | Target 50,000 tracks | §2 R2 | P5.13, P3.1, P4.12 | P3-AC1, P6-AC6, P18-AC6 | MEAS | Planned |
 | R2-6 | Status line counts at scan end; Settings shows last counts and "Open log folder"; log holds per-file reasons | §2 R2 | P5.4, P4.3, P5.2 | P5-AC6, P5-AC2 | IT, E2E | Planned |
-| R2-7 | Skip names starting with "."; do not follow links or junctions; Rescan does nothing while a scan runs | §2 R2 | P5.1, P5.4 | P5-AC3, P5-AC5 | IT | Planned |
+| R2-7 | Skip files and folders whose names start with "."; do not follow links or junctions to folders; Rescan does nothing while a scan runs | §2 R2 | P5.1, P5.4 | P5-AC3, P5-AC5 | IT | Planned |
 | R2-8 | Remove missing files only after a complete traversal; cancel or failure removes nothing | §2 R2 | P5.3 | P5-AC4 | IT | Planned |
 | R2-9 | Readable, empty root removes all tracks | §2 R2 | P5.3 | P5-AC4 | IT | Planned |
 | R3-1 | Grouping by folder names; tags never change grouping | §2 R3 | P5.6 | P5-AC1 | IT | Planned |
@@ -112,7 +112,7 @@
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Planned |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
-| R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7 | UT, E2E | Planned |
+| R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Planned |
 | R30-5 | Milestone 0 uses React, Tailwind, shadcn/ui and the docking library | §2 R30 | P3.3, P3.4, P3.2 | P3-AC1, P3-AC5 | MEAS | Planned |
 | R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Planned |
 | R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Planned |
@@ -132,24 +132,24 @@
 | R6-4 | Repeat off, all and one behavior | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
 | R6-5 | Shuffle behavior: each entry once, display order kept; shuffle off continues in order | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
 | R6-6 | Previous: over 3 s restarts; else previous in play order; shuffle uses the run history | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
-| R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12 | P7-AC3 | IT | Planned (D32) |
+| R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12, P5.11 | P7-AC3 | IT | Planned (D32) |
 | R6-8 | Single click selects; double-click or Enter plays; album row plays from the first song | §2 R6 | P6.5 | P6-AC4 | E2E | Planned |
 | R6-9 | Queue rule per mode and for playlists; Play and double-click replace; Add to queue appends | §2 R6 | P6.5, P7.10, P11.5 | P6-AC4, P7-AC7, P11-AC8 | E2E | Planned |
 | R6-10 | Queue edits: remove playing, remove earlier, clear | §2 R6 | P7.1, P7.9 | P7-AC1 | UT | Planned |
 | R6-11 | Search: incremental, ignores case and accents, matches artist, album and title; Tree rule | §2 R6 | P6.1, P6.2 | P6-AC3 | UT, E2E | Planned |
-| R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6 | P7-AC7 | E2E | Planned (D20) |
+| R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6, P6.6 | P7-AC7, P6-AC10 | E2E | Planned (D20) |
 | R24-1 | Media keys play/pause, next, previous work with the window in the background | §2 R24 | P8.1, P8.2 | P8-AC1, P8-AC2 | MAN-W, MAN-L | Planned (D39) |
 | R24-2 | Title, artist, album, artwork and position go to the OS panel | §2 R24 | P8.3, P10.5 | P8-AC1, P8-AC2, P10-AC6 | MAN-W, MAN-L | Planned |
-| R24-3 | Accept play, pause, toggle, next, previous, stop; log and continue if registration fails | §2 R24 | P8.2, P8.4 | P8-AC2, P8-AC3 | MAN-L | Planned |
+| R24-3 | Accept play, pause, toggle, next, previous, stop; log and continue if registration fails | §2 R24 | P8.2, P8.4 | P8-AC2, P8-AC3, P8-AC1 | MAN-L, MAN-W | Planned |
 | R25-1 | Space toggles play/pause, not while typing | §2 R25 | P7.11 | P7-AC5 | E2E | Planned (D17) |
-| R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5 | E2E | Planned |
+| R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5, P11-AC8 | E2E | Planned |
 | R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Planned (D24) |
 | R25-4 | Ctrl+F focuses search; Esc clears it and returns to the Library | §2 R25 | P6.6, P0.13 | P6-AC5, P0-AC8 | E2E | Planned |
 | R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Planned |
-| R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2 | E2E, MAN-L | Planned |
-| R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2 | E2E, MAN-L | Planned |
+| R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Planned |
+| R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Planned |
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Planned (D25) |
-| R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1 | IT | Planned |
+| R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Planned |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
 
 ### 1.5 Section 2: online and sidecars (R7 to R11)
@@ -160,7 +160,7 @@
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Planned (D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Planned |
 | R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Planned |
-| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6 | P14-AC4, P14-AC5 | IT | Planned |
+| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16 | IT | Planned (D44) |
 | R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
 | R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
 | R8-4 | Name normalization; save exact matches only | §2 R8 | P14.4 | P14-AC3 | UT | Planned (D43) |
@@ -168,7 +168,7 @@
 | R8-6 | Exclusions (Unknown groups, artist-level songs); release group query; unique match; writability check | §2 R8 | P14.5 | P14-AC4, P14-AC5 | IT | Planned |
 | R8-7 | No match: marker in the album sidecar; no automatic retry | §2 R8 | P14.3, P14.5 | P14-AC4, P14-AC8 | IT | Planned |
 | R8-8 | "Retry lookup" per album clears the marker and tries again | §2 R8 | P14.7 | P14-AC7 | IT | Planned |
-| R8-9 | "Set cover" per album saves `cover.jpg`, converting if needed | §2 R8 | P10.4 | P10-AC5 | IT, MAN-L | Planned (D19) |
+| R8-9 | "Set cover" per album saves `cover.jpg`, converting if needed | §2 R8 | P10.4 | P10-AC5 | IT, MAN-L | Resolved (C17) |
 | R8-10 | MusicBrainz at most 1 request per second; User-Agent with name, version and contact URL | §2 R8 | P14.1, P14.2 | P14-AC6 | IT | Planned |
 | R8-11 | Status line progress with cancel; UI stays usable | §2 R8 | P14.6 | P14-AC12 | MAN-L | Planned |
 | R9-1 | Per-song action; source LRCLIB; save `.lrc` when synced, else `.txt` | §2 R9 | P15.1, P15.2 | P15-AC3, P15-AC4 | IT | Planned |
@@ -229,7 +229,7 @@
 | R17-4 | Docs: brand inputs | §2 R17 | P1.10 | P18-AC13 | REV | Planned |
 | R17-5 | Docs: copied Magic UI components | §2 R17 | P2.16 | P18-AC13 | REV | Planned (D6) |
 | R18-1 | Settings (folder path, lookup switch) and window size in the OS config folder | §2 R18 | P4.4, P4.2 | P4-AC6, P4-AC7 | IT, MAN-L | Planned |
-| R18.1-1 | Portable marker: settings, arrangement, state, cache, logs and WebView profile in `data/` | §2 R18.1 | P4.1, P4.2, P4.3 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
+| R18.1-1 | Portable marker: settings, arrangement, state, cache, logs and WebView profile in `data/` | §2 R18.1 | P4.1, P4.2, P4.3 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned (D47) |
 | R18.1-2 | Music folder path relative to the executable folder on the same volume, else absolute | §2 R18.1 | P4.1 | P9-AC7, P18-AC10 | UT, MAN-W | Planned |
 | R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Planned |
 | R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Planned |
@@ -286,8 +286,8 @@
 | ID | Edge case | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Planned |
-| E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13 | IT | Planned |
-| E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10 | P5-AC12 | IT, MAN-L | Planned (D30) |
+| E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Planned |
+| E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned (D30) |
 | E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Planned (D16) |
 | E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Planned |
 | E-6 | Missing tags: R4 fallbacks | §5 | P5.7 | P5-AC1, P5-AC10 | UT | Planned |
@@ -297,17 +297,17 @@
 | E-10 | Windows paths over 260 characters work | §5 | P5.1, P5.12 | P5-AC14 | IT | Planned |
 | E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Planned |
 | E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Planned |
-| E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2 | P10-AC5, P11-AC10, P14-AC5, P15-AC5 | IT, MAN-L | Planned |
+| E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Planned |
 | E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Planned |
 | E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Planned |
-| E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Planned |
+| E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Resolved (C18) |
 | E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Planned |
 | E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Planned |
 | E-19 | Unreadable playlist file: skip and log | §5 | P11.2 | P11-AC6 | IT | Planned |
 | E-20 | Playlist write failure: show the error; old file intact | §5 | P11.1, P11.8 | P11-AC3 | IT | Planned |
 | E-21 | Layout problems follow R29 | §5 | P9.4 | P9-AC4 | UT | Planned |
 | E-22 | Transport controls hidden: keys and media keys work; Reset layout restores | §5 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W, MAN-L | Planned |
-| E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Planned (D33) |
+| E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Planned (D45) |
 | E-24 | Empty Play queue, Playlists or Lyrics show a hint | §5 | P2.9 | P2-AC12 | E2E | Planned |
 | E-25 | Output stream error: stop with a message; next Play opens the default device | §5 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
@@ -394,8 +394,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Planned |
 | AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Planned |
 | AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Planned |
-| AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10 | P5-AC12 | IT, MAN-L | Planned |
-| AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3 | P5-AC8, P14-AC8 | IT | Planned |
+| AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned |
+| AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Planned |
 | AC-10 | Unplugging the device stops playback with a message; Play resumes on the default device | §9.10 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Planned |
 | AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Planned |
@@ -406,7 +406,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-17 | Portable folder and music folder copied to another drive: settings, arrangement, queue survive | §9.17 | P4.1, P9.1 | P9-AC7, P18-AC10 | MAN-W | Planned |
 | AC-18 | Two-disc album plays disc 1 then disc 2 in track order | §9.18 | P5.7, P7.1 | P5-AC11, P7-AC6 | IT, MAN-L | Planned |
 | AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Planned |
-| AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9 | P4-AC3, P7-AC10 | MAN-L | Planned |
+| AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9, P4.11, P4.12 | P4-AC3, P7-AC10 | MAN-L | Planned |
 | AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Planned |
 
 ---
@@ -434,7 +434,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Planned |
 | DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Planned |
 | DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
-| DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7 | P0-AC5, P7-AC8 | UT, E2E | Resolved (C13) |
+| DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Resolved (C13) |
 | DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Resolved (C4) |
 | DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Planned |
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
@@ -446,17 +446,17 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.4 | Default arrangement, auto-save, Reset layout, tabbed groups, no floating or pop-out | §5 | P2.4, P9.3 | P2-AC1, P9-AC2, P9-AC3 | E2E | Planned |
 | DES-5.5 | Main area prioritizes browsing, metadata and art | §5 | P2.4, P6.4 | P2-AC1 | E2E | Planned |
 | DES-5.6 | Persistent, reachable transport controls; keys and media keys when Transport is hidden | §5 | P7.7, P7.11, P8.2 | P7-AC5, P8-AC4 | E2E, MAN-W | Planned |
-| DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1 | E2E | Planned |
-| DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D33) |
+| DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Planned |
+| DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D45) |
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Planned |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Planned |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Planned |
-| DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7 | E2E | Planned |
+| DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Planned |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Planned |
 | DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Resolved (C11) |
 | DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Planned |
-| DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9 | E2E | Planned |
-| DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9 | E2E | Resolved (C3) |
+| DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Planned |
+| DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Resolved (C3) |
 | DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Planned |
 | DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Planned (D12) |
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
@@ -480,9 +480,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-9.3 | No macOS window buttons in production | §9 | P4.2 | P0-AC2 | MAN-L | Resolved (C9) |
 | DES-9.4 | Run without install where possible; single file, no installer and portable data are distinct | §9 | P4.1, P18.2, P18.3 | P18-AC4, P18-AC5, P18-AC10 | MAN-W, MAN-L | Planned |
 | DES-9.5 | Data paths follow the requirements; no silent profile-path assumptions | §9 | P4.1 | P4-AC4 | IT | Planned |
-| DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3 | MAN-L | Planned |
+| DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3, P1-AC4 | MAN-L | Planned |
 | DES-10.2 | Icons exported and configured for Windows and Linux | §10 | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-W, MAN-L | Planned |
-| DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9 | UT, E2E | Planned |
+| DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Planned |
 | DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Planned |
 | DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Planned (D34) |
 | DES-10.6 | No loss of audio, playlist, library, lyric or metadata behavior | §10 | P0.16 | P0-AC1 | CI | Resolved (C1) |
@@ -559,7 +559,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AST-11 | Fonts and illustrations compatible with open-source redistribution | Checklist | P0.9, P18.4 | P18-AC7 | REV | Planned (D7) |
 | AST-12 | Missing-artwork placeholder with quiet branding | Checklist | P1.8, P10.3 | P10-AC4 | E2E | Planned |
 | AST-13 | Logo legible at real icon sizes | Checklist | P1.7 | P1-AC3 | MAN-L | Planned |
-| AST-14 | Test light backgrounds and high contrast | Checklist | P1.4, P17.6 | P1-AC4, P17-AC6 | REV, MAN-W | Planned |
+| AST-14 | Test light backgrounds and high contrast | Checklist | P1.4, P17.6, P2.13 | P1-AC4, P17-AC6, P2-AC16 | REV, MAN-W | Planned |
 | AST-15 | No copyrighted MAD or Inspector Gadget artwork | Checklist | P1.1, P1.2, P1.3 | P1-AC7 | REV | Planned |
 | AST-16 | Only assets the app needs; no animated mascot or wallpapers | Closing rule | P1.4 | P1-AC1 | REV | Planned (D6, D9) |
 
@@ -609,7 +609,9 @@ These tasks have no single source requirement. They exist so that other rows can
 
 | Task | Purpose | Supports |
 |---|---|---|
-| P0.12 | Security baseline: CSP and minimal capabilities (D13) | CON-11, DES-9.1 |
+| P0.0 | Install native build packages and Playwright browsers | Every CI and local validation row |
+| P0.12 | Security baseline: CSP and minimal capabilities (D13, D48) | CON-11, DES-9.1 |
+| P2-AC18 | Confirms that the CSP raises no violation in the e2e run | CON-11 |
 | P2.15 | Playwright and mocked IPC infrastructure | Every E2E row |
 | P6.7 | Remove Milestone 0 fixture code (D35) | CON-1 (no dead spike code) |
 | P6-AC8 | Confirms P6.7 | CON-1 |
@@ -627,4 +629,6 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | Q2 Identifier | R31-4 | Confirm `io.github.penguinpants.clawdio` | Owner, before P4 |
 | Q3 Font | R16-2, DES-4.1 | Confirm bundled Geist Sans | Owner, before P0.9 |
 | Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets | Owner, after P1 |
+| Q7 Set cover overwrite | R8-9 | Confirm "ask, then replace" (C17) | Owner, before P10 |
+| Q8 Small icon layers | DES-2.4, AST-2, AST-13 | Allow the 16 and 24 px layers from the simple icon if the full icon fails | Owner, after P1 |
 | B5 Test machines | All MAN-W and MAN-L rows | Windows 10 or 11 and Ubuntu 22.04 desktops | Owner or agent environment, by P18 |
