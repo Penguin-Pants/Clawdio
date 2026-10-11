@@ -35,20 +35,20 @@ assets/branding/
 ```
 
 ## Production checklist
-- [ ] Original wordmark SVG: red `Claw`, steel `dio`, equalizer bars in `o`
-- [ ] Original red-eyed cat silhouette SVG, clear at 16 and 32 px
-- [ ] Angular C/eye/audio-bar monogram SVG
-- [ ] Full-color and monochrome variants for dark and light backgrounds
-- [ ] All vector masters contain viewBox and no embedded raster images
-- [ ] PNG icons: 16, 32, 64, 128, 256, 512 and 1024 px where packaging needs them
+- [x] Original wordmark SVG: red `Claw`, steel `dio`, equalizer bars in `o`
+- [x] Original red-eyed cat silhouette SVG, clear at 16 and 32 px
+- [x] Angular C/eye/audio-bar monogram SVG
+- [x] Full-color and monochrome variants for dark and light backgrounds
+- [x] All vector masters contain viewBox and no embedded raster images
+- [x] PNG icons: 16, 32, 64, 128, 256, 512 and 1024 px where packaging needs them
 - [ ] Multi-resolution Windows ICO and Linux launcher icon
-- [ ] README banner and social image only if helpful
+- [x] README banner and social image only if helpful
 - [ ] Application title, executable metadata, manifests and About view renamed Clawdio
 - [ ] Icon works in Windows taskbar and Linux app launchers
 - [ ] Fonts and illustration assets compatible with open-source redistribution
 - [ ] Missing-artwork placeholder with quiet branding
-- [ ] Logo legible at actual icon sizes
+- [x] Logo legible at actual icon sizes
 - [ ] Test light backgrounds and high contrast
-- [ ] No copyrighted MAD / Inspector Gadget artwork reproduced
+- [x] No copyrighted MAD / Inspector Gadget artwork reproduced
 
 Only create assets the actual application and repository need. Do not add animated mascot or wallpapers solely for decoration.

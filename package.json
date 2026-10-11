@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check:sources": "node scripts/check-sources.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run check:sources",
+    "check:svg": "node scripts/check-svg.mjs",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run check:sources && npm run check:svg",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "@tauri-apps/cli": "2.12.2",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
+    "@types/jsdom": "28.0.3",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

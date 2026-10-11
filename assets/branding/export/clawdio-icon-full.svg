@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" rx="192" fill="#171717"/>
+  <path d="M162.4 324.8 A372 372 0 0 1 861.6 324.8" fill="none" stroke="#E10606" stroke-opacity="0.35" stroke-width="40" stroke-linecap="round"/>
+  <g transform="matrix(0.7 0 0 0.7 153.6 36)">
+    <path d="M200 150 L384 330 Q512 300 640 330 L824 150 L858 474 Q932 604 862 724 Q722 902 512 912 Q302 902 162 724 Q92 604 166 474 Z" fill="#0B0B0B" stroke="#B7B7B7" stroke-width="96" stroke-linejoin="miter"/>
+    <g fill="#E10606">
+      <path d="M278 537.8 Q413 459.2 466 606.2 Q331 684.8 278 537.8 Z"/>
+      <path d="M558 606.2 Q611 459.2 746 537.8 Q693 684.8 558 606.2 Z"/>
+    </g>
+    <g fill="none" stroke="#B7B7B7" stroke-width="16" stroke-linecap="round">
+      <path d="M196 690 L44 652"/>
+      <path d="M200 742 L58 774"/>
+      <path d="M828 690 L980 652"/>
+      <path d="M824 742 L966 774"/>
+    </g>
+  </g>
+  <g fill="#E10606">
+    <path d="M292 812 L356 812 L356 900 L292 900 Z"/>
+    <path d="M384 760 L448 760 L448 900 L384 900 Z"/>
+    <path d="M476 704 L540 704 L540 900 L476 900 Z"/>
+    <path d="M568 760 L632 760 L632 900 L568 900 Z"/>
+    <path d="M660 812 L724 812 L724 900 L660 900 Z"/>
+  </g>
+</svg>
