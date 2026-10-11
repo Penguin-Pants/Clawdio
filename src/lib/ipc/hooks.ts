@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { commands, type SongRow } from "./commands";
 
 /**
@@ -37,35 +37,44 @@ export interface RowCache<T> {
 
 /**
  * Rows by id, fetched for the visible window only (D14). The cache keeps at most
- * ROW_CACHE_LIMIT rows.
+ * ROW_CACHE_LIMIT rows. A new `libraryVersion` empties it: a rescan keeps ids but can change
+ * their rows (D46).
  */
-export function useRowCache<T extends { id: number }>(fetchRows: (ids: number[]) => Promise<T[]>): RowCache<T> {
-  const cache = useRef(new Map<number, T>());
-  const pending = useRef(new Set<number>());
+export function useRowCache<T extends { id: number }>(
+  fetchRows: (ids: number[]) => Promise<T[]>,
+  libraryVersion: number,
+): RowCache<T> {
+  // New maps for each library version: the old rows are dropped and the lists ask again.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the version is the reason to start over.
+  const store = useMemo(() => ({ cache: new Map<number, T>(), pending: new Set<number>() }), [libraryVersion]);
   const fetchRef = useRef(fetchRows);
   const [, setVersion] = useState(0);
-  const request = useCallback((ids: number[]) => {
-    const missing = ids.filter((id) => !cache.current.has(id) && !pending.current.has(id));
-    if (missing.length === 0) return;
-    missing.forEach((id) => pending.current.add(id));
-    fetchRef.current(missing).then(
-      (rows) => {
-        rows.forEach((row) => cache.current.set(row.id, row));
-        for (const id of cache.current.keys()) {
-          if (cache.current.size <= ROW_CACHE_LIMIT) break;
-          cache.current.delete(id);
-        }
-        missing.forEach((id) => pending.current.delete(id));
-        setVersion((version) => version + 1);
-      },
-      () => missing.forEach((id) => pending.current.delete(id)),
-    );
-  }, []);
-  const row = useCallback((id: number) => cache.current.get(id), []);
+  const request = useCallback(
+    (ids: number[]) => {
+      const { cache, pending } = store;
+      const missing = ids.filter((id) => !cache.has(id) && !pending.has(id));
+      if (missing.length === 0) return;
+      missing.forEach((id) => pending.add(id));
+      fetchRef.current(missing).then(
+        (rows) => {
+          rows.forEach((row) => cache.set(row.id, row));
+          for (const id of cache.keys()) {
+            if (cache.size <= ROW_CACHE_LIMIT) break;
+            cache.delete(id);
+          }
+          missing.forEach((id) => pending.delete(id));
+          setVersion((version) => version + 1);
+        },
+        () => missing.forEach((id) => pending.delete(id)),
+      );
+    },
+    [store],
+  );
+  const row = useCallback((id: number) => store.cache.get(id), [store]);
   return { row, request };
 }
 
 /** Song rows for the visible window (D14). */
-export function useSongRows(): RowCache<SongRow> {
-  return useRowCache(commands.libraryRows);
+export function useSongRows(libraryVersion: number): RowCache<SongRow> {
+  return useRowCache(commands.libraryRows, libraryVersion);
 }

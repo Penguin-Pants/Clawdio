@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { VirtualList } from "@/components/virtual-list";
 import { useSongRows } from "@/lib/ipc/hooks";
+import { useLibraryStore } from "@/store/library";
 import { usePlayerStore } from "@/store/player";
 import { ROW_HEIGHT, Row, SongCells } from "../library/rows";
 import { EmptyHint } from "../hint";
@@ -8,7 +9,8 @@ import { EmptyHint } from "../hint";
 /** Play queue widget (R6). The current entry is marked with a label. P7 adds editing. */
 export function QueueWidget() {
   const queue = usePlayerStore((state) => state.queue);
-  const { row, request } = useSongRows();
+  const version = useLibraryStore((state) => state.version);
+  const { row, request } = useSongRows(version);
   const onRange = useCallback(
     (start: number, end: number) => request(queue.entries.slice(start, end + 1)),
     [queue.entries, request],

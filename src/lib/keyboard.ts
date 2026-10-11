@@ -3,13 +3,18 @@ import { focusLibrarySearch, resetLayout } from "@/shell/layouts";
 /** Reset layout shortcut (D17, R29). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
 
+/** The letter of a key event, so shortcuts follow the keyboard layout (AZERTY, Dvorak). */
+function letter(event: KeyboardEvent): string {
+  return event.key.length === 1 ? event.key.toLowerCase() : "";
+}
+
 export function isResetShortcut(event: KeyboardEvent): boolean {
-  return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.code === "KeyL";
+  return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "l";
 }
 
 /** Ctrl+F: the Library search field (R25). */
 export function isSearchShortcut(event: KeyboardEvent): boolean {
-  return event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey && event.code === "KeyF";
+  return event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "f";
 }
 
 /** Keys inside open menus, dialogs and select popups belong to those controls (D17). */

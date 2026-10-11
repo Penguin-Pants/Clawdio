@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as layouts from "@/shell/layouts";
-import { handleGlobalKey, isResetShortcut, nextRegion, widgetRegions } from "./keyboard";
+import { handleGlobalKey, isResetShortcut, isSearchShortcut, nextRegion, widgetRegions } from "./keyboard";
 
 function key(init: KeyboardEventInit & { target?: EventTarget }) {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
@@ -30,7 +30,22 @@ describe("isResetShortcut (D17)", () => {
   it("matches Ctrl+Shift+L only", () => {
     expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "L" }))).toBe(true);
     expect(isResetShortcut(key({ ctrlKey: true, code: "KeyL", key: "l" }))).toBe(false);
-    expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, altKey: true, code: "KeyL" }))).toBe(false);
+    expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, altKey: true, code: "KeyL", key: "L" }))).toBe(false);
+  });
+
+  it("follows the layout: the key that types L counts, not the physical position", () => {
+    // Dvorak: the key at the QWERTY "P" position types "L".
+    expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyP", key: "L" }))).toBe(true);
+    expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "N" }))).toBe(false);
+  });
+});
+
+describe("isSearchShortcut (R25)", () => {
+  it("matches Ctrl+F by the typed letter", () => {
+    expect(isSearchShortcut(key({ ctrlKey: true, code: "KeyF", key: "f" }))).toBe(true);
+    expect(isSearchShortcut(key({ ctrlKey: true, code: "KeyY", key: "f" }))).toBe(true);
+    expect(isSearchShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyF", key: "F" }))).toBe(false);
+    expect(isSearchShortcut(key({ code: "KeyF", key: "f" }))).toBe(false);
   });
 });
 
@@ -68,7 +83,7 @@ describe("nextRegion", () => {
 describe("handleGlobalKey", () => {
   it("runs Reset layout on Ctrl+Shift+L", () => {
     const reset = vi.spyOn(layouts, "resetLayout").mockImplementation(() => {});
-    expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyL" }))).toBe(true);
+    expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "L" }))).toBe(true);
     expect(reset).toHaveBeenCalledOnce();
   });
 

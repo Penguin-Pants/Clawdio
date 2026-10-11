@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useMemo, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
@@ -15,12 +15,20 @@ function playList(ids: number[], start: number) {
   if (start >= 0 && start < ids.length) void commands.playerPlayList(ids, start).catch(() => {});
 }
 
-/** Plays the songs of an album or an artist as the Library shows them, from the first (P6.5). */
-function playScope(scope: { artist: number | null; album: number | null }, search: string) {
-  void commands.librarySongIds(scope, search).then(
-    (ids) => playList(ids, 0),
+/**
+ * Plays a whole album or artist from `song`, or from the first song (R6: an album row plays
+ * the album; in Tree mode a song plays its album). The search does not narrow it.
+ */
+function playScope(scope: { artist: number | null; album: number | null }, song?: number) {
+  void commands.librarySongIds(scope, "").then(
+    (ids) => playList(ids, song === undefined ? 0 : Math.max(0, ids.indexOf(song))),
     () => {},
   );
+}
+
+/** The list element inside a list frame: menus return focus to it. */
+function listElement(frame: RefObject<HTMLElement | null>): HTMLElement | null {
+  return frame.current?.querySelector<HTMLElement>('[role="listbox"], [role="tree"]') ?? null;
 }
 
 /** The track that plays or is paused, for the playing indicator (P6.4). */
@@ -43,7 +51,7 @@ function useRowMenu(listRef: RefObject<HTMLElement | null>) {
   const [request, setRequest] = useState<MenuRequest | null>(null);
   const element = (
     <DropdownMenu open={request !== null} onOpenChange={(open) => !open && setRequest(null)}>
-      <DropdownMenuContent anchor={request?.anchor} side="bottom" align="start" finalFocus={listRef}>
+      <DropdownMenuContent anchor={request?.anchor} side="bottom" align="start" finalFocus={() => listElement(listRef)}>
         <DropdownMenuItem onClick={() => request?.play()}>Play</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -67,7 +75,7 @@ export function ArtistList() {
   const setSelection = useLibraryStore((state) => state.setSelection);
   const version = useLibraryStore((state) => state.version);
   const ids = useCommand(() => commands.libraryArtists(search), NO_IDS, [search, version]);
-  const { row, request } = useRowCache(commands.libraryArtistRows);
+  const { row, request } = useRowCache(commands.libraryArtistRows, version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const onRange = useCallback(
@@ -76,7 +84,13 @@ export function ArtistList() {
   );
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ artist: id, album: null, song: null });
-  const play = (id: number | null) => (id === null ? null : () => playScope({ artist: id, album: null }, search));
+  const play = (id: number | null) => (id === null ? null : () => playScope({ artist: id, album: null }));
+  // A search that hides the selected artist selects "All", so no hidden row filters the lists.
+  useEffect(() => {
+    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
+      setSelection({ artist: null, album: null, song: null });
+    }
+  }, [ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -117,7 +131,7 @@ export function AlbumList() {
   const setSelection = useLibraryStore((state) => state.setSelection);
   const version = useLibraryStore((state) => state.version);
   const ids = useCommand(() => commands.libraryAlbums(artist, search), NO_IDS, [artist, search, version]);
-  const { row, request } = useRowCache(commands.libraryAlbumRows);
+  const { row, request } = useRowCache(commands.libraryAlbumRows, version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const onRange = useCallback(
@@ -127,7 +141,11 @@ export function AlbumList() {
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ album: id, song: null });
   // An album row plays the album from its first song (P6.5).
-  const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }, search));
+  const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
+  // A search or an artist change that hides the selected album selects "All".
+  useEffect(() => {
+    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
+  }, [ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -183,7 +201,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
     search,
     version,
   ]);
-  const { row, request } = useSongRows();
+  const { row, request } = useSongRows(version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const onRange = useCallback((start: number, end: number) => request(ids.slice(start, end + 1)), [ids, request]);
@@ -230,8 +248,8 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
 
 type TreeLine = { posinset: number; setsize: number } & (
   | { kind: "artist"; id: number; name: string; expanded: boolean }
-  | { kind: "album"; id: number; artist: number; name: string; expanded: boolean; songs: number[] }
-  | { kind: "song"; id: number; artist: number; album: number; songs: number[] }
+  | { kind: "album"; id: number; artist: number; name: string; expanded: boolean }
+  | { kind: "song"; id: number; artist: number; album: number }
 );
 
 const LEVEL = { artist: 1, album: 2, song: 3 } as const;
@@ -258,7 +276,6 @@ export function treeLines(tree: TreeArtist[], openArtists: Set<number>, openAlbu
         artist: artist.id,
         name: album.name,
         expanded: albumOpen,
-        songs: album.songs,
         posinset: albumIndex + 1,
         setsize: artist.albums.length,
       });
@@ -269,7 +286,6 @@ export function treeLines(tree: TreeArtist[], openArtists: Set<number>, openAlbu
           id,
           artist: artist.id,
           album: album.id,
-          songs: album.songs,
           posinset: songIndex + 1,
           setsize: album.songs.length,
         }),
@@ -289,7 +305,7 @@ export function TreeList() {
   const tree = useCommand(() => commands.libraryTree(search), NO_TREE, [search, version]);
   const [openArtists, setOpenArtists] = useState(() => new Set<number>());
   const [openAlbums, setOpenAlbums] = useState(() => new Set<number>());
-  const { row, request } = useSongRows();
+  const { row, request } = useSongRows(version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const lines = useMemo(() => treeLines(tree, openArtists, openAlbums), [tree, openArtists, openAlbums]);
@@ -308,19 +324,42 @@ export function TreeList() {
     else if (line.kind === "album") setSelection({ artist: line.artist, album: line.id, song: null });
     else setSelection({ artist: line.artist, album: line.album, song: line.id });
   };
-  // In Tree mode a song plays its album as shown, from that song (R6 queue rule).
+  // In Tree mode a song plays its whole album, from that song (R6 queue rule).
   const play = (line: TreeLine | undefined) => {
-    if (line?.kind === "song") return () => playList(line.songs, line.songs.indexOf(line.id));
-    if (line?.kind === "album") return () => playList(line.songs, 0);
+    if (line?.kind === "song") return () => playScope({ artist: null, album: line.album }, line.id);
+    if (line?.kind === "album") return () => playScope({ artist: null, album: line.id });
     return null;
   };
   const active = lines.findIndex((line) =>
     selection.song !== null
-      ? line.kind === "song" && line.id === selection.song && line.album === selection.album
+      ? line.kind === "song" &&
+        line.id === selection.song &&
+        (selection.album === null || line.album === selection.album)
       : selection.album !== null
         ? line.kind === "album" && line.id === selection.album
         : line.kind === "artist" && line.id === selection.artist,
   );
+  // A selection from another mode opens its artist and album, so it shows (R28, P6-AC2).
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || tree === NO_TREE) return;
+    opened.current = true;
+    const open = (artist: number, album: number | null) => {
+      setOpenArtists((set) => new Set(set).add(artist));
+      if (album !== null) setOpenAlbums((set) => new Set(set).add(album));
+    };
+    if (selection.song !== null) {
+      void commands.libraryRows([selection.song]).then(
+        ([song]) => song && open(song.artistId, song.albumId),
+        () => {},
+      );
+    } else if (selection.album !== null) {
+      const owner = tree.find((artist) => artist.albums.some((album) => album.id === selection.album));
+      if (owner) open(owner.id, selection.album);
+    } else if (selection.artist !== null) {
+      open(selection.artist, null);
+    }
+  }, [tree, selection]);
   const onRange = useCallback(
     (start: number, end: number) =>
       request(
@@ -405,6 +444,7 @@ export function TreeList() {
                 setOpen(line, !line.expanded);
                 select(line);
               }}
+              onPick={() => select(line)}
               onActivate={playLine ?? undefined}
               onMenu={onMenu}
             >

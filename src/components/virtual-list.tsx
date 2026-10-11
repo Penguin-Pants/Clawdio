@@ -35,11 +35,8 @@ interface VirtualListProps {
 /** Rows rendered above and below the view. */
 const OVERSCAN = 8;
 
-/** Rows per Page Up and Page Down. */
-const PAGE = 10;
-
-/** The index a navigation key moves to, or null for other keys. */
-export function moveTarget(key: string, active: number | null, count: number): number | null {
+/** The index a navigation key moves to, or null for other keys. `page` is the rows in view. */
+export function moveTarget(key: string, active: number | null, count: number, page: number): number | null {
   if (count === 0) return null;
   const from = active ?? -1;
   switch (key) {
@@ -52,9 +49,9 @@ export function moveTarget(key: string, active: number | null, count: number): n
     case "End":
       return count - 1;
     case "PageDown":
-      return Math.min(count - 1, Math.max(0, from) + PAGE);
+      return Math.min(count - 1, Math.max(0, from) + page);
     case "PageUp":
-      return Math.max(0, from - PAGE);
+      return Math.max(0, from - page);
     default:
       return null;
   }
@@ -114,7 +111,9 @@ export function VirtualList({
       aria-activedescendant={active === null ? undefined : rowId(active)}
       tabIndex={0}
       onKeyDown={(event) => {
-        const target = moveTarget(event.key, active, count);
+        // A page is the rows in view, less one, so one row stays as context.
+        const page = Math.max(1, Math.floor(event.currentTarget.clientHeight / rowHeight) - 1);
+        const target = moveTarget(event.key, active, count, page);
         if (target !== null && !event.altKey && !event.ctrlKey && !event.metaKey) {
           event.preventDefault();
           virtualizer.scrollToIndex(target, { align: "auto" });

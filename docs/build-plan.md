@@ -464,14 +464,18 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 4. A reviewer agent's audit was still running at commit; its findings go into a follow-up commit.
+**TWO-PASS REVIEW:** F1 3, F2 11, F3 0, F4 7. Sources: own audit and a reviewer agent (its fixes are in the commit after `05b430c`).
 
-- F2: the debounced search could drop keys typed while a value was sent (it now tracks the sent value). The probe logged nothing when all events were fast under Event Timing (it now counts every input). The Columns e2e test expected the old last song of the mock. The keyboard test was checked by mutation.
+- F1: a song selected under "All" in Columns did not show in Tree (P6-AC2); Tree now opens the artist and album of the selection. In Tree and on album rows the queue was the search-filtered list; R6 says "its album", so the whole album plays (P6-AC4). Ctrl+F did nothing when Library was a hidden tab (P6-AC5); the focus now waits for the tab body.
+- F2: the debounced search could drop keys. The probe logged nothing when all events were fast under Event Timing. Right-click on a Tree row opened or closed it. The menu returned focus to a wrapper, not the list. A search that hid the selected artist or album kept filtering the other lists (now "All" is selected). The row cache kept old rows after a rescan (D46 keeps ids). Ctrl+F and Ctrl+Shift+L matched the physical key, not the typed letter (AZERTY, Dvorak). Page Up and Page Down moved 10 rows, not a page. The probe test had no Event Timing case and no slow count.
 - F4:
-  - An album selected outside the filtered list makes "All" the active row: the user's selection stays; the next move starts from "All".
-  - The context menu has no trigger element: Base UI positions it at the row and returns focus to the list (tested).
-  - `library_tree` still returns the whole structure: P6.1 defines it so; F-13 waits for the owner.
-  - `library-changed` refetches all three lists twice per second during a scan: section 6.9 allows it; P6-AC6 measured the cost.
+  - An album selected outside the filtered list made "All" active: now the selection moves to "All" (F2 above).
+  - The context menu has no trigger element: Base UI positions it at the row; focus returns to the list (tested).
+  - `library_tree` returns the whole structure: P6.1 defines it so; F-13 waits for the owner.
+  - `library-changed` refetches the id lists twice per second during a scan: section 6.9 allows it; P6-AC6 measured the cost.
+  - Tree Right on an open node with no children: the tree builder always yields children.
+  - The measurement readiness has no race: `start_scan` counts the startup scan before the UI asks `scan_running`.
+  - Older plan text names the `fixtures` CI steps: it is the P3 record of that time.
 
 **Follow-ups:** F-13 (open).
 

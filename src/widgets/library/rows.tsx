@@ -18,6 +18,8 @@ interface RowProps {
   onActivate?: () => void;
   /** Right-click: the row's context menu (P6.6). */
   onMenu?: (row: HTMLElement) => void;
+  /** Selects the row for the context menu without other click effects. Defaults to `onSelect`. */
+  onPick?: () => void;
   role?: "option" | "treeitem";
   className?: string;
   children: ReactNode;
@@ -37,6 +39,7 @@ export function Row({
   onSelect,
   onActivate,
   onMenu,
+  onPick,
   role = "option",
   className,
   children,
@@ -60,7 +63,7 @@ export function Row({
       onContextMenu={(event) => {
         if (!onMenu) return;
         event.preventDefault();
-        onSelect?.();
+        (onPick ?? onSelect)?.();
         onMenu(event.currentTarget);
       }}
       className={cn(

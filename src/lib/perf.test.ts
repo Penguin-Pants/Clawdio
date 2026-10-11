@@ -30,3 +30,50 @@ describe("startPerfProbe", () => {
     expect(lines).toHaveLength(1);
   });
 });
+
+describe("startPerfProbe with Event Timing", () => {
+  it("takes the durations from Event Timing entries and counts slow events", () => {
+    let report: (() => void) | undefined;
+    let deliver: ((entries: { name: string; duration: number }[]) => void) | undefined;
+    const listeners = new Map<string, () => void>();
+    class FakeObserver {
+      static supportedEntryTypes = ["event"];
+      constructor(callback: (list: { getEntries: () => { name: string; duration: number }[] }) => void) {
+        deliver = (entries) => callback({ getEntries: () => entries });
+      }
+      observe() {}
+      disconnect() {}
+    }
+    const target = {
+      PerformanceObserver: FakeObserver,
+      performance: { now: () => 0 },
+      addEventListener: (name: string, listener: () => void) => listeners.set(name, listener),
+      removeEventListener: (name: string) => listeners.delete(name),
+      setInterval: (callback: () => void) => {
+        report = callback;
+        return 1;
+      },
+      clearInterval: () => {
+        report = undefined;
+      },
+      requestAnimationFrame: () => {
+        throw new Error("Event Timing needs no frame callback");
+      },
+    } as unknown as Window;
+    const lines: string[] = [];
+    const stop = startPerfProbe({ log: (line) => lines.push(line), target });
+    listeners.get("keydown")?.();
+    listeners.get("keydown")?.();
+    listeners.get("pointerdown")?.();
+    deliver?.([
+      { name: "keydown", duration: 24 },
+      { name: "pointerdown", duration: 152 },
+      { name: "scroll", duration: 400 },
+    ]);
+    report?.();
+    expect(lines).toEqual(["perf: 3 input events, max 152 ms, 1 over 100 ms (Event Timing)"]);
+    stop();
+    expect(listeners.size).toBe(0);
+    expect(report).toBeUndefined();
+  });
+});

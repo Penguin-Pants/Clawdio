@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
 import { useCommand, useSongRows } from "@/lib/ipc/hooks";
+import { useLibraryStore } from "@/store/library";
 import { cn } from "@/lib/utils";
 import { EmptyHint } from "../hint";
 
@@ -8,7 +9,8 @@ const NO_PLAYLISTS: PlaylistRow[] = [];
 
 function Entries({ id }: { id: number }) {
   const entries = useCommand<PlaylistEntry[]>(() => commands.playlistEntries(id), [], [id]);
-  const { row, request } = useSongRows();
+  const version = useLibraryStore((state) => state.version);
+  const { row, request } = useSongRows(version);
   useEffect(() => {
     request(entries.flatMap((entry) => (entry.track === null ? [] : [entry.track])));
   }, [entries, request]);

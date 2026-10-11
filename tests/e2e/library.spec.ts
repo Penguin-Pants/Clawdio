@@ -152,10 +152,15 @@ test("P6-AC5: arrow keys, Enter, Ctrl+F and Esc, with the active row outlined", 
 
   await mode(page, "Tree");
   const library = tree(page);
+  // The tree opens the album of the song selected in Columns (P6-AC2).
+  await expect(library.getByRole("treeitem", { name: /Song 3 of Album A0/ })).toHaveAttribute("aria-selected", "true");
   await library.focus();
   await page.keyboard.press("Home");
   const first = library.getByRole("treeitem", { name: "Artist 00", exact: true });
   await expect(first).toHaveAttribute("aria-selected", "true");
+  // The earlier song selection opened this artist (P6-AC2); Left closes it.
+  await expect(first).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("ArrowLeft");
   await expect(first).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("ArrowRight");
   await expect(first).toHaveAttribute("aria-expanded", "true");
@@ -163,6 +168,10 @@ test("P6-AC5: arrow keys, Enter, Ctrl+F and Esc, with the active row outlined", 
   const album = library.getByRole("treeitem", { name: "Album A0", exact: true });
   await expect(album).toHaveAttribute("aria-selected", "true");
   await expect(album).toHaveAttribute("aria-level", "2");
+  // Left closes an open album first, then moves to its artist.
+  await expect(album).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("ArrowLeft");
+  await expect(album).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("ArrowLeft");
   await expect(first).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("ArrowLeft");
@@ -213,4 +222,71 @@ test("P6.4: the playing song shows the playing icon and label", async ({ page })
   const songs = list(page, "Songs");
   await expect(songs.getByRole("option", { name: /Playing.*Song 4 of Album A0/ })).toBeVisible();
   await expect(songs.getByRole("option", { name: /Song 5 of Album A0/ })).not.toContainText("Playing");
+});
+
+test("P6-AC2: a song selected under All shows selected in Tree", async ({ page }) => {
+  await openLibrary(page);
+  await list(page, "Songs")
+    .getByRole("option", { name: /Song 2 of Album B0/ })
+    .click();
+  await mode(page, "Tree");
+  const song = tree(page).getByRole("treeitem", { name: /Song 2 of Album B0/ });
+  await expect(song).toHaveAttribute("aria-selected", "true");
+  await tree(page).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(tree(page).getByRole("treeitem", { name: /Song 3 of Album B0/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
+test("P6-AC4: in Tree a song plays its whole album, and Enter on an album row plays it", async ({ page }) => {
+  await openLibrary(page);
+  const albumIds = (album: number) => Array.from({ length: 10 }, (_, s) => album * 10 + s);
+  // Columns: Enter on an album row plays the album from its first song.
+  const albums = list(page, "Albums");
+  await albums.getByRole("option", { name: /Album C0/ }).click();
+  await albums.press("Enter");
+  expect(await lastPlay(page)).toEqual({ ids: albumIds(2), start: 0 });
+
+  // A search narrows the Tree, not the queue: the album plays whole (R6).
+  await mode(page, "Tree");
+  await search(page, "Song 7 of Album A1");
+  await tree(page).getByRole("treeitem", { name: "Artist 01", exact: true }).click();
+  await tree(page).getByRole("treeitem", { name: "Album A1", exact: true }).click();
+  await expect(tree(page).getByRole("treeitem", { level: 3 })).toHaveCount(1);
+  await tree(page).getByRole("treeitem", { level: 3 }).dblclick();
+  expect(await lastPlay(page)).toEqual({ ids: albumIds(3), start: 6 });
+});
+
+test("P6: a search that hides the selected artist selects All", async ({ page }) => {
+  await openLibrary(page);
+  await list(page, "Artists").getByRole("option", { name: "Artist 02", exact: true }).click();
+  await search(page, "beyonce");
+  await expect(list(page, "Artists").getByRole("option", { name: "All", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(list(page, "Songs").getByRole("option")).toHaveCount(3);
+});
+
+test("P6: right-click on a Tree row opens the menu without opening or closing the row", async ({ page }) => {
+  await openLibrary(page);
+  await mode(page, "Tree");
+  await tree(page).getByRole("treeitem", { name: "Artist 00", exact: true }).click();
+  const album = tree(page).getByRole("treeitem", { name: "Album A0", exact: true });
+  await album.click({ button: "right" });
+  await expect(page.getByRole("menu")).toBeVisible();
+  await expect(album).toHaveAttribute("aria-expanded", "false");
+  await expect(album).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Escape");
+});
+
+test("P6-AC5: Ctrl+F reaches the search field when Library is a hidden tab", async ({ page }) => {
+  await openLibrary(page);
+  await page.evaluate(() => window.e2e.addAsTab("queue", "library"));
+  await expect(widget(page, "library")).toBeHidden();
+  await page.keyboard.press("Control+f");
+  const field = widget(page, "library").getByRole("searchbox", { name: "Search" });
+  await expect(field).toBeFocused();
 });

@@ -26,7 +26,7 @@ describe("useCommand", () => {
 describe("useSongRows (D14)", () => {
   it("fetches only ids that are not cached and keeps at most the limit", async () => {
     const libraryRows = vi.spyOn(commands, "libraryRows").mockImplementation((ids) => Promise.resolve(ids.map(song)));
-    const { result } = renderHook(() => useSongRows());
+    const { result } = renderHook(() => useSongRows(0));
     act(() => result.current.request([1, 2, 3]));
     await waitFor(() => expect(result.current.row(3)?.title).toBe("Song 3"));
     act(() => result.current.request([2, 3, 4]));
@@ -37,6 +37,22 @@ describe("useSongRows (D14)", () => {
     act(() => result.current.request(many));
     await waitFor(() => expect(result.current.row(many.at(-1) as number)).toBeDefined());
     expect(result.current.row(1)).toBeUndefined();
+    libraryRows.mockRestore();
+  });
+
+  it("loads rows again after the library changes (D46: ids stay, rows can change)", async () => {
+    let title = "Old";
+    const libraryRows = vi
+      .spyOn(commands, "libraryRows")
+      .mockImplementation((ids) => Promise.resolve(ids.map((id) => ({ ...song(id), title }))));
+    const { result, rerender } = renderHook(({ version }) => useSongRows(version), { initialProps: { version: 1 } });
+    act(() => result.current.request([1]));
+    await waitFor(() => expect(result.current.row(1)?.title).toBe("Old"));
+    title = "New";
+    rerender({ version: 2 });
+    expect(result.current.row(1)).toBeUndefined();
+    act(() => result.current.request([1]));
+    await waitFor(() => expect(result.current.row(1)?.title).toBe("New"));
     libraryRows.mockRestore();
   });
 });
