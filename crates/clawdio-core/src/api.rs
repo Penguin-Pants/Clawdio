@@ -66,7 +66,7 @@ pub struct AlbumRow {
     pub artist_id: u32,
     pub name: String,
     pub artist_name: String,
-    /// Thumbnail file in the cache folder, for the asset protocol (D41). Null when none exists.
+    /// Thumbnail file name, loaded through the `thumb://` scheme (D41). Null when none exists.
     pub thumb: Option<String>,
 }
 

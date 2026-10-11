@@ -1,5 +1,5 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
+import { thumbUrl } from "@/lib/thumbs";
 import { IconButton } from "@/components/icon-button";
 import { commands, type SongRow } from "@/lib/ipc/commands";
 import { useCommand } from "@/lib/ipc/hooks";
@@ -21,12 +21,7 @@ export function NowPlayingWidget() {
   return (
     <div className="flex h-full items-center gap-3 p-2">
       {art ? (
-        <img
-          src={convertFileSrc(art)}
-          alt=""
-          className="size-16 shrink-0 rounded-card object-cover"
-          draggable={false}
-        />
+        <img src={thumbUrl(art)} alt="" className="size-16 shrink-0 rounded-card object-cover" draggable={false} />
       ) : (
         <ArtPlaceholder className="size-16 shrink-0" />
       )}

@@ -5,7 +5,7 @@ use clawdio_core::api::{AlbumRow, ArtistRow, SongRow, SongScope, TreeArtist};
 use tauri::State;
 
 use super::{lock_error, CommandResult};
-use crate::state::{Library, Thumbs};
+use crate::state::Library;
 
 #[tauri::command]
 pub fn library_artists(library: State<'_, Library>, query: String) -> CommandResult<Vec<u32>> {
@@ -44,21 +44,13 @@ pub fn library_albums(
 #[tauri::command]
 pub fn library_album_rows(
     library: State<'_, Library>,
-    thumbs: State<'_, Thumbs>,
     ids: Vec<u32>,
 ) -> CommandResult<Vec<AlbumRow>> {
-    let mut rows = library
+    Ok(library
         .0
         .read()
         .map_err(|_| lock_error())?
-        .album_rows(&ids)?;
-    for row in &mut rows {
-        row.thumb = row
-            .thumb
-            .take()
-            .map(|name| thumbs.0.join(name).to_string_lossy().into_owned());
-    }
-    Ok(rows)
+        .album_rows(&ids)?)
 }
 
 #[tauri::command]
@@ -84,17 +76,15 @@ pub fn library_tree(library: State<'_, Library>, query: String) -> CommandResult
     Ok(library.0.read().map_err(|_| lock_error())?.tree(&query))
 }
 
-/// The thumbnail of a track's album, for Now playing. An unknown or removed track is an error (D46).
+/// The thumbnail name of a track's album, for Now playing. An unknown or removed track is an
+/// error (D46).
 #[tauri::command]
-pub fn album_art(
-    library: State<'_, Library>,
-    thumbs: State<'_, Thumbs>,
-    track: u32,
-) -> CommandResult<Option<String>> {
-    let index = library.0.read().map_err(|_| lock_error())?;
-    Ok(index
+pub fn album_art(library: State<'_, Library>, track: u32) -> CommandResult<Option<String>> {
+    Ok(library
+        .0
+        .read()
+        .map_err(|_| lock_error())?
         .album_of(track)?
         .thumb
-        .as_ref()
-        .map(|name| thumbs.0.join(name).to_string_lossy().into_owned()))
+        .clone())
 }

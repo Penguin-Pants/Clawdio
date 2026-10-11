@@ -2,6 +2,6 @@
 
 export type AlbumRow = { id: number, artistId: number, name: string, artistName: string, 
 /**
- * Thumbnail file in the cache folder, for the asset protocol (D41). Null when none exists.
+ * Thumbnail file name, loaded through the `thumb://` scheme (D41). Null when none exists.
  */
 thumb: string | null, };

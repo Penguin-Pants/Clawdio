@@ -1,6 +1,6 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
 import type { CSSProperties, ReactNode } from "react";
 import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
+import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -60,12 +60,10 @@ export function SongCells({ song, showAlbum }: { song: SongRow | undefined; show
   );
 }
 
-/** A 40 px album thumbnail from the cache folder (D27, D41), or the placeholder. */
+/** A 40 px album thumbnail through the `thumb://` scheme (D27, D41), or the placeholder. */
 export function AlbumThumb({ src }: { src: string | null }) {
   if (!src) return <ArtPlaceholder className="size-10 shrink-0" />;
-  return (
-    <img src={convertFileSrc(src)} alt="" className="size-10 shrink-0 rounded-card object-cover" draggable={false} />
-  );
+  return <img src={thumbUrl(src)} alt="" className="size-10 shrink-0 rounded-card object-cover" draggable={false} />;
 }
 
 export function AlbumCells({ album }: { album: AlbumRow }) {

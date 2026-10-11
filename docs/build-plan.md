@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.10, October 11, 2026 (owner approval of F-06, F-07, F-08 and F-10, section 13).
+**Version:** 1.11, October 11, 2026 (owner decision on D41, section 13).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -283,10 +283,10 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | Criterion | Result | Evidence |
 |---|---|---|
 | P3-AC1 | Pass (Linux, Xvfb) | Fixtures build in each mode with all six widgets populated (`CLAWDIO_MEASURE_MODE`). Browser: `tests/e2e/milestone.spec.ts` (Songs list to its end, filters, tree expansion, axe). Rust: `src-tauri/src/fixtures.rs` tests (50,000 songs, 2,000 thumbnails, widget data). |
-| P3-AC2 | Linux only | `docs/milestone-0.md`: 470 MB (Columns, worst mode median). Windows: B8. |
+| P3-AC2 | Linux only | `docs/milestone-0.md`: 468 MB (Columns, worst mode median, build `e62ddca`). Windows: B8. |
 | P3-AC3 | Pass | `.deb` 3.3 MB (local). NSIS installer 2.2 MB (`measure.yml` run 38169331542). |
-| P3-AC4 | Linux only | Linux over 300 MB: target raised to 470 MB (D49). Windows verdict open. |
-| P3-AC5 | Pass (Linux) | Thumbnails load from `~/.cache/io.github.penguinpants.clawdio/thumbs` through the asset protocol (dot folder, D41). Windows: B8. |
+| P3-AC4 | Linux only | Linux over 300 MB: target raised to 468 MB (D49). Windows verdict open. |
+| P3-AC5 | Pass (Linux) | Thumbnails load from `~/.cache/io.github.penguinpants.clawdio/thumbs` (a dot folder) through the `thumb://` scheme (D41 as changed in 1.11). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. Windows: B8. |
 
 **Notes**
 
@@ -295,8 +295,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N3: `fold` (D4) came forward from P5.5 for search. Natural order stays in P5.
 - N4: song rows cache at most 2,000 rows per list (`ROW_CACHE_LIMIT`).
 - N5: the e2e mocks serve a 600-song library with `?data=library` (`tests/e2e/library-data.ts`).
-- N6: the measurement ran in a container with Xvfb and software rendering (K15). `WebKitWebProcess` is 339 of the 470 MB.
-- N7: the Linux numbers come from `1990a37`, before the D14 fix for artist and album rows. That build held every artist and album row in the webview, so the numbers are an upper bound.
+- N6: the measurement ran in a container with Xvfb and software rendering (K15). `WebKitWebProcess` is 338 of the 468 MB.
+- N7: the first Linux run (`1990a37`, before the D14 fix and the ready signal) gave 470 MB. The run on `e62ddca` gave 468 MB; `docs/milestone-0.md` holds it.
 
 **Exceptions**
 
@@ -306,13 +306,12 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** B8.
 
-**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 7.
+**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 6. One finding (absolute thumbnail paths over IPC, D13 against D41) went to the owner, who chose the `thumb://` scheme (section 13, 1.11).
 
 - F2 (Codex review of `fdc1db1`): artist and album lists loaded every row at once, against D14; they now load ids, then rows for the visible window (`library_artist_rows`, `library_album_rows`). A tree album selection kept the old artist; it now selects its artist too. `album_art` returned no art for an unknown track; it now returns `unknown_id` (D46). `measure-memory.sh` and `.ps1` now fail when the app exits before the sample. The first Windows run failed: `$runs` and the `-Runs` parameter are one variable in PowerShell (renamed `$runRecords`).
 - F2 (Codex review of `b71e28c`): a tree song selection kept the old artist and album; it now sets all three. The scripts sampled after a fixed delay; the UI now writes a ready file once all six widgets show data (`measure_ready`, `CLAWDIO_MEASURE_READY`) and the scripts wait for it. F6 stayed in a focused Library list; only select popups keep F6 now. The Menu and dialog close buttons had no tooltip.
 - F2: the song row cache had no limit; scrolling 50,000 rows kept every row. Now capped (N4). The fixture `widgets` assignment failed `clippy` with the feature on; CI now lints and tests with `--features clawdio/fixtures`.
 - F4:
-  - Album rows return an absolute thumbnail path: D13 forbids paths from the webview; this path goes to it, for `convertFileSrc` (P3.2).
   - Fixture thumbnails stay in the cache folder after P6.7: the cache is rebuildable (R19).
   - Queries sort per call: 50,000 songs sort in milliseconds; P6.1 finishes the queries.
   - `CLAWDIO_MEASURE_MODE` holds the product name in capitals: the plan names the variable; the guard is case sensitive (D34).
@@ -442,7 +441,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D38 | The portable build relies on Tauri's built-in "WebView2 Runtime not found" dialog (Tauri 2.6 and later), which links to the Microsoft download page. `main` exits with code 1 on `WebviewRuntimeNotInstalled` and does not panic. | R22. No extra code. |
 | D39 | souvlaki 0.8.3 with default features (libdbus on Linux). | R24. |
 | D40 | Log: file `app.log`, 1 MB per file, 5 old files kept. | R23 size-based rotation. |
-| D41 | The asset protocol is on. Its scope is the thumbnail folder only, granted at runtime. `requireLiteralLeadingDot` is false so `~/.cache` paths work on Linux. | Thumbnails and art without exposing the music folder. |
+| D41 | Thumbnails and display art load through a `thumb://` URI scheme. Rust serves only plain `.jpg` file names from the thumbnail folder. IPC carries the file name; the webview builds the URL with `convertFileSrc(name, "thumb")`. The asset protocol is off. | D13 (no file paths over IPC). Owner decision October 11, 2026 (1.11); it replaced the asset protocol scope. |
 | D42 | Metadata fill picks a release in three steps. (1) Search releases by the folder artist and album; if that gives no single release group by the D43 normalization, search again by the most common album and artist tags of the album's songs, when they differ. (2) Among the remaining releases, score each by the number of songs whose title (tag, else the R4 file-name title) matches a track title after folding. (3) The release with the highest score wins if at least half the songs match and no other release has the same score; prefer a track count equal to the song count, then the earliest date. Otherwise there is no proposal. | R10: "It looks up by folder names, existing tags and file name." Codex review finding Y4. |
 | D43 | Name normalization for R8 and R10 matching: fold (D4); remove a leading year with an optional separator ("1973 - ", "1973. ", "(1973) "); remove each bracketed or parenthesized group that holds a 4-digit year or any of these words: remaster, remastered, deluxe, edition, expanded, anniversary, bonus, special, reissue, version, mono, stereo; remove a leading "the "; collapse spaces. | R8 gives examples, not a full list. |
 | D44 | Online candidates use flags that the scan stores: per track, whether it has an embedded picture; per album, the cover file state (none, valid, broken). A cover file is decoded only when it is new or changed. An album with a broken `cover.jpg` or a corrupt `sidecar.json` is not a candidate and is logged once per scan. | C18. R8 (no overwrite, no automatic retry). Startup must not read 50,000 files (P5-AC7). |
@@ -747,9 +746,9 @@ Uppercase spaced text is not used in the app UI (design.md §4).
 
 ### 6.13 Security model
 
-- **Content Security Policy:** `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'`. Nonce handling per D48.
+- **Content Security Policy:** `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' thumb: http://thumb.localhost data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'`. Nonce handling per D48.
 - **Capabilities:** `core:default`, plus `log:default` from P4. No fs, http, shell, dialog or opener permission in the webview (D13).
-- **Asset protocol:** thumbnail folder only (D41). The music folder is never exposed to the webview.
+- **Thumbnails:** the `thumb://` scheme serves file names from the thumbnail folder only (D41). The asset protocol is off. The music folder is never exposed to the webview.
 - **Paths:** IPC never accepts a file path from the webview. Paths come from Rust pickers or from the index. Every write target is checked to be inside the music folder after normalization. Playlist names pass the R12 rule before any file operation.
 - **Network:** off by default. Allow-listed HTTPS hosts only. 10 MB cap. Images decoded before saving. No telemetry and no updater.
 - **Supply chain:** lockfiles committed. `cargo deny check` in CI (licenses, advisories, sources) from P18; `npm audit --omit=dev` reported in CI.
@@ -1027,7 +1026,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - The real query commands serve it: `library_artists`, `library_albums`, `library_song_ids`, `library_rows` and `library_tree`, with search (signatures as in section 6.7). This matches D14, so the gate measures the real memory profile.
   - The app writes 2,000 album thumbnails (96 px JPEG, generated colors and numbers) into the thumbnail folder.
   - Outside the `fixtures` feature, so release builds keep it: with `CLAWDIO_MEASURE_MODE` set to `tree`, `columns` or `topBottom`, the app applies an arrangement that shows all six widgets (Playlists, Play queue and Lyrics docked beside the default arrangement) in that Library mode. It does not save that arrangement.
-- **P3.2** Asset protocol (D41): enable it. Grant the thumbnail folder at runtime. Set `requireLiteralLeadingDot` to false so `~/.cache` paths load on Linux. Use `convertFileSrc` for image URLs.
+- **P3.2** Thumbnail scheme (D41): register `thumb://`, which serves plain `.jpg` names from the thumbnail folder. Album rows carry the file name. Use `convertFileSrc(name, "thumb")` for image URLs. (Changed in 1.11; it was the asset protocol.)
 - **P3.3** Library views with fixture data, all virtualized (section 6.2):
   - Tree: flattened rows (artist, album, song) with expand and collapse.
   - Columns: Artist, Album and Songs lists side by side. Artist and Album lists start with an "All" row.
@@ -1046,7 +1045,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P3-AC2** Idle memory is measured on Windows and Linux by the D28 method, with all six widgets shown, in each Library mode. The worst mode per OS is the gate value. The environment is recorded.
 - **P3-AC3** NSIS installer and `.deb` sizes are recorded against the 30 MB target.
 - **P3-AC4** The verdict is recorded for memory and for package size. An OS over 300 MB gets its measured value as its new memory target. The other OS keeps 200 MB (D49).
-- **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the asset protocol (no broken images).
+- **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the `thumb://` scheme (no broken images).
 
 **Verification.** CI workflow `measure.yml` plus local Linux runs. Manual: scroll each mode, open each widget. The owner gets the numbers in the phase report.
 
@@ -1318,7 +1317,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   2. Else embedded art: walk the album's songs in album order (only songs with the D44 embedded-picture flag) and take the first front cover (`PictureType::CoverFront`) that decodes. If no song has a front cover that decodes, take the first picture of any type that decodes.
   3. A cover file that fails to decode is logged and skipped. The next source applies.
 - **P10.2** `thumbs.rs` (D27): 96 px and 512 px JPEG files in `DataDirs.cache/thumbs/`. Two worker threads make them on request. Command `album_art(album_id, size)` returns a path or none. Event `art-ready` tells the UI when a file appears.
-- **P10.3** UI: album rows request art only for visible rows. `<img>` uses `convertFileSrc`. Now playing shows the 512 px image. No art: `ArtPlaceholder`.
+- **P10.3** UI: album rows request art only for visible rows. `<img>` uses `convertFileSrc(name, "thumb")` (D41). Now playing shows the 512 px image. No art: `ArtPlaceholder`.
 - **P10.4** "Set cover" on the album context menu: a Rust file picker for `.jpg`, `.jpeg` and `.png`. Decode the file, convert it to JPEG (quality 90), check that the folder is writable, ask for confirmation if `cover.jpg` exists (D19), write a temp file and rename it. Remove the album's thumbnails so they regenerate. Read-only folder: show the error and write nothing.
 - **P10.5** Media controls: pass the 512 px file as a `file://` cover URL (R24). When the 512 px file for the current song's album becomes ready after the track started (`art-ready`), publish the metadata again.
 
@@ -1650,7 +1649,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K6 | Apple XML format is not documented by Apple | Import mismatches | Fixtures from public samples; owner exports (Q5) | P12 |
 | K7 | "Dr. Claw Development" names a third-party character. A villain-cat brand can look derivative. | Trademark or takedown risk | Original vector shapes only (P1-AC7); owner kept the publisher name and accepted the risk on October 11, 2026 (Q1) | P1, P18 |
 | K8 | Brand palette contrast (C13) | Unreadable text | D10 rules and the contrast test | P0, P17 |
-| K9 | Asset protocol globs skip dot folders on Linux | Thumbnails fail to load | D41; P3-AC5 | P3 |
+| K9 | Thumbnails live in a dot folder on Linux (`~/.cache`) | Thumbnails fail to load | D41 `thumb://` scheme reads by name, with no glob scope; P3-AC5 | P3 |
 | K10 | MusicBrainz blocks clients that exceed 1 request per second | Lookups fail | Shared limiter; stop on 503 | P14 |
 | K11 | AppImage needs FUSE on the user system | AppImage does not start | README note: `--appimage-extract-and-run` | P18 |
 | K12 | Hosted Ubuntu 22.04 runners may be retired | Higher glibc floor | Build in the `ubuntu:22.04` container | P18 |
@@ -1835,6 +1834,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
 - **1.9 (October 11, 2026):** owner signed off the brand after P1 (Q6 closed). Owner chose F-09 option (b) for B7: P1-AC4 checks wordmark bar separation at the 72 px README height, and the 20 px rule keeps only the bar width. F-09 left section 11.
 - **1.8 (October 11, 2026):** owner answered Q5 (supply the formats they have), Q6 (review after P1; P2 waits), Q7 (ask, then replace), Q8 (simple icon for 16 and 24 px only if needed), B5 (Windows machine only) and B2 (raise the target over 300 MB, new D49).

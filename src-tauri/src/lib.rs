@@ -4,6 +4,7 @@ mod commands;
 #[cfg(feature = "fixtures")]
 mod fixtures;
 mod state;
+mod thumbs;
 #[cfg(windows)]
 mod webview2_keys;
 mod window;
@@ -15,10 +16,13 @@ use state::{Library, Thumbs};
 /// Builds and runs the app until it quits.
 pub fn run() -> tauri::Result<()> {
     tauri::Builder::default()
+        // Thumbnails load by name from the thumbnail folder only (D41, D13).
+        .register_uri_scheme_protocol(thumbs::SCHEME, |ctx, request| {
+            let folder = ctx.app_handle().state::<Thumbs>();
+            thumbs::respond(&folder.0, request.uri().path())
+        })
         .setup(|app| {
             let thumbs = app.path().app_cache_dir()?.join("thumbs");
-            // The webview reads thumbnails through the asset protocol, from this folder only (D41).
-            app.asset_protocol_scope().allow_directory(&thumbs, false)?;
             let library = Library::default();
             #[cfg(feature = "fixtures")]
             let widgets = {
