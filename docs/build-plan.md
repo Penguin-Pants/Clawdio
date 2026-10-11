@@ -507,7 +507,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N1: the engine is in `player/engine.rs` (P7.2); `player/mod.rs` keeps the thread, the handle and the `PlayerEvents` trait. `PlayerEvent` went: `player-state` and `queue-changed` are separate events.
 - N2: `damaged.ogg` reaches rule (c), not rule (b) as P7-AC3 says. Symphonia 0.5.5 drops Ogg pages with bad audio and decodes garbage with no error, so no seed file triggers rule (b). The rule is a unit test on the packet counter (`source.rs`). Both damaged seeds are 6 s tones that end over 2 s early.
 - N3: rule (c) uses only a stated length: MP3 needs a Xing, Info or VBRI tag, else Symphonia estimates and the check is off (D32). New seed `tone-vbr.mp3` (1.5 KB) covers it.
-- N4: a buffer underrun from the device does not stop playback; other stream errors do (P7.4).
+- N4: a buffer underrun from the device does not stop playback; other stream errors do (P7.4). Each command first checks for a lost device. A device that dies in the moment between that check and a seek can still block the seek, because rodio's `try_seek` waits for the mixer thread with no timeout (rodio 0.22.2 `player.rs:247`).
 - N5: Transport controls are disabled with an empty queue (P7.7), so P4-AC2's check after "Choose music folder" now expects Play disabled. P2-AC7's "no red at rest" scan skips Transport controls, whose play ring, slider ranges and thumbs are red indicators by D10 (3).
 - N6: the Library menu has Play, Add to queue and a disabled Add to playlist on song, album and artist rows. The e2e build has a mock player (`tests/e2e/mock-player.ts`) that sends the real events.
 - N7: the traceability coverage summary was recounted from the rows. Earlier phases had changed row statuses but not the counts.
@@ -519,15 +519,25 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 5. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 1, F2 11, F3 0, F4 12. Sources: own audit (in `b18d5d0`) and a reviewer agent (fixed in the next commit).
 
-- F2: a buffer underrun from the device stopped playback like a lost device (now ignored, N4). The TypeScript wrappers for `player_play` and `player_pause` had no caller (removed; the commands stay for P8). The rodio decoder features were unused (removed).
+- F1: Add to queue on an empty queue left no current entry, so Play played one song and stopped (`Queue::append` now makes the first new entry current).
+- F2:
+  - Own audit: a buffer underrun stopped playback like a lost device (N4). Unused TypeScript wrappers for `player_play` and `player_pause` (removed; the commands stay for P8). Unused rodio decoder features (removed).
+  - Reviewer: a device lost while paused, or between ticks, could block the player thread in `Player::clear` or `try_seek` (each command now checks the device first, and a new `Player` replaces `clear`). `queue_get` and `player_state` could block the main thread (now async). An ID3 tag over 16 KiB (cover art) hid the Xing tag, so rule (c) was off. A rule (b) or (c) error that arrived between the error check and the end check was lost (the tick now reads the end first). A device lost while idle needed two Play presses. After repeat all wrapped, Previous on the first entry restarted it instead of going to the last entry played. Removing the playing entry with shuffle and repeat all stopped when the cycle had ended. Two tests passed with the rule inverted: the VBR seed now asserts no stated length, and the e2e test checks that Play replaces the queue count.
 - F4:
-  - A decode error and the end callback in the same tick: the source sends the error before the callback source runs, and the tick reads errors first.
-  - Repeat one with a file that fails at its end: the engine moves on with Next, not a restart, and the failure count still stops a loop.
+  - A decode error and the end callback in the same tick: the source sends the error before the end callback runs (and the tick now reads the end first).
+  - Repeat one with a file that fails at its end: the engine moves on with Next, and the failure count still stops a loop.
   - Space on a focused button presses it on key up: the capture handler also takes key up.
   - Seek before a file plays: the engine ignores it (tested).
   - `Queue::next` shares the iterator method name: the plan names it; clippy's lint is allowed there with the reason.
+  - Removing the playing entry while paused starts the next entry: R6 says "starts the next entry".
+  - A stale end callback could mark the new file ended: each `load` makes a new flag.
+  - A paused player could block a seek: the mixer still runs while paused.
+  - A keyboard seek might not commit: Base UI commits on each key change.
+  - Space against D17: text fields, menus, dialogs and select popups keep Space (unit and e2e tests).
+  - D13: IPC carries ids and indexes; messages carry the file name only.
+  - The three-failures count: it resets only on a normal end or a user action.
 
 **Follow-ups:** F-13 (open).
 

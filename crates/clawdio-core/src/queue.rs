@@ -114,11 +114,17 @@ impl Queue {
 
     /// Appends entries (Add to queue). The playing song does not change. During shuffle the
     /// new entries join the remaining pool.
+    /// On an empty queue the first new entry becomes current, so Play starts there.
     pub fn append(&mut self, ids: &[TrackId]) {
         let first = self.entries.len();
         self.entries.extend_from_slice(ids);
+        if self.current.is_none() && first < self.entries.len() {
+            self.current = Some(first);
+        }
         if self.shuffle {
-            self.pool.extend(first..self.entries.len());
+            let current = self.current;
+            self.pool
+                .extend((first..self.entries.len()).filter(|&index| Some(index) != current));
         }
     }
 
@@ -155,6 +161,9 @@ impl Queue {
             return Removed::Current(Step::Stop);
         }
         if self.shuffle {
+            if self.pool.is_empty() && self.repeat == RepeatMode::All {
+                self.pool = (0..self.entries.len()).collect();
+            }
             if let Some(next) = self.take_from_pool(None) {
                 self.current = Some(next);
                 return Removed::Current(Step::Play(next));
@@ -225,7 +234,11 @@ impl Queue {
             }
             previous
         } else {
-            current.checked_sub(1)
+            // After repeat all wrapped, the entry before the first is the last one.
+            current.checked_sub(1).or_else(|| {
+                (self.repeat == RepeatMode::All && !self.history.is_empty())
+                    .then(|| self.entries.len() - 1)
+            })
         };
         match previous {
             Some(previous) => {
@@ -450,6 +463,46 @@ mod tests {
         queue.append(&[300]);
         assert_eq!(queue.current(), Some(1));
         assert_eq!(queue.on_end(), Step::Play(2));
+    }
+
+    #[test]
+    fn append_on_an_empty_queue_makes_the_first_new_entry_current() {
+        let mut queue = Queue::new(1);
+        queue.append(&[7, 8]);
+        assert_eq!(queue.current(), Some(0));
+        assert_eq!(queue.on_end(), Step::Play(1), "the queue plays on");
+        queue.clear();
+        queue.set_shuffle(true);
+        queue.append(&[7, 8, 9]);
+        assert_eq!(queue.current(), Some(0));
+        assert!(
+            !queue.pool.contains(&0),
+            "the current entry is not still to play"
+        );
+    }
+
+    #[test]
+    fn previous_after_repeat_all_wrapped_goes_to_the_last_entry() {
+        let mut wrapped = queue(3, 2);
+        wrapped.set_repeat(RepeatMode::All);
+        assert_eq!(wrapped.next(), Step::Play(0));
+        assert_eq!(wrapped.previous(0), Step::Play(2));
+        let mut fresh = queue(3, 0);
+        fresh.set_repeat(RepeatMode::All);
+        assert_eq!(
+            fresh.previous(0),
+            Step::Restart,
+            "no entry played before the first"
+        );
+    }
+
+    #[test]
+    fn removing_the_playing_entry_with_shuffle_and_repeat_all_starts_a_new_cycle() {
+        let mut queue = queue(2, 0);
+        queue.set_shuffle(true);
+        queue.set_repeat(RepeatMode::All);
+        assert_eq!(queue.next(), Step::Play(1));
+        assert!(matches!(queue.remove(1), Removed::Current(Step::Play(0))));
     }
 
     /// Property (P7-AC1): with shuffle and repeat all, the play order splits into cycles that

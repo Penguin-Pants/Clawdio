@@ -3,7 +3,7 @@
 //! normal end of stream, so the source checks the stated duration itself.
 
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::num::NonZero;
 use std::path::Path;
 use std::sync::mpsc::Sender;
@@ -45,26 +45,29 @@ impl PacketErrors {
 /// Whether an MP3 file states its length in a Xing, Info or VBRI tag. Without one Symphonia
 /// estimates the length from the bitrate, and an estimate never triggers rule (c) (D32).
 fn mp3_states_length(path: &Path) -> bool {
-    let mut head = Vec::with_capacity(16 * 1024);
-    let Ok(file) = File::open(path) else {
+    let Ok(mut file) = File::open(path) else {
         return false;
     };
-    if file.take(16 * 1024).read_to_end(&mut head).is_err() {
+    // Skip an ID3v2 tag of any size: "ID3", version, flags, then a 28-bit size.
+    let mut header = [0u8; 10];
+    let mut start = 0u64;
+    if file.read_exact(&mut header).is_ok() && header.starts_with(b"ID3") {
+        let size = header[6..10]
+            .iter()
+            .fold(0u64, |size, byte| (size << 7) | u64::from(byte & 0x7f));
+        let footer = if header[5] & 0x10 != 0 { 10 } else { 0 };
+        start = 10 + size + footer;
+    }
+    // The tag sits in the first frame, within its first 200 bytes.
+    let mut frame = Vec::with_capacity(1_500);
+    if file.seek(SeekFrom::Start(start)).is_err()
+        || file.take(1_500).read_to_end(&mut frame).is_err()
+    {
         return false;
     }
-    // Skip an ID3v2 tag: "ID3", version, flags, then a 28-bit size.
-    let mut start = 0;
-    if head.starts_with(b"ID3") && head.len() >= 10 {
-        let size = head[6..10]
-            .iter()
-            .fold(0usize, |size, byte| (size << 7) | usize::from(byte & 0x7f));
-        start = 10 + size;
-    }
-    let first_frame = head.get(start..).unwrap_or_default();
-    let window = &first_frame[..first_frame.len().min(1_500)];
     [b"Xing", b"Info", b"VBRI"]
         .iter()
-        .any(|tag| window.windows(4).any(|bytes| bytes == *tag))
+        .any(|tag| frame.windows(4).any(|bytes| bytes == *tag))
 }
 
 /// A playing file. Decode errors go to `errors` as text; the engine reads them (D32).
@@ -314,6 +317,33 @@ pub mod tests {
     fn an_mp3_states_its_length_only_with_a_tag() {
         assert!(mp3_states_length(&seed("tone.mp3")));
         assert!(!mp3_states_length(&seed("corrupt.mp3")));
+        assert!(!mp3_states_length(&seed("tone-vbr.mp3")));
+        let (sender, _) = mpsc::channel();
+        let vbr = TrackSource::open(&seed("tone-vbr.mp3"), sender).unwrap();
+        assert_eq!(
+            vbr.stated_length(),
+            None,
+            "an estimate is not a stated length"
+        );
+    }
+
+    /// A cover in a large ID3 tag does not hide the Xing tag after it.
+    #[test]
+    fn an_mp3_with_a_large_id3_tag_still_states_its_length() {
+        let size: u32 = 64 * 1024;
+        let mut file = b"ID3\x04\x00\x00".to_vec();
+        file.extend(
+            (0..4)
+                .rev()
+                .map(|shift| ((size >> (7 * shift)) & 0x7f) as u8),
+        );
+        file.resize(10 + size as usize, 0);
+        file.extend(std::fs::read(seed("tone.mp3")).unwrap());
+        let path = std::env::temp_dir().join(format!("clawdio-id3-{}.mp3", std::process::id()));
+        std::fs::write(&path, file).unwrap();
+        let states = mp3_states_length(&path);
+        let _ = std::fs::remove_file(&path);
+        assert!(states);
     }
 
     /// Both damaged seeds end more than 2 s before their stated length (rule c). Symphonia

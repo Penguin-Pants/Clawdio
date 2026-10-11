@@ -311,6 +311,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         if self.status != PlayerStatus::Playing {
             return;
         }
+        // Read the end first: the source sends its error before the end callback runs, so an
+        // error that belongs to this end is in the channel by now.
+        let ended = self.output.finished();
         match self.output.take_error() {
             Some(OutputError::Device(reason)) => {
                 self.device_failed(&reason);
@@ -335,7 +338,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             }
             None => {}
         }
-        if self.output.finished() {
+        if ended {
             self.failures = 0;
             let step = self.queue.on_end();
             self.prepare_next(step);
@@ -347,6 +350,14 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
 
     /// Handles one command. Returns false on Shutdown.
     pub fn handle(&mut self, command: Command) -> bool {
+        // A device lost while paused or between ticks: stop first, so no command waits on it.
+        if let Some(reason) = self.output.device_lost() {
+            if self.status == PlayerStatus::Stopped {
+                log::warn!("player: audio device: {reason}");
+            } else {
+                self.device_failed(&reason);
+            }
+        }
         match command {
             Command::PlayList { ids, start } => self.play_list(ids, start),
             Command::Play => self.play(),
@@ -620,6 +631,40 @@ mod tests {
         assert_eq!(recorder.messages(), [DEVICE_MESSAGE]);
         assert_eq!(engine.queue().current, Some(0), "the queue stays");
         engine.play();
+        assert_eq!(engine.state().status, PlayerStatus::Playing);
+    }
+
+    #[test]
+    fn a_device_lost_while_paused_stops_before_the_next_command() {
+        let (mut engine, recorder) = engine();
+        engine.play_list(vec![0, 1], 0);
+        engine.pause();
+        engine.output_mut().lose_device = true;
+        engine.tick();
+        assert_eq!(
+            engine.state().status,
+            PlayerStatus::Paused,
+            "ticks skip a paused player"
+        );
+        engine.handle(Command::Next);
+        assert_eq!(recorder.messages(), [DEVICE_MESSAGE]);
+        assert_eq!(
+            engine.state().status,
+            PlayerStatus::Playing,
+            "Next opens the device again"
+        );
+        assert_eq!(engine.queue().current, Some(1));
+    }
+
+    #[test]
+    fn play_after_add_to_queue_on_an_empty_queue_plays_every_entry() {
+        let (mut engine, recorder) = engine();
+        engine.append(vec![0, 1]);
+        engine.play();
+        assert_eq!(engine.queue().current, Some(0));
+        assert!(recorder.has("queue Some(0)"));
+        play_to_end(&mut engine);
+        assert_eq!(engine.queue().current, Some(1));
         assert_eq!(engine.state().status, PlayerStatus::Playing);
     }
 

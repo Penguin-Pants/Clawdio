@@ -86,12 +86,14 @@ pub fn queue_clear(player: State<'_, PlayerHandle>) {
     player.send(Command::ClearQueue);
 }
 
+// The reads wait for the player thread's answer. As async commands they wait off the main
+// thread, so a slow player never freezes the window.
 #[tauri::command]
-pub fn queue_get(player: State<'_, PlayerHandle>) -> CommandResult<QueueSnapshot> {
+pub async fn queue_get(player: State<'_, PlayerHandle>) -> CommandResult<QueueSnapshot> {
     Ok(player.queue())
 }
 
 #[tauri::command]
-pub fn player_state(player: State<'_, PlayerHandle>) -> CommandResult<PlayerSnapshot> {
+pub async fn player_state(player: State<'_, PlayerHandle>) -> CommandResult<PlayerSnapshot> {
     Ok(player.state())
 }

@@ -69,8 +69,15 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
   await expect(queue).toContainText("51 songs");
   await expect(queue.getByRole("option", { name: /Playing.*Song 4 of Album A0/ })).toBeVisible();
 
+  // With Album A0 selected, the Songs list holds its 10 songs: Play makes them the queue.
+  await widget(page, "library")
+    .getByRole("listbox", { name: "Albums" })
+    .getByRole("option", { name: /Album A0/ })
+    .click();
+  await expect(songs.getByRole("option")).toHaveCount(10);
   await songs.getByRole("option", { name: /Song 3 of Album A0/ }).click({ button: "right" });
   await menu.getByRole("menuitem", { name: "Play", exact: true }).click();
+  await expect(queue).toContainText("10 songs");
   await expect(queue.getByRole("option", { name: /Playing.*Song 3 of Album A0/ })).toBeVisible();
   expect((await calls(page)).at(-1)).toBe("player_play_list");
 });

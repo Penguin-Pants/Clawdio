@@ -36,9 +36,18 @@ pub trait AudioOutput {
     fn position(&self) -> Duration;
     /// True once the current file played to its end.
     fn finished(&self) -> bool;
-    /// An error that happened while playing: a decode error of the current file (D32 rules b
-    /// and c) or a lost device. Each error is returned once.
-    fn take_error(&mut self) -> Option<OutputError>;
+    /// The device failed since the last check: the reason. The output closes it, so the next
+    /// `load` opens the default device (P7.4). Returned once.
+    fn device_lost(&mut self) -> Option<String>;
+    /// A decode error of the current file (D32 rules b and c), returned once.
+    fn take_decode_error(&mut self) -> Option<OutputError>;
+    /// An error that happened while playing: a lost device first, else a decode error.
+    fn take_error(&mut self) -> Option<OutputError> {
+        if let Some(reason) = self.device_lost() {
+            return Some(OutputError::Device(reason));
+        }
+        self.take_decode_error()
+    }
 }
 
 /// The device output (section 6.10). The device sink opens on the first `load`, and again on
@@ -67,6 +76,8 @@ impl Default for RodioOutput {
 
 impl RodioOutput {
     fn player(&mut self) -> Result<&Player, OutputError> {
+        // A device that failed while idle opens again now, not on the next Play.
+        let _ = self.device_lost();
         if self.sink.is_none() {
             let failed = self.device_error.clone();
             let sink = DeviceSinkBuilder::from_default_device()
@@ -101,6 +112,16 @@ impl RodioOutput {
         self.player = None;
         self.sink = None;
     }
+
+    /// Drops the current sources with a new `Player` on the same mixer. `Player::clear` waits
+    /// for the mixer thread, which a dead stream never runs.
+    fn fresh_player(&mut self) {
+        if let Some(sink) = &self.sink {
+            let player = Player::connect_new(sink.mixer());
+            player.set_volume(self.volume);
+            self.player = Some(player);
+        }
+    }
 }
 
 impl AudioOutput for RodioOutput {
@@ -110,8 +131,12 @@ impl AudioOutput for RodioOutput {
         let ended = Arc::new(AtomicBool::new(false));
         self.ended = ended.clone();
         self.decode_errors = Some(receiver);
-        let player = self.player()?;
-        player.clear();
+        self.player()?;
+        self.fresh_player();
+        let player = self
+            .player
+            .as_ref()
+            .ok_or_else(|| OutputError::Device("no player".into()))?;
         player.append(source);
         // The callback source runs when the track before it has ended (section 6.10).
         player.append(EmptyCallback::new(Box::new(move || {
@@ -134,9 +159,7 @@ impl AudioOutput for RodioOutput {
     }
 
     fn stop(&mut self) {
-        if let Some(player) = &self.player {
-            player.clear();
-        }
+        self.fresh_player();
         self.ended = Arc::new(AtomicBool::new(false));
         self.decode_errors = None;
     }
@@ -165,16 +188,19 @@ impl AudioOutput for RodioOutput {
         self.ended.load(Ordering::Relaxed)
     }
 
-    fn take_error(&mut self) -> Option<OutputError> {
+    fn device_lost(&mut self) -> Option<String> {
         let lost = self
             .device_error
             .lock()
             .ok()
             .and_then(|mut slot| slot.take());
-        if let Some(reason) = lost {
+        if lost.is_some() {
             self.close_device();
-            return Some(OutputError::Device(reason));
         }
+        lost
+    }
+
+    fn take_decode_error(&mut self) -> Option<OutputError> {
         self.decode_errors
             .as_ref()
             .and_then(|errors| errors.try_recv().ok())
@@ -260,11 +286,16 @@ impl AudioOutput for TestOutput {
         self.error.is_none() && self.length.is_some_and(|length| self.clock >= length)
     }
 
-    fn take_error(&mut self) -> Option<OutputError> {
-        if self.lose_device {
-            self.lose_device = false;
-            return Some(OutputError::Device("the test device went away".into()));
+    fn device_lost(&mut self) -> Option<String> {
+        if !self.lose_device {
+            return None;
         }
+        self.lose_device = false;
+        self.stop();
+        Some("the test device went away".into())
+    }
+
+    fn take_decode_error(&mut self) -> Option<OutputError> {
         let at_end = self.length.is_some_and(|length| self.clock >= length);
         if at_end {
             return self.error.take().map(OutputError::Decode);
