@@ -1,6 +1,6 @@
 # Requirements Review: Minimalist Music Player
 
-**Reviewed document:** `MusicPlayer_REQUIREMENTS.md`, version 1.3 (October 11, 2026). The reviewed version (1.3) is `docs/MusicPlayer_REQUIREMENTS.md` at commit 19aaa34. That file is now version 1.4, which records the owner decisions in its section 8 and applies only the wording those decisions need. The other findings in this review still wait for an owner pass.
+**Reviewed document:** `MusicPlayer_REQUIREMENTS.md`, version 1.3 (October 11, 2026). The reviewed version (1.3) is `docs/MusicPlayer_REQUIREMENTS.md` at commit 19aaa34. That file is now version 1.5: version 1.4 recorded the owner decisions in its section 8, and version 1.5 applied this review's section G with the owner's choices (decisions 9 to 16).
 **Review date:** October 11, 2026
 **Scope:** Review only. No code. No edits to the requirements document.
 
