@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.5, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.5. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.6, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.6. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -28,7 +28,7 @@
 | Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
 | Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
 | tokens.json | 20 | 16 | 4 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| AGENTS.md | 3 | 2 | 0 | 1 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
 
@@ -600,6 +600,7 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 |---|---|---|---|---|---|---|
 | AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Planned |
 | AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Planned |
+| AGT-3 | Mock data only in tests (Edits rule 9); the Milestone 0 `fixtures` feature is an approved exception | Edits rule 9 | P0.1, P3.1, P6.7 | P0-AC7, P6-AC8 | REV | Resolved (C19) |
 
 ---
 
