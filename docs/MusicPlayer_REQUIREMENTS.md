@@ -1,11 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.4, October 11, 2026.
-**Open questions:** None. Section 8 records the owner decisions of version 1.4.
+**Status:** Decision-complete. Version 1.5, October 11, 2026.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 and 1.5.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
-- `(v1.4)` marks an item changed in version 1.4 (owner decisions, section 8). `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
+- `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
 ---
@@ -21,7 +21,7 @@ The closest open source player (Strawberry) has many features the owner does not
 - It adds artwork, lyrics and missing metadata.
 - It keeps playlists as portable files.
 - It takes its theme from one token file in the repo (`theme/tokens.json`), compiled at build time. `(v1.4)`
-- The music folder holds all user data. The app keeps only a disposable cache.
+- The music folder holds all music-related user data: playlists, Favorites, artwork, lyrics and sidecars. Per-machine settings, the widget arrangement, playback state, cache and logs live in the OS config directory, or next to the executable in portable mode (R18). `(v1.5)`
 
 ---
 
@@ -31,35 +31,41 @@ The closest open source player (Strawberry) has many features the owner does not
 
 - **R1 (v1.1).** One user-chosen music folder. Import mp3, ogg and wav. Ignore other file types.
   - `[D]` "ogg" means Ogg Vorbis. Skip Ogg files with other codecs (for example Opus) and report them (R2).
+  - `(v1.5)` WAV: PCM integer and float, and ADPCM, as the pinned decoder supports. A WAV file with another encoding is skipped and reported as unsupported codec.
+- **R1.1 (v1.5).** First run: if no music folder is set, the main area shows a "Choose music folder" button. Other widgets show their empty hints. Transport controls are disabled until a folder is set.
 - **R2 (v1.1).** Startup sync adds new files and removes missing files. The folder wins.
   - The scan is incremental (path, size, modified time).
   - The scan does not block the UI.
   - A manual Rescan command exists.
   - Target: 50,000 tracks.
-  - `[D]` Each scan produces a report: files added, removed and skipped, with skip reasons (unsupported type, unsupported codec, corrupt file). Settings shows the latest report.
+  - `(v1.5)` The status line shows counts (added, removed, skipped) when a scan ends. Settings shows the last counts and an "Open log folder" button. The log holds the per-file reasons (unsupported type, unsupported codec, corrupt file).
+  - `(v1.5)` The scan skips files and folders whose names start with ".". The scan does not follow symbolic links or junctions to folders. If a scan is running, Rescan does nothing.
+  - `(v1.5)` The scan removes missing files only after a complete traversal of the folder. A canceled or failed scan keeps what it added and removes nothing.
+  - `(v1.5)` If the root folder is readable and empty, the scan removes all tracks. This is accepted. Playlists and Favorites are files and are not affected.
 - **R3.** Grouping uses folder names. Tags never change grouping.
   - The first folder under the root is the artist.
   - The second folder is the album.
   - Deeper folders (for example Disc 1) fold into the album.
   - A file directly under an artist folder goes to "Unknown Album".
-  - A file at the root goes to "Unknown Artist".
-- **R4 (v1.1) `[D]`.** Song title is the embedded tag, then the sidecar value, then the file name without extension. Remove any leading track-number prefix from the file name (for example "01 - ", "01. " or "1-01 "). Track number is the embedded tag, then the sidecar value, then the prefix removed from the file name. Songs sort by track number, then file name.
+  - A file at the root goes to "Unknown Album" under "Unknown Artist". `(v1.5)`
+  - `(v1.5)` Display names are folder names, unchanged. Artist and album lists sort by folder name. The sort ignores case and accents and uses natural numeric order (2 before 10). Names that compare equal after this normalization sort by their exact name in byte order. "Unknown Artist" and "Unknown Album" sort last.
+- **R4 (v1.1) `[D]`.** Song title is the embedded tag, then the sidecar value, then the file name without extension. Remove any leading track-number prefix from the file name. `(v1.5)` A track-number prefix is: one to three digits, then an optional group of a separator ("-" or ".") and one to three more digits, then one or more of space, ".", "-" or "_". Examples: "01 - ", "01. ", "1-01 ", "001_". Track number is the embedded tag, then the sidecar value, then the prefix removed from the file name. `(v1.5)` Songs in an album sort by: (1) disc order, (2) the track number, (3) the file name. Disc order is the disc number tag when present. Otherwise it is the position of the song's sub-folder in a natural-order sort of the album's sub-folders. Files directly in the album folder sort as disc 0. Comparison ignores case.
 
 ### Widgets and layout
 
 - **R5 (v1.2).** The UI is made of widgets that the user can dock, resize, move and hide (R29).
   - **Library:** mandatory (R28).
-  - **Transport controls:** movable and hideable. Buttons: play/pause, stop, previous, next, shuffle and repeat. `[D]` The seek bar and volume control are part of this widget.
+  - **Transport controls:** movable and hideable. Buttons: play/pause, stop, previous, next, shuffle and repeat. `[D]` The seek bar and volume control are part of this widget. `(v1.5)` It shows elapsed time and total time next to the seek bar.
   - **Now playing:** movable and hideable. Shows album art, title, artist, album and the heart button (R26).
   - **Playlists:** movable and hideable (R12 to R14).
   - **Play queue:** movable and hideable (R6).
   - **Lyrics:** movable and hideable (R9).
-  - **Search:** movable and hideable. `[D]`
-  - **Status line:** fixed at the bottom edge of the window. It is not dockable. `[D]` It shows "Ready" when idle, and progress text with pause and cancel during scans and lookups (for example "Fetching artwork: 14 of 62 albums"). `(v1.3)`
+  - **Search:** a text field in the Library widget header (R28). It is not a separate widget. `(v1.5)`
+  - **Status line:** fixed at the bottom edge of the window. It is not dockable. `[D]` It shows "Ready" when idle, and progress text with a cancel control during scans and lookups (for example "Fetching artwork: 14 of 62 albums"). `(v1.5)` Pause is removed; cancel plus "Retry lookup" covers it.
   - **Menu button:** fixed in the top-right corner. It is not dockable. It opens Widgets, Layouts, Settings and Rescan. `[D]`
-  - Album art shows where available. Order: a cover image in the album folder (`cover`, `folder`, `front` or `albumart`, as `.jpg`, `.jpeg` or `.png`), then embedded art. `[D]`
+  - Album art shows in the Now playing widget and as a thumbnail in Album rows. Order: a cover image in the album folder (`cover`, `folder`, `front` or `albumart`, as `.jpg`, `.jpeg` or `.png`), then embedded art. A cover file that fails to decode is logged and ignored. Thumbnails are stored in the cache (R19). `[D] (v1.5)`
   - `[D]` A song row also shows the tag artist when it differs from the folder artist. This is display only. Grouping does not change.
-- **R28 (v1.2).** The Library widget is one widget with a layout switch in its header.
+- **R28 (v1.2).** The Library widget is one widget with a layout switch in its header. `(v1.5)` The header also holds the search field (R5, R6).
   - `(v1.3) [D]` When the widget is too narrow for the three-button switch, the switch collapses into one dropdown that shows the current mode.
   - **Tree:** a single expandable tree (artist, album, song).
   - **Columns:** Artist, Album and Songs side by side, left to right.
@@ -71,11 +77,11 @@ The closest open source player (Strawberry) has many features the owner does not
   - Free-form drag-and-drop docking inside the main window. The user drags a widget by its header and drops it on the edge of another widget or of the window. Splitters resize widgets.
   - `(v1.4)` Floating panels and pop-out windows are not in v1. Tabbed groups are allowed. The app adds no code to prevent them. The saved arrangement must round-trip a tabbed group.
   - **Built-in layouts:** Columns (default at first run), Tree and Top/bottom. Each sets the Library mode and a widget arrangement. `[D]` Built-in layouts cannot be changed or deleted.
-  - `[D]` **Default arrangement:** Library in the main area, Search in a top bar, Now playing and Transport controls in a bottom bar. Playlists, Play queue and Lyrics are hidden and available in the Widgets menu. The Tree and Top/bottom layouts use the same arrangement with their own Library mode.
+  - `[D]` **Default arrangement:** Library in the main area (search in its header), Now playing and Transport controls in a bottom bar. `(v1.5)` Playlists, Play queue and Lyrics are hidden and available in the Widgets menu. The Tree and Top/bottom layouts use the same arrangement with their own Library mode.
   - `(v1.4)` User-saved named layouts are deferred (section 7).
-  - `[D]` The current arrangement is one JSON file in the OS config directory, per machine. It does not store window size. It is versioned. Import and export are deferred.
+  - `[D]` The current arrangement is one JSON file in the OS config directory, per machine. It does not store window size. It is versioned. A file with an unknown version is ignored and logged, like a corrupt file. `(v1.5)` Import and export are deferred.
   - `[D]` The current arrangement saves automatically and restores at startup. Applying a layout replaces the current arrangement.
-  - `[D]` **Reset layout** applies the built-in Columns layout. The menu button offers it, and a documented keyboard shortcut also runs it. Layouts cannot hide either.
+  - `[D]` **Reset layout** applies the built-in Columns layout. The menu button offers it, and a documented keyboard shortcut also runs it. No layout can hide the menu button or the status line. `(v1.5)`
   - `[D]` **Non-drag path:** the menu button offers show and hide for each widget, switching the Library mode and applying layouts. Moving a widget needs drag in v1.
   - `[D]` Corrupt layout file: ignore it and log it. Unknown widget in a layout: ignore that widget. Layout without the Library widget: apply the built-in Columns layout.
 - **R30 (v1.4).** UI framework: React, Tailwind CSS v4 and shadcn/ui components. Magic UI (https://github.com/magicuidesign/magicui) is optional.
@@ -94,23 +100,30 @@ The closest open source player (Strawberry) has many features the owner does not
 - **R6 (v1.2).** Playback: play/pause, stop, previous/next, seek, volume, shuffle, repeat and a play queue (add, remove, clear). Nothing else.
   - Stop is a requested control. `[D]` Stop ends playback, resets the position to the start and keeps the queue.
   - `[D]` Repeat modes: off, all, one. Shuffle applies to the queue.
+  - `(v1.5)` Repeat off: playback stops after the last queue entry; the position shows the start of the last song. Repeat all: after the last entry, playback continues from the first. Repeat one: the current song restarts when it ends. Next and Previous still move through the queue.
+  - `(v1.5)` Shuffle on: the app plays the remaining entries in random order. Each entry plays once before any entry repeats. The queue display keeps its order. Shuffle off: playback continues in queue order from the current song.
+  - `(v1.5)` Previous: if the position is more than 3 seconds, Previous restarts the current song. Otherwise it goes to the previous entry in play order. With shuffle on, the previous entry is the last song played in this shuffle run. With no previous entry, Previous restarts the current song.
+  - `(v1.5)` Decode error: the app logs it, shows "Cannot play <file name>" in the status line and continues with the next entry. After three consecutive failures, playback stops.
   - `[D]` Single click selects. Double-click or Enter on a song plays it. On an album row, it plays the album from the first song.
-  - `[D]` Queue rule: playing a song sets the queue to the list it appears in. That is its album in Tree mode, the Songs list as shown in Columns and Top/bottom modes, and the playlist in the Playlists widget.
-  - `[D]` Search is incremental, ignores case and accents, matches artist, album and song title, and filters the Library widget.
+  - `[D]` Queue rule: playing a song sets the queue to the list it appears in. That is its album in Tree mode, the Songs list as shown in Columns and Top/bottom modes, and the playlist in the Playlists widget. `(v1.5)` Play (context menu) and double-click replace the queue and start at that song. Add to queue appends to the end and does not change the playing song.
+  - `(v1.5)` Queue edits: removing the playing entry stops it and starts the next entry, or stops playback at the end of the queue. Removing an entry before the playing one keeps the playing song and its position. Clear stops playback and empties the queue.
+  - `[D]` Search is incremental, ignores case and accents, matches artist, album and song title, and filters the Library widget. `(v1.5)` In Tree mode the tree shows artists and albums that contain a match, and the matching songs. A match on an artist or album name shows all of its songs.
   - `[D]` Context menu: Play, Add to queue, Add to playlist. "Add to queue" shows "Added to queue" in the status line, because the Play queue widget may be hidden.
 - **R24 (v1.1).** OS media keys and now-playing.
   - Play/pause, next and previous media keys work while the app runs, including when the window is in the background.
   - The app sends title, artist, album, artwork and position to the OS now-playing controls (Windows media controls, Linux MPRIS). `[D]`
+  - `(v1.5)` The app accepts play, pause, toggle, next, previous and stop from the OS. If OS media controls cannot register, the app logs it and continues.
 - **R25 (v1.2) `[D]`.** Minimal keyboard navigation (the owner chose "minimal"; the keys are proposed).
   - Space toggles play/pause (not while typing in search).
   - Up and Down move through lists and the tree. Right expands. Left collapses.
   - Enter plays the selected song or album.
-  - Ctrl+F focuses search and shows the Search widget if hidden. Esc clears search and returns focus to the Library widget.
+  - Ctrl+F focuses the search field in the Library header. `(v1.5)` Esc clears search and returns focus to the Library widget.
   - F6 and Shift+F6 move focus between visible widgets.
+  - `(v1.5)` Delete removes the selected entry from the Play queue or from a playlist, without confirmation.
   - Keyboard focus is always visible.
 - **R27 (v1.1).** Remember queue, current song, position and volume.
   - The app saves them in the OS config directory.
-  - `[D]` At startup it restores them and starts paused. It drops queue entries that no longer exist in the library without a message.
+  - `[D]` At startup it restores them and starts paused. It drops queue entries that no longer exist in the library without a message. `(v1.5)` State stores paths relative to the music folder root. The music folder path is stored as set, except in portable mode (R18.1).
 
 ### Online and sidecars
 
@@ -120,21 +133,22 @@ The closest open source player (Strawberry) has many features the owner does not
   - It saves `cover.jpg` in the album folder. It never overwrites existing art.
   - `[D]` Name matching: ignore case and accents. Strip a leading year, year or edition words in brackets or parentheses (for example "Remastered" or "Deluxe Edition") and a leading "The". Save only exact matches after this normalization. Do not save low-confidence matches.
   - `[D]` Request an image of about 500 px, not the original. Check that the download is an image and under 10 MB before saving.
+  - `(v1.5)` The app never looks up "Unknown Artist" or "Unknown Album" groups, or an album whose songs are directly in the artist folder. It queries a MusicBrainz release group by artist and album and requests the Cover Art Archive front image at 500 px. A lookup counts as a match only when exactly one release group matches after normalization. Two or more matches count as no match. Before a lookup, the app checks that the album folder is writable. If it is not, the app skips the album and logs it.
   - `[D]` No match: record "no match" in the album's JSON sidecar (R10). The app does not retry automatically.
   - `[D]` "Retry lookup" per album clears the marker and tries again.
   - `[D]` "Set cover" per album: the user picks an image file. The app saves it as `cover.jpg` (converting if needed).
   - Rate limit: at most 1 request per second to MusicBrainz. The User-Agent has the app name, version and a project contact URL.
-  - A status line shows progress with pause and cancel. The UI stays usable.
+  - The status line shows progress with cancel (R5). The UI stays usable. `(v1.5)`
 - **R9 (v1.2).** Lyrics are a per-song action. Source: lrclib. The app saves a `.lrc` file if synced lyrics exist, otherwise a `.txt` file, next to the song.
   - `[D]` Lookup sends the folder artist, the cleaned title (R4), the folder album and the duration from the decoder. If that finds nothing, search by artist and title. Accept a result only if its duration is within 2 seconds.
-  - The Lyrics widget shows the lyrics text for the playing song. For `.lrc` files it hides timestamps. If no lyrics file exists, it shows a "Fetch lyrics" button (disabled when Online lookups are off). `[D]`
+  - The Lyrics widget shows the lyrics text for the playing song. For `.lrc` files it hides timestamps. `(v1.5)` Lyrics sources in order: a `.lrc` file with the song's base name next to the song, then a `.txt` file with the same base name, then embedded lyrics (ID3v2 USLT, Vorbis comment LYRICS or UNSYNCEDLYRICS). The "Fetch lyrics" button shows only when none exists (disabled when Online lookups are off). `[D]`
   - Synced line highlighting is deferred.
 - **R10 (v1.1).** Metadata fill is a per-album action with a preview. The app writes nothing until the user confirms.
   - It fills blanks only (title, track number, year).
   - `[D]` A field is "missing" when the embedded tag is absent or empty. The file-name fallbacks in R4 do not count as filled.
   - It looks up by folder names, existing tags and file name.
   - It does not use audio fingerprinting.
-  - It writes one JSON sidecar per album folder. `[D]` The same file holds lookup markers (R8).
+  - It writes one JSON sidecar per album folder. `[D]` The same file holds lookup markers (R8). `(v1.5)` The sidecar file name is `sidecar.json` in the album folder.
   - Embedded tags win over sidecar values.
 - **R11.** The app never modifies audio files. Sidecars are not library tracks. Orphan sidecars (audio renamed or deleted) are ignored and never auto-deleted.
 
@@ -142,17 +156,21 @@ The closest open source player (Strawberry) has many features the owner does not
 
 - **R12 (v1.2) `[D]`.** Create a playlist, add songs, remove songs and delete a playlist. Delete removes the `.m3u8` file after a confirmation.
   - `[D]` The Playlists widget lists playlists. Each playlist expands to show its songs. Double-click plays a playlist. A "New playlist" button and "Add to playlist" in the context menu create playlists. "Remove from playlist" is a context menu action.
+  - `(v1.5)` Add to playlist appends the song. Duplicates are allowed. Favorites is the exception: the heart toggles membership.
+  - `(v1.5)` A playlist name must not contain a path separator ("/" or "\\"), the sequence "..", or a character that Windows rejects (< > : " | ? *). It must not start or end with a space or a dot. It must not be a Windows reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9). "Favorites" is reserved (R26). The app rejects such a name with a message.
 - **R13 (v1.1).** Storage is `.m3u8` (UTF-8) in `Playlists/` at the folder root.
   - `[D]` Paths are relative to the playlist file, with forward slashes. A file in `Playlists/` therefore holds paths like `../Artist/Album/Song.mp3`.
   - `[D]` If a target player fails on `..` paths in testing, move playlist files to the folder root. The owner decides.
   - The file name is the playlist name.
   - Writes use a temp file, then a rename.
-  - Startup finds `.m3u8` files anywhere in the folder.
+  - Startup finds `.m3u8` files anywhere in the folder. `(v1.5)` Entries resolve relative to the playlist file. Other playlist files (`.m3u`, `.pls`) are not listed; use Import.
   - Rescan never edits playlists.
 - **R14 (v1.4).** Import M3U, M3U8 and Apple XML. PLS, XSPF and Apple text are deferred (section 7).
   - The app writes a new `.m3u8` in `Playlists/`. The original file stays untouched.
   - Apple XML is the playlist export from the Apple Music app or iTunes. `[D]`
   - Matching order: relative to the playlist file (M3U family only), then longest path suffix, then file name, then name plus artist plus album against the library (when the source has them). `[D]`
+  - `(v1.5)` Before matching, the app normalizes each entry path: backslashes become slashes, a drive letter or UNC prefix is removed, the text is Unicode NFC normalized, and comparison ignores case.
+  - `(v1.5)` Each matching stage must yield exactly one library track. If a stage yields more than one, the next stage runs on those candidates only. If the last stage still yields more than one, the entry is reported as ambiguous and stays in the file as missing.
   - For Apple XML, convert each track's `file://` location to a path first. `[D]`
   - Unmatched entries stay in the file as "missing" and appear in an import report.
   - `[D]` A track with no file location (for example a streaming-only track) appears in the import report only. The app does not write it to the `.m3u8`.
@@ -172,7 +190,8 @@ The closest open source player (Strawberry) has many features the owner does not
 ### State, footprint and release
 
 - **R18 (v1.4).** Settings (music folder path, Online lookups switch) live in the OS config directory, per machine. `[D]` Window size is saved there too.
-- **R19 `[D]`.** The SQLite database is a rebuildable cache. Deleting it loses nothing. A schema change triggers a rebuild, with no migrations. The cache holds no lookup markers, so a rebuild causes no new lookups.
+- **R18.1 (v1.5).** Portable mode: if a file named `portable` exists next to the executable, the app stores settings, the widget arrangement, playback state, cache, logs and the WebView profile in a `data` folder next to the executable. The music folder path is stored relative to the executable's folder when both are on the same volume, else absolute.
+- **R19 `[D]`.** The SQLite database is a rebuildable cache. Deleting it loses nothing. A schema change triggers a rebuild, with no migrations. The cache holds no lookup markers, so a rebuild causes no new lookups. `(v1.5)` The cache stores paths relative to the music folder root. Thumbnails live in the cache directory.
 - **R20 (v1.2).** Footprint targets, measured in the first build and adjustable:
   - Windows installer under 30 MB.
   - Linux `.deb` under 30 MB.
@@ -180,8 +199,8 @@ The closest open source player (Strawberry) has many features the owner does not
   - The AppImage is exempt (expected size is 70 MB or more).
   - **Milestone 0 (before feature work):** a footprint spike. It includes the docking code and every widget populated with test data: the Library widget in all three modes with a virtualized 50,000-track list, 2,000 art thumbnails, Play queue, Playlists, Lyrics, Now playing, Transport controls and Search. Measure memory across all processes on Windows and Linux. `(v1.4)` The spike uses the real UI stack (React, Tailwind, shadcn/ui, docking library, and Motion only if R30 names a component).
   - `[D]` If idle memory is more than 50% over target (above 300 MB), stop. The owner decides whether to switch to a native UI or cut layout freedom.
-- **R21 (v1.1).** Distribution: Windows installer, Linux `.deb` and AppImage. Build the AppImage on the oldest supported base system.
-- **R22 (v1.1) `[D]`.** Minimum OS: Windows 10 or later. Linux: any distro that ships WebKitGTK 4.1. The owner may tighten these.
+- **R21 (v1.5).** Distribution: Windows per-user installer (no admin), Windows portable zip (the executable plus the `portable` marker file, R18.1), Linux AppImage and `.deb`. Build the AppImage on the R22 baseline system.
+- **R22 (v1.5) `[D]`.** Minimum OS: Windows 10 or later. The WebView2 Runtime must be present. It ships with Windows 10 from version 1803 and with Windows 11. The installer downloads it if missing. The portable build must show an error with a download link if it is missing. Linux: glibc-based distributions only. AppImage: glibc 2.35 or later (built on Ubuntu 22.04). `.deb`: Debian 12, Ubuntu 22.04 or later, which ship WebKitGTK 4.1. The owner may tighten these.
 - **R23 (v1.1) `[D]`.** The app writes a log file to the OS log directory, with size-based rotation. Settings has an "Open log folder" command. Every "skip and log" event goes there (scan, playlists, sidecars, lookups, layouts).
 
 ---
@@ -220,6 +239,8 @@ These are out under the owner's "few features" rule.
 
 ## 5. Edge cases and failure behavior
 
+- **No music folder set `(v1.5)`:** R1.1 applies.
+- **Music folder changed in Settings `(v1.5)`:** the app stops playback, resets the position, clears the queue and the cache, then scans the new folder and reloads its playlists. Entries from the old folder never remain in the cache.
 - **Music folder missing at startup `[D]`:** show "Music folder not found" with a Change folder button. Keep the cache. A false purge cannot lose data, because the cache is rebuildable and playlists live in the folder.
 - **Unsupported or corrupt audio file:** skip it, log it and count it in the scan report.
 - **Ogg file with an unsupported codec (for example Opus) `[D]`:** skip it, log it and count it in the scan report.
@@ -230,16 +251,19 @@ These are out under the owner's "few features" rule.
 - **Windows paths over 260 characters `[D]`:** must work.
 - **No network or service error:** playback and library still work. Fetches retry on the next startup, except albums with a "no match" marker (R8).
 - **Existing art:** an embedded image or a cover image file (R5 names) in the album folder blocks the fetch.
-- **Read-only music folder:** fetch features turn off with a message.
+- **Read-only music folder `(v1.5)`:** fetch features, playlist edits and Favorites show an error. Playback and browsing work.
+- **Decode error during playback `(v1.5)`:** R6 applies.
+- **File name that is not valid UTF-8 (Linux) `(v1.5)`:** skip it and log it.
+- **Cover image file that fails to decode `(v1.5)`:** log it and ignore it. Embedded art and, when enabled, the online lookup still apply.
 - **Corrupt sidecar:** ignore it and log it. A later metadata fill may replace it after the preview.
 - **Playlist entry with no file:** shown as "missing" and skipped in playback. It is never removed automatically.
 - **Unreadable playlist file:** skip it and log it.
 - **Playlist write failure:** show the error. The old file stays intact (temp file, then rename).
 - **Layout problems `[D]`:** a corrupt layout file, an unknown widget or a missing Library widget follow R29.
-- **Controls or Search hidden `[D]`:** keyboard shortcuts (R25) and media keys (R24) still work. Reset layout restores the default.
+- **Transport controls hidden `[D] (v1.5)`:** keyboard shortcuts (R25) and media keys (R24) still work. Reset layout restores the default.
 - **Window smaller than a saved layout needs `[D]`:** the app enforces a minimum window size and a minimum size per widget. It clamps the layout to fit.
 - **Empty Play queue, Playlists or Lyrics widget `[D]`:** show a short hint, not a blank area.
-- **Audio device unplugged or changed during playback `[D]`:** pause, show a message and resume on the default device when the user presses play.
+- **Audio device unplugged or changed during playback `[D] (v1.5)`:** on an output stream error, the app stops playback and shows a message. The next Play opens the current default device.
 - **Second app launch `[D]`:** focus the running instance. Do not start a second one.
 - **Closing the window `[D]`:** quits the app. Media keys work only while the app runs.
 - **Folder edited while the app runs:** changes appear after Rescan or restart.
@@ -252,8 +276,8 @@ These are out under the owner's "few features" rule.
 - **Branding `[D]`:** no feature code depends on the placeholder name, icon or theme. All brand inputs are the files named in R31. `(v1.4)`
 - **Docking `[D]`:** a docking library may be used if its license is MIT or compatible, it has React bindings and it passes Milestone 0. One example is the MIT Dockview with its React package. Do not use commercial add-ons (Dockview Enterprise is commercial). Turn off floating panels and pop-out windows (section 4). Tabbed groups stay on (R29). `(v1.4)`
 - **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no named layouts, no floating panels, no pop-out windows and no layout import or export in v1. `(v1.4)` Adding any of these needs an owner decision.
-- **Audio engine `[D]`:** design it so gapless playback can be added later (decode the next track ahead of time). Gapless is not in v1.
-- **License:** MIT unless a dependency forces GPL. Strawberry is GPL-3.0, so do not copy its code into an MIT project.
+- **Audio engine `[D] (v1.5)`:** rodio pinned to a release, Symphonia with the `mp3` feature, lofty for tags. Design it so gapless playback can be added later (decode the next track ahead of time). Gapless is not in v1.
+- **License `(v1.5)`:** MIT application. Symphonia is MPL-2.0. The AppImage bundles WebKitGTK and GTK (LGPL). Each release ships the license texts of bundled and linked third-party components and states, per component, the exact version and where its source is available. This covers Symphonia in every build and the LGPL libraries bundled in the AppImage. The repo keeps this list in a NOTICE file. Strawberry is GPL-3.0, so do not copy its code into an MIT project.
 - **Platforms:** Windows and Linux (R22).
 - **Formats:** mp3, ogg (Vorbis) and wav.
 - **Source of truth:** the music folder.
@@ -299,14 +323,27 @@ None. The owner made these decisions on October 11, 2026 (version 1.4):
 7. **Tabbed groups (R29, section 6):** allowed.
 8. **Magic UI and Motion (R30):** optional. No Motion unless a named component needs it.
 
-Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, and the R20 Milestone 0 outcome. Other findings of the requirements review (`docs/REQUIREMENTS_REVIEW.md`, section G) are not yet applied.
+Version 1.5 applies section G of the requirements review (`docs/REQUIREMENTS_REVIEW.md`) with these owner decisions, also made on October 11, 2026:
+
+9. **Portable mode (R18.1) and a Windows portable zip (R21):** added.
+10. **Search (R5):** a field in the Library header, not a separate widget.
+11. **Scan report (R2):** counts in the status line and Settings, per-file reasons in the log.
+12. **Lookup progress (R5, R8):** cancel only; pause removed.
+13. **Previous (R6):** restarts the current song after 3 seconds.
+14. **Playlist duplicates (R12):** allowed; Favorites toggles.
+15. **Linux baseline (R22):** Ubuntu 22.04, glibc 2.35.
+16. **Brand UI icon set override (R31):** kept for v1.
+
+Defaults applied without a decision, changeable: three consecutive decode failures stop playback (R6); the sidecar file is `sidecar.json` (R10); acceptance check 2 uses a 100 ms redraw limit.
+
+Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, and the R20 Milestone 0 outcome.
 
 ---
 
 ## 9. Acceptance checks for v1 `[D]`
 
 1. **Footprint spike (Milestone 0):** passes the R20 targets or triggers the owner decision.
-2. **Responsiveness:** the UI stays responsive during a startup scan of a 50,000-track test library.
+2. **Responsiveness `(v1.5)`:** during the first scan of the 50,000-track test library, the user can select and play an already-scanned song, and the window redraws within 100 ms of input.
 3. **Playlist interop:** a playlist written by the app opens in at least one other player (MusicBee or VLC) with all paths intact.
 4. **Import:** real exports import with a correct matched/missing report. Use one Apple XML, one MusicBee M3U8 and one legacy `.m3u`. `(v1.4)`
 5. **Lyrics:** a song named "01 - Title.mp3" finds lyrics through the cleaned title and the decoded duration.
@@ -314,13 +351,18 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 7. **Theme build `(v1.4)`:** changing a color in `theme/tokens.json` and rebuilding changes the UI. (Replaces the theme lockout check. R16 is deferred.)
 8. **Missing folder:** startup with the folder missing loses no data. Change folder works.
 9. **Cache rebuild:** deleting the cache restores the same library and playlists, with no new lookups for albums that have a "no match" marker.
-10. **Audio device:** unplugging the output device mid-song pauses playback with a message.
+10. **Audio device `(v1.5)`:** unplugging the output device mid-song stops playback with a message. Play resumes on the default device.
 11. **Docking:** in each Library mode, the user can dock, resize, hide and show widgets. The arrangement survives a restart.
 12. **Built-in layouts `(v1.4)`:** applying each built-in layout works. A tabbed group survives a restart. (Named layouts are deferred.)
-13. **Layout lockout:** with Transport controls and Search hidden, keyboard shortcuts and media keys still work. Reset layout restores the default.
+13. **Layout lockout `(v1.5)`:** with Transport controls hidden, keyboard shortcuts and media keys still work. Reset layout restores the default.
 14. **Library widget:** it cannot be closed. Switching its mode keeps the selection and search text.
 15. **Branding swap `(v1.4)`:** replacing `theme/tokens.json` and the icon source and rebuilding changes the theme and the app icon with no other code changes.
 16. **Reduced motion `(v1.4)`:** with the OS reduce-motion setting on, no animation plays. Applies to Magic UI components only if R30 names any.
+17. **Portable mode `(v1.5)`:** after use, copy the whole portable folder (executable, `portable` marker and `data` folder) and the music folder to another drive letter. Start it. Settings, the arrangement and the queue survive.
+18. **Multi-disc `(v1.5)`:** a two-disc album plays disc 1 then disc 2 in track order.
+19. **Decode error `(v1.5)`:** a corrupt file in the queue is skipped with a status message. Playback continues.
+20. **First run `(v1.5)`:** first run shows the folder prompt. After choosing a folder, the user can play a song before the scan ends.
+21. **Embedded lyrics `(v1.5)`:** a song with ID3 USLT lyrics and no lyric file shows the embedded lyrics.
 
 ---
 
@@ -342,6 +384,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.5 (October 11, 2026):** section G of the requirements review applied, with owner decisions 9 to 16 (section 8).
+  - **Added:** R1.1 first run, R18.1 portable mode, WAV encodings (R1), scan rules (R2), sort order and multi-disc order (R3, R4), playback semantics and queue edits (R6), OS command set (R24), Delete key (R25), relative paths (R19, R27), artwork match and writability rules (R8), lyrics source order with embedded lyrics (R9), sidecar name (R10), playlist name rule and duplicates (R12), import normalization and unique-match rule (R14), Linux baseline and WebView2 prerequisite (R22), portable zip (R21), five edge cases, acceptance checks 17 to 21.
+  - **Changed:** Search moved into the Library header (R5, R28, R29, R25). Scan report reduced to counts plus log (R2). Lookup pause removed (R5, R8). Audio device case softened (section 5, check 10). Audio engine and license constraints (section 6). Checks 2 and 13.
 - **1.4 (October 11, 2026):** owner decisions after the requirements review (`docs/REQUIREMENTS_REVIEW.md`).
   - **Owner decisions (section 8):** docking shell stays (R29). Online lookups off by default with a first-run choice (R7). R10 kept. Import limited to M3U, M3U8 and Apple XML (R14). User-selected theme deferred; build-time `theme/tokens.json` (R16, R31). Named layouts deferred (R29). Tabbed groups allowed (R29, section 6). Magic UI optional and Motion only by named component (R30).
   - **Updated:** outcome bullets (section 1), R17, R18, R20, section 3, section 4, section 5 (theme cases removed), section 6, section 7, acceptance checks 4, 7, 12, 15 and 16.
