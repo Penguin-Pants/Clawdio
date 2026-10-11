@@ -21,6 +21,16 @@ const hooks = {
       ),
     );
   },
+  /** The minimum size the dock applies to the group of each widget (D33, D45 clamp). */
+  groupMinimums(): Record<string, { width: number; height: number }> {
+    const result: Record<string, { width: number; height: number }> = {};
+    for (const group of dock().groups) {
+      for (const panel of group.panels) {
+        result[panel.id] = { width: group.minimumWidth, height: group.minimumHeight };
+      }
+    }
+    return result;
+  },
   /** Sends the window close request, like the close button (P9-AC11). */
   closeRequest(): Promise<void> {
     return emit("tauri://close-requested");

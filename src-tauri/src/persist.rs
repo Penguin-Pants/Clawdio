@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use clawdio_core::api::{PlayerSnapshot, QueueSnapshot};
 use clawdio_core::state::{self, PlaybackState};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, Runtime};
 
 use crate::player::{Command, PlayerHandle};
 use crate::state::{Library, MusicRoot};
@@ -66,15 +66,17 @@ impl StateStore {
         }
     }
 
-    /// A player event before the restore is a user action: the user's queue wins and the
-    /// saved one is dropped.
+    /// A queue change before the restore is the user's: their queue wins and the saved one
+    /// is dropped. `ready` changes only under the `pending` lock, like in `try_restore`.
     fn user_first(&self) {
-        if !self.ready.swap(true, Ordering::SeqCst) {
-            if let Ok(mut pending) = self.pending.lock() {
-                if pending.take().is_some() {
-                    log::info!("state: the queue changed before the restore; saved queue dropped");
-                }
-            }
+        let Ok(mut pending) = self.pending.lock() else {
+            return;
+        };
+        if self.ready.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        if pending.take().is_some() {
+            log::info!("state: the queue changed before the restore; saved queue dropped");
         }
     }
 
@@ -83,8 +85,9 @@ impl StateStore {
         self.update(|latest| latest.queue = queue.clone());
     }
 
+    /// Volume and position changes keep the saved queue waiting (only a queue change drops
+    /// it); before the restore they are not saved.
     pub fn player(&self, player: &PlayerSnapshot) {
-        self.user_first();
         self.update(|latest| {
             latest.position_ms = player.position_ms;
             latest.volume = player.volume;
@@ -102,10 +105,13 @@ impl StateStore {
 
     /// Restores the saved state when the library holds every entry, or when `complete` (a
     /// full traversal ended) drops the missing ones (P9.1).
-    pub fn try_restore(&self, app: &AppHandle, complete: bool) {
+    pub fn try_restore<R: Runtime>(&self, app: &AppHandle<R>, complete: bool) {
         let Ok(mut pending) = self.pending.lock() else {
             return;
         };
+        if self.ready.load(Ordering::SeqCst) {
+            return;
+        }
         let Some(saved) = pending.as_ref() else {
             self.ready.store(true, Ordering::SeqCst);
             return;
@@ -124,6 +130,16 @@ impl StateStore {
         pending.take();
         // Ready first: the restore's own events are saved, not taken as a user action.
         self.ready.store(true, Ordering::SeqCst);
+        // The restored values are the latest state already, so an exit before the player
+        // applies them saves the same queue, not an empty one.
+        if let Ok(mut latest) = self.latest.lock() {
+            latest.queue = QueueSnapshot {
+                entries: restored.ids.clone(),
+                current: restored.current.map(|index| index as u32),
+            };
+            latest.position_ms = restored.position_ms;
+            latest.volume = restored.volume;
+        }
         log::info!("state: restored {} queue entries", restored.ids.len());
         app.state::<PlayerHandle>().send(Command::Restore {
             ids: restored.ids,
@@ -137,13 +153,17 @@ impl StateStore {
     pub fn new_folder(&self) {
         if let Ok(mut pending) = self.pending.lock() {
             pending.take();
+            self.ready.store(true, Ordering::SeqCst);
         }
-        self.ready.store(true, Ordering::SeqCst);
     }
 
     /// Writes the state now when there is a change (or `force`, at exit) and writing is
     /// allowed. An unchanged state is not written again.
-    pub fn save_now(&self, app: &AppHandle, force: bool) {
+    pub fn save_now<R: Runtime>(&self, app: &AppHandle<R>, force: bool) {
+        // One save at a time, so an older capture is never written after a newer one.
+        let Ok(mut written) = self.written.lock() else {
+            return;
+        };
         let (ids, current, position_ms, volume) = {
             let Ok(mut latest) = self.latest.lock() else {
                 return;
@@ -178,9 +198,6 @@ impl StateStore {
             };
             state::capture(&ids, current, position_ms, volume, &index)
         };
-        let Ok(mut written) = self.written.lock() else {
-            return;
-        };
         if written.as_ref() == Some(&state) {
             return;
         }
@@ -191,7 +208,7 @@ impl StateStore {
     }
 
     /// The save thread: waits for a change, then SAVE_DELAY, then saves.
-    pub fn spawn_saver(app: AppHandle) {
+    pub fn spawn_saver<R: Runtime>(app: AppHandle<R>) {
         let spawned = std::thread::Builder::new()
             .name("state-saver".into())
             .spawn(move || loop {
@@ -230,11 +247,153 @@ impl StateStore {
     }
 
     /// Saves a pending change and stops the save thread (app exit).
-    pub fn flush(&self, app: &AppHandle) {
+    pub fn flush<R: Runtime>(&self, app: &AppHandle<R>) {
         self.save_now(app, true);
         if let Ok(mut latest) = self.latest.lock() {
             latest.stop = true;
             self.changed.notify_all();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+    use std::sync::{Arc, RwLock};
+
+    use clawdio_core::api::PlayerStatus;
+    use clawdio_core::library::{FileStamp, LibraryIndex, NewTrack};
+    use clawdio_core::state::STATE_FILE;
+    use tauri::test::{mock_app, MockRuntime};
+
+    use super::*;
+    use crate::player::output::TestOutput;
+    use crate::player::{PlayerEvents, Resolve};
+
+    struct Quiet;
+
+    impl PlayerEvents for Quiet {
+        fn state(&self, _: PlayerSnapshot) {}
+        fn queue(&self, _: &QueueSnapshot) {}
+        fn position(&self, _: u32) {}
+        fn message(&self, _: String) {}
+    }
+
+    fn track(rel_path: &str) -> NewTrack {
+        NewTrack {
+            rel_path: rel_path.into(),
+            artist: "Artist".into(),
+            album: "Album".into(),
+            subfolder: None,
+            title: rel_path.into(),
+            tag_artist: None,
+            track_no: None,
+            disc: None,
+            duration_ms: 1000,
+            stamp: FileStamp::default(),
+            has_picture: false,
+        }
+    }
+
+    /// An app with the library `paths`, the music folder `music` and a saved queue.
+    fn app(config: &Path, music: Option<&Path>, paths: &[&str]) -> tauri::App<MockRuntime> {
+        let saved = PlaybackState {
+            version: state::STATE_VERSION,
+            queue: vec!["A/a.mp3".into(), "B/b.mp3".into()],
+            current: Some(1),
+            position_ms: 5_000,
+            volume: 70,
+        };
+        state::save(config, &saved).unwrap();
+        let app = mock_app();
+        let mut index = LibraryIndex::default();
+        for path in paths {
+            index.insert(track(path));
+        }
+        app.manage(Library(Arc::new(RwLock::new(index))));
+        app.manage(MusicRoot(Arc::new(RwLock::new(
+            music.map(Path::to_path_buf),
+        ))));
+        let resolve: Resolve = Arc::new(|_| None);
+        let (player, _thread) = PlayerHandle::spawn(TestOutput::default, Quiet, resolve);
+        app.manage(player);
+        app.manage(StateStore::load(config.to_path_buf()));
+        app
+    }
+
+    fn file(config: &Path) -> Vec<u8> {
+        std::fs::read(config.join(STATE_FILE)).unwrap()
+    }
+
+    fn snapshot(volume: u8) -> PlayerSnapshot {
+        PlayerSnapshot {
+            status: PlayerStatus::Stopped,
+            volume,
+            ..PlayerSnapshot::default()
+        }
+    }
+
+    #[test]
+    fn nothing_is_saved_before_the_restore_resolves() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3"]);
+        let store = app.state::<StateStore>();
+        let before = file(config.path());
+        store.player(&snapshot(20));
+        store.try_restore(app.handle(), false);
+        store.flush(app.handle());
+        assert_eq!(file(config.path()), before, "B/b.mp3 waits for the scan");
+    }
+
+    #[test]
+    fn a_volume_change_keeps_the_saved_queue_waiting() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3", "B/b.mp3"]);
+        let store = app.state::<StateStore>();
+        store.player(&snapshot(20));
+        store.try_restore(app.handle(), false);
+        assert_eq!(store.latest.lock().unwrap().queue.entries.len(), 2);
+        store.flush(app.handle());
+        let saved = state::load(config.path()).unwrap();
+        assert_eq!(saved.queue, ["A/a.mp3", "B/b.mp3"]);
+        assert_eq!(saved.current, Some(1));
+        assert_eq!(
+            saved.position_ms, 5_000,
+            "an exit before the player applies it keeps it"
+        );
+    }
+
+    #[test]
+    fn a_queue_change_by_the_user_drops_the_saved_queue() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3", "B/b.mp3"]);
+        let store = app.state::<StateStore>();
+        let user = app
+            .state::<Library>()
+            .0
+            .read()
+            .unwrap()
+            .track_at("A/a.mp3")
+            .unwrap()
+            .id;
+        store.queue(&QueueSnapshot {
+            entries: vec![user],
+            current: Some(0),
+        });
+        store.try_restore(app.handle(), true);
+        store.flush(app.handle());
+        assert_eq!(state::load(config.path()).unwrap().queue, ["A/a.mp3"]);
+    }
+
+    #[test]
+    fn with_the_music_folder_missing_the_file_stays_the_same() {
+        let config = tempfile::tempdir().unwrap();
+        let missing = config.path().join("no-such-folder");
+        let app = app(config.path(), Some(&missing), &["A/a.mp3", "B/b.mp3"]);
+        let store = app.state::<StateStore>();
+        let before = file(config.path());
+        store.queue(&QueueSnapshot::default());
+        store.flush(app.handle());
+        assert_eq!(file(config.path()), before);
     }
 }

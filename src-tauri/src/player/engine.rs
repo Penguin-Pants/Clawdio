@@ -207,7 +207,12 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     }
 
     /// The saved queue, paused at the saved position, and the saved volume (P9.1, R27).
+    /// A queue the user started first wins: the restore is then ignored.
     pub fn restore(&mut self, ids: Vec<u32>, current: Option<usize>, position_ms: u32, volume: u8) {
+        if !self.queue.entries().is_empty() || self.status != PlayerStatus::Stopped {
+            log::info!("player: a queue is in use; the saved queue is not restored");
+            return;
+        }
         self.set_volume(volume);
         match current.and_then(|start| self.queue.replace(ids.clone(), start)) {
             Some(_) => {
@@ -240,8 +245,13 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
                 if let Some(at) = self.resume_at.take() {
                     // A restored queue: load the current entry, then go to the saved position.
                     self.failures = 0;
-                    self.play_index(self.queue.current().unwrap_or(0));
-                    if at > 0 && self.status == PlayerStatus::Playing {
+                    let saved = self.queue.current().unwrap_or(0);
+                    self.play_index(saved);
+                    // The position belongs to the saved entry, not to one after a skip.
+                    if at > 0
+                        && self.status == PlayerStatus::Playing
+                        && self.queue.current() == Some(saved)
+                    {
                         self.seek(Duration::from_millis(u64::from(at)));
                     }
                     return;
@@ -768,6 +778,25 @@ mod tests {
         assert_eq!(engine.state().status, PlayerStatus::Playing);
         assert_eq!(engine.output_mut().position(), Duration::from_millis(600));
         assert_eq!(engine.queue().current, Some(1));
+    }
+
+    #[test]
+    fn a_restore_after_the_user_started_a_queue_is_ignored() {
+        let (mut engine, _) = engine();
+        engine.play_list(vec![2], 0);
+        engine.restore(vec![0, 1], Some(1), 400, 60);
+        assert_eq!(engine.queue().entries, [2]);
+        assert_eq!(engine.state().status, PlayerStatus::Playing);
+        assert_eq!(engine.state().volume, 100);
+    }
+
+    #[test]
+    fn a_saved_entry_that_cannot_open_skips_without_the_saved_position() {
+        let (mut engine, _) = engine();
+        engine.restore(vec![7, 0], Some(0), 600, 100);
+        engine.play();
+        assert_eq!(engine.queue().current, Some(1));
+        assert_eq!(engine.output_mut().position(), Duration::ZERO);
     }
 
     #[test]

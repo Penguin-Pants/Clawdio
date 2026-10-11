@@ -74,11 +74,16 @@ test("P9-AC3: a tabbed group survives a restart", async ({ page }) => {
   await savedWith(page, ["queue"]);
   await page.reload();
   await expect(tab(page, "Play queue")).toBeVisible();
-  const groupOf = (title: string) => tab(page, title).locator("xpath=ancestor::div[contains(@class, 'dv-groupview')]");
-  await expect(groupOf("Play queue")).toHaveCount(1);
-  const queueGroup = await groupOf("Play queue").evaluate((element) => element.outerHTML.length);
-  const nowGroup = await groupOf("Now playing").evaluate((element) => element.outerHTML.length);
-  expect(queueGroup).toBe(nowGroup);
+  // The same group element holds both tabs.
+  const sameGroup = await page.evaluate(() => {
+    const groupOf = (title: string) =>
+      [...document.querySelectorAll(".dv-tab")]
+        .find((element) => element.textContent?.includes(title))
+        ?.closest(".dv-groupview");
+    const queue = groupOf("Play queue");
+    return queue !== undefined && queue !== null && queue === groupOf("Now playing");
+  });
+  expect(sameGroup).toBe(true);
 });
 
 test("P9-AC5: Reset layout restores the default after a restart with a saved layout", async ({ page }) => {
@@ -102,12 +107,18 @@ test("P9-AC9: a layout saved at 1600 x 1000 fits an 800 x 560 window", async ({ 
   await page.setViewportSize({ width: 800, height: 560 });
   await page.reload();
   await expect(widget(page, "lyrics")).toBeVisible();
+  const applied = await page.evaluate(() => window.e2e.groupMinimums());
   for (const id of ["library", "nowPlaying", "transport", "playlists", "queue", "lyrics"]) {
     const box = await group(page, id).boundingBox();
     if (!box) throw new Error(`no group for ${id}`);
-    // Every widget keeps its minimum, or the D45 clamp lowers it, never below the 32 px header.
-    expect(box.width, `${id} width`).toBeGreaterThanOrEqual(Math.min(MINIMUMS[id].width, 32) - 1);
-    expect(box.height, `${id} height`).toBeGreaterThanOrEqual(Math.min(MINIMUMS[id].height, 32) - 1);
+    // The dock applies the widget minimum, or the D45 clamp lowers it, never below 32 px.
+    const minimum = applied[id];
+    expect(minimum.width, `${id} applied width`).toBeGreaterThanOrEqual(32);
+    expect(minimum.height, `${id} applied height`).toBeGreaterThanOrEqual(32);
+    expect(minimum.width, `${id} applied width`).toBeLessThanOrEqual(MINIMUMS[id].width);
+    expect(minimum.height, `${id} applied height`).toBeLessThanOrEqual(MINIMUMS[id].height);
+    expect(box.width, `${id} width`).toBeGreaterThanOrEqual(minimum.width - 1);
+    expect(box.height, `${id} height`).toBeGreaterThanOrEqual(minimum.height - 1);
     expect(box.x + box.width, `${id} right`).toBeLessThanOrEqual(801);
     expect(box.y + box.height, `${id} bottom`).toBeLessThanOrEqual(561);
   }

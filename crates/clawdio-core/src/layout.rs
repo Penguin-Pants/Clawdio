@@ -33,8 +33,11 @@ pub fn save(config_dir: &Path, json: &str) -> Result<(), CoreError> {
         Ok(serde_json::Value::Object(_)) => {}
         _ => return Err(CoreError::Invalid("the layout is not a JSON object".into())),
     }
-    write_atomic(&config_dir.join(LAYOUT_FILE), json.as_bytes())
-        .map_err(|error| CoreError::Io(error.to_string()))
+    write_atomic(&config_dir.join(LAYOUT_FILE), json.as_bytes()).map_err(|error| {
+        // The error text can hold the config path, which never goes to the webview (D13).
+        log::warn!("layout: cannot save: {error}");
+        CoreError::Io("cannot write the layout".into())
+    })
 }
 
 #[cfg(test)]

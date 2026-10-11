@@ -623,7 +623,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 1, F2 2, F3 0, F4 4. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 2, F2 7, F3 1, F4 13. Sources: own audit (in `8140536`) and a reviewer agent (fixed in the next commit).
 
 - F1: saving `state.json` on each position tick wrote 3.4 MB every 2 s with a 50,000-entry queue (N1).
 - F2: the close flush waited for a pending change that Dockview had not reported yet (N4). The unit test for the close path asserted the old behavior (updated).
@@ -632,8 +632,13 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - The restore event could count as a user action: the store is ready before the Restore command goes out.
   - Paths over IPC: the layout commands carry JSON text only; the config path is fixed in Rust (D13).
   - Position 0 after a restore with the current entry missing: R27 drops missing entries; the next entry starts at 0.
+- Reviewer:
+  - F1: any player state event (volume, shuffle, a lost device) before the restore counted as a user action and dropped the saved queue (only a queue change does now; tested).
+  - F2: a race let the restore replace a queue the user started during the scan (the engine now ignores a restore when a queue is in use, and `ready` changes only under the pending lock; tested). The layout save error sent the config path to the webview (now a fixed message, D13). A saved entry that failed to open made Play seek the next song to the saved position (tested). An older capture could be written after the exit save, and an exit before the player applied the restore saved an empty queue (one save at a time; the restored values are the latest state; tested). `persist.rs` had no tests (four added). The P9-AC9 test passed with no minimums, and the P9-AC3 test compared text lengths (both now check the real values).
+  - F3: F-15 (the settings save error can carry the config path, P4 code).
+  - F4: `layout.json` holds the dock size in the Dockview grid: it is not the window size, which is only in `settings.json` (N2); Dockview needs it for the proportions. Track ids after a cache restore, a channel deadlock, the missing-folder path, pending entries, concurrent layout writes, the destroy permission, the P9.4 order, the single instance and lock times: none hold.
 
-**Follow-ups:** F-13 (open), F-14 (open).
+**Follow-ups:** F-13, F-14 and F-15 (open).
 
 ---
 
@@ -2017,6 +2022,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
 
