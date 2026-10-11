@@ -1,6 +1,6 @@
 # Requirements Review: Minimalist Music Player
 
-**Reviewed document:** `MusicPlayer_REQUIREMENTS.md`, version 1.3 (October 11, 2026)
+**Reviewed document:** `MusicPlayer_REQUIREMENTS.md`, version 1.3 (October 11, 2026). A verbatim copy of the reviewed version is at `docs/MusicPlayer_REQUIREMENTS.md`.
 **Review date:** October 11, 2026
 **Scope:** Review only. No code. No edits to the requirements document.
 
@@ -72,7 +72,7 @@
 | High | R10, R11, R17 | Metadata fill has low visible value. It fills title, track number and year. R4 already derives title and track number from file names. No widget shows year. | R5 Now playing: art, title, artist, album. Library: artist, album, song. "Year" appears nowhere in R5 or R28. | **Defer** R10 (owner decision). Keep a minimal album sidecar only for the R8 "no match" marker. | Saves L |
 | High | R14, check 4 | Six formats, three encodings and four matching passes for a one-time migration. | R14 lists M3U, M3U8, PLS, XSPF, Apple XML and Apple text. UTF-16 detection and a tab-delimited parser exist only for Apple text. Apple XML carries the same data. | **Simplify** to M3U, M3U8 and Apple XML (owner decision). Defer PLS, XSPF and Apple text. | Saves M |
 | High | R7, R8 | Online lookups are on by default. On first run the app contacts MusicBrainz and writes `cover.jpg` into the library for every album without art. This conflicts with "local-first" and "minimal configuration". | R7: "On by default." R8: "Artwork fetches automatically in the background." | **Simplify:** default off. Turn the first-run notice into a choice ("Turn on" or "Keep off"). Automatic fetch stays once the switch is on. (Owner decision.) | S |
-| Medium | R4, R3 | Multi-disc albums play out of order. Deeper folders fold into the album, and track numbers restart on each disc. Sorting by track number then file name interleaves discs. | R3: "Deeper folders (for example Disc 1) fold into the album." R4: "Songs sort by track number, then file name." | **Add:** sort by sub-folder path, then disc number tag, then track number, then file name. | S |
+| Medium | R4, R3 | Multi-disc albums play out of order. Deeper folders fold into the album, and track numbers restart on each disc. Sorting by track number then file name interleaves discs. | R3: "Deeper folders (for example Disc 1) fold into the album." R4: "Songs sort by track number, then file name." | **Add:** sort by disc order (the disc tag, else the sub-folder order), then track number, then file name. | S |
 | Medium | R3, R28 | Artist and album sort order is undefined. Placement of "Unknown Artist" and "Unknown Album" is undefined. | No sort rule exists for artists or albums. | **Add:** sort by folder name, ignore case and accents, natural numeric order. Unknown groups sort last. | S |
 | Medium | R6 | Shuffle, repeat one, end of queue and Previous are undefined. Double-click replacing a user-built queue is implied, not stated. | R6: "Shuffle applies to the queue." No rule for what plays after the last entry. | **Clarify** with the wording in section G. | S |
 | Medium | R1, section 5 | No first-run state. The document covers "folder missing" but not "no folder set yet". | Section 5 starts at "Music folder missing at startup". | **Add:** first-run prompt and empty state. | S |
@@ -92,7 +92,7 @@
 | Low | R9, R10 | File naming is not stated. Lyrics "next to the song" has no base-name rule. The sidecar has no file name. `.lrc` versus `.txt` precedence is not stated. | R9, R10, R17. | **Clarify** names and precedence. | S |
 | Low | R7 | "Off means zero network calls" is not fully in the app's control. The WebView2 runtime updates itself. | WebView2 is an OS component. | **Clarify:** "zero network calls by the app's own code". | S |
 | Low | Check 2 | "The UI stays responsive" is not testable. | Section 9, check 2. | **Clarify** with a measurable condition. | S |
-| Low | Section 6 (license) | Symphonia is MPL-2.0, not MIT. | Symphonia README (verified). | **Clarify:** compatible with an MIT app. Keep its notice. No code change. | S |
+| Medium | Section 6 (license), R21 | Symphonia is MPL-2.0, not MIT. The AppImage bundles WebKitGTK and GTK (LGPL), so a release must ship the license texts and state where the corresponding source of the bundled libraries is available. A NOTICE entry alone is not enough. | Symphonia README (verified). Tauri AppImage docs (verified): the AppImage "bundles all dependencies and files needed by the application". | **Clarify:** both licenses are compatible with an MIT app. Add a release license plan (section E, item 13). | S |
 | Low | R24 | No fail-soft rule when OS media controls cannot register (no D-Bus session on Linux). | souvlaki (verified) needs `dbus_name` on Linux and an HWND on Windows. | **Add:** log and continue. | S |
 | Low | R12 | Duplicate entries in playlists are undefined. | R12. | **Clarify:** duplicates allowed; Favorites toggles. | S |
 
@@ -160,9 +160,9 @@ Resolve these before Milestone 0.
 8. **Theme.** Build-time compile of `brand/DESIGN.md` with the official CLI (`export css-tailwind`). Runtime theme deferred.
 9. **Online lookups default.** Off, with a first-run choice.
 10. **Playlist import formats.** M3U, M3U8, Apple XML.
-11. **Paths.** Relative to the music folder root in cache, state and playlists. Forward slashes in files.
+11. **Paths.** Relative to the music folder root in cache and state. Relative to the playlist file in playlists, as R13 requires and as M3U players expect. Forward slashes in files.
 12. **Device change.** Stop on stream error. Open the current default device on the next Play.
-13. **License.** MIT application. Record Symphonia (MPL-2.0) and WebKitGTK (LGPL, dynamic) in a NOTICE file.
+13. **License.** MIT application. Symphonia is MPL-2.0: ship its license text and keep any modified Symphonia source available under the MPL. The AppImage bundles WebKitGTK and GTK, which are LGPL: ship their license texts inside the AppImage and in the repo, and publish where the corresponding source of the bundled versions is available (the base distribution's source packages for those exact versions) or an equivalent written offer. The `.deb` and the Windows builds do not bundle them, so only the notices apply there.
 
 ---
 
@@ -213,8 +213,8 @@ Wording is ready to insert. "Must" marks a requirement.
 - **Add to R2.** "If the root folder is readable and empty, the scan removes all tracks. This is accepted. Playlists and Favorites are files and are not affected."
 - **Rewrite R2 report.** "The status line shows counts (added, removed, skipped) when a scan ends. Settings shows the last counts and an 'Open log folder' button. The log holds the per-file reasons."
 - **Add to R3.** "Display names are folder names, unchanged. Artist and album lists sort by folder name. The sort ignores case and accents and uses natural numeric order (2 before 10). 'Unknown Artist' and 'Unknown Album' sort last."
-- **Rewrite R4 prefix rule.** "A track-number prefix is: one to three digits, an optional separator ('-' or '.') and one to three more digits, then one or more of space, '.', '-' or '_'. Examples: '01 - ', '01. ', '1-01 ', '001_'."
-- **Rewrite R4 order.** "Songs in an album sort by: (1) the relative folder path inside the album folder, (2) the disc number tag, (3) the track number, (4) the file name. Comparison ignores case."
+- **Rewrite R4 prefix rule.** "A track-number prefix is: one to three digits, then an optional group of a separator ('-' or '.') and one to three more digits, then one or more of space, '.', '-' or '_'. Examples: '01 - ', '01. ', '1-01 ', '001_'."
+- **Rewrite R4 order.** "Songs in an album sort by: (1) disc order, (2) the track number, (3) the file name. Disc order is the disc number tag when present. Otherwise it is the position of the song's sub-folder in a natural-order sort of the album's sub-folders. Files directly in the album folder sort as disc 0. Comparison ignores case."
 
 ### Section 2. Widgets and layout
 
@@ -232,7 +232,7 @@ Wording is ready to insert. "Must" marks a requirement.
 - **Add to R6.** "Play (context menu) and double-click replace the queue with the list the song appears in and start at that song. Add to queue appends to the end and does not change the playing song."
 - **Add to R6.** "Repeat off: playback stops after the last queue entry; the position shows the start of the last song. Repeat all: after the last entry, playback continues from the first. Repeat one: the current song restarts when it ends. Next and Previous still move through the queue."
 - **Add to R6.** "Shuffle on: the app plays the remaining entries in random order. Each entry plays once before any entry repeats. The queue display keeps its order. Shuffle off: playback continues in queue order from the current song."
-- **Add to R6.** "Previous: if the position is more than 3 seconds, Previous restarts the current song. Otherwise it goes to the previous entry. At the first entry it restarts the current song."
+- **Add to R6.** "Previous: if the position is more than 3 seconds, Previous restarts the current song. Otherwise it goes to the previous entry in play order. With shuffle on, the previous entry is the last song played in this shuffle run. With no previous entry, Previous restarts the current song."
 - **Add to R6.** "Decode error: the app logs it, shows 'Cannot play <file name>' in the status line and continues with the next entry. After three consecutive failures, playback stops."
 - **Add to R6 search.** "In Tree mode the tree shows artists and albums that contain a match, and the matching songs. A match on an artist or album name shows all of its songs."
 - **Add to R24.** "The app accepts play, pause, toggle, next, previous and stop from the OS. If OS media controls cannot register, the app logs it and continues."
@@ -270,7 +270,7 @@ Wording is ready to insert. "Must" marks a requirement.
 ### Section 5. Edge cases
 
 - **Add.** "No music folder set: R1.1 applies."
-- **Add.** "Music folder changed in Settings: the app clears the queue, rescans and reloads playlists from the new folder."
+- **Add.** "Music folder changed in Settings: the app stops playback, resets the position, clears the queue, rescans and reloads playlists from the new folder."
 - **Rewrite** "Audio device unplugged": "On an output stream error, the app stops playback and shows a message. The next Play opens the current default device."
 - **Rewrite** "Read-only music folder": "Fetch features, playlist edits and Favorites show an error. Playback and browsing work."
 - **Add.** "File name that is not valid UTF-8 (Linux): skip it and log it."
@@ -281,7 +281,7 @@ Wording is ready to insert. "Must" marks a requirement.
 
 - **Rewrite Docking.** "Dockview (MIT core) with React bindings. `disableFloatingGroups` on. No popout calls. Tabbed groups are not required and not tested in v1; the app adds no code to prevent them. Do not use `dockview-enterprise`."
 - **Rewrite Audio engine.** "rodio pinned to a release, Symphonia with the `mp3` feature, lofty for tags. Decode the next track ahead of time so gapless can be added later."
-- **Rewrite License.** "MIT application. Symphonia is MPL-2.0 and WebKitGTK is LGPL (dynamic). Both are compatible. Record them in a NOTICE file."
+- **Rewrite License.** "MIT application. Symphonia is MPL-2.0. The AppImage bundles WebKitGTK and GTK (LGPL). Each release ships the license texts of bundled and linked third-party components and states where the corresponding source of bundled LGPL libraries is available. The repo keeps this list in a NOTICE file."
 - **Rewrite Stack** to match R30 (Motion only by named component).
 
 ### Section 8. Open questions
@@ -292,7 +292,7 @@ Wording is ready to insert. "Must" marks a requirement.
 
 - **Rewrite check 2.** "During the first scan of the 50,000-track test library, the user can select and play an already-scanned song, and the window redraws within 100 ms of input."
 - **Rewrite check 10.** "Unplugging the output device mid-song stops playback with a message. Play resumes on the default device."
-- **Add check 17.** "Portable mode: copy the portable build and the music folder to another drive letter. Start it. Settings, layouts and the queue survive."
+- **Add check 17.** "Portable mode: after use, copy the whole portable folder (executable, `portable` marker and `data` folder) and the music folder to another drive letter. Start it. Settings, layouts and the queue survive."
 - **Add check 18.** "A two-disc album plays disc 1 then disc 2 in track order."
 - **Add check 19.** "A corrupt file in the queue is skipped with a status message. Playback continues."
 - **Add check 20.** "First run shows the folder prompt. After choosing a folder, the user can play a song before the scan ends."
