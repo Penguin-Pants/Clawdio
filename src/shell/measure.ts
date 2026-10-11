@@ -1,39 +1,38 @@
-/** A widget body with data, by the elements it shows when populated (P3.1). */
-const POPULATED = [
-  '[data-widget="library"] [role="option"]:not(:first-child), [data-widget="library"] [role="treeitem"]',
-  '[data-widget="queue"] [role="option"]',
-  '[data-widget="playlists"] [role="treeitem"]',
-  '[data-widget="lyrics"] section',
-  '[data-widget="nowPlaying"] p.text-lg',
-];
+/** The six widgets that the measurement arrangement mounts (P3.1). */
+const WIDGETS = ["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"];
 
-/** The Now playing art: a thumbnail that loaded through the `thumb://` scheme (P3-AC5). */
-function artLoaded(root: ParentNode): boolean {
-  const art = root.querySelector<HTMLImageElement>('[data-widget="nowPlaying"] img');
-  return art !== null && art.complete && art.naturalWidth > 0;
-}
+/** Library rows beyond the "All" rows: the library has loaded. */
+const LIBRARY_ROWS =
+  '[data-widget="library"] [role="option"]:not(:first-child), [data-widget="library"] [role="treeitem"]';
 
-/** True when all six widgets are in the page, show data and the Now playing art loaded. */
+/**
+ * True when all six widgets are in the page and the Library shows the library. With the
+ * production setup (P6.7) only the Library has data: the queue, playlists and lyrics fill in
+ * later phases, and D28 measures with no playback.
+ */
 export function measurementPopulated(root: ParentNode = document): boolean {
   return (
-    root.querySelector('[data-widget="transport"]') !== null &&
-    POPULATED.every((selector) => root.querySelector(selector)) &&
-    artLoaded(root)
+    WIDGETS.every((id) => root.querySelector(`[data-widget="${id}"]`) !== null) &&
+    root.querySelector(LIBRARY_ROWS) !== null
   );
 }
 
 /**
- * Resolves once every widget shows data, so the measurement samples the populated UI
- * (P3.5). Rejects after `timeoutMs`.
+ * Resolves once the widgets show the library and `scanDone` says the startup scan ended, so
+ * the idle period starts after the library loads (D28). Rejects after `timeoutMs`.
  */
-export function waitForPopulated(timeoutMs = 60_000, root: ParentNode = document): Promise<void> {
+export function waitForPopulated(
+  scanDone: () => Promise<boolean>,
+  timeoutMs = 600_000,
+  root: ParentNode = document,
+): Promise<void> {
   const start = Date.now();
   return new Promise((resolve, reject) => {
-    const check = () => {
-      if (measurementPopulated(root)) resolve();
-      else if (Date.now() - start > timeoutMs) reject(new Error("measurement: widgets did not fill"));
+    const check = async () => {
+      if (measurementPopulated(root) && (await scanDone().catch(() => false))) resolve();
+      else if (Date.now() - start > timeoutMs) reject(new Error("measurement: the library did not load"));
       else setTimeout(check, 250);
     };
-    check();
+    void check();
   });
 }

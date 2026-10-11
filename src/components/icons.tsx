@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import {
+  AudioLines,
   Columns3,
   GripVertical,
   Heart,
@@ -33,6 +34,7 @@ export const ICONS = {
   next: SkipForward,
   pause: Pause,
   play: Play,
+  playing: AudioLines,
   previous: SkipBack,
   repeat: Repeat,
   search: Search,

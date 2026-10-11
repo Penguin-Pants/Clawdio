@@ -1,4 +1,4 @@
-# Milestone 0 measurements (P3.6). GitHub dispatches a workflow only when it exists on the
+# Idle memory and bundle sizes (P3.6; production setup since P6.7). GitHub dispatches a workflow only when it exists on the
 # default branch, so pushes to measure/** branches also run it.
 name: Measure
 
@@ -34,15 +34,25 @@ jobs:
           cache: npm
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
-      - name: Release build with Milestone 0 data
-        run: npm run tauri build -- --features fixtures --no-bundle
+      - name: Release build
+        run: npm run tauri build -- --no-bundle
+      # Production setup (P6.7): the 50,000-track library (P4.12, P5.13) with 2,000 covers,
+      # read by a portable copy of the release build.
+      - name: Generate the test library
+        shell: bash
+        run: cargo run --release -p clawdio-core --example gen_test_library -- "$RUNNER_TEMP/library" --tracks 50000 --edge-cases --covers 2000
+      - name: Portable app folder
+        shell: bash
+        run: node scripts/measure-setup.mjs target/release/clawdio${{ runner.os == 'Windows' && '.exe' || '' }} "$RUNNER_TEMP/library" "$RUNNER_TEMP/app"
       - name: Measure (Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -s "-screen 0 1200x800x24" scripts/measure-memory.sh target/release/clawdio memory-linux.json
+        env:
+          STARTUP_SECONDS: 600
+        run: xvfb-run -s "-screen 0 1200x800x24" scripts/measure-memory.sh "$RUNNER_TEMP/app/clawdio" memory-linux.json
       - name: Measure (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./scripts/measure-memory.ps1 -Binary target/release/clawdio.exe -Output memory-windows.json
+        run: ./scripts/measure-memory.ps1 -Binary "$env:RUNNER_TEMP/app/clawdio.exe" -Output memory-windows.json -StartupSeconds 600
       - uses: actions/upload-artifact@v4
         with:
           name: memory-${{ runner.os }}

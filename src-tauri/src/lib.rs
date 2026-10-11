@@ -2,8 +2,6 @@
 
 mod commands;
 mod events;
-#[cfg(feature = "fixtures")]
-mod fixtures;
 mod jobs;
 mod player;
 mod state;
@@ -92,17 +90,6 @@ pub fn run() -> tauri::Result<()> {
             let library = Library::default();
             let music_root = MusicRoot(Arc::new(std::sync::RwLock::new(root.clone())));
 
-            #[cfg(feature = "fixtures")]
-            let widgets = {
-                let mut index = library
-                    .0
-                    .write()
-                    .map_err(|_| std::io::Error::other("index lock"))?;
-                fixtures::fill_library(&mut index);
-                fixtures::write_thumbnails(&mut index, &thumbs)?;
-                fixtures::widgets()
-            };
-            #[cfg(not(feature = "fixtures"))]
             let widgets = state::Widgets::default();
 
             let resolve: Resolve = {
@@ -119,11 +106,6 @@ pub fn run() -> tauri::Result<()> {
                 AppEvents(app.handle().clone()),
                 resolve,
             );
-            #[cfg(feature = "fixtures")]
-            {
-                let (queue, snapshot) = fixtures::queue();
-                player.send(player::Command::SetQueue(queue, snapshot));
-            }
 
             app.manage(AppState {
                 dirs,
@@ -139,11 +121,9 @@ pub fn run() -> tauri::Result<()> {
             window::create_main(app.handle())?;
 
             // Startup sync of the stored folder (R2). A missing folder leaves the cache alone
-            // (D30). The fixtures build serves its own data.
-            if !cfg!(feature = "fixtures") {
-                if let Some(root) = root.filter(|path| path.is_dir()) {
-                    jobs::start_scan(app.handle(), root, jobs::ScanKind::Startup);
-                }
+            // (D30).
+            if let Some(root) = root.filter(|path| path.is_dir()) {
+                jobs::start_scan(app.handle(), root, jobs::ScanKind::Startup);
             }
             Ok(())
         })
@@ -174,6 +154,8 @@ pub fn run() -> tauri::Result<()> {
             commands::widgets::lyrics_get,
             commands::measure::measure_mode,
             commands::measure::measure_ready,
+            commands::measure::scan_running,
+            commands::measure::perf_mode,
         ])
         .build(tauri::generate_context!())?
         .run(|app, event| {

@@ -87,18 +87,18 @@
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Planned |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Planned |
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Planned |
-| R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Planned |
+| R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Planned (D27) |
-| R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Planned |
+| R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
 | R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
-| R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
-| R28-4 | Columns mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
-| R28-5 | Top/bottom mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
-| R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Planned |
-| R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Planned |
+| R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
+| R28-4 | Columns mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
+| R28-5 | Top/bottom mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
+| R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Done (P6) |
+| R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Done (P6) |
 | R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Done (P2) |
 | R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
 | R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Planned |
@@ -134,10 +134,10 @@
 | R6-5 | Shuffle behavior: each entry once, display order kept; shuffle off continues in order | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
 | R6-6 | Previous: over 3 s restarts; else previous in play order; shuffle uses the run history | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
 | R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12, P5.11 | P7-AC3 | IT | Planned (D32) |
-| R6-8 | Single click selects; double-click or Enter plays; album row plays from the first song | §2 R6 | P6.5 | P6-AC4 | E2E | Planned |
+| R6-8 | Single click selects; double-click or Enter plays; album row plays from the first song | §2 R6 | P6.5 | P6-AC4 | E2E | Done (P6) |
 | R6-9 | Queue rule per mode and for playlists; Play and double-click replace; Add to queue appends | §2 R6 | P6.5, P7.10, P11.5 | P6-AC4, P7-AC7, P11-AC8 | E2E | Planned |
 | R6-10 | Queue edits: remove playing, remove earlier, clear | §2 R6 | P7.1, P7.9 | P7-AC1 | UT | Planned |
-| R6-11 | Search: incremental, ignores case and accents, matches artist, album and title; Tree rule | §2 R6 | P6.1, P6.2 | P6-AC3 | UT, E2E | Planned |
+| R6-11 | Search: incremental, ignores case and accents, matches artist, album and title; Tree rule | §2 R6 | P6.1, P6.2 | P6-AC3 | UT, E2E | Done (P6) |
 | R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6, P6.6 | P7-AC7, P6-AC10 | E2E | Planned (D20) |
 | R24-1 | Media keys play/pause, next, previous work with the window in the background | §2 R24 | P8.1, P8.2 | P8-AC1, P8-AC2 | MAN-W, MAN-L | Planned (D39) |
 | R24-2 | Title, artist, album, artwork and position go to the OS panel | §2 R24 | P8.3, P10.5 | P8-AC1, P8-AC2, P10-AC6 | MAN-W, MAN-L | Planned |
@@ -292,7 +292,7 @@
 | E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5, D16) |
 | E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5) |
 | E-6 | Missing tags: R4 fallbacks | §5 | P5.7 | P5-AC1, P5-AC10 | UT | Done (P5) |
-| E-7 | Tag and folder disagree: folder wins, no warning | §5 | P5.6 | P5-AC1, P6-AC7 | IT | Planned |
+| E-7 | Tag and folder disagree: folder wins, no warning | §5 | P5.6 | P5-AC1, P6-AC7 | IT | Done (P6) |
 | E-8 | Folders that differ only by case (Linux) are separate | §5 | P5.12 | P5-AC1 | IT | Done (P5) |
 | E-9 | Non-ASCII names work on both systems | §5 | P5.12 | P5-AC14 | IT | Done (P5) |
 | E-10 | Windows paths over 260 characters work | §5 | P5.1, P5.12 | P5-AC14 | IT | Planned |
@@ -401,7 +401,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Planned |
 | AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Planned |
 | AC-13 | Transport hidden: keys and media keys work; Reset layout restores | §9.13 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W | Planned |
-| AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Planned |
+| AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Done (P6) |
 | AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Planned |
 | AC-16 | With reduce motion on, no animation plays (Magic UI clause applies only if components are named) | §9.16 | P0.7, P17.3 | P2-AC8, P17-AC3 | E2E, MAN-L, MAN-W | Planned |
 | AC-17 | Portable folder and music folder copied to another drive: settings, arrangement, queue survive | §9.17 | P4.1, P9.1 | P9-AC7, P18-AC10 | MAN-W | Planned |
@@ -453,12 +453,12 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Planned |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
-| DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Planned |
+| DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Done (P6) |
 | DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Resolved (C11) |
 | DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Planned |
 | DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Planned |
 | DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Resolved (C3) |
-| DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Planned |
+| DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Done (P6) |
 | DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Done (P5, D12) |
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
 | DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Planned |

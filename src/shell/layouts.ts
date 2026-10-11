@@ -143,3 +143,16 @@ export function guardLibrary(
     });
   });
 }
+
+/**
+ * Ctrl+F (R25): activates the Library tab when it shares a group, then focuses the search
+ * field. Returns false when there is no Library search field.
+ */
+export function focusLibrarySearch(doc: Document = document): boolean {
+  getDock()?.getPanel("library")?.api.setActive();
+  const field = doc.querySelector<HTMLInputElement>('[data-widget="library"] input[type="search"]');
+  if (!field) return false;
+  field.focus();
+  field.select();
+  return true;
+}

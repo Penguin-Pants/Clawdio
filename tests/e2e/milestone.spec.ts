@@ -31,7 +31,7 @@ test("P3-AC1: Columns filters by artist and album and scrolls the songs", async 
   const library = widget(page, "library");
   const songs = library.getByRole("listbox", { name: "Songs" });
   await songs.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-  await expect(songs.getByRole("option").last()).toContainText("Song 10 of Album C19");
+  await expect(songs.getByRole("option").last()).toContainText("Sorry");
   await library.getByRole("listbox", { name: "Artists" }).getByRole("option", { name: "Artist 05" }).click();
   const albums = library.getByRole("listbox", { name: "Albums" }).getByRole("option");
   await expect(albums).toHaveCount(4);

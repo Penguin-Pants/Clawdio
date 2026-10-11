@@ -46,4 +46,6 @@ export const commands = {
   openNotice: () => invoke<void>("open_notice"),
   measureMode: () => invoke<LibraryMode | null>("measure_mode"),
   measureReady: () => invoke<void>("measure_ready"),
+  scanRunning: () => invoke<boolean>("scan_running"),
+  perfMode: () => invoke<boolean>("perf_mode"),
 };

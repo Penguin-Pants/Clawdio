@@ -36,10 +36,6 @@ pub enum Command {
     },
     Toggle,
     Stop,
-    /// Replaces the queue without playing (start state). The fixtures use it now; P9
-    /// restores the saved queue with it (R27).
-    #[cfg_attr(not(feature = "fixtures"), allow(dead_code))]
-    SetQueue(QueueSnapshot, PlayerSnapshot),
     /// Stops playback, resets the position and empties the queue (P5.9, a new music folder).
     /// The reply comes when it is done.
     Clear(Sender<()>),
@@ -188,12 +184,6 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         self.announce();
     }
 
-    pub fn set_queue(&mut self, queue: QueueSnapshot, player: PlayerSnapshot) {
-        self.queue = queue;
-        self.player = player;
-        self.announce();
-    }
-
     /// One tick while playing: report the position and move on at the end of a file. After
     /// the last entry playback stops at the start of the last song (R6 repeat off).
     pub fn tick(&mut self) {
@@ -219,7 +209,6 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             Command::PlayList { ids, start } => self.play_list(ids, start),
             Command::Toggle => self.toggle(),
             Command::Stop => self.stop(),
-            Command::SetQueue(queue, player) => self.set_queue(queue, player),
             Command::Clear(done) => {
                 self.clear();
                 let _ = done.send(());

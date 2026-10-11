@@ -1,5 +1,6 @@
-// A small generated library for e2e tests (P3): 20 artists, 3 albums each, 10 songs each.
-// The handlers answer the library commands like the Rust index does, without folding.
+// A small generated library for e2e tests (P3): 20 artists, 3 albums each, 10 songs each, and
+// "Beyoncé" with one album for the accent search (P6-AC3). The handlers answer the library
+// commands like the Rust index does: search folds case and accents (D4).
 import type { AlbumRow } from "../../src/lib/ipc/bindings/AlbumRow";
 import type { ArtistRow } from "../../src/lib/ipc/bindings/ArtistRow";
 import type { PlaylistEntry } from "../../src/lib/ipc/bindings/PlaylistEntry";
@@ -38,8 +39,35 @@ for (let a = 0; a < 20; a += 1) {
   }
 }
 
+{
+  const artist = { id: artists.length, name: "Beyoncé" };
+  artists.push(artist);
+  const album: AlbumRow = {
+    id: albums.length,
+    artistId: artist.id,
+    name: "Lemonade",
+    artistName: artist.name,
+    thumb: null,
+  };
+  albums.push(album);
+  for (const title of ["Pray You Catch Me", "Hold Up", "Sorry"]) {
+    songs.push({
+      id: songs.length,
+      artistId: artist.id,
+      albumId: album.id,
+      title,
+      artistName: artist.name,
+      albumName: album.name,
+      tagArtist: null,
+      durationMs: 200_000,
+    });
+  }
+}
+
+/** Folding like the Rust `fold` (D4): accents removed, lowercase. */
+const fold = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const hit = (query: string, ...texts: string[]) =>
-  query === "" || texts.some((text) => text.toLowerCase().includes(query.toLowerCase()));
+  query === "" || texts.some((text) => fold(text).includes(fold(query)));
 const songHits = (query: string, song: SongRow) => hit(query, song.title, song.albumName, song.artistName);
 
 export const library = {

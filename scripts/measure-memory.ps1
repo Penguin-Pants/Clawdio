@@ -45,12 +45,12 @@ foreach ($mode in $modes) {
     $env:CLAWDIO_MEASURE_MODE = $mode
     $env:CLAWDIO_MEASURE_READY = $ready
     $app = Start-Process -FilePath $Binary -PassThru
-    # The app writes the ready file once all six widgets show data.
+    # The app writes the ready file once the library shows and the startup scan ended (D28).
     $waited = 0
     while (-not (Test-Path $ready)) {
       if ($app.HasExited -or $waited -ge $StartupSeconds) {
         Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
-        throw "$mode run ${run}: the app did not show populated widgets within $StartupSeconds s"
+        throw "$mode run ${run}: the library did not load within $StartupSeconds s"
       }
       Start-Sleep -Seconds 1
       $waited++

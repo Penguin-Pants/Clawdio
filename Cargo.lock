@@ -528,7 +528,6 @@ name = "clawdio"
 version = "0.1.0"
 dependencies = [
  "clawdio-core",
- "image",
  "log",
  "rodio",
  "serde",

@@ -259,12 +259,6 @@ impl LibraryIndex {
             })
     }
 
-    pub fn set_album_thumb(&mut self, album: AlbumId, thumb: Option<String>) {
-        if let Some(entry) = self.albums.get_mut(album as usize) {
-            entry.thumb = thumb;
-        }
-    }
-
     pub fn track(&self, id: TrackId) -> Option<&Track> {
         self.tracks.get(id as usize).and_then(Option::as_ref)
     }

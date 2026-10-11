@@ -76,8 +76,11 @@ export function DockShell() {
         (mode) => {
           if (!mode) return;
           applyMeasureLayout(mode, api);
-          // The measurement scripts wait for this signal before the idle period (P3.5).
-          waitForPopulated().then(() => commands.measureReady(), console.error);
+          // The measurement scripts wait for this signal before the idle period (P3.5, D28).
+          waitForPopulated(async () => !(await commands.scanRunning())).then(
+            () => commands.measureReady(),
+            console.error,
+          );
         },
         () => {
           // No app shell: no measurement mode.

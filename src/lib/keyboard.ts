@@ -1,10 +1,15 @@
-import { resetLayout } from "@/shell/layouts";
+import { focusLibrarySearch, resetLayout } from "@/shell/layouts";
 
 /** Reset layout shortcut (D17, R29). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
 
 export function isResetShortcut(event: KeyboardEvent): boolean {
   return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.code === "KeyL";
+}
+
+/** Ctrl+F: the Library search field (R25). */
+export function isSearchShortcut(event: KeyboardEvent): boolean {
+  return event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey && event.code === "KeyF";
 }
 
 /** Keys inside open menus, dialogs and select popups belong to those controls (D17). */
@@ -40,6 +45,9 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
   if (isResetShortcut(event)) {
     resetLayout();
     return true;
+  }
+  if (isSearchShortcut(event) && !inMenuOrDialog(event.target)) {
+    return focusLibrarySearch(doc);
   }
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
     nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey)?.focus();

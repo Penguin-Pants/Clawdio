@@ -4,7 +4,7 @@
 # median. The gate value is the worst mode. Needs a display (use xvfb-run on CI).
 # Usage: scripts/measure-memory.sh <app binary> [output.json]
 # Environment: RUNS (default 3), STARTUP_SECONDS (default 60, the longest wait for the app to
-# signal that all six widgets show data), IDLE_SECONDS (default 60).
+# signal that the library loaded and the startup scan ended), IDLE_SECONDS (default 60).
 set -euo pipefail
 
 BINARY=${1:?usage: measure-memory.sh <app binary> [output.json]}
@@ -44,11 +44,11 @@ for mode in "${MODES[@]}"; do
     ready=$(mktemp -u)
     CLAWDIO_MEASURE_MODE=$mode CLAWDIO_MEASURE_READY=$ready "$BINARY" >/dev/null 2>&1 &
     app=$!
-    # The app writes the ready file once all six widgets show data.
+    # The app writes the ready file once the library shows and the startup scan ended (D28).
     waited=0
     until [ -f "$ready" ]; do
       if ! kill -0 "$app" 2>/dev/null || [ "$waited" -ge "$STARTUP_SECONDS" ]; then
-        echo "$mode run $run: the app did not show populated widgets within ${STARTUP_SECONDS} s" >&2
+        echo "$mode run $run: the library did not load within ${STARTUP_SECONDS} s" >&2
         kill "$app" 2>/dev/null || true
         exit 1
       fi

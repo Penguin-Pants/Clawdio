@@ -15,6 +15,21 @@ pub fn measure_mode() -> Option<LibraryMode> {
         .and_then(|value| LibraryMode::parse(&value))
 }
 
+/// `CLAWDIO_PERF=1` turns on the responsiveness probe (P6.8, AC-2).
+pub const PERF_VAR: &str = "CLAWDIO_PERF";
+
+#[tauri::command]
+pub fn perf_mode() -> bool {
+    std::env::var(PERF_VAR).is_ok_and(|value| value == "1")
+}
+
+/// Whether a scan runs or waits to run. The measurement waits until the startup scan ends
+/// (D28: idle after the library loads).
+#[tauri::command]
+pub fn scan_running() -> bool {
+    crate::jobs::scan_running()
+}
+
 /// Called by the UI when all six widgets show data. With `CLAWDIO_MEASURE_READY` set, it writes
 /// that file, so the measurement scripts start the idle period from a populated UI.
 #[tauri::command]

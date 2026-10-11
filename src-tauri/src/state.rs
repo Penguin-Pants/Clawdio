@@ -30,7 +30,7 @@ pub struct AppState {
 }
 
 /// Widget data that later phases own: playlists (P11) and lyrics (P13). Empty until then, or
-/// Milestone 0 data with the `fixtures` feature.
+/// Empty until those phases.
 #[derive(Default)]
 pub struct Widgets {
     pub playlists: Vec<(PlaylistRow, Vec<PlaylistEntry>)>,

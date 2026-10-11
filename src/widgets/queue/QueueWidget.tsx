@@ -22,8 +22,8 @@ export function QueueWidget() {
         count={queue.entries.length}
         rowHeight={ROW_HEIGHT}
         onRange={onRange}
-        renderRow={(index, style) => (
-          <Row key={index} style={style} selected={false}>
+        renderRow={(index, frame) => (
+          <Row key={index} frame={frame} selected={false}>
             {index === queue.current && <span className="sr-only">Playing: </span>}
             <span aria-hidden="true" className="w-4 text-xs text-text-muted">
               {index === queue.current ? "▶" : ""}

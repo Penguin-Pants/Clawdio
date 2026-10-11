@@ -56,6 +56,9 @@ function settingsCommand(command: string, args: Args): unknown {
       document.body.dataset.rescans = String(Number(document.body.dataset.rescans ?? 0) + 1);
       return null;
     case "player_play_list":
+      // Tests read the last queue request from the page (P6-AC4).
+      document.body.dataset.playList = JSON.stringify({ ids: args.ids, start: args.start });
+      return null;
     case "player_toggle":
     case "player_stop":
     case "cancel_job":
@@ -133,6 +136,9 @@ mockIPC((command, args) => {
       return app.version;
     case "measure_mode":
       return new URLSearchParams(window.location.search).get("measure");
+    case "scan_running":
+    case "perf_mode":
+      return false;
     case "measure_ready":
       document.body.dataset.measureReady = "true";
       return null;

@@ -49,10 +49,6 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
-      - name: Lint with Milestone 0 data (fixtures feature, D35)
-        run: cargo clippy --workspace --all-targets --features clawdio/fixtures -- -D warnings
-      - name: Test with Milestone 0 data (fixtures feature, D35)
-        run: cargo test --workspace --features clawdio/fixtures
       - name: Generated IPC types are committed
         shell: bash
         run: test -z "$(git status --porcelain -- src/lib/ipc/bindings)"

@@ -70,7 +70,7 @@ A phase is Done when all of these are true:
 | P3 | Milestone 0 footprint gate | P2 | Done with exceptions |
 | P4 | End-to-end slice | P3 | Done with exceptions |
 | P5 | Library scan and cache | P4 | Done with exceptions |
-| P6 | Library widget and search | P5 | Not started |
+| P6 | Library widget and search | P5 | Done with exceptions |
 | P7 | Playback engine and Play queue | P6 | Not started |
 | P8 | OS media integration | P7 | Not started |
 | P9 | Persistence: state, arrangement and instance | P8 | Not started |
@@ -390,7 +390,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P5-AC11 | Pass | Golden file: disc tags win over folder order; without tags "Disc 2" comes before "Disc 10". |
 | P5-AC12 | Pass with exception | Manual Linux: "Music folder not found: lib50k" and "Change folder"; the cache file is unchanged. E2E: Change folder leads to the library. The native picker step did not run (E1). |
 | P5-AC13 | Pass | Core test: a canceled old scan, a clear and a new scan leave only new paths in the index and the cache. App: one scan at a time (gate), and the player queue clears before the index (`Command::Clear`). |
-| P5-AC14 | Pass (Linux); Windows long path in CI | Non-ASCII names in the golden file. A name that is not valid UTF-8 is skipped and logged once. The path over 260 characters is a Windows-only test (`p5_ac14_...`). |
+| P5-AC14 | Pass | Non-ASCII names in the golden file. A name that is not valid UTF-8 is skipped and logged once. The path over 260 characters passes in Windows CI (`p5_ac14_...`, run on `402c5fd`). |
 | P5-AC15 | Pass | A file added after a scan appears only after the next scan. |
 | P5-AC16 | Pass | Cover state none, valid and broken and the embedded picture flag are cached; a restart decodes no cover; a changed cover decodes again. |
 
@@ -406,7 +406,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - E1: the GTK folder picker under Xvfb lists no files, so the picker step of P5-AC12 did not run. P4 uses the same command.
 - E2: P5.3 sidecar part: the scan does not read `sidecar.json` yet. The sidecar reader comes in P14.3 and the R4 sidecar step in P16.6. Those phases add the stamp check.
-- E3: the Windows-only tests (long path, junction behavior) run in CI only.
+- E3: the Windows-only tests (long path) run in CI only; they passed on `402c5fd`.
 
 **Blockers:** none.
 
@@ -428,6 +428,52 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Real folders named "Unknown Artist" or "Unknown Album" sort with the unknown groups; lofty also reads embedded pictures for the flag (a 50,000-track cold scan took 9 s in the container; P6-AC6 measures).
 
 **Follow-ups:** none.
+
+---
+
+#### P6. Library widget and search (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `402c5fd`. Messages start with `P6:`.
+- **Packages:** none added. `image` left `src-tauri` with the `fixtures` feature.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P6-AC1 | Pass | `tests/e2e/library.spec.ts`: All rows, Artist filters Album, Album filters Songs, Top/bottom and Tree. |
+| P6-AC2 | Pass | E2E: Tree and back keeps the artist, album, song and search text. |
+| P6-AC3 | Pass | E2E: "beyonce" finds "Beyoncé"; an album name match shows all its songs; "hold" shows one. Rust: `tests/library.rs` on the scanned fixture tree ("BJORK", "debut", the Tree rule). |
+| P6-AC4 | Pass | E2E: double-click and Enter play the Songs list as shown; an album row plays from its first song; in Tree a song plays its album from that song. |
+| P6-AC5 | Pass | E2E: Up, Down, Enter, Ctrl+F, Esc; the active row has a 2 px inset outline and `aria-activedescendant`; after a wheel scroll Down moves from the active row; Tree Right, Left, `aria-level`, `aria-expanded`, `aria-selected`. A mutation (no move) fails the test. |
+| P6-AC6 | Exception (E1) | Manual Linux (Xvfb, software rendering), release build, first scan of 50,000 tracks with `CLAWDIO_PERF=1`, select, play, 30 Down keys: maximum 104 ms (1 of 28 events over 100 ms), then 48 ms and 64 ms in two more runs. Without a scan: 56 ms. Windows: not verified. |
+| P6-AC7 | Pass | E2E: "Song 3" shows "Artist 00 feat. Guest". |
+| P6-AC8 | Pass | `src-tauri/src/fixtures.rs`, the feature and its CI steps are gone. `CLAWDIO_MEASURE_MODE` and the mocks stay. |
+| P6-AC9 | Pass | E2E: the selected row's left edge reads over 100 brighter in grayscale. |
+| P6-AC10 | Pass | E2E: Shift+F10 and the ContextMenu key open the menu at the active row; Play plays; Esc returns focus to the list. |
+
+**Notes**
+
+- N1: the context menu has "Play" only. P7 adds "Add to queue", P11 "Add to playlist".
+- N2: the measurement (P6.7) runs a portable release build (`scripts/measure-setup.mjs`) on the generated library with `--edge-cases --covers 2000`. The ready signal waits for the six widgets, Library rows and the end of the startup scan (`scan_running`, D28). The queue, playlists, lyrics and Now playing art have no data until P7, P9, P11 and P13. A short local run (10 s idle): 477 to 499 MB.
+- N3: WebKitGTK 2.52 supports the Event Timing API, so the probe uses it on Linux too; the next-frame message is the fallback. Event Timing reports only events of 16 ms or more, so listeners count every input.
+- N4: `SetQueue` and `set_album_thumb` went with the fixtures. P9 and P10 add their own.
+- N5: the e2e mock library gained "Beyoncé" and folds accents like `fold` (D4).
+
+**Exceptions**
+
+- E1: P6-AC6 passed in 2 of 3 Linux runs in a container with software rendering (K15). P17 and P18.5 repeat it on desktops; Windows is not verified.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 4. A reviewer agent's audit was still running at commit; its findings go into a follow-up commit.
+
+- F2: the debounced search could drop keys typed while a value was sent (it now tracks the sent value). The probe logged nothing when all events were fast under Event Timing (it now counts every input). The Columns e2e test expected the old last song of the mock. The keyboard test was checked by mutation.
+- F4:
+  - An album selected outside the filtered list makes "All" the active row: the user's selection stays; the next move starts from "All".
+  - The context menu has no trigger element: Base UI positions it at the row and returns focus to the list (tested).
+  - `library_tree` still returns the whole structure: P6.1 defines it so; F-13 waits for the owner.
+  - `library-changed` refetches all three lists twice per second during a scan: section 6.9 allows it; P6-AC6 measured the cost.
+
+**Follow-ups:** F-13 (open).
 
 ---
 

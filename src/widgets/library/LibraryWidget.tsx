@@ -71,9 +71,38 @@ function ModeSwitch({ narrow }: { narrow: boolean }) {
   );
 }
 
+/** Search waits this long after the last key (P6.2). */
+export const SEARCH_DEBOUNCE_MS = 120;
+
+/** Focuses the first list of the Library body. */
+function focusLibraryList(from: HTMLElement) {
+  from
+    .closest('[data-widget="library"]')
+    ?.querySelector<HTMLElement>('[data-library-body] [role="listbox"], [data-library-body] [role="tree"]')
+    ?.focus();
+}
+
+/** The search field (R6): it searches as the user types, 120 ms after the last key. Esc clears it. */
 function SearchField() {
   const search = useLibraryStore((state) => state.search);
   const setSearch = useLibraryStore((state) => state.setSearch);
+  const [text, setText] = useState(search);
+  const sent = useRef(search);
+  // A change from elsewhere shows in the field; the field's own changes come back unchanged.
+  useEffect(() => {
+    if (search !== sent.current) {
+      sent.current = search;
+      setText(search);
+    }
+  }, [search]);
+  useEffect(() => {
+    if (text === sent.current) return;
+    const timer = setTimeout(() => {
+      sent.current = text;
+      setSearch(text);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [text, setSearch]);
   return (
     <div className="relative min-w-0 flex-1">
       <Icon name="search" className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-text-muted" />
@@ -82,8 +111,16 @@ function SearchField() {
         aria-label="Search"
         placeholder="Search"
         className="h-7 pl-7"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          setText("");
+          sent.current = "";
+          setSearch("");
+          focusLibraryList(event.currentTarget);
+        }}
       />
     </div>
   );

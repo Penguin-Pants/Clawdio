@@ -47,6 +47,11 @@ fn progress(app: &AppHandle, text: Option<String>) {
     );
 }
 
+/// Whether a scan runs or waits to run.
+pub fn scan_running() -> bool {
+    ACTIVE.load(Ordering::SeqCst) > 0
+}
+
 /// The status line text for a finished scan (R2, P5.4).
 pub fn summary(report: &ScanReport) -> String {
     if report.canceled {

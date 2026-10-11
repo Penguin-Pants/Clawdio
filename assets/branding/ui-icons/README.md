@@ -24,6 +24,7 @@ The names come from `src/components/icons.tsx`:
 | `next` | Next |
 | `pause` | Pause |
 | `play` | Play |
+| `playing` | The playing song in Library lists |
 | `previous` | Previous |
 | `repeat` | Repeat |
 | `search` | Search field |

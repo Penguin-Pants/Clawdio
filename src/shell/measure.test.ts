@@ -4,57 +4,50 @@ import { measurementPopulated, waitForPopulated } from "./measure";
 const POPULATED_HTML = `
   <section data-widget="library"><div role="option">All</div><div role="option">Artist</div></section>
   <section data-widget="transport"></section>
-  <section data-widget="nowPlaying"><img alt="" /><p class="text-lg">Song</p></section>
-  <section data-widget="playlists"><div role="treeitem">Mix</div></section>
-  <section data-widget="queue"><div role="option">Song</div></section>
-  <section data-widget="lyrics"><section>Line</section></section>`;
-
-/** jsdom loads no images, so a test sets the decoded state of the Now playing art. */
-function setArt(width: number) {
-  const art = document.querySelector('[data-widget="nowPlaying"] img');
-  if (art) Object.defineProperties(art, { complete: { value: true }, naturalWidth: { value: width } });
-}
+  <section data-widget="nowPlaying"></section>
+  <section data-widget="playlists"></section>
+  <section data-widget="queue"></section>
+  <section data-widget="lyrics"></section>`;
 
 afterEach(() => {
   document.body.innerHTML = "";
   vi.useRealTimers();
 });
 
-describe("measurementPopulated (P3.5)", () => {
-  it("is true only when all six widgets show data", () => {
+describe("measurementPopulated (P3.5, P6.7)", () => {
+  it("is true when all six widgets are in the page and the Library shows rows", () => {
     document.body.innerHTML = POPULATED_HTML;
-    setArt(96);
     expect(measurementPopulated()).toBe(true);
-    document.querySelector('[data-widget="queue"] [role="option"]')?.remove();
-    expect(measurementPopulated()).toBe(false);
-  });
-
-  it("waits for the Now playing art to load (P3-AC5)", () => {
-    document.body.innerHTML = POPULATED_HTML;
-    setArt(0);
+    document.querySelector('[data-widget="queue"]')?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 
   it("does not count the Library 'All' row alone", () => {
     document.body.innerHTML = POPULATED_HTML;
-    setArt(96);
     document.querySelectorAll('[data-widget="library"] [role="option"]')[1]?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 });
 
 describe("waitForPopulated", () => {
-  it("resolves once the widgets fill and rejects after the timeout", async () => {
+  it("waits for the scan to end, and rejects after the timeout", async () => {
     vi.useFakeTimers();
-    const filled = waitForPopulated(5_000);
     document.body.innerHTML = POPULATED_HTML;
-    setArt(96);
+    let scanning = true;
+    let done = false;
+    const ready = waitForPopulated(async () => !scanning, 5_000).then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(done).toBe(false);
+    scanning = false;
     await vi.advanceTimersByTimeAsync(300);
-    await expect(filled).resolves.toBeUndefined();
-    document.body.innerHTML = "";
-    const empty = waitForPopulated(1_000);
-    const result = expect(empty).rejects.toThrow("did not fill");
+    await ready;
+    expect(done).toBe(true);
+
+    const never = waitForPopulated(async () => false, 1_000);
+    const outcome = never.catch((error: Error) => error.message);
     await vi.advanceTimersByTimeAsync(1_500);
-    await result;
+    expect(await outcome).toMatch(/did not load/);
   });
 });
