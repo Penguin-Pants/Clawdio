@@ -3,7 +3,7 @@
 
 use std::cmp::Ordering;
 
-use super::{Album, AlbumId, Artist, LibraryIndex, Track, TrackId};
+use super::{Album, AlbumId, Artist, ArtistId, LibraryIndex, Track, TrackId};
 use crate::api::{AlbumRow, ArtistRow, SongRow, SongScope, TreeAlbum, TreeArtist};
 use crate::error::CoreError;
 use crate::fold::fold;
@@ -97,8 +97,8 @@ impl LibraryIndex {
         }
     }
 
-    /// Artists with at least one matching song, in folder name order.
-    pub fn artists(&self, query: &str) -> Vec<ArtistRow> {
+    /// Ids of the artists with at least one matching song, in folder name order.
+    pub fn artist_ids(&self, query: &str) -> Vec<ArtistId> {
         let query = Query::new(query);
         self.sorted_artists()
             .into_iter()
@@ -107,15 +107,32 @@ impl LibraryIndex {
                     .into_iter()
                     .any(|album| !self.matching_songs(artist, album, &query).is_empty())
             })
-            .map(|artist| ArtistRow {
-                id: artist.id,
-                name: artist.name.clone(),
+            .map(|artist| artist.id)
+            .collect()
+    }
+
+    /// Row data for the given artist ids, in the same order (D14).
+    pub fn artist_rows(&self, ids: &[ArtistId]) -> Result<Vec<ArtistRow>, CoreError> {
+        ids.iter()
+            .map(|id| {
+                let artist = self.artist(*id).ok_or(CoreError::UnknownId {
+                    kind: "artist",
+                    id: *id,
+                })?;
+                Ok(ArtistRow {
+                    id: artist.id,
+                    name: artist.name.clone(),
+                })
             })
             .collect()
     }
 
-    /// Albums of one artist, or of all artists, with at least one matching song.
-    pub fn albums(&self, artist: Option<u32>, query: &str) -> Result<Vec<AlbumRow>, CoreError> {
+    /// Ids of the albums of one artist, or of all artists, with at least one matching song.
+    pub fn album_ids(
+        &self,
+        artist: Option<ArtistId>,
+        query: &str,
+    ) -> Result<Vec<AlbumId>, CoreError> {
         let query = Query::new(query);
         let artists = match artist {
             Some(id) => vec![self
@@ -123,21 +140,38 @@ impl LibraryIndex {
                 .ok_or(CoreError::UnknownId { kind: "artist", id })?],
             None => self.sorted_artists(),
         };
-        let mut rows = Vec::new();
+        let mut ids = Vec::new();
         for artist in artists {
             for album in self.sorted_albums(artist) {
                 if !self.matching_songs(artist, album, &query).is_empty() {
-                    rows.push(AlbumRow {
-                        id: album.id,
-                        artist_id: artist.id,
-                        name: album.name.clone(),
-                        artist_name: artist.name.clone(),
-                        thumb: album.thumb.clone(),
-                    });
+                    ids.push(album.id);
                 }
             }
         }
-        Ok(rows)
+        Ok(ids)
+    }
+
+    /// Row data for the given album ids, in the same order (D14).
+    pub fn album_rows(&self, ids: &[AlbumId]) -> Result<Vec<AlbumRow>, CoreError> {
+        ids.iter()
+            .map(|id| {
+                let album = self.album(*id).ok_or(CoreError::UnknownId {
+                    kind: "album",
+                    id: *id,
+                })?;
+                let artist = self.artist(album.artist).ok_or(CoreError::UnknownId {
+                    kind: "artist",
+                    id: album.artist,
+                })?;
+                Ok(AlbumRow {
+                    id: album.id,
+                    artist_id: artist.id,
+                    name: album.name.clone(),
+                    artist_name: artist.name.clone(),
+                    thumb: album.thumb.clone(),
+                })
+            })
+            .collect()
     }
 
     /// Ids of the matching songs in a scope, in artist, album and song order.
@@ -232,9 +266,15 @@ impl LibraryIndex {
             .collect()
     }
 
-    /// The album id of a track, for the Now playing art.
-    pub fn album_of(&self, id: TrackId) -> Option<AlbumId> {
-        self.track(id).map(|track| track.album)
+    /// The album of a track, for the Now playing art. An unknown or removed id is an error (D46).
+    pub fn album_of(&self, id: TrackId) -> Result<&Album, CoreError> {
+        let track = self
+            .track(id)
+            .ok_or(CoreError::UnknownId { kind: "track", id })?;
+        self.album(track.album).ok_or(CoreError::UnknownId {
+            kind: "album",
+            id: track.album,
+        })
     }
 }
 
@@ -266,48 +306,52 @@ mod tests {
         index
     }
 
-    fn names(rows: &[ArtistRow]) -> Vec<&str> {
-        rows.iter().map(|row| row.name.as_str()).collect()
+    fn names(index: &LibraryIndex, query: &str) -> Vec<String> {
+        let ids = index.artist_ids(query);
+        index
+            .artist_rows(&ids)
+            .unwrap()
+            .into_iter()
+            .map(|row| row.name)
+            .collect()
+    }
+
+    fn album_names(index: &LibraryIndex, artist: Option<u32>, query: &str) -> Vec<String> {
+        let ids = index.album_ids(artist, query).unwrap();
+        index
+            .album_rows(&ids)
+            .unwrap()
+            .into_iter()
+            .map(|row| row.name)
+            .collect()
     }
 
     #[test]
     fn lists_artists_in_folded_order() {
-        assert_eq!(names(&sample().artists("")), ["ABBA", "Beyoncé"]);
+        assert_eq!(names(&sample(), ""), ["ABBA", "Beyoncé"]);
     }
 
     #[test]
     fn search_ignores_case_and_accents() {
         let index = sample();
-        assert_eq!(names(&index.artists("beyonce")), ["Beyoncé"]);
-        assert_eq!(names(&index.artists("WATERLOO")), ["ABBA"]);
-        assert!(index.artists("nothing like this").is_empty());
+        assert_eq!(names(&index, "beyonce"), ["Beyoncé"]);
+        assert_eq!(names(&index, "WATERLOO"), ["ABBA"]);
+        assert!(index.artist_ids("nothing like this").is_empty());
     }
 
     #[test]
     fn albums_filter_by_artist_and_query() {
         let index = sample();
-        let all: Vec<String> = index
-            .albums(None, "")
-            .unwrap()
-            .into_iter()
-            .map(|a| a.name)
-            .collect();
-        assert_eq!(all, ["Arrival", "Gold", "Lemonade"]);
-        let abba = index.artists("")[0].id;
-        let gold: Vec<String> = index
-            .albums(Some(abba), "water")
-            .unwrap()
-            .into_iter()
-            .map(|a| a.name)
-            .collect();
-        assert_eq!(gold, ["Gold"]);
         assert_eq!(
-            index.albums(Some(99), ""),
-            Err(CoreError::UnknownId {
-                kind: "artist",
-                id: 99
-            })
+            album_names(&index, None, ""),
+            ["Arrival", "Gold", "Lemonade"]
         );
+        let abba = index.artist_ids("")[0];
+        assert_eq!(album_names(&index, Some(abba), "water"), ["Gold"]);
+        let unknown = |kind, id| Some(CoreError::UnknownId { kind, id });
+        assert_eq!(index.album_ids(Some(99), "").err(), unknown("artist", 99));
+        assert_eq!(index.album_rows(&[99]).err(), unknown("album", 99));
+        assert_eq!(index.artist_rows(&[99]).err(), unknown("artist", 99));
     }
 
     #[test]
@@ -331,7 +375,7 @@ mod tests {
                 "Hold Up"
             ]
         );
-        let lemonade = index.albums(None, "lemon").unwrap()[0].id;
+        let lemonade = index.album_ids(None, "lemon").unwrap()[0];
         let scope = SongScope {
             artist: None,
             album: Some(lemonade),
@@ -369,6 +413,17 @@ mod tests {
                 kind: "track",
                 id: 0
             })
+        );
+        assert_eq!(
+            index.album_of(0).err(),
+            Some(CoreError::UnknownId {
+                kind: "track",
+                id: 0
+            })
+        );
+        assert_eq!(
+            index.album_of(1).map(|album| album.name.as_str()),
+            Ok("Lemonade")
         );
         let id = index.insert(track("New", "Album", "Song", 1));
         assert_eq!(id, 5);

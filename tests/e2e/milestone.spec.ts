@@ -57,6 +57,23 @@ test("P3-AC1: Top/bottom and Tree show the library and search filters it", async
   await expect(tree.getByRole("treeitem", { name: "Artist 00", exact: true })).toHaveAttribute("aria-expanded", "true");
 });
 
+test("P3: a tree album selection also selects its artist, so Columns shows that album", async ({ page }) => {
+  await open(page, "tree");
+  const library = widget(page, "library");
+  const tree = library.getByRole("tree", { name: "Library" });
+  await tree.getByRole("treeitem", { name: "Artist 00", exact: true }).click();
+  await tree.getByRole("treeitem", { name: "Artist 01", exact: true }).click();
+  await tree.getByRole("treeitem", { name: "Album B0", exact: true }).click();
+  await openMenu(page);
+  await page.getByRole("menuitemradio", { name: "Columns" }).click();
+  await closeMenu(page);
+  const artists = library.getByRole("listbox", { name: "Artists" });
+  await expect(artists.getByRole("option", { name: "Artist 00" })).toHaveAttribute("aria-selected", "true");
+  await expect(library.getByRole("listbox", { name: "Songs" }).getByRole("option").first()).toContainText(
+    "Song 1 of Album B0",
+  );
+});
+
 test("P3: axe finds no serious or critical violation with data", async ({ page }) => {
   await open(page, "columns");
   await expect(widget(page, "queue").getByRole("option").first()).toBeVisible();

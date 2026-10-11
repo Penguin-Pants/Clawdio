@@ -51,6 +51,8 @@ export const library = {
         (artist === null || album.artistId === artist) &&
         songs.some((s) => s.albumId === album.id && songHits(query, s)),
     ),
+  artistRows: (ids: number[]) => ids.map((id) => artists[id]),
+  albumRows: (ids: number[]) => ids.map((id) => albums[id]),
   songIds: (scope: SongScope, query: string) =>
     songs
       .filter(

@@ -35,7 +35,7 @@ function Get-PrivateWorkingSet([int[]]$Ids) {
   return $result
 }
 
-$runs = @()
+$runRecords = @()
 $medians = [ordered]@{}
 $worst = 0
 foreach ($mode in $modes) {
@@ -44,11 +44,13 @@ foreach ($mode in $modes) {
     $env:CLAWDIO_MEASURE_MODE = $mode
     $app = Start-Process -FilePath $Binary -PassThru
     Start-Sleep -Seconds ($StartupSeconds + $IdleSeconds)
+    # A run where the app exited early would sum to zero. Fail instead of recording it.
+    if ($app.HasExited) { throw "$mode run ${run}: the app exited before the sample" }
     $processes = Get-PrivateWorkingSet (Get-TreeIds $app.Id)
     $total = ($processes | Measure-Object -Property privateWorkingSetKb -Sum).Sum
     foreach ($id in (Get-TreeIds $app.Id)) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
     $totals += $total
-    $runs += [pscustomobject]@{ mode = $mode; run = $run; totalKb = $total; processes = $processes }
+    $runRecords += [pscustomobject]@{ mode = $mode; run = $run; totalKb = $total; processes = $processes }
     Write-Host "$mode run ${run}: $([math]::Round($total / 1024)) MB"
   }
   $sorted = $totals | Sort-Object
@@ -71,6 +73,6 @@ $webview = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Cl
   settings = [ordered]@{ runs = $Runs; startupSeconds = $StartupSeconds; idleSeconds = $IdleSeconds }
   medianKbPerMode = $medians
   gateKb = $worst
-  runs = $runs
+  runs = $runRecords
 } | ConvertTo-Json -Depth 6 | Set-Content -Path $Output -Encoding utf8
 Write-Host "gate value: $([math]::Round($worst / 1024)) MB (worst mode median)"

@@ -6,7 +6,7 @@ This file records the R20 Milestone 0 spike (build plan P3): the method, the env
 
 - Linux idle memory: **470 MB** (worst Library mode, median of 3 runs). This is over 300 MB, so D49 applies: the Linux memory target becomes 470 MB and the build continues. The owner is told the number.
 - Windows idle memory: **not measured yet**. The `measure.yml` workflow runs it on windows-latest. It needs a push to a `measure/**` branch or the workflow on the default branch (blocker B8).
-- Linux `.deb`: **3.3 MB** (3,454,940 bytes) against the 30 MB target: pass. Windows NSIS installer: not measured yet (B8).
+- Linux `.deb`: **3.3 MB** (3,454,940 bytes) against the 30 MB target: pass. Windows NSIS installer: **2.2 MB** (2,341,082 bytes, `measure.yml` run 38169331542): pass.
 
 ## Method
 
@@ -32,14 +32,14 @@ Per process (median run of the worst mode): the app process 109 MB, `WebKitWebPr
 
 ## Windows
 
-Not measured yet (B8). The workflow job `memory (windows-latest)` writes `memory-windows.json`.
+Not measured yet (B8). The workflow job `memory (windows-latest)` writes `memory-windows.json`. The first run (38169331542) stopped before any sample: in PowerShell `$runs` and the `-Runs` parameter are one variable, so the script failed. Fixed.
 
 ## Bundle sizes
 
 | Bundle | Size | Target | Result |
 |---|---|---|---|
 | Linux `.deb` (release, no fixtures) | 3.3 MB | under 30 MB | Pass |
-| Windows NSIS installer | not measured (B8) | under 30 MB | |
+| Windows NSIS installer (release, no fixtures) | 2.2 MB | under 30 MB | Pass |
 
 ## Scrolling
 
@@ -49,4 +49,4 @@ With the fixtures build under Xvfb, each Library mode showed the 50,000 songs in
 
 - **Memory, Linux:** 470 MB is over 300 MB. Per D49 the Linux target becomes 470 MB. The build continues. K15 applies: the numbers come from a container with Xvfb and software rendering, not from a desktop session; P18.5 measures again.
 - **Memory, Windows:** open (B8).
-- **Package size:** Pass for the `.deb`. The NSIS installer is open (B8).
+- **Package size:** both bundles pass (3.3 MB `.deb`, 2.2 MB NSIS).

@@ -43,6 +43,11 @@ for mode in "${MODES[@]}"; do
     CLAWDIO_MEASURE_MODE=$mode "$BINARY" >/dev/null 2>&1 &
     app=$!
     sleep $((STARTUP_SECONDS + IDLE_SECONDS))
+    # A run where the app exited early would sum to zero. Fail instead of recording it.
+    if ! kill -0 "$app" 2>/dev/null; then
+      echo "$mode run $run: the app exited before the sample" >&2
+      exit 1
+    fi
     processes=()
     total=0
     for pid in $(tree_pids "$app"); do

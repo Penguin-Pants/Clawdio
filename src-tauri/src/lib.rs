@@ -40,7 +40,9 @@ pub fn run() -> tauri::Result<()> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::library::library_artists,
+            commands::library::library_artist_rows,
             commands::library::library_albums,
+            commands::library::library_album_rows,
             commands::library::library_song_ids,
             commands::library::library_rows,
             commands::library::library_tree,

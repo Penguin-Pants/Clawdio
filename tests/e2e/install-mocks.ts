@@ -12,7 +12,9 @@ function libraryCommand(command: string, args: Args): unknown {
   if (!withLibrary) {
     switch (command) {
       case "library_artists":
+      case "library_artist_rows":
       case "library_albums":
+      case "library_album_rows":
       case "library_song_ids":
       case "library_tree":
       case "library_rows":
@@ -29,9 +31,13 @@ function libraryCommand(command: string, args: Args): unknown {
   }
   switch (command) {
     case "library_artists":
-      return library.artists(args.query as string);
+      return library.artists(args.query as string).map((artist) => artist.id);
+    case "library_artist_rows":
+      return library.artistRows(args.ids as number[]);
     case "library_albums":
-      return library.albums(args.artist as number | null, args.query as string);
+      return library.albums(args.artist as number | null, args.query as string).map((album) => album.id);
+    case "library_album_rows":
+      return library.albumRows(args.ids as number[]);
     case "library_song_ids":
       return library.songIds(args.scope as { artist: number | null; album: number | null }, args.query as string);
     case "library_rows":

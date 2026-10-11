@@ -26,22 +26,29 @@ export function useCommand<T>(load: () => Promise<T>, fallback: T, deps: readonl
   return value;
 }
 
-/** Most song rows a list keeps. Older rows are dropped first and load again when needed. */
+/** Most rows a list keeps. Older rows are dropped first and load again when needed. */
 export const ROW_CACHE_LIMIT = 2_000;
 
+/** A row cache: `row` reads it, `request` loads the ids that are not cached yet. */
+export interface RowCache<T> {
+  row: (id: number) => T | undefined;
+  request: (ids: number[]) => void;
+}
+
 /**
- * Song rows by id, fetched for the visible window only (D14). `request` loads the ids that
- * are not cached yet; `row` reads the cache, which keeps at most ROW_CACHE_LIMIT rows.
+ * Rows by id, fetched for the visible window only (D14). The cache keeps at most
+ * ROW_CACHE_LIMIT rows.
  */
-export function useSongRows(): { row: (id: number) => SongRow | undefined; request: (ids: number[]) => void } {
-  const cache = useRef(new Map<number, SongRow>());
+export function useRowCache<T extends { id: number }>(fetchRows: (ids: number[]) => Promise<T[]>): RowCache<T> {
+  const cache = useRef(new Map<number, T>());
   const pending = useRef(new Set<number>());
+  const fetchRef = useRef(fetchRows);
   const [, setVersion] = useState(0);
   const request = useCallback((ids: number[]) => {
     const missing = ids.filter((id) => !cache.current.has(id) && !pending.current.has(id));
     if (missing.length === 0) return;
     missing.forEach((id) => pending.current.add(id));
-    commands.libraryRows(missing).then(
+    fetchRef.current(missing).then(
       (rows) => {
         rows.forEach((row) => cache.current.set(row.id, row));
         for (const id of cache.current.keys()) {
@@ -56,4 +63,9 @@ export function useSongRows(): { row: (id: number) => SongRow | undefined; reque
   }, []);
   const row = useCallback((id: number) => cache.current.get(id), []);
   return { row, request };
+}
+
+/** Song rows for the visible window (D14). */
+export function useSongRows(): RowCache<SongRow> {
+  return useRowCache(commands.libraryRows);
 }

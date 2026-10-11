@@ -16,8 +16,10 @@ export type { AlbumRow, ArtistRow, LibraryMode, Lyrics, PlayerSnapshot, Playlist
 export type { QueueSnapshot, SongRow, SongScope, TreeArtist };
 
 export const commands = {
-  libraryArtists: (query: string) => invoke<ArtistRow[]>("library_artists", { query }),
-  libraryAlbums: (artist: number | null, query: string) => invoke<AlbumRow[]>("library_albums", { artist, query }),
+  libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
+  libraryArtistRows: (ids: number[]) => invoke<ArtistRow[]>("library_artist_rows", { ids }),
+  libraryAlbums: (artist: number | null, query: string) => invoke<number[]>("library_albums", { artist, query }),
+  libraryAlbumRows: (ids: number[]) => invoke<AlbumRow[]>("library_album_rows", { ids }),
   librarySongIds: (scope: SongScope, query: string) => invoke<number[]>("library_song_ids", { scope, query }),
   libraryRows: (ids: number[]) => invoke<SongRow[]>("library_rows", { ids }),
   libraryTree: (query: string) => invoke<TreeArtist[]>("library_tree", { query }),

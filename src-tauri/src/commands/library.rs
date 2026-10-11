@@ -8,25 +8,50 @@ use super::{lock_error, CommandResult};
 use crate::state::{Library, Thumbs};
 
 #[tauri::command]
-pub fn library_artists(
+pub fn library_artists(library: State<'_, Library>, query: String) -> CommandResult<Vec<u32>> {
+    Ok(library
+        .0
+        .read()
+        .map_err(|_| lock_error())?
+        .artist_ids(&query))
+}
+
+#[tauri::command]
+pub fn library_artist_rows(
     library: State<'_, Library>,
-    query: String,
+    ids: Vec<u32>,
 ) -> CommandResult<Vec<ArtistRow>> {
-    Ok(library.0.read().map_err(|_| lock_error())?.artists(&query))
+    Ok(library
+        .0
+        .read()
+        .map_err(|_| lock_error())?
+        .artist_rows(&ids)?)
 }
 
 #[tauri::command]
 pub fn library_albums(
     library: State<'_, Library>,
-    thumbs: State<'_, Thumbs>,
     artist: Option<u32>,
     query: String,
+) -> CommandResult<Vec<u32>> {
+    Ok(library
+        .0
+        .read()
+        .map_err(|_| lock_error())?
+        .album_ids(artist, &query)?)
+}
+
+#[tauri::command]
+pub fn library_album_rows(
+    library: State<'_, Library>,
+    thumbs: State<'_, Thumbs>,
+    ids: Vec<u32>,
 ) -> CommandResult<Vec<AlbumRow>> {
     let mut rows = library
         .0
         .read()
         .map_err(|_| lock_error())?
-        .albums(artist, &query)?;
+        .album_rows(&ids)?;
     for row in &mut rows {
         row.thumb = row
             .thumb
@@ -59,7 +84,7 @@ pub fn library_tree(library: State<'_, Library>, query: String) -> CommandResult
     Ok(library.0.read().map_err(|_| lock_error())?.tree(&query))
 }
 
-/// The thumbnail of a track's album, for Now playing.
+/// The thumbnail of a track's album, for Now playing. An unknown or removed track is an error (D46).
 #[tauri::command]
 pub fn album_art(
     library: State<'_, Library>,
@@ -68,8 +93,8 @@ pub fn album_art(
 ) -> CommandResult<Option<String>> {
     let index = library.0.read().map_err(|_| lock_error())?;
     Ok(index
-        .album_of(track)
-        .and_then(|album| index.album(album))
-        .and_then(|album| album.thumb.as_ref())
+        .album_of(track)?
+        .thumb
+        .as_ref()
         .map(|name| thumbs.0.join(name).to_string_lossy().into_owned()))
 }

@@ -214,9 +214,9 @@ mod tests {
         fill_library(&mut index);
         assert_eq!(index.len(), 50_000);
         assert_eq!(index.album_count(), 5_000);
-        assert_eq!(index.artists("").len(), 1_000);
+        assert_eq!(index.artist_ids("").len(), 1_000);
         assert!(
-            index.artists("angstrom").len() > 10,
+            index.artist_ids("angstrom").len() > 10,
             "accented names fold for search"
         );
     }
@@ -229,7 +229,9 @@ mod tests {
         write_thumbnails(&mut index, &folder).unwrap();
         let files = fs::read_dir(&folder).unwrap().count();
         assert_eq!(files, 2_000);
-        let albums = index.albums(None, "").unwrap();
+        let albums = index
+            .album_rows(&index.album_ids(None, "").unwrap())
+            .unwrap();
         assert_eq!(
             albums.iter().filter(|album| album.thumb.is_some()).count(),
             2_000

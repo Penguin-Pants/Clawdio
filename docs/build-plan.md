@@ -284,7 +284,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 |---|---|---|
 | P3-AC1 | Pass (Linux, Xvfb) | Fixtures build in each mode with all six widgets populated (`CLAWDIO_MEASURE_MODE`). Browser: `tests/e2e/milestone.spec.ts` (Songs list to its end, filters, tree expansion, axe). Rust: `src-tauri/src/fixtures.rs` tests (50,000 songs, 2,000 thumbnails, widget data). |
 | P3-AC2 | Linux only | `docs/milestone-0.md`: 470 MB (Columns, worst mode median). Windows: B8. |
-| P3-AC3 | Linux only | `.deb` 3.3 MB. NSIS: B8. |
+| P3-AC3 | Pass | `.deb` 3.3 MB (local). NSIS installer 2.2 MB (`measure.yml` run 38169331542). |
 | P3-AC4 | Linux only | Linux over 300 MB: target raised to 470 MB (D49). Windows verdict open. |
 | P3-AC5 | Pass (Linux) | Thumbnails load from `~/.cache/io.github.penguinpants.clawdio/thumbs` through the asset protocol (dot folder, D41). Windows: B8. |
 
@@ -296,6 +296,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N4: song rows cache at most 2,000 rows per list (`ROW_CACHE_LIMIT`).
 - N5: the e2e mocks serve a 600-song library with `?data=library` (`tests/e2e/library-data.ts`).
 - N6: the measurement ran in a container with Xvfb and software rendering (K15). `WebKitWebProcess` is 339 of the 470 MB.
+- N7: the Linux numbers come from `1990a37`, before the D14 fix for artist and album rows. That build held every artist and album row in the webview, so the numbers are an upper bound.
 
 **Exceptions**
 
@@ -305,8 +306,9 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** B8.
 
-**TWO-PASS REVIEW:** F1 0, F2 2, F3 0, F4 6.
+**TWO-PASS REVIEW:** F1 0, F2 5, F3 0, F4 7.
 
+- F2 (Codex review of `fdc1db1`): artist and album lists loaded every row at once, against D14; they now load ids, then rows for the visible window (`library_artist_rows`, `library_album_rows`). A tree album selection kept the old artist; it now selects its artist too. `album_art` returned no art for an unknown track; it now returns `unknown_id` (D46). `measure-memory.sh` and `.ps1` now fail when the app exits before the sample. The first Windows run failed: `$runs` and the `-Runs` parameter are one variable in PowerShell (renamed `$runRecords`).
 - F2: the song row cache had no limit; scrolling 50,000 rows kept every row. Now capped (N4). The fixture `widgets` assignment failed `clippy` with the feature on; CI now lints and tests with `--features clawdio/fixtures`.
 - F4:
   - Album rows return an absolute thumbnail path: D13 forbids paths from the webview; this path goes to it, for `convertFileSrc` (P3.2).
@@ -315,6 +317,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - `CLAWDIO_MEASURE_MODE` holds the product name in capitals: the plan names the variable; the guard is case sensitive (D34).
   - List keyboard navigation is missing: P6.6.
   - The 875 kB bundle: the measured memory is the gate; P17 or P18 may split it.
+  - Codex claims `$id` in `measure-memory.ps1` collides with the automatic `$PID`: PowerShell names are case insensitive, but `id` and `pid` are different names.
 
 **Follow-ups:** none.
 

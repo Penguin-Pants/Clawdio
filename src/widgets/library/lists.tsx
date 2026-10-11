@@ -1,30 +1,33 @@
 import { useCallback, useMemo, useState } from "react";
 import { VirtualList } from "@/components/virtual-list";
-import { commands, type AlbumRow, type ArtistRow, type TreeArtist } from "@/lib/ipc/commands";
-import { useCommand, useSongRows } from "@/lib/ipc/hooks";
+import { commands, type TreeArtist } from "@/lib/ipc/commands";
+import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
 
-const NO_ARTISTS: ArtistRow[] = [];
-const NO_ALBUMS: AlbumRow[] = [];
 const NO_IDS: number[] = [];
 const NO_TREE: TreeArtist[] = [];
 
-/** Artist list with an "All" row first (R28). */
+/** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
 export function ArtistList() {
   const search = useLibraryStore((state) => state.search);
   const selected = useLibraryStore((state) => state.selection.artist);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const artists = useCommand(() => commands.libraryArtists(search), NO_ARTISTS, [search]);
+  const ids = useCommand(() => commands.libraryArtists(search), NO_IDS, [search]);
+  const { row, request } = useRowCache(commands.libraryArtistRows);
+  const onRange = useCallback(
+    (start: number, end: number) => request(ids.slice(Math.max(0, start - 1), end)),
+    [ids, request],
+  );
   return (
     <VirtualList
       label="Artists"
       role="listbox"
-      count={artists.length + 1}
+      count={ids.length + 1}
       rowHeight={ROW_HEIGHT}
+      onRange={onRange}
       renderRow={(index, style) => {
-        const artist = index === 0 ? null : artists[index - 1];
-        const id = artist?.id ?? null;
+        const id = index === 0 ? null : ids[index - 1];
         return (
           <Row
             key={id ?? "all"}
@@ -32,7 +35,7 @@ export function ArtistList() {
             selected={selected === id}
             onSelect={() => setSelection({ artist: id, album: null, song: null })}
           >
-            <span className="truncate">{artist?.name ?? "All"}</span>
+            <span className="truncate">{id === null ? "All" : (row(id)?.name ?? "…")}</span>
           </Row>
         );
       }}
@@ -40,22 +43,28 @@ export function ArtistList() {
   );
 }
 
-/** Album list of the selected artist with an "All" row first. Rows show the thumbnail (R5). */
+/** Album list of the selected artist with an "All" row first. Rows show the thumbnail (R5) and load for the visible window (D14). */
 export function AlbumList() {
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const selected = useLibraryStore((state) => state.selection.album);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const albums = useCommand(() => commands.libraryAlbums(artist, search), NO_ALBUMS, [artist, search]);
+  const ids = useCommand(() => commands.libraryAlbums(artist, search), NO_IDS, [artist, search]);
+  const { row, request } = useRowCache(commands.libraryAlbumRows);
+  const onRange = useCallback(
+    (start: number, end: number) => request(ids.slice(Math.max(0, start - 1), end)),
+    [ids, request],
+  );
   return (
     <VirtualList
       label="Albums"
       role="listbox"
-      count={albums.length + 1}
+      count={ids.length + 1}
       rowHeight={ALBUM_ROW_HEIGHT}
+      onRange={onRange}
       renderRow={(index, style) => {
-        const album = index === 0 ? null : albums[index - 1];
-        const id = album?.id ?? null;
+        const id = index === 0 ? null : ids[index - 1];
+        const album = id === null ? undefined : row(id);
         return (
           <Row
             key={id ?? "all"}
@@ -63,7 +72,7 @@ export function AlbumList() {
             selected={selected === id}
             onSelect={() => setSelection({ album: id, song: null })}
           >
-            {album ? <AlbumCells album={album} /> : <span className="pl-12">All</span>}
+            {id === null ? <span className="pl-12">All</span> : album ? <AlbumCells album={album} /> : <span>…</span>}
           </Row>
         );
       }}
@@ -102,7 +111,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
 
 type TreeLine =
   | { kind: "artist"; id: number; name: string; expanded: boolean }
-  | { kind: "album"; id: number; name: string; expanded: boolean }
+  | { kind: "album"; id: number; artist: number; name: string; expanded: boolean }
   | { kind: "song"; id: number };
 
 /** One expandable artist, album and song tree (R28). Song rows load for the visible window. */
@@ -122,7 +131,7 @@ export function TreeList() {
       if (!artistOpen) continue;
       for (const album of artist.albums) {
         const albumOpen = openAlbums.has(album.id);
-        result.push({ kind: "album", id: album.id, name: album.name, expanded: albumOpen });
+        result.push({ kind: "album", id: album.id, artist: artist.id, name: album.name, expanded: albumOpen });
         if (albumOpen) album.songs.forEach((id) => result.push({ kind: "song", id }));
       }
     }
@@ -181,9 +190,9 @@ export function TreeList() {
               if (isArtist) {
                 setOpenArtists((open) => toggle(open, line.id));
                 setSelection({ artist: line.id, album: null, song: null });
-              } else {
+              } else if (line.kind === "album") {
                 setOpenAlbums((open) => toggle(open, line.id));
-                setSelection({ album: line.id, song: null });
+                setSelection({ artist: line.artist, album: line.id, song: null });
               }
             }}
           >
