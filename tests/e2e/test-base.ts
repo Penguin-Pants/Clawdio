@@ -19,7 +19,8 @@ export const test = base.extend<{ guard: void }>({
         });
       });
       await use();
-      if (!page.isClosed()) expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
+      // A skipped test never loads the app, so the list does not exist there.
+      if (!page.isClosed()) expect((await page.evaluate(() => window.cspViolations)) ?? []).toEqual([]);
       expect(errors).toEqual([]);
     },
     { auto: true },
