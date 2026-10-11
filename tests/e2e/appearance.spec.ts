@@ -239,7 +239,22 @@ test("P2-AC15: the pressed mode, the active tab and the highlighted menu item sh
   const other = page.locator("[role^='menuitem']:not([data-highlighted])").filter({ hasNotText: name }).first();
   const lit = await grayProfile(page, highlighted);
   const plain = await grayProfile(page, other);
-  expect(lit.left - plain.left).toBeGreaterThan(100);
+  // The details name the item and its styles when an engine draws it differently.
+  const details = await highlighted.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    return JSON.stringify({
+      text: element.textContent,
+      focused: document.activeElement === element,
+      box: [box.x, box.y, box.width, box.height],
+      boxShadow: style.boxShadow,
+      outline: `${style.outlineStyle} ${style.outlineWidth} ${style.outlineOffset} ${style.outlineColor}`,
+      background: style.backgroundColor,
+    });
+  });
+  expect(lit.left - plain.left, `${details} lit ${JSON.stringify(lit)} plain ${JSON.stringify(plain)}`).toBeGreaterThan(
+    100,
+  );
 });
 
 test("P2-AC16: forced colors keep focus rings, mask icons and the art placeholder visible", async ({
