@@ -149,11 +149,26 @@ fn hsv(hue: f32, saturation: f32, value: f32) -> (u8, u8, u8) {
     (channel(r), channel(g), channel(b))
 }
 
-/// Queue (500 entries), player (paused at 1:23), 20 playlists of 30 entries and 60 lyric lines.
-pub fn widgets() -> Widgets {
+/// Queue (500 entries) with the player paused at 1:23.
+pub fn queue() -> (QueueSnapshot, PlayerSnapshot) {
     let entries: Vec<u32> = (0..500)
         .map(|i| i * 97 % (ARTISTS * ALBUMS_PER_ARTIST * SONGS_PER_ALBUM))
         .collect();
+    (
+        QueueSnapshot {
+            entries,
+            current: Some(3),
+        },
+        PlayerSnapshot {
+            status: PlayerStatus::Paused,
+            position_ms: 83_000,
+            volume: 80,
+        },
+    )
+}
+
+/// 20 playlists of 30 entries and 60 lyric lines.
+pub fn widgets() -> Widgets {
     let playlists = (0..20)
         .map(|p| {
             let entries: Vec<PlaylistEntry> = (0..30)
@@ -190,15 +205,6 @@ pub fn widgets() -> Widgets {
         .collect::<Vec<_>>()
         .join("\n");
     Widgets {
-        queue: QueueSnapshot {
-            entries,
-            current: Some(3),
-        },
-        player: PlayerSnapshot {
-            status: PlayerStatus::Paused,
-            position_ms: 83_000,
-            volume: 80,
-        },
         playlists,
         lyrics: Some(Lyrics { text: lyrics }),
     }
@@ -244,7 +250,7 @@ mod tests {
     #[test]
     fn fills_every_widget() {
         let widgets = widgets();
-        assert_eq!(widgets.queue.entries.len(), 500);
+        assert_eq!(queue().0.entries.len(), 500);
         assert_eq!(widgets.playlists.len(), 20);
         assert!(widgets
             .playlists

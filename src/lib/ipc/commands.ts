@@ -2,18 +2,22 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { AlbumRow } from "./bindings/AlbumRow";
 import type { ArtistRow } from "./bindings/ArtistRow";
+import type { FolderState } from "./bindings/FolderState";
+import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
 import type { Lyrics } from "./bindings/Lyrics";
+import type { PlayerEvent } from "./bindings/PlayerEvent";
 import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
 import type { QueueSnapshot } from "./bindings/QueueSnapshot";
+import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
 import type { SongScope } from "./bindings/SongScope";
 import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
-export type { QueueSnapshot, SongRow, SongScope, TreeArtist };
+export type { FolderState, JobProgress, PlayerEvent, QueueSnapshot, SettingsView, SongRow, SongScope, TreeArtist };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -29,6 +33,16 @@ export const commands = {
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
+  playerPlayList: (ids: number[], start: number) => invoke<void>("player_play_list", { ids, start }),
+  playerToggle: () => invoke<void>("player_toggle"),
+  playerStop: () => invoke<void>("player_stop"),
+  settingsGet: () => invoke<SettingsView>("settings_get"),
+  setOnlineLookups: (on: boolean) => invoke<SettingsView>("set_online_lookups", { on }),
+  firstRunNoticeDone: () => invoke<SettingsView>("first_run_notice_done"),
+  chooseMusicFolder: () => invoke<SettingsView>("choose_music_folder"),
+  cancelJob: (id: string) => invoke<void>("cancel_job", { id }),
+  openLogFolder: () => invoke<void>("open_log_folder"),
+  openNotice: () => invoke<void>("open_notice"),
   measureMode: () => invoke<LibraryMode | null>("measure_mode"),
   measureReady: () => invoke<void>("measure_ready"),
 };

@@ -56,7 +56,7 @@
 | R1-1 | One user-chosen folder; import mp3, ogg and wav; ignore other types | §2 R1 | P4.5, P5.2 | P5-AC2 | IT | Planned (D16) |
 | R1-2 | Ogg means Vorbis; skip and report Opus and other codecs | §2 R1 | P5.2 | P5-AC2 | IT | Planned |
 | R1-3 | WAV: PCM integer and float and ADPCM as the pinned decoder supports; others are "unsupported codec" | §2 R1 | P5.2 | P5-AC2 | IT | Planned (D3) |
-| R1.1-1 | First run: "Choose music folder" in the main area; other widgets show hints; transport disabled | §2 R1.1 | P4.6, P2.9 | P4-AC2, P2-AC12 | E2E | Planned |
+| R1.1-1 | First run: "Choose music folder" in the main area; other widgets show hints; transport disabled | §2 R1.1 | P4.6, P2.9 | P4-AC2, P2-AC12 | E2E | Done (P4) |
 | R2-1 | Startup sync adds new files and removes missing files; the folder wins | §2 R2 | P5.3 | P5-AC4, P5-AC15 | IT | Planned |
 | R2-2 | Incremental scan by path, size and modified time | §2 R2 | P5.3 | P5-AC7 | IT | Planned |
 | R2-3 | The scan does not block the UI | §2 R2 | P4.7, P6.8 | P6-AC6 | MEAS, MAN-L, MAN-W | Planned |
@@ -157,9 +157,9 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Planned |
+| R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Done (P4) |
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Planned (D29) |
-| R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Planned |
+| R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
 | R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Planned |
 | R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Planned (D44) |
 | R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
@@ -229,7 +229,7 @@
 | R17-3 | Docs: arrangement file schema | §2 R17 | P9.6 | P18-AC13 | REV | Planned |
 | R17-4 | Docs: brand inputs | §2 R17 | P1.10 | P18-AC13 | REV | Planned |
 | R17-5 | Docs: copied Magic UI components | §2 R17 | P2.16 | P18-AC13 | REV | Planned (D6) |
-| R18-1 | Settings (folder path, lookup switch) and window size in the OS config folder | §2 R18 | P4.4, P4.2 | P4-AC6, P4-AC7 | IT, MAN-L | Planned |
+| R18-1 | Settings (folder path, lookup switch) and window size in the OS config folder | §2 R18 | P4.4, P4.2 | P4-AC6, P4-AC7 | IT, MAN-L | Done (P4) |
 | R18.1-1 | Portable marker: settings, arrangement, state, cache, logs and WebView profile in `data/` | §2 R18.1 | P4.1, P4.2, P4.3 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned (D47) |
 | R18.1-2 | Music folder path relative to the executable folder on the same volume, else absolute | §2 R18.1 | P4.1 | P9-AC7, P18-AC10 | UT, MAN-W | Planned |
 | R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Planned |
@@ -248,7 +248,7 @@
 | R22-1 | Windows 10 or later; WebView2 required; installer downloads it | §2 R22 | P18.1 | P18-AC3 | MAN-W | Planned |
 | R22-2 | Portable build shows an error with a download link when WebView2 is missing | §2 R22 | P18.2 | P18-AC4 | MAN-W | Planned (D38) |
 | R22-3 | Linux glibc baseline: AppImage glibc 2.35; `.deb` for Debian 12 and Ubuntu 22.04 | §2 R22 | P18.3 | P18-AC5 | MAN-L | Planned |
-| R23-1 | Log file in the OS log folder with size-based rotation | §2 R23 | P4.3 | P4-AC5 | IT | Planned (D40) |
+| R23-1 | Log file in the OS log folder with size-based rotation | §2 R23 | P4.3 | P4-AC5 | IT | Done (P4, D40) |
 | R23-2 | Settings has "Open log folder" | §2 R23 | P4.3, P5.4 | P5-AC6 | E2E, MAN-L | Planned |
 | R23-3 | Every skip-and-log event goes to the log | §2 R23 | P5.2, P9.4, P11.2, P14.3, P14.5 | P5-AC2, P9-AC4, P11-AC6, P14-AC5, P14-AC10 | IT | Planned |
 
@@ -286,7 +286,7 @@
 
 | ID | Edge case | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Planned |
+| E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Done (P4) |
 | E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Planned |
 | E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned (D30) |
 | E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Planned (D16) |
@@ -362,7 +362,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | ID | Item | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | DEC-1 | Docking shell stays; design.md §5 rewrite (done in the repo before planning) | §8.1 | P2.1 | P2-AC1 | E2E | Done (P2) |
-| DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Planned |
+| DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Done (P4) |
 | DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
 | DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Planned |
 | DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Done (P0) |
@@ -480,7 +480,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-9.2 | Respects Windows and Linux controls, text scaling and keyboard access | §9 | P4.2, P17.5 | P17-AC2, P17-AC5 | MAN-W, MAN-L | Planned |
 | DES-9.3 | No macOS window buttons in production | §9 | P4.2 | P0-AC2 | MAN-L | Resolved (C9) |
 | DES-9.4 | Run without install where possible; single file, no installer and portable data are distinct | §9 | P4.1, P18.2, P18.3 | P18-AC4, P18-AC5, P18-AC10 | MAN-W, MAN-L | Planned |
-| DES-9.5 | Data paths follow the requirements; no silent profile-path assumptions | §9 | P4.1 | P4-AC4 | IT | Planned |
+| DES-9.5 | Data paths follow the requirements; no silent profile-path assumptions | §9 | P4.1 | P4-AC4 | IT | Done (P4) |
 | DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3, P1-AC4 | MAN-L | Done (P1) |
 | DES-10.2 | Icons exported and configured for Windows and Linux | §10 | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-W, MAN-L | Planned |
 | DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Planned |

@@ -12,6 +12,8 @@ interface RowProps {
   style: CSSProperties;
   selected: boolean;
   onSelect?: () => void;
+  /** Double-click: play (R6). */
+  onActivate?: () => void;
   role?: "option" | "treeitem";
   className?: string;
   children: ReactNode;
@@ -24,7 +26,17 @@ interface RowProps {
  * A list row. Selected rows use `state.selected` and a 2 px `text.primary` bar at the left
  * (D10). Rows change background with no transition (C16).
  */
-export function Row({ style, selected, onSelect, role = "option", className, children, level, expanded }: RowProps) {
+export function Row({
+  style,
+  selected,
+  onSelect,
+  onActivate,
+  role = "option",
+  className,
+  children,
+  level,
+  expanded,
+}: RowProps) {
   return (
     <div
       role={role}
@@ -34,8 +46,9 @@ export function Row({ style, selected, onSelect, role = "option", className, chi
       data-row=""
       style={style}
       onClick={onSelect}
+      onDoubleClick={onActivate}
       className={cn(
-        "flex cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap hover:bg-bg-hover",
+        "flex cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap select-none hover:bg-bg-hover",
         selected && "bg-state-selected shadow-[inset_2px_0_0_var(--color-text-primary)] hover:bg-state-selected",
         className,
       )}

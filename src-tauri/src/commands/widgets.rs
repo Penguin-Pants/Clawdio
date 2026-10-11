@@ -1,20 +1,10 @@
-//! Queue, player, playlist and lyrics reads. Later phases replace the data source.
+//! Playlist and lyrics reads. Later phases replace the data source (P11, P13).
 
-use clawdio_core::api::{Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow, QueueSnapshot};
+use clawdio_core::api::{Lyrics, PlaylistEntry, PlaylistRow};
 use tauri::State;
 
 use super::CommandResult;
 use crate::state::Widgets;
-
-#[tauri::command]
-pub fn queue_get(widgets: State<'_, Widgets>) -> CommandResult<QueueSnapshot> {
-    Ok(widgets.queue.clone())
-}
-
-#[tauri::command]
-pub fn player_state(widgets: State<'_, Widgets>) -> CommandResult<PlayerSnapshot> {
-    Ok(widgets.player)
-}
 
 #[tauri::command]
 pub fn playlists_list(widgets: State<'_, Widgets>) -> CommandResult<Vec<PlaylistRow>> {

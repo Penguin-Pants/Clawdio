@@ -4,7 +4,46 @@ import { mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import app from "./data/app.json";
 import { library } from "./library-data";
 
-const withLibrary = new URLSearchParams(window.location.search).get("data") === "library";
+const params = new URLSearchParams(window.location.search);
+const withLibrary = params.get("data") === "library";
+
+/** Mock settings. "?first=1" starts like a fresh profile; the state persists over reloads. */
+const SETTINGS_KEY = "e2e-settings";
+const settings = JSON.parse(
+  sessionStorage.getItem(SETTINGS_KEY) ??
+    JSON.stringify(
+      params.get("first") === "1"
+        ? { folderName: null, folderState: "none", onlineLookups: false, noticePending: true, portable: false }
+        : { folderName: "music", folderState: "ready", onlineLookups: false, noticePending: false, portable: false },
+    ),
+);
+
+function saveSettings(change: Record<string, unknown>) {
+  Object.assign(settings, change);
+  sessionStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  return settings;
+}
+
+function settingsCommand(command: string, args: Args): unknown {
+  switch (command) {
+    case "settings_get":
+      return settings;
+    case "set_online_lookups":
+      return saveSettings({ onlineLookups: args.on });
+    case "first_run_notice_done":
+      return saveSettings({ noticePending: false });
+    case "choose_music_folder":
+      return saveSettings({ folderName: "music", folderState: "ready" });
+    case "player_play_list":
+    case "player_toggle":
+    case "player_stop":
+    case "cancel_job":
+    case "open_log_folder":
+    case "open_notice":
+      return null;
+  }
+  return undefined;
+}
 
 type Args = Record<string, unknown>;
 
@@ -76,7 +115,11 @@ mockIPC((command, args) => {
     case "measure_ready":
       document.body.dataset.measureReady = "true";
       return null;
+    case "plugin:event|listen":
+    case "plugin:event|unlisten":
+    case "plugin:log|log":
+      return 0;
     default:
-      return libraryCommand(command, (args ?? {}) as Args);
+      return settingsCommand(command, (args ?? {}) as Args) ?? libraryCommand(command, (args ?? {}) as Args);
   }
 });

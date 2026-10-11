@@ -3,6 +3,8 @@
 
 pub mod library;
 pub mod measure;
+pub mod player;
+pub mod settings;
 pub mod widgets;
 
 use clawdio_core::api::IpcError;

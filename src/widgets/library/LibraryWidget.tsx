@@ -1,6 +1,9 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { chooseMusicFolder } from "@/dialogs/SettingsDialog";
+import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
@@ -137,9 +140,23 @@ function LibraryBody({ mode }: { mode: LibraryMode }) {
   );
 }
 
+/** First run with no music folder (R1.1, P4.6). */
+function ChooseFolder() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+      <h2 className="text-2xl">Choose your music folder</h2>
+      <p className="max-w-sm text-sm text-text-secondary">
+        The app shows the songs in one folder. It reads the folder and never changes your audio files.
+      </p>
+      <Button onClick={chooseMusicFolder}>Choose music folder</Button>
+    </div>
+  );
+}
+
 /** Library widget (P2.8, R28): mode switch and search in its header. It cannot be hidden. */
 export function LibraryWidget() {
   const mode = useLibraryStore((state) => state.mode);
+  const noFolder = useSettingsStore((state) => state.loaded && state.view.folderState === "none");
   const ref = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -157,7 +174,7 @@ export function LibraryWidget() {
         <ModeSwitch narrow={narrow} />
         <SearchField />
       </div>
-      <LibraryBody mode={mode} />
+      {noFolder ? <ChooseFolder /> : <LibraryBody mode={mode} />}
     </div>
   );
 }

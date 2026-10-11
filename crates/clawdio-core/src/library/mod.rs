@@ -107,6 +107,20 @@ impl LibraryIndex {
         true
     }
 
+    /// Removes every track, for a new music folder. Ids stay unique (D46).
+    pub fn clear_tracks(&mut self) {
+        for slot in &mut self.tracks {
+            if let Some(track) = slot.take() {
+                self.albums[track.album as usize].tracks.clear();
+            }
+        }
+    }
+
+    /// The relative path of a track, for playback.
+    pub fn rel_path(&self, id: TrackId) -> Option<&str> {
+        self.track(id).map(|track| track.rel_path.as_str())
+    }
+
     pub fn set_album_thumb(&mut self, album: AlbumId, thumb: Option<String>) {
         if let Some(entry) = self.albums.get_mut(album as usize) {
             entry.thumb = thumb;

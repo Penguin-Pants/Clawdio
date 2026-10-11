@@ -68,7 +68,7 @@ A phase is Done when all of these are true:
 | P1 | Brand identity assets and icon pipeline | P0 | Done with exceptions |
 | P2 | Themed docking shell | P1, Q6 sign-off | Done with exceptions |
 | P3 | Milestone 0 footprint gate | P2 | Done with exceptions |
-| P4 | End-to-end slice | P3 | Not started |
+| P4 | End-to-end slice | P3 | Done with exceptions |
 | P5 | Library scan and cache | P4 | Not started |
 | P6 | Library widget and search | P5 | Not started |
 | P7 | Playback engine and Play queue | P6 | Not started |
@@ -286,7 +286,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P3-AC2 | Pass | `docs/milestone-0.md`. Linux: 468 MB (agent container) and 390 MB (CI runner). Windows: 112 MB (`measure.yml` run 38171140952). Worst mode medians, all six widgets, environments recorded. |
 | P3-AC3 | Pass | `.deb` 3.3 MB (local). NSIS installer 2.2 MB (`measure.yml` run 38169331542). |
 | P3-AC4 | Pass | Linux over 300 MB: target raised to 468 MB (D49). Windows 112 MB: pass, keeps 200 MB. Both bundles under 30 MB. |
-| P3-AC5 | Pass | Thumbnails load from the cache folder (`~/.cache/...` on Linux) through the `thumb://` scheme (D41 as changed in 1.11). The measurement ready signal waits for the Now playing thumbnail to decode, so every `measure.yml` run checks it on Linux and Windows (run on the commit after `2d76032`). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. |
+| P3-AC5 | Pass | Thumbnails load from the cache folder (`~/.cache/...` on Linux) through the `thumb://` scheme (D41 as changed in 1.11). The measurement ready signal waits for the Now playing thumbnail to decode, so every `measure.yml` run checks it on Linux and Windows (run 38172605144 on `e896960` passed on Linux and Windows). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. |
 
 **Notes**
 
@@ -320,6 +320,52 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Codex claims `$id` in `measure-memory.ps1` collides with the automatic `$PID`: PowerShell names are case insensitive, but `id` and `pid` are different names.
 
 **Follow-ups:** none.
+
+---
+
+#### P4. End-to-end slice (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `e896960`. Messages start with `P4:`.
+- **Packages:** `walkdir` 2.5.0, `lofty` 0.25.4, `rusqlite` 0.40.2 (`bundled`), `tempfile` 3.27.0, `rodio` 0.22.2, `symphonia` 0.5.5, `tauri-plugin-log` 2.10.1, `tauri-plugin-dialog` 2.8.2, `tauri-plugin-opener` 2.7.1, `@tauri-apps/plugin-log` 2.10.1. Dev only: Tauri feature `test`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P4-AC1 | Pass | `tests/e2e/first-run.spec.ts`: the notice names the three services and the three file kinds; the choice is saved and the notice does not show again. Manual Linux: the notice shows on a fresh portable profile; "Keep off" writes `onlineNoticeDone: true`. |
+| P4-AC2 | Pass | `tests/e2e/first-run.spec.ts` and `layouts.spec.ts` (P2-AC12): "Choose music folder", disabled transport, widget hints. |
+| P4-AC3 | Pass (Linux, Xvfb) | 50,000 tracks from `gen_test_library`, release build, cold page cache: the Songs list fills while the status line shows "Scanning: 9500 files"; a double-click plays before the scan ends; Pause and Stop change the state. Rust: `player/mod.rs` tests with the test output (order, pause, stop, skip, three failures). |
+| P4-AC4 | Pass (Linux) | `portable` next to `target/release/clawdio`: `data/config/settings.json`, `data/cache/library.sqlite`, `data/logs/app.log` and `data/webview/`. No new file under `~/.config`, `~/.cache` or `~/.local/share`. Windows: not verified (E2). |
+| P4-AC5 | Pass | `src-tauri/src/lib.rs` test: the real log setup with a 200-byte limit rotates and keeps five old files. |
+| P4-AC6 | Pass | `settings.rs` tests. Manual Linux: `{ not json` gives defaults and `WARN settings: corrupt settings file ...; using defaults` in `app.log`. |
+| P4-AC7 | Pass (Linux, Xvfb) | Resized to 1000 x 700, restarted: the window opens at 1000 x 700. `window.rs` tests. |
+
+**Notes**
+
+- N1: `SettingsView` carries the music folder's name, not its path (D13). Settings shows the name.
+- N2: one scan runs at a time. A new scan waits until the canceled one stops, so the old one cannot write after a fresh scan clears the index.
+- N3: without the cache (cannot open), the scan still fills the index and logs a warning (D14).
+- N4: the portable `config` and `cache` folders appear on the first write (notice answer, first scan).
+- N5: `docs/file-formats.md` holds the `settings.json` schema.
+
+**Exceptions**
+
+- E1: manual checks ran in a container under Xvfb with the ALSA null device. The null device plays faster than real time, so the sound and the elapsed time were not checked by ear. P7-AC4 and P18 test on a desktop.
+- E2: P4-AC4 on Windows is not verified (no Windows desktop; the plan allows "not verified").
+- E3: WebKit e2e runs only in CI (no WebKit build in the container).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 6, F3 1, F4 4.
+
+- F2: a double-click on a row selected its text (rows are now `select-none`). Overlapping scans could write old rows after a fresh clear (scan gate). A cache open failure stopped the scan (scan without cache). `SettingsView` sent the absolute music folder path (D13; now the name). A minimized window could save 0 x 0 (not saved now). A late start read could overwrite a newer `player-state` event (dropped now).
+- F3: F-13 (Tree data per visible window), raised by the Codex review of `e896960`.
+- F4:
+  - A device error stops the queue: P7.4 sets this rule and adds the message.
+  - `library-changed` comes only at 500-file batches: the P4.7 batch rule.
+  - A row fetch for ids from before a fresh scan fails: the hook clears its pending ids, and the new ids load after the refresh.
+  - Windows drive-letter case in `relative_to`: both paths come from OS APIs in canonical form, and the fallback is a valid absolute path.
+
+**Follow-ups:** F-13.
 
 ---
 
@@ -1703,6 +1749,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 

@@ -14,9 +14,12 @@ export interface LibrarySelection {
 export const EMPTY_SELECTION: LibrarySelection = { artist: null, album: null, song: null };
 
 interface LibraryState {
+  /** Goes up on every `library-changed` event, so lists load again. */
+  version: number;
   mode: LibraryMode;
   search: string;
   selection: LibrarySelection;
+  bumpVersion: () => void;
   setMode: (mode: LibraryMode) => void;
   setSearch: (search: string) => void;
   setSelection: (selection: Partial<LibrarySelection>) => void;
@@ -24,6 +27,8 @@ interface LibraryState {
 
 /** Library widget state. Mode, search text and selection are separate, so a mode switch keeps the other two (R28). */
 export const useLibraryStore = create<LibraryState>()((set) => ({
+  version: 0,
+  bumpVersion: () => set((state) => ({ version: state.version + 1 })),
   mode: "columns",
   search: "",
   selection: EMPTY_SELECTION,

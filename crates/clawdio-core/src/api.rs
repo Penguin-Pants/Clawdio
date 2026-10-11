@@ -165,3 +165,49 @@ pub struct PlaylistEntry {
 pub struct Lyrics {
     pub text: String,
 }
+
+/// The music folder state for the Library body and Settings (R1.1, section 5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum FolderState {
+    /// No folder chosen yet (R1.1).
+    None,
+    Ready,
+    /// The stored folder does not exist (section 5, D30).
+    Missing,
+}
+
+/// What Settings and the first-run flow show.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SettingsView {
+    /// The music folder's own name for display, never its path (D13).
+    pub folder_name: Option<String>,
+    pub folder_state: FolderState,
+    pub online_lookups: bool,
+    /// The first-run notice is still to be answered (R7).
+    pub notice_pending: bool,
+    pub portable: bool,
+}
+
+/// A running job for the status line (R5).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct JobProgress {
+    pub id: String,
+    /// Progress text, or null when the job ended.
+    pub text: Option<String>,
+    pub cancelable: bool,
+}
+
+/// The `player-state` event: the player and its queue.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PlayerEvent {
+    pub player: PlayerSnapshot,
+    pub queue: QueueSnapshot,
+}

@@ -184,5 +184,8 @@ test("P2-AC12: empty widgets show hints and Now playing shows the placeholder", 
   await expect(widget(page, "lyrics")).toContainText("No lyrics for this song.");
   await expect(widget(page, "nowPlaying")).toContainText("Nothing playing");
   await expect(widget(page, "nowPlaying").locator("[data-slot='art-placeholder-mark']")).toBeVisible();
-  for (const button of await widget(page, "transport").getByRole("button").all()) await expect(button).toBeDisabled();
+  // P4 enables Play and Stop once a music folder is set; P4-AC2 checks the disabled state without one.
+  for (const name of ["Shuffle", "Previous", "Next", "Repeat"]) {
+    await expect(widget(page, "transport").getByRole("button", { name })).toBeDisabled();
+  }
 });

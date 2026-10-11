@@ -13,7 +13,8 @@ export function ArtistList() {
   const search = useLibraryStore((state) => state.search);
   const selected = useLibraryStore((state) => state.selection.artist);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const ids = useCommand(() => commands.libraryArtists(search), NO_IDS, [search]);
+  const version = useLibraryStore((state) => state.version);
+  const ids = useCommand(() => commands.libraryArtists(search), NO_IDS, [search, version]);
   const { row, request } = useRowCache(commands.libraryArtistRows);
   const onRange = useCallback(
     (start: number, end: number) => request(ids.slice(Math.max(0, start - 1), end)),
@@ -49,7 +50,8 @@ export function AlbumList() {
   const artist = useLibraryStore((state) => state.selection.artist);
   const selected = useLibraryStore((state) => state.selection.album);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const ids = useCommand(() => commands.libraryAlbums(artist, search), NO_IDS, [artist, search]);
+  const version = useLibraryStore((state) => state.version);
+  const ids = useCommand(() => commands.libraryAlbums(artist, search), NO_IDS, [artist, search, version]);
   const { row, request } = useRowCache(commands.libraryAlbumRows);
   const onRange = useCallback(
     (start: number, end: number) => request(ids.slice(Math.max(0, start - 1), end)),
@@ -87,9 +89,17 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
   const album = useLibraryStore((state) => state.selection.album);
   const selected = useLibraryStore((state) => state.selection.song);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search), NO_IDS, [artist, album, search]);
+  const version = useLibraryStore((state) => state.version);
+  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search), NO_IDS, [
+    artist,
+    album,
+    search,
+    version,
+  ]);
   const { row, request } = useSongRows();
   const onRange = useCallback((start: number, end: number) => request(ids.slice(start, end + 1)), [ids, request]);
+  // Playing a song sets the queue to the Songs list as shown (R6 queue rule, P4.8).
+  const play = (index: number) => void commands.playerPlayList(ids, index).catch(() => {});
   return (
     <VirtualList
       label="Songs"
@@ -97,10 +107,23 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
       count={ids.length}
       rowHeight={ROW_HEIGHT}
       onRange={onRange}
+      onKeyDown={(event) => {
+        const index = selected === null ? -1 : ids.indexOf(selected);
+        if (event.key === "Enter" && index >= 0) {
+          event.preventDefault();
+          play(index);
+        }
+      }}
       renderRow={(index, style) => {
         const id = ids[index];
         return (
-          <Row key={id} style={style} selected={selected === id} onSelect={() => setSelection({ song: id })}>
+          <Row
+            key={id}
+            style={style}
+            selected={selected === id}
+            onSelect={() => setSelection({ song: id })}
+            onActivate={() => play(index)}
+          >
             <SongCells song={row(id)} showAlbum={showAlbum} />
           </Row>
         );
@@ -119,7 +142,8 @@ export function TreeList() {
   const search = useLibraryStore((state) => state.search);
   const selection = useLibraryStore((state) => state.selection);
   const setSelection = useLibraryStore((state) => state.setSelection);
-  const tree = useCommand(() => commands.libraryTree(search), NO_TREE, [search]);
+  const version = useLibraryStore((state) => state.version);
+  const tree = useCommand(() => commands.libraryTree(search), NO_TREE, [search, version]);
   const [openArtists, setOpenArtists] = useState(() => new Set<number>());
   const [openAlbums, setOpenAlbums] = useState(() => new Set<number>());
   const { row, request } = useSongRows();

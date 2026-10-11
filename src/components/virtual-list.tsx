@@ -12,11 +12,21 @@ interface VirtualListProps {
   renderRow: (index: number, style: CSSProperties) => ReactNode;
   /** Called with the rendered index range, so the caller can fetch rows for it (D14). */
   onRange?: (start: number, end: number) => void;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   className?: string;
 }
 
 /** A virtualized list: only the rows in view and a small overscan are in the DOM. */
-export function VirtualList({ count, rowHeight, label, role, renderRow, onRange, className }: VirtualListProps) {
+export function VirtualList({
+  count,
+  rowHeight,
+  label,
+  role,
+  renderRow,
+  onRange,
+  onKeyDown,
+  className,
+}: VirtualListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line react-hooks/incompatible-library -- the app does not use the React Compiler.
   const virtualizer = useVirtualizer({
@@ -37,6 +47,7 @@ export function VirtualList({ count, rowHeight, label, role, renderRow, onRange,
       role={role}
       aria-label={label}
       tabIndex={0}
+      onKeyDown={onKeyDown}
       className={cn("min-h-0 flex-1 overflow-auto focus-visible:-outline-offset-2", className)}
     >
       <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
