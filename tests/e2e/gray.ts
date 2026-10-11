@@ -1,7 +1,7 @@
 // Grayscale reading of an element screenshot, for "identifiable in grayscale" checks.
 import type { Locator, Page } from "@playwright/test";
 
-/** Mean grayscale brightness (0 to 255) of the bottom rows and left columns of an element screenshot. */
+/** Mean grayscale brightness (0 to 255) of an element screenshot, and of its bottom rows and left columns. */
 export async function grayProfile(page: Page, locator: Locator) {
   const png = (await locator.screenshot()).toString("base64");
   return page.evaluate(async (data) => {
@@ -28,7 +28,10 @@ export async function grayProfile(page: Page, locator: Locator) {
       for (let y = 0; y < image.height; y += 1) sum += gray(x, y);
       return sum / image.height;
     };
+    let total = 0;
+    for (let y = 0; y < image.height; y += 1) total += row(y);
     return {
+      mean: total / image.height,
       bottom: Math.min(row(image.height - 1), row(image.height - 2)),
       left: Math.min(column(0), column(1)),
     };

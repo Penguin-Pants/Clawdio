@@ -43,5 +43,6 @@ test("P4-AC2: with no folder the Library asks for one, Transport is disabled and
 
   await library.getByRole("button", { name: "Choose music folder" }).click();
   await expect(page.locator("[data-library-body]")).toBeVisible();
-  await expect(widget(page, "transport").getByRole("button", { name: "Play" })).toBeEnabled();
+  // The queue is still empty, so Transport stays disabled (P7.7).
+  await expect(widget(page, "transport").getByRole("button", { name: "Play" })).toBeDisabled();
 });

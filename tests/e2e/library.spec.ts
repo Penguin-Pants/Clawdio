@@ -206,14 +206,14 @@ test("P6-AC10: Shift+F10 and the ContextMenu key open the menu of the active row
   await page.keyboard.press("Shift+F10");
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Play" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(songs).toBeFocused();
 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ContextMenu");
-  await menu.getByRole("menuitem", { name: "Play" }).click();
+  await menu.getByRole("menuitem", { name: "Play", exact: true }).click();
   expect((await lastPlay(page)).start).toBe(1);
 });
 

@@ -14,7 +14,7 @@ test("P3-AC1: the measurement arrangement shows all six widgets with data", asyn
     await expect(widget(page, id)).toBeVisible();
   }
   await expect(widget(page, "queue").getByRole("option").first()).toContainText("Song 1 of Album A0");
-  await expect(widget(page, "queue")).toContainText("Playing:");
+  await expect(widget(page, "queue")).toContainText("Playing");
   await expect(widget(page, "playlists").getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
   await expect(widget(page, "lyrics")).toContainText("Lyric line 60");
   await expect(widget(page, "nowPlaying")).toContainText("Song 4 of Album A0");

@@ -3251,7 +3251,6 @@ dependencies = [
  "cpal",
  "dasp_sample",
  "num-rational",
- "symphonia",
  "thiserror 2.0.21",
 ]
 

@@ -9,6 +9,7 @@ import {
   Pause,
   Play,
   Repeat,
+  Repeat1,
   Rows2,
   Search,
   Shuffle,
@@ -16,6 +17,7 @@ import {
   SkipForward,
   Square,
   Volume2,
+  VolumeX,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -37,12 +39,14 @@ export const ICONS = {
   playing: AudioLines,
   previous: SkipBack,
   repeat: Repeat,
+  repeatOne: Repeat1,
   search: Search,
   shuffle: Shuffle,
   stop: Square,
   topBottom: Rows2,
   tree: ListTree,
   volume: Volume2,
+  volumeMuted: VolumeX,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

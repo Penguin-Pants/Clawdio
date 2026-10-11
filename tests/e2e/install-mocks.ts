@@ -3,6 +3,7 @@
 import { mockConvertFileSrc, mockIPC } from "@tauri-apps/api/mocks";
 import app from "./data/app.json";
 import { library } from "./library-data";
+import { createPlayer } from "./mock-player";
 
 const params = new URLSearchParams(window.location.search);
 const withLibrary = params.get("data") === "library";
@@ -55,12 +56,6 @@ function settingsCommand(command: string, args: Args): unknown {
     case "rescan":
       document.body.dataset.rescans = String(Number(document.body.dataset.rescans ?? 0) + 1);
       return null;
-    case "player_play_list":
-      // Tests read the last queue request from the page (P6-AC4).
-      document.body.dataset.playList = JSON.stringify({ ids: args.ids, start: args.start });
-      return null;
-    case "player_toggle":
-    case "player_stop":
     case "cancel_job":
     case "open_log_folder":
     case "open_notice":
@@ -70,6 +65,13 @@ function settingsCommand(command: string, args: Args): unknown {
 }
 
 type Args = Record<string, unknown>;
+
+const player = withLibrary
+  ? createPlayer(structuredClone(library.queue), structuredClone(library.player))
+  : createPlayer(
+      { entries: [], current: null },
+      { status: "stopped", positionMs: 0, volume: 100, shuffle: false, repeat: "off" },
+    );
 
 function libraryCommand(command: string, args: Args): unknown {
   if (!withLibrary) {
@@ -83,10 +85,6 @@ function libraryCommand(command: string, args: Args): unknown {
       case "library_rows":
       case "playlists_list":
         return [];
-      case "queue_get":
-        return { entries: [], current: null };
-      case "player_state":
-        return { status: "stopped", positionMs: 0, volume: 100 };
       case "lyrics_get":
       case "album_art":
         return null;
@@ -109,10 +107,6 @@ function libraryCommand(command: string, args: Args): unknown {
       return library.tree(args.query as string);
     case "album_art":
       return "album.jpg";
-    case "queue_get":
-      return library.queue;
-    case "player_state":
-      return library.player;
     case "playlists_list":
       return library.playlists.map(([row]) => row);
     case "playlist_entries":
@@ -128,28 +122,32 @@ mockConvertFileSrc("linux");
 (
   window as unknown as { __TAURI_INTERNALS__: { convertFileSrc: (path: string, protocol?: string) => string } }
 ).__TAURI_INTERNALS__.convertFileSrc = (path, protocol = "asset") => `/${protocol}/${path}`;
-mockIPC((command, args) => {
-  switch (command) {
-    case "plugin:app|name":
-      return app.name;
-    case "plugin:app|version":
-      return app.version;
-    case "measure_mode":
-      return new URLSearchParams(window.location.search).get("measure");
-    case "scan_running":
-    case "perf_mode":
-      return false;
-    case "measure_ready":
-      document.body.dataset.measureReady = "true";
-      return null;
-    case "plugin:event|listen":
-    case "plugin:event|unlisten":
-    case "plugin:log|log":
-      return 0;
-    default: {
-      // A settings command that returns null is handled; only undefined falls through.
-      const handled = settingsCommand(command, (args ?? {}) as Args);
-      return handled !== undefined ? handled : libraryCommand(command, (args ?? {}) as Args);
+mockIPC(
+  (command, args) => {
+    switch (command) {
+      case "plugin:app|name":
+        return app.name;
+      case "plugin:app|version":
+        return app.version;
+      case "measure_mode":
+        return new URLSearchParams(window.location.search).get("measure");
+      case "scan_running":
+      case "perf_mode":
+        return false;
+      case "measure_ready":
+        document.body.dataset.measureReady = "true";
+        return null;
+      case "plugin:log|log":
+        return 0;
+      default: {
+        // A settings command that returns null is handled; only undefined falls through.
+        const input = (args ?? {}) as Args;
+        const setting = settingsCommand(command, input);
+        if (setting !== undefined) return setting;
+        const played = player(command, input);
+        return played !== undefined ? played : libraryCommand(command, input);
+      }
     }
-  }
-});
+  },
+  { shouldMockEvents: true },
+);

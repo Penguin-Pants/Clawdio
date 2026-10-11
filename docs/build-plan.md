@@ -71,7 +71,7 @@ A phase is Done when all of these are true:
 | P4 | End-to-end slice | P3 | Done with exceptions |
 | P5 | Library scan and cache | P4 | Done with exceptions |
 | P6 | Library widget and search | P5 | Done with exceptions |
-| P7 | Playback engine and Play queue | P6 | Not started |
+| P7 | Playback engine and Play queue | P6 | Done with exceptions |
 | P8 | OS media integration | P7 | Not started |
 | P9 | Persistence: state, arrangement and instance | P8 | Not started |
 | P10 | Local artwork and thumbnails | P9 | Not started |
@@ -476,6 +476,58 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Tree Right on an open node with no children: the tree builder always yields children.
   - The measurement readiness has no race: `start_scan` counts the startup scan before the UI asks `scan_running`.
   - Older plan text names the `fixtures` CI steps: it is the P3 record of that time.
+
+**Follow-ups:** F-13 (open).
+
+---
+
+#### P7. Playback engine and Play queue (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5f7b559`. Messages start with `P7:`.
+- **Packages:** none added. `rodio` keeps only `playback`: the engine decodes with its own Symphonia source, so the rodio decoder features went.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P7-AC1 | Pass | `crates/clawdio-core/src/queue.rs`: one named test per P7.1 rule (repeat off, all, one; shuffle; shuffle off; Previous; remove playing, remove earlier; clear; append during shuffle) and a property test over 299 seeds and four rounds with repeat all that shuffle plays every entry once before a repeat. Engine: `player/engine.rs` tests for repeat all and one. |
+| P7-AC2 | Pass | `engine.rs` `stop_ends_playback_resets_the_position_and_keeps_the_queue`. |
+| P7-AC3 | Pass | `engine.rs`: `corrupt.mp3` shows "Cannot play corrupt.mp3" and the next entry plays; three failures in a row stop; a good file resets the count; `truncated.mp3` and `damaged.ogg` show "Cannot play <file name>" at their early end and the next entry plays; `tone-vbr.mp3` (no Xing header) plays to its end with no message. `source.rs`: rule (b) counts bad packets. See N2. |
+| P7-AC4 | Exception (E1) | `engine.rs` `a_lost_device_stops_with_the_message_and_play_tries_again` with the test output. No device can be unplugged in the container. |
+| P7-AC5 | Pass | `tests/e2e/playback.spec.ts`: Space toggles with Transport hidden; after a click on Next, Space sends one toggle and no second Next; Space types in the search field. Unit: `src/lib/keyboard.test.ts` (buttons, key repeat, text fields, range inputs, menus, dialogs). Manual Linux: Space paused and resumed the release build. |
+| P7-AC6 | Pass | `query.rs` `songs_order_by_disc_then_track_then_file_name`; an album row plays its song ids in that order (P6-AC4); the engine plays the queue in order (`plays_the_queue_in_order_and_stops_after_the_last_entry`). |
+| P7-AC7 | Pass | E2E: "Add to queue" appends (50 to 51 songs), the status line shows "Added to queue", the playing song stays; Play from the menu replaces the queue; "Add to playlist" is disabled. |
+| P7-AC8 | Pass | E2E: the grayscale mean of Shuffle and Repeat changes by more than 3 when on (red icon and 4 px dot); repeat one shows the `Repeat1` icon. |
+| P7-AC9 | Pass | E2E: Right Arrow on the focused seek slider seeks to 84 s; End and Home seek to the end and 0; times use `tabular-nums`. |
+| P7-AC10 | Exception (E2) | Manual Linux, release build, 50,000 generated tracks: a double-click 2 s after start played the first song in the same second the scan ended. |
+| P7-AC11 | Pass | E2E: arrows, Home and End on both sliders; `aria-valuetext` "1:23 of 2:04" and "Volume 79 percent"; the 12 px thumb at position 0; `VolumeX` at 0. |
+| P7-AC12 | Pass | E2E: Up and Down select in the Play queue; Delete removes the entry; the menu Remove and Clear queue work. |
+
+**Notes**
+
+- N1: the engine is in `player/engine.rs` (P7.2); `player/mod.rs` keeps the thread, the handle and the `PlayerEvents` trait. `PlayerEvent` went: `player-state` and `queue-changed` are separate events.
+- N2: `damaged.ogg` reaches rule (c), not rule (b) as P7-AC3 says. Symphonia 0.5.5 drops Ogg pages with bad audio and decodes garbage with no error, so no seed file triggers rule (b). The rule is a unit test on the packet counter (`source.rs`). Both damaged seeds are 6 s tones that end over 2 s early.
+- N3: rule (c) uses only a stated length: MP3 needs a Xing, Info or VBRI tag, else Symphonia estimates and the check is off (D32). New seed `tone-vbr.mp3` (1.5 KB) covers it.
+- N4: a buffer underrun from the device does not stop playback; other stream errors do (P7.4).
+- N5: Transport controls are disabled with an empty queue (P7.7), so P4-AC2's check after "Choose music folder" now expects Play disabled. P2-AC7's "no red at rest" scan skips Transport controls, whose play ring, slider ranges and thumbs are red indicators by D10 (3).
+- N6: the Library menu has Play, Add to queue and a disabled Add to playlist on song, album and artist rows. The e2e build has a mock player (`tests/e2e/mock-player.ts`) that sends the real events.
+- N7: the traceability coverage summary was recounted from the rows. Earlier phases had changed row statuses but not the counts.
+
+**Exceptions**
+
+- E1: P7-AC4 needs a real device. The device path ran only in the unit test. Manual on Windows and Linux desktops in P18.
+- E2: P7-AC10: the container scan of 50,000 tracks takes about 2 s with a warm page cache, so play during the scan was not shown. P4-AC3 showed play during a cold scan. Not checked by ear (P4 E1).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 5. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F2: a buffer underrun from the device stopped playback like a lost device (now ignored, N4). The TypeScript wrappers for `player_play` and `player_pause` had no caller (removed; the commands stay for P8). The rodio decoder features were unused (removed).
+- F4:
+  - A decode error and the end callback in the same tick: the source sends the error before the callback source runs, and the tick reads errors first.
+  - Repeat one with a file that fails at its end: the engine moves on with Next, not a restart, and the failure count still stops a loop.
+  - Space on a focused button presses it on key up: the capture handler also takes key up.
+  - Seek before a file plays: the engine ignores it (tested).
+  - `Queue::next` shares the iterator method name: the plan names it; clippy's lint is allowed there with the reason.
 
 **Follow-ups:** F-13 (open).
 

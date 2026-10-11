@@ -1,10 +1,11 @@
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
+import { useUiStore } from "@/store/ui";
+import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
 
 const NO_IDS: number[] = [];
@@ -26,46 +27,29 @@ function playScope(scope: { artist: number | null; album: number | null }, song?
   );
 }
 
-/** The list element inside a list frame: menus return focus to it. */
-function listElement(frame: RefObject<HTMLElement | null>): HTMLElement | null {
-  return frame.current?.querySelector<HTMLElement>('[role="listbox"], [role="tree"]') ?? null;
-}
-
 /** The track that plays or is paused, for the playing indicator (P6.4). */
 function usePlayingTrack(): number | null {
   return usePlayerStore((state) => (state.player.status === "stopped" ? null : currentTrack(state.queue)));
 }
 
-/** True for the keys that open the context menu of the active row (R25, P6-AC10). */
-function isMenuKey(event: React.KeyboardEvent): boolean {
-  return event.key === "ContextMenu" || (event.key === "F10" && event.shiftKey);
-}
-
-interface MenuRequest {
-  anchor: HTMLElement;
-  play: () => void;
-}
-
-/** The row context menu. P7 adds "Add to queue" and P11 "Add to playlist". */
-function useRowMenu(listRef: RefObject<HTMLElement | null>) {
-  const [request, setRequest] = useState<MenuRequest | null>(null);
-  const element = (
-    <DropdownMenu open={request !== null} onOpenChange={(open) => !open && setRequest(null)}>
-      <DropdownMenuContent anchor={request?.anchor} side="bottom" align="start" finalFocus={() => listElement(listRef)}>
-        <DropdownMenuItem onClick={() => request?.play()}>Play</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+/** Appends `ids` to the queue and says so in the status line, which shows with the queue hidden (R6). */
+function addToQueue(ids: number[]) {
+  if (ids.length === 0) return;
+  void commands.queueAppend(ids).then(
+    () => useUiStore.getState().showMessage("Added to queue"),
+    () => {},
   );
-  /** Opens the menu at the active row of a list key event. */
-  const fromKey = (event: React.KeyboardEvent<HTMLElement>, play: (() => void) | null) => {
-    if (!isMenuKey(event)) return false;
-    event.preventDefault();
-    const anchor = event.currentTarget.querySelector<HTMLElement>("[data-active]");
-    if (anchor && play) setRequest({ anchor, play });
-    return true;
-  };
-  const open = (anchor: HTMLElement, play: () => void) => setRequest({ anchor, play });
-  return { element, fromKey, open };
+}
+
+/** Appends a whole album or artist to the queue. */
+function addScope(scope: { artist: number | null; album: number | null }) {
+  void commands.librarySongIds(scope, "").then(addToQueue, () => {});
+}
+
+/** The Library row menu (R6, P7.10): Play, Add to queue and Add to playlist (P11 wires it). */
+function rowItems(play: (() => void) | null, add: () => void): RowMenuItem[] | null {
+  if (!play) return null;
+  return [{ label: "Play", run: play }, { label: "Add to queue", run: add }, { label: "Add to playlist" }];
 }
 
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
@@ -85,6 +69,7 @@ export function ArtistList() {
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ artist: id, album: null, song: null });
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: id, album: null }));
+  const items = (id: number | null) => rowItems(play(id), () => addScope({ artist: id, album: null }));
   // A search that hides the selected artist selects "All", so no hidden row filters the lists.
   useEffect(() => {
     if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
@@ -101,17 +86,17 @@ export function ArtistList() {
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
-        onKeyDown={(event) => menu.fromKey(event, play(selected))}
+        onKeyDown={(event) => menu.fromKey(event, items(selected))}
         renderRow={(index, frame) => {
           const id = idAt(index);
-          const playRow = play(id);
+          const rowMenu = items(id);
           return (
             <Row
               key={id ?? "all"}
               frame={frame}
               selected={selected === id}
               onSelect={() => select(id)}
-              onMenu={playRow ? (anchor) => menu.open(anchor, playRow) : undefined}
+              onMenu={rowMenu ? (anchor) => menu.open(anchor, rowMenu) : undefined}
             >
               <span className="truncate">{id === null ? "All" : (row(id)?.name ?? "…")}</span>
             </Row>
@@ -142,6 +127,7 @@ export function AlbumList() {
   const select = (id: number | null) => setSelection({ album: id, song: null });
   // An album row plays the album from its first song (P6.5).
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
+  const items = (id: number | null) => rowItems(play(id), () => addScope({ artist: null, album: id }));
   // A search or an artist change that hides the selected album selects "All".
   useEffect(() => {
     if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
@@ -157,7 +143,7 @@ export function AlbumList() {
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
         onKeyDown={(event) => {
-          if (menu.fromKey(event, play(selected))) return;
+          if (menu.fromKey(event, items(selected))) return;
           if (event.key === "Enter") {
             event.preventDefault();
             play(selected)?.();
@@ -167,6 +153,7 @@ export function AlbumList() {
           const id = idAt(index);
           const album = id === null ? undefined : row(id);
           const playRow = play(id);
+          const rowMenu = items(id);
           return (
             <Row
               key={id ?? "all"}
@@ -174,7 +161,7 @@ export function AlbumList() {
               selected={selected === id}
               onSelect={() => select(id)}
               onActivate={playRow ?? undefined}
-              onMenu={playRow ? (anchor) => menu.open(anchor, playRow) : undefined}
+              onMenu={rowMenu ? (anchor) => menu.open(anchor, rowMenu) : undefined}
             >
               {id === null ? <span className="pl-12">All</span> : album ? <AlbumCells album={album} /> : <span>…</span>}
             </Row>
@@ -208,6 +195,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
   const active = selected === null ? -1 : ids.indexOf(selected);
   // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
   const play = (index: number) => () => playList(ids, index);
+  const items = (index: number) => rowItems(play(index), () => addToQueue([ids[index]]));
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -219,7 +207,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
         activeIndex={active >= 0 ? active : null}
         onMove={(index) => setSelection({ song: ids[index] ?? null })}
         onKeyDown={(event) => {
-          if (menu.fromKey(event, active >= 0 ? play(active) : null)) return;
+          if (menu.fromKey(event, active >= 0 ? items(active) : null)) return;
           if (event.key === "Enter" && active >= 0) {
             event.preventDefault();
             play(active)();
@@ -234,7 +222,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
               selected={selected === id}
               onSelect={() => setSelection({ song: id })}
               onActivate={play(index)}
-              onMenu={(anchor) => menu.open(anchor, play(index))}
+              onMenu={(anchor) => menu.open(anchor, items(index) ?? [])}
             >
               <SongCells song={row(id)} showAlbum={showAlbum} playing={playing === id} />
             </Row>
@@ -330,6 +318,11 @@ export function TreeList() {
     if (line?.kind === "album") return () => playScope({ artist: null, album: line.id });
     return null;
   };
+  const items = (line: TreeLine | undefined) =>
+    rowItems(play(line), () => {
+      if (line?.kind === "song") addToQueue([line.id]);
+      else if (line?.kind === "album") addScope({ artist: null, album: line.id });
+    });
   const active = lines.findIndex((line) =>
     selection.song !== null
       ? line.kind === "song" &&
@@ -372,7 +365,7 @@ export function TreeList() {
   );
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const line = lines[active];
-    if (menu.fromKey(event, play(line))) return;
+    if (menu.fromKey(event, items(line))) return;
     if (!line) return;
     if (event.key === "Enter") {
       event.preventDefault();
@@ -410,7 +403,8 @@ export function TreeList() {
         renderRow={(index, frame) => {
           const line = lines[index];
           const playLine = play(line);
-          const onMenu = playLine ? (anchor: HTMLElement) => menu.open(anchor, playLine) : undefined;
+          const lineMenu = items(line);
+          const onMenu = lineMenu ? (anchor: HTMLElement) => menu.open(anchor, lineMenu) : undefined;
           if (line.kind === "song") {
             return (
               <Row

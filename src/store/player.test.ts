@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { commands } from "@/lib/ipc/commands";
-import { currentTrack, usePlayerStore } from "./player";
+import { currentTrack, STOPPED, usePlayerStore } from "./player";
 
 describe("currentTrack", () => {
   it("returns the track of the current entry, or null", () => {
@@ -14,12 +14,10 @@ describe("load", () => {
   it("keeps a player-state event that arrives before the start read returns", async () => {
     let answer: (value: { entries: number[]; current: number | null }) => void = () => {};
     vi.spyOn(commands, "queueGet").mockReturnValue(new Promise((resolve) => (answer = resolve)));
-    vi.spyOn(commands, "playerState").mockResolvedValue({ status: "stopped", positionMs: 0, volume: 100 });
+    vi.spyOn(commands, "playerState").mockResolvedValue(STOPPED);
     const loading = usePlayerStore.getState().load();
-    usePlayerStore.getState().apply({
-      player: { status: "playing", positionMs: 0, volume: 100 },
-      queue: { entries: [5], current: 0 },
-    });
+    usePlayerStore.getState().applyState({ ...STOPPED, status: "playing" });
+    usePlayerStore.getState().applyQueue({ entries: [5], current: 0 });
     answer({ entries: [], current: null });
     await loading;
     expect(usePlayerStore.getState().player.status).toBe("playing");

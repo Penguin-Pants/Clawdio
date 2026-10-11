@@ -9,5 +9,6 @@ pub mod error;
 pub mod fold;
 pub mod library;
 pub mod paths;
+pub mod queue;
 pub mod scan;
 pub mod settings;

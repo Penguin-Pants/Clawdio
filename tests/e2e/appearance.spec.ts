@@ -36,6 +36,8 @@ test("P2-AC7: dock chrome colors come from tokens and no red shows at rest", asy
   const found = await page.evaluate((colors) => {
     const hits: string[] = [];
     for (const element of document.querySelectorAll("body *")) {
+      // Transport indicators are red by D10 (3) and P7.7: the play ring, slider ranges and thumbs.
+      if (element.closest("[data-widget='transport']")) continue;
       const style = getComputedStyle(element);
       const values = [
         style.color,

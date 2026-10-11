@@ -6,18 +6,18 @@ import type { FolderState } from "./bindings/FolderState";
 import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
 import type { Lyrics } from "./bindings/Lyrics";
-import type { PlayerEvent } from "./bindings/PlayerEvent";
 import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
 import type { QueueSnapshot } from "./bindings/QueueSnapshot";
+import type { RepeatMode } from "./bindings/RepeatMode";
 import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
 import type { SongScope } from "./bindings/SongScope";
 import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
-export type { FolderState, JobProgress, PlayerEvent, QueueSnapshot, SettingsView, SongRow, SongScope, TreeArtist };
+export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -36,6 +36,15 @@ export const commands = {
   playerPlayList: (ids: number[], start: number) => invoke<void>("player_play_list", { ids, start }),
   playerToggle: () => invoke<void>("player_toggle"),
   playerStop: () => invoke<void>("player_stop"),
+  playerNext: () => invoke<void>("player_next"),
+  playerPrevious: () => invoke<void>("player_previous"),
+  playerSeek: (ms: number) => invoke<void>("player_seek", { ms }),
+  playerSetVolume: (volume: number) => invoke<void>("player_set_volume", { volume }),
+  playerSetShuffle: (on: boolean) => invoke<void>("player_set_shuffle", { on }),
+  playerSetRepeat: (mode: RepeatMode) => invoke<void>("player_set_repeat", { mode }),
+  queueAppend: (ids: number[]) => invoke<void>("queue_append", { ids }),
+  queueRemove: (index: number) => invoke<void>("queue_remove", { index }),
+  queueClear: () => invoke<void>("queue_clear"),
   settingsGet: () => invoke<SettingsView>("settings_get"),
   setOnlineLookups: (on: boolean) => invoke<SettingsView>("set_online_lookups", { on }),
   firstRunNoticeDone: () => invoke<SettingsView>("first_run_notice_done"),

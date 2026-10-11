@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as layouts from "@/shell/layouts";
-import { handleGlobalKey, isResetShortcut, isSearchShortcut, nextRegion, widgetRegions } from "./keyboard";
+import { handleGlobalKey, handleSpace, isResetShortcut, isSearchShortcut, nextRegion, widgetRegions } from "./keyboard";
 
 function key(init: KeyboardEventInit & { target?: EventTarget }) {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
@@ -106,5 +106,66 @@ describe("handleGlobalKey", () => {
     document.body.append(dialog);
     expect(handleGlobalKey(key({ key: "F6", target: dialog }))).toBe(false);
     expect(handleGlobalKey(key({ key: "a" }))).toBe(false);
+  });
+});
+
+describe("handleSpace (D17, P7.11)", () => {
+  function space(target: Element, type = "keydown", repeat = false) {
+    document.body.append(target);
+    const event = new KeyboardEvent(type, { key: " ", bubbles: true, cancelable: true, repeat });
+    Object.defineProperty(event, "target", { value: target });
+    return event;
+  }
+
+  it("toggles playback on a focused button and keeps the button from being pressed", () => {
+    const toggle = vi.fn();
+    const down = space(document.createElement("button"));
+    expect(handleSpace(down, toggle)).toBe(true);
+    expect(down.defaultPrevented).toBe(true);
+    const up = space(document.createElement("button"), "keyup");
+    expect(handleSpace(up, toggle)).toBe(true);
+    expect(up.defaultPrevented).toBe(true);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("toggles once while the key repeats", () => {
+    const toggle = vi.fn();
+    handleSpace(space(document.createElement("div")), toggle);
+    handleSpace(space(document.createElement("div"), "keydown", true), toggle);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves Space to text fields", () => {
+    const toggle = vi.fn();
+    const search = document.createElement("input");
+    search.type = "search";
+    const event = space(search);
+    expect(handleSpace(event, toggle)).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
+    expect(handleSpace(space(document.createElement("textarea")), toggle)).toBe(false);
+    expect(toggle).not.toHaveBeenCalled();
+  });
+
+  it("toggles on a slider thumb, which is a range input", () => {
+    const toggle = vi.fn();
+    const range = document.createElement("input");
+    range.type = "range";
+    expect(handleSpace(space(range), toggle)).toBe(true);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves Space to open menus and dialogs", () => {
+    const toggle = vi.fn();
+    for (const role of ["menu", "dialog"]) {
+      const popup = document.createElement("div");
+      popup.setAttribute("role", role);
+      const button = document.createElement("button");
+      popup.append(button);
+      document.body.append(popup);
+      const event = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+      Object.defineProperty(event, "target", { value: button });
+      expect(handleSpace(event, toggle)).toBe(false);
+    }
+    expect(toggle).not.toHaveBeenCalled();
   });
 });

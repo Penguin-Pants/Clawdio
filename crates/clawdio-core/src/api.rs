@@ -139,6 +139,19 @@ pub struct PlayerSnapshot {
     pub position_ms: u32,
     /// Volume from 0 to 100.
     pub volume: u8,
+    pub shuffle: bool,
+    pub repeat: RepeatMode,
+}
+
+/// Repeat modes (R6).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RepeatMode {
+    #[default]
+    Off,
+    All,
+    One,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -212,13 +225,4 @@ pub struct JobProgress {
     /// Progress text, or null when the job ended.
     pub text: Option<String>,
     pub cancelable: bool,
-}
-
-/// The `player-state` event: the player and its queue.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct PlayerEvent {
-    pub player: PlayerSnapshot,
-    pub queue: QueueSnapshot,
 }

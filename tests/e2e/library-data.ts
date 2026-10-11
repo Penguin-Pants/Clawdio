@@ -107,7 +107,7 @@ export const library = {
       }))
       .filter((artist) => artist.albums.length > 0),
   queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
-  player: { status: "paused", positionMs: 83_000, volume: 80 },
+  player: { status: "paused" as const, positionMs: 83_000, volume: 80, shuffle: false, repeat: "off" as const },
   playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
     { id: p, name: `Mix ${p + 1}`, entryCount: 6 },
     Array.from({ length: 6 }, (_, e) =>

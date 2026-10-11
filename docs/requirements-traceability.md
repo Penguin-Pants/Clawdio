@@ -24,11 +24,11 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 32 | 181 | 34 | 6 | 6 | 42 | 0 |
-| design.md | 76 | 25 | 27 | 9 | 14 | 0 | 1 | 0 |
+| Requirements | 301 | 97 | 125 | 26 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 35 | 21 | 8 | 11 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
-| tokens.json | 20 | 17 | 2 | 1 | 0 | 0 | 0 | 0 |
+| tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
@@ -42,7 +42,7 @@
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | S1-1 | Small open source player for Windows and Linux | §1 | P0.4, P18.1 | P0-AC1, P18-AC5 | CI, MAN-L, MAN-W | Planned |
-| S1-2 | One music folder; shows artist, album and song; plays mp3, ogg and wav | §1 | P4.5, P5.2, P5.6, P6.3, P7.2 | P4-AC3, P5-AC1, P5-AC2 | IT, MAN-L | Planned |
+| S1-2 | One music folder; shows artist, album and song; plays mp3, ogg and wav | §1 | P4.5, P5.2, P5.6, P6.3, P7.2 | P4-AC3, P5-AC1, P5-AC2 | IT, MAN-L | Done (P7) |
 | S1-3 | Widget UI: dock, resize, hide, show; three built-in layouts | §1 | P2.1, P2.4, P2.6 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | S1-4 | Adds artwork, lyrics and missing metadata | §1 | P14.5, P15.1, P16.2 | P14-AC4, P15-AC1, P16-AC3 | IT | Planned |
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
@@ -82,10 +82,10 @@
 |---|---|---|---|---|---|---|
 | R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
-| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Planned |
+| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Done (P7) |
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Planned |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Planned |
-| R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Planned |
+| R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Planned |
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
@@ -127,22 +127,22 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R6-1 | Controls: play/pause, stop, previous, next, seek, volume, shuffle, repeat, queue add, remove, clear; nothing else | §2 R6 | P7.6, P7.7, P7.9 | P7-AC1, P7-AC9 | UT, E2E | Resolved (C3) |
-| R6-2 | Stop ends playback, resets the position, keeps the queue | §2 R6 | P7.1 | P7-AC2 | UT | Planned |
-| R6-3 | Repeat modes off, all, one; shuffle applies to the queue | §2 R6 | P7.1, P7.7 | P7-AC1, P7-AC8 | UT, E2E | Planned |
-| R6-4 | Repeat off, all and one behavior | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
-| R6-5 | Shuffle behavior: each entry once, display order kept; shuffle off continues in order | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
-| R6-6 | Previous: over 3 s restarts; else previous in play order; shuffle uses the run history | §2 R6 | P7.1 | P7-AC1 | UT | Planned |
-| R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12, P5.11 | P7-AC3 | IT | Planned (D32) |
+| R6-1 | Controls: play/pause, stop, previous, next, seek, volume, shuffle, repeat, queue add, remove, clear; nothing else | §2 R6 | P7.6, P7.7, P7.9 | P7-AC1, P7-AC9 | UT, E2E | Done (P7, C3) |
+| R6-2 | Stop ends playback, resets the position, keeps the queue | §2 R6 | P7.1 | P7-AC2 | UT | Done (P7) |
+| R6-3 | Repeat modes off, all, one; shuffle applies to the queue | §2 R6 | P7.1, P7.7 | P7-AC1, P7-AC8 | UT, E2E | Done (P7) |
+| R6-4 | Repeat off, all and one behavior | §2 R6 | P7.1 | P7-AC1 | UT | Done (P7) |
+| R6-5 | Shuffle behavior: each entry once, display order kept; shuffle off continues in order | §2 R6 | P7.1 | P7-AC1 | UT | Done (P7) |
+| R6-6 | Previous: over 3 s restarts; else previous in play order; shuffle uses the run history | §2 R6 | P7.1 | P7-AC1 | UT | Done (P7) |
+| R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12, P5.11 | P7-AC3 | IT | Done (P7, D32) |
 | R6-8 | Single click selects; double-click or Enter plays; album row plays from the first song | §2 R6 | P6.5 | P6-AC4 | E2E | Done (P6) |
 | R6-9 | Queue rule per mode and for playlists; Play and double-click replace; Add to queue appends | §2 R6 | P6.5, P7.10, P11.5 | P6-AC4, P7-AC7, P11-AC8 | E2E | Planned |
-| R6-10 | Queue edits: remove playing, remove earlier, clear | §2 R6 | P7.1, P7.9 | P7-AC1 | UT | Planned |
+| R6-10 | Queue edits: remove playing, remove earlier, clear | §2 R6 | P7.1, P7.9 | P7-AC1 | UT | Done (P7) |
 | R6-11 | Search: incremental, ignores case and accents, matches artist, album and title; Tree rule | §2 R6 | P6.1, P6.2 | P6-AC3 | UT, E2E | Done (P6) |
 | R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6, P6.6 | P7-AC7, P6-AC10 | E2E | Planned (D20) |
 | R24-1 | Media keys play/pause, next, previous work with the window in the background | §2 R24 | P8.1, P8.2 | P8-AC1, P8-AC2 | MAN-W, MAN-L | Planned (D39) |
 | R24-2 | Title, artist, album, artwork and position go to the OS panel | §2 R24 | P8.3, P10.5 | P8-AC1, P8-AC2, P10-AC6 | MAN-W, MAN-L | Planned |
 | R24-3 | Accept play, pause, toggle, next, previous, stop; log and continue if registration fails | §2 R24 | P8.2, P8.4 | P8-AC2, P8-AC3, P8-AC1 | MAN-L, MAN-W | Planned |
-| R25-1 | Space toggles play/pause, not while typing | §2 R25 | P7.11 | P7-AC5 | E2E | Planned (D17) |
+| R25-1 | Space toggles play/pause, not while typing | §2 R25 | P7.11 | P7-AC5 | E2E | Done (P7, D17) |
 | R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5, P11-AC8 | E2E | Planned |
 | R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Planned (D24) |
 | R25-4 | Ctrl+F focuses search; Esc clears it and returns to the Library | §2 R25 | P6.6, P0.13 | P6-AC5, P0-AC8 | E2E | Planned |
@@ -299,7 +299,7 @@
 | E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Planned |
 | E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Planned |
 | E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Planned |
-| E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Planned |
+| E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Done (P7) |
 | E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Done (P5) |
 | E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Resolved (C18) |
 | E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Planned |
@@ -323,7 +323,7 @@
 | CON-2 | Branding: no feature code depends on the name, icon or theme | §6 | P0.14 | P0-AC6, P18-AC9 | UT, MAN-L | Planned (D34) |
 | CON-3 | Docking library MIT, React bindings, passes Milestone 0, no commercial add-ons, no floating or pop-out, tabs on | §6 | P2.1, P3.8, P18.4 | P2-AC2, P3-AC4, P18-AC7 | E2E, REV | Planned (D8) |
 | CON-4 | Complexity budget: fixed widgets, no per-view overrides, named layouts, floating, pop-out or layout import and export | §6 | P0.1, P2.2 | P2-AC2 | REV | Done (P2) |
-| CON-5 | Audio engine: rodio pinned, Symphonia with `mp3`, lofty; gapless-ready design | §6 | P7.2, P7.5 | P7-AC1 | REV | Planned (D3) |
+| CON-5 | Audio engine: rodio pinned, Symphonia with `mp3`, lofty; gapless-ready design | §6 | P7.2, P7.5 | P7-AC1 | REV | Done (P7, D3) |
 | CON-6 | License: MIT app; Symphonia MPL-2.0; LGPL in the AppImage; license texts, versions and sources per release; NOTICE file; no Strawberry code | §6 | P0.2, P18.4 | P18-AC7, P18-AC8 | REV, CI | Planned |
 | CON-7 | Platforms: Windows and Linux | §6 | P0.16, P18.3 | P0-AC1, P18-AC5 | CI | Planned |
 | CON-8 | Formats: mp3, Ogg Vorbis, wav | §6 | P5.2 | P5-AC2 | IT | Done (P5) |
@@ -373,11 +373,11 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Done (P5) |
 | DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Planned |
-| DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Planned |
+| DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Done (P7) |
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Planned |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
 | DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
-| DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Planned |
+| DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Planned |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
 | VER-1 | Verify the R13 path base after the interop test | §8 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
@@ -405,8 +405,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Planned |
 | AC-16 | With reduce motion on, no animation plays (Magic UI clause applies only if components are named) | §9.16 | P0.7, P17.3 | P2-AC8, P17-AC3 | E2E, MAN-L, MAN-W | Planned |
 | AC-17 | Portable folder and music folder copied to another drive: settings, arrangement, queue survive | §9.17 | P4.1, P9.1 | P9-AC7, P18-AC10 | MAN-W | Planned |
-| AC-18 | Two-disc album plays disc 1 then disc 2 in track order | §9.18 | P5.7, P7.1 | P5-AC11, P7-AC6 | IT, MAN-L | Planned |
-| AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Planned |
+| AC-18 | Two-disc album plays disc 1 then disc 2 in track order | §9.18 | P5.7, P7.1 | P5-AC11, P7-AC6 | IT, MAN-L | Done (P7) |
+| AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Done (P7) |
 | AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9, P4.11, P4.12 | P4-AC3, P7-AC10 | MAN-L | Planned |
 | AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Planned |
 
@@ -435,11 +435,11 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Done (P0) |
 | DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
-| DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Resolved (C13) |
+| DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Done (P7, C13) |
 | DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
 | DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Done (P1) |
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
-| DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Planned |
+| DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Done (P7) |
 | DES-4.5 | Sentence case; uppercase spaced text only for brand collateral | §4 | P17.7 | P17-AC8 | REV | Planned |
 | DES-5.1 | Six widgets; headers with grip, title and close (hideable only); drag docking; show and hide | §5 | P2.1, P2.2, P2.3, P2.6 | P2-AC1, P2-AC2, P2-AC3, P2-AC4 | E2E | Done (P2) |
 | DES-5.2 | Fixed chrome: status line and top-right menu button; no layout hides them | §5 | P2.5, P2.6, P2.7 | P2-AC6 | E2E | Done (P2, C14) |
@@ -455,9 +455,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Done (P6) |
 | DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Resolved (C11) |
-| DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Planned |
-| DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Planned |
-| DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Resolved (C3) |
+| DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Done (P7) |
+| DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Done (P7) |
+| DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Done (P7, C3) |
 | DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Done (P6) |
 | DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Done (P5, D12) |
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
@@ -474,7 +474,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
 | DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
 | DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
-| DES-8.4 | No animation on repeated rows, the seek bar or live times | §8 | P0.7, P6.4, P7.7 | P2-AC13 | E2E | Resolved (C16) |
+| DES-8.4 | No animation on repeated rows, the seek bar or live times | §8 | P0.7, P6.4, P7.7 | P2-AC13 | E2E | Done (P7, C16) |
 | DES-8.5 | No recurring decorative motion during playback | §8 | P17.8 | P17-AC3 | REV | Planned (D6) |
 | DES-9.1 | Works offline with no account | §9 | P14.1 | P14-AC1, P14-AC13 | IT | Planned |
 | DES-9.2 | Respects Windows and Linux controls, text scaling and keyboard access | §9 | P4.2, P17.5 | P17-AC2, P17-AC5 | MAN-W, MAN-L | Planned |
@@ -572,7 +572,7 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 | ID | Token | Value | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| TOK-1 | `colors.brand.red` | `#E10606` | P0.6, P2.10, P7.7 | P0-AC5, P2-AC7 | UT, E2E | Planned (D10) |
+| TOK-1 | `colors.brand.red` | `#E10606` | P0.6, P2.10, P7.7 | P0-AC5, P2-AC7 | UT, E2E | Done (P7, D10) |
 | TOK-2 | `colors.brand.steel` | `#4A4A4A` | P0.6, P1.4 | P1-AC4 | UT, REV | Done (P1, D10) |
 | TOK-3 | `colors.bg.canvas` | `#0B0B0B` | P0.6, P0.7 | P0-AC2, P0-AC3 | MAN-L | Done (P0) |
 | TOK-4 | `colors.bg.surface` | `#111111` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |

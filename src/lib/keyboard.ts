@@ -1,3 +1,4 @@
+import { commands } from "@/lib/ipc/commands";
 import { focusLibrarySearch, resetLayout } from "@/shell/layouts";
 
 /** Reset layout shortcut (D17, R29). */
@@ -21,6 +22,31 @@ export function isSearchShortcut(event: KeyboardEvent): boolean {
 function inMenuOrDialog(target: EventTarget | null): boolean {
   return (
     target instanceof Element && target.closest('[role="menu"], [role="dialog"], [data-slot="select-content"]') !== null
+  );
+}
+
+/** Input types that take no typed text: Space on them toggles playback (D17). */
+const NON_TEXT_INPUTS = new Set(["button", "checkbox", "color", "file", "image", "radio", "range", "reset", "submit"]);
+
+/** Text fields keep Space for typing (R25, D17). */
+function inTextField(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement) return true;
+  return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type);
+}
+
+/**
+ * Space toggles play and pause everywhere except in text fields and in open menus and dialogs
+ * (D17, P7.11). On a focused button it does not press the button.
+ */
+export function isPlaybackSpace(event: KeyboardEvent): boolean {
+  return (
+    event.key === " " &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.metaKey &&
+    !inTextField(event.target) &&
+    !inMenuOrDialog(event.target)
   );
 }
 
@@ -61,11 +87,34 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
   return false;
 }
 
-/** Installs the global key handler on the window. Returns the uninstall function. */
+/**
+ * Space before any other handler (capture phase): it toggles playback and no focused control
+ * sees it, so a button is not pressed on key up (D17). Returns true when it handled the event.
+ */
+export function handleSpace(event: KeyboardEvent, toggle: () => void = playbackToggle): boolean {
+  if (!isPlaybackSpace(event)) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.type === "keydown" && !event.repeat) toggle();
+  return true;
+}
+
+function playbackToggle() {
+  void commands.playerToggle().catch(() => {});
+}
+
+/** Installs the global key handlers on the window. Returns the uninstall function. */
 export function installKeyboard(target: Window = window): () => void {
   const listener = (event: KeyboardEvent) => {
     if (handleGlobalKey(event, target.document)) event.preventDefault();
   };
+  const space = (event: KeyboardEvent) => void handleSpace(event);
+  target.addEventListener("keydown", space, true);
+  target.addEventListener("keyup", space, true);
   target.addEventListener("keydown", listener);
-  return () => target.removeEventListener("keydown", listener);
+  return () => {
+    target.removeEventListener("keydown", space, true);
+    target.removeEventListener("keyup", space, true);
+    target.removeEventListener("keydown", listener);
+  };
 }
