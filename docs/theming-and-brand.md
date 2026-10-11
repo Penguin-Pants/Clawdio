@@ -1,0 +1,104 @@
+# Theming and brand
+
+This file lists the theme tokens that the app reads and the UI part that each token controls (requirements R17). The build plan section 6.12 is the source for these tables.
+
+## How the theme gets into the app
+
+1. `theme/tokens.json` is the only theme source (R15, R31).
+2. `scripts/build-tokens.mjs` checks the file and writes `src/styles/tokens.generated.css`. The generated file is not committed.
+3. Tailwind CSS v4 builds the generated variables into the CSS bundle. `src/styles/globals.css` maps the shadcn/ui semantic variables to them.
+4. `npm run dev` and `npm run build` run the script first (`predev` and `prebuild`). To apply a token change, rebuild the app. No other file changes.
+
+The script stops with an error that names the key path when a key is missing or a value has the wrong kind. Every key in the current file is required:
+
+- Colors: a hex color (`#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`).
+- Radii: a px length (`10px`).
+- Motion: a ms duration (`140ms`). `motion.reduced` is a policy text. The script checks that it exists and writes nothing for it.
+
+Unknown keys cause a warning and are ignored.
+
+## Token map
+
+| Token | CSS variable | UI roles |
+|---|---|---|
+| `colors.brand.red` | `--color-brand-red` | Slider range and thumb, play ring, active toggles, switch on, focus ring, active drop target, error icons |
+| `colors.brand.steel` | `--color-brand-steel` | Wordmark "dio" on light backgrounds; decorative seek and volume track |
+| `colors.bg.canvas` | `--color-bg-canvas` | Window, header strip, status line |
+| `colors.bg.surface` | `--color-bg-surface` | Widget bodies |
+| `colors.bg.elevated` | `--color-bg-elevated` | Widget headers (tab bars), menus, dialogs, inputs, art placeholder |
+| `colors.bg.hover` | `--color-bg-hover` | Row and button hover, drop zone overlay |
+| `colors.border.default` | `--color-border-default` | Panel boundaries, splitters |
+| `colors.border.strong` | `--color-border-strong` | Splitter hover, input border, dialog border |
+| `colors.text.primary` | `--color-text-primary` | Main text, active tab title |
+| `colors.text.secondary` | `--color-text-secondary` | Artist, album, status line |
+| `colors.text.muted` | `--color-text-muted` | Hints, placeholders, inactive tab titles, durations, missing entries |
+| `colors.state.selected` | `--color-state-selected` | Selected rows |
+| `colors.state.redHover` | `--color-state-red-hover` | Hover of red icon controls |
+| `colors.state.redActive` | `--color-state-red-active` | Pressed red controls, fill of red text buttons |
+| `radii.control` | `--radius-control` | Buttons, inputs, menu items |
+| `radii.card` | `--radius-card` | Widgets, album thumbnails, art |
+| `radii.dialog` | `--radius-dialog` | Dialogs |
+| `motion.fast` | `--clawdio-motion-fast` | Hover and focus transitions. Also Tailwind's default transition duration. |
+| `motion.panel` | `--clawdio-motion-panel` | Menu and dialog open and close |
+| `motion.reduced` | policy | The reduced-motion rule in `globals.css`: under `prefers-reduced-motion: reduce`, every transition and animation lasts 0s and scrolling is not smooth |
+
+`radii.control` also sets the shadcn/ui `--radius` variable.
+
+## shadcn/ui semantic variables
+
+`src/styles/globals.css` sets these variables from the tokens. Components use the semantic names.
+
+| Variable | Token |
+|---|---|
+| `--background` | `colors.bg.canvas` |
+| `--foreground`, `--primary-foreground`, `--accent-foreground`, `--card-foreground`, `--popover-foreground`, `--secondary-foreground` | `colors.text.primary` |
+| `--card`, `--muted` | `colors.bg.surface` |
+| `--popover`, `--secondary` | `colors.bg.elevated` |
+| `--primary`, `--destructive`, `--ring` | `colors.brand.red` (indicators only) |
+| `--muted-foreground` | `colors.text.muted` |
+| `--accent` | `colors.bg.hover` |
+| `--border` | `colors.border.default` |
+| `--input` | `colors.border.strong` |
+| `--radius` | `radii.control` |
+
+## Color role rules
+
+The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D10) keep text and indicators readable:
+
+1. Text uses `text.primary`, `text.secondary` or `text.muted`. Red text only at 24 px and larger, or 18.66 px and larger when bold. Error messages use `text.primary` with a `brand.red` icon.
+2. Text on a red fill uses `state.redActive` in every state. `state.redHover` and `brand.red` fills carry icons only.
+3. Indicators (focus ring, slider range and thumb, switch on, active toggles, active drop target) use `brand.red`. `state.redActive` is never an indicator.
+4. On `state.selected` rows, icons, bars and outlines use `text.primary`.
+5. `brand.steel` is only for the wordmark "dio" on light backgrounds and the decorative seek and volume track.
+6. Borders are decoration. Inputs carry an icon and placeholder text.
+7. No state is shown by color alone. Selected rows add a left bar. Pressed toggles and the active tab add an underline or a dot.
+
+## Contrast role pairs
+
+`src/styles/contrast.test.ts` checks these pairs against the current tokens. "Pass" pairs must reach the threshold. "Excluded" pairs must stay below it, so a token change that makes them pass is reviewed before the rules change. The `state.redActive` row is one role on four surfaces: it stays excluded while its worst surface fails.
+
+| Pair | Ratio | Rule | Result |
+|---|---|---|---|
+| text.primary on canvas, surface, elevated, hover, selected | 16.81 to 11.75 | text 4.5 | Pass |
+| text.secondary on the same five backgrounds | 9.81 to 6.86 | text 4.5 | Pass |
+| text.muted on the same five backgrounds | 6.91 to 4.83 | text 4.5 | Pass |
+| text.primary on state.redActive | 5.33 | text 4.5 | Pass |
+| brand.red on canvas, surface, elevated, hover | 3.96 to 3.40 | non-text and large text 3.0 | Pass for icons, rings and 24 px text |
+| text.primary on brand.red / state.redHover | 4.24 / 3.67 | not used for text | Excluded |
+| brand.red on state.selected | 2.77 | not used | Excluded |
+| brand.steel on canvas, surface | 2.22, 2.13 | decorative track only; the thumb and range carry the state | Decorative |
+| state.redActive on canvas, surface, elevated, hover | 3.16 to 2.70 | never an indicator | Excluded |
+| text.primary outline or bar on state.selected, surface | 11.75, 16.13 | non-text 3.0 | Pass |
+| state.selected on surface (fill alone) | 1.37 | needs the left bar | Bar required |
+
+## Focus, motion and high contrast
+
+- Focus: every interactive element shows a 2 px `brand.red` ring with a 2 px offset (`:focus-visible`).
+- Motion: hover and focus transitions use `motion.fast`. Menus and dialogs use `motion.panel`.
+- Reduced motion: see `motion.reduced` above.
+- Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`.
+- Times use tabular numerals (`tabular` class).
+
+## Font
+
+The UI font is Geist Sans (variable, OFL 1.1) from `@fontsource-variable/geist`. The fallback is `system-ui, "Segoe UI", Ubuntu, Cantarell, sans-serif`. `NOTICE` holds the license.

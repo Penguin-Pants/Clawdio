@@ -1,0 +1,21 @@
+[package]
+name = "clawdio"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Penguin-Pants/Clawdio"
+publish = false
+
+[lib]
+name = "clawdio_lib"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.2", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.3", features = [] }
+
+[target.'cfg(windows)'.dependencies]
+log = "=0.4.34"
+webview2-com = "=0.39.1"
+windows-core = "=0.62.2"

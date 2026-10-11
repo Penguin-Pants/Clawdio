@@ -1,0 +1,5 @@
+node_modules/
+dist/
+target/
+src-tauri/gen/schemas/
+src/styles/tokens.generated.css

@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "./tokens.generated.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* The app is dark-only. index.html sets class "dark" on <html>, so shadcn/ui dark styles apply. */
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn/ui semantic variables, mapped to token variables (build plan section 6.12, D10). */
+:root {
+  --background: var(--color-bg-canvas);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-bg-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-bg-elevated);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-brand-red);
+  --primary-foreground: var(--color-text-primary);
+  --secondary: var(--color-bg-elevated);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-bg-surface);
+  --muted-foreground: var(--color-text-muted);
+  --accent: var(--color-bg-hover);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-brand-red);
+  --border: var(--color-border-default);
+  --input: var(--color-border-strong);
+  --ring: var(--color-brand-red);
+  --radius: var(--radius-control);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* Geist Sans, the one bundled font (D7), with system fonts as the fallback. */
+  --font-sans: "Geist Variable", system-ui, "Segoe UI", Ubuntu, Cantarell, sans-serif;
+  --font-heading: var(--font-sans);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-bg-canvas);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+
+  /* One focus ring for every interactive element: 2 px brand red, 2 px offset (section 6.16). */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-red);
+    outline-offset: 2px;
+  }
+}
+
+/* Tabular numerals for times (design.md section 4). */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reduced motion: no transition or animation plays and scrolling is not smooth (section 6.16). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Windows high contrast: keep focus rings and selected rows visible with system colors. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  [aria-selected="true"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}

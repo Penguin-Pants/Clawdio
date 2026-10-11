@@ -79,4 +79,73 @@ Give each finding exactly one class: the first class in this list that applies.
 - Verify subagent completion. Retry incomplete work with a higher turn limit. Report turn-limit exhaustion with ⚠️.
 - Ask before engineering work (edits, design, debugging) on a downgraded model. Mechanical, read-only, git and docs work: no prompt.
 
+## Project rules
+
+Clawdio rules. They add to the Agent Rules. The plan is `docs/build-plan.md`.
+
+#### Source precedence
+
+1. Features and behavior: `docs/MusicPlayer_REQUIREMENTS.md`.
+2. UI: `docs/design.md`.
+3. Brand identity: `docs/claude-code-implementation-prompt.md` with `docs/asset-manifest.md`, `theme/tokens.json` and the mockup (direction only).
+4. Resolved conflicts and fixed details: plan sections 5.1 and 5.2. A conflict that these rules cannot resolve is an owner question.
+
+#### Scope
+
+- Implement only the current phase of the plan.
+- Requirements section 4 (non-goals) and section 7 (deferred ideas) are out.
+- Do not copy Strawberry code (GPL-3.0).
+- Record other defects and ideas as F3 proposals in plan section 11.
+
+#### Architecture: boundaries
+
+- D1: `crates/clawdio-core` holds the library, scan, queue, playlist, import, lyrics, sidecar, online and settings logic. No Tauri and no audio device. `src-tauri` holds the app, commands, audio output, media controls and window.
+- D13: the webview gets no filesystem, HTTP, shell or dialog permission. IPC carries ids and validated names, never file paths.
+- D46: track ids are session ids and are never reused. The player thread owns the queue.
+
+#### Architecture: data and guards
+
+- D14: the library index lives in Rust memory. SQLite is a rebuildable cache. The UI fetches rows for the visible window only.
+- D15: `ts-rs` writes the IPC types to `src/lib/ipc/bindings/` during `cargo test`. Commit them.
+- D34: no hex color literal in `src/` (except the generated token file). No product name literal in `src/`, `crates/` or `src-tauri/src/`.
+
+#### Coding standards
+
+- Rust: edition 2021, `cargo fmt` and `cargo clippy -D warnings`.
+- Rust: `thiserror` errors in the core. No `unwrap` or `expect` on user data outside tests.
+- TypeScript: `strict`, ESLint and Prettier. No `any` in IPC code.
+- Every shadcn/ui component in the repo follows the plan P0.10 focus rule.
+
+#### Tests
+
+- Every phase adds tests for its acceptance criteria.
+- Tests use generated fixtures in temp folders. Tests never touch a real music folder.
+- Approved exception to Edits rule 9 (plan C19): the `fixtures` Cargo feature (D35) holds generated data in `src-tauri` from P3 until P6.7 deletes it.
+
+#### Validation command set
+
+Run every command before a push (plan section 1.2). Static checks:
+
+1. `npm run check`
+2. `cargo fmt --all --check`
+3. `cargo clippy --workspace --all-targets -- -D warnings`
+
+Tests:
+
+1. `cargo test --workspace`
+2. `test -z "$(git status --porcelain -- src/lib/ipc/bindings)"`
+3. `npm run test:e2e` (from P2)
+
+#### Workflow
+
+- One phase at a time.
+- Commit messages start with the phase ID, for example `P5: add incremental scan`.
+- Push only after the validation command set passes.
+- In the same push, update the plan status (section 2), the phase record (section 2.1) and the traceability Status column.
+
+#### Platform reporting
+
+- Name every check that could not run in the current environment, and the reason.
+- Never claim a check that did not run.
+
 You are cherished.

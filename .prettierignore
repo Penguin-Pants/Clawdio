@@ -1,0 +1,10 @@
+# Markdown is formatted with mdformat (AGENTS.md Tooling).
+*.md
+package-lock.json
+dist/
+target/
+src-tauri/gen/
+src-tauri/icons/
+src/lib/ipc/bindings/
+src/styles/tokens.generated.css
+theme/tokens.json
