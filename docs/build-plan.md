@@ -220,7 +220,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D46 | Track ids are monotonic within a session and never reused. A removed track stays as a tombstone until the next start, and an unknown or removed id returns a typed error. The index lives in the core behind `Arc<RwLock<_>>`. The player thread owns the queue: every `player_*` and `queue_*` command goes through its channel. | Rescans must not shift ids under the queue, the selection or a pending `library_rows` call. |
 | D47 | On Linux, portable mode applies to the AppImage. "Next to the executable" means next to the AppImage file (the `APPIMAGE` environment variable), for both the marker and the R18.1 path rule. | Inside an AppImage the executable runs from a temporary mount. |
 | D48 | Tauri's CSP nonce injection stays on. If a release build reports a `style-src` violation, add `dangerousDisableAssetCspModification: ["style-src"]` and record it. The e2e suite serves the section 6.13 CSP and fails on any violation. | A nonce makes browsers ignore `'unsafe-inline'`. Inline styles from libraries must not break silently. |
-| D49 | Milestone 0 over 300 MB on either OS: record the worst value per OS as the new memory target and continue. No stop. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
+| D49 | Milestone 0 over 300 MB on an OS: that OS's worst value becomes its memory target, and the build continues. No stop. An OS at or under 300 MB keeps the 200 MB target. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
 
 ### 5.3 Owner confirmations
 
@@ -242,7 +242,7 @@ None of these blocks work. Each has a default.
 | ID | Item | Effect | Resolution path |
 |---|---|---|---|
 | B1 | `AGENTS.md` did not exist. The task and the prompt require it. | None. | Closed October 11, 2026: the owner supplied `AGENTS.md`; the review sections were added; P0.1 adds the project rules. |
-| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | P3 verdict. **Owner answer October 11, 2026:** over 300 MB raises the memory target to the measured value and the build continues (D49). |
+| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | P3 verdict. **Owner answer October 11, 2026:** over 300 MB on an OS raises that OS's memory target to its measured value, and the build continues (D49). |
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
 | B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
@@ -703,7 +703,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 - **P1-AC1** `check-svg.mjs` passes for all nine SVG files.
 - **P1-AC2** `npm run icons` exits 0. `src-tauri/icons/icon.ico` holds the 16, 24, 32, 48, 64 and 256 px layers (`identify` output in the phase record). The Linux PNGs listed in D9 exist with the right pixel sizes.
-- **P1-AC3** At 16 and 32 px the contact sheet shows two separate red eye marks, two ear tips and the head edge. The rim color has a contrast of at least 3:1 against the icon square (computed: `#B7B7B7` on `#171717`, 8.94:1). Geometry check: the rim stroke and each eye measure at least 1 px at 16 px. If the 16 or 24 px layer still fails the visual check, record it, make `scripts/icons.mjs` render those two layers from `clawdio-icon-simple.svg` (Q8, owner approved) and run P1.7 again.
+- **P1-AC3** At 16 and 32 px the contact sheet shows two separate red eye marks, two ear tips and the head edge. The rim color has a contrast of at least 3:1 against the icon square (computed: `#B7B7B7` on `#171717`, 8.94:1). Geometry check: the rim stroke and each eye measure at least 1 px at 16 px. If the 16 or 24 px layer still fails the visual check, record it, make `scripts/icons.mjs` render those two layers from `clawdio-icon-simple.svg` (Q8, owner approved) and run P1.7 again. With this fallback on, the 16 and 24 px layers pass a monogram check instead of the cat check: the "C" stroke and the negative-space eye each measure at least 1 px at 16 px and stay separate, and `#E10606` reaches at least 3:1 on `#171717` (computed: 3.61:1). The 32 px and larger layers still pass the cat check.
 - **P1-AC4** The wordmark files contain no `<text>`. "Claw" is `#E10606`. The "o" holds five bars. At the 20 px header height each bar is at least 1 px wide and the bars are separate (contact sheet). In the light variant both colors reach at least 3:1 on `#FFFFFF`.
 - **P1-AC5** Replace `clawdio-icon-full.svg` with any other square SVG and run `npm run tauri build -- --debug`. The new executable shows the new icon. No other source file changed; only the generated files in `src-tauri/icons/` differ (D9; AC-15 icon part). If the Q8 fallback is on, the test replaces `clawdio-icon-simple.svg` too, and P1.10 tells users to replace both files.
 - **P1-AC6** No file references `assets/branding/placeholder/`.
@@ -804,14 +804,14 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P3.5** `scripts/measure-memory.sh` (Linux) and `scripts/measure-memory.ps1` (Windows). Method per D28. Each script runs the app three times per Library mode with `CLAWDIO_MEASURE_MODE`, so every widget is mounted and populated. The value per mode is the median of its three runs (D28). The gate value per OS is the worst mode. Output JSON: per-process values, total per mode, environment.
 - **P3.6** `.github/workflows/measure.yml` (triggers: `workflow_dispatch` and pushes to `measure/**` branches). Build release with `--features fixtures` on ubuntu-22.04 (under `xvfb-run`) and windows-latest. Run the scripts. Build NSIS and `.deb` bundles without fixtures and report their sizes. Upload results as artifacts.
 - **P3.7** `docs/milestone-0.md`: method, environment, numbers per OS, bundle sizes, verdict and notes on scroll behavior.
-- **P3.8** Verdict per R20: under 200 MB passes. 200 to 300 MB continues and the owner is told the number. Over 300 MB on either OS: record the worst value per OS as the new memory target in `docs/milestone-0.md`, tell the owner the number and continue (D49). Package size: under 30 MB passes. Over 30 MB, the owner is told and decides, because R20 calls the targets adjustable. A size result alone does not block P4.
+- **P3.8** Verdict per R20: under 200 MB passes. 200 to 300 MB continues and the owner is told the number. Over 300 MB on an OS: record that OS's worst value as its new memory target in `docs/milestone-0.md`, tell the owner the number and continue (D49). An OS at or under 300 MB keeps the 200 MB target. Package size: under 30 MB passes. Over 30 MB, the owner is told and decides, because R20 calls the targets adjustable. A size result alone does not block P4.
 
 **Acceptance criteria.**
 
 - **P3-AC1** With fixtures, each Library mode scrolls the 50,000 songs. 2,000 thumbnails load. Every widget shows data.
 - **P3-AC2** Idle memory is measured on Windows and Linux by the D28 method, with all six widgets shown, in each Library mode. The worst mode per OS is the gate value. The environment is recorded.
 - **P3-AC3** NSIS installer and `.deb` sizes are recorded against the 30 MB target.
-- **P3-AC4** The verdict is recorded for memory and for package size. Over 300 MB on either OS records the new memory target (D49).
+- **P3-AC4** The verdict is recorded for memory and for package size. An OS over 300 MB gets its measured value as its new memory target. The other OS keeps 200 MB (D49).
 - **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the asset protocol (no broken images).
 
 **Verification.** CI workflow `measure.yml` plus local Linux runs. Manual: scroll each mode, open each widget. The owner gets the numbers in the phase report.
@@ -1373,7 +1373,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - `scripts/frontend-licenses.mjs` reads the license files of production npm dependencies and writes `THIRD_PARTY_LICENSES_WEB.txt`.
   - `scripts/notice.mjs` generates the `NOTICE` component table from the complete inventories: every production Rust crate (`cargo metadata`; version, license, crates.io or repository URL), every production npm package (version, license, repository URL), every library inside the AppImage (`dpkg-query` in the build container; version, license, Ubuntu source package URL) and the copied or bundled assets (Geist OFL, shadcn/ui MIT, Lucide ISC with the Feather MIT notice). Symphonia's entry also names its tagged GitHub release. CI runs the script and fails when the committed `NOTICE` differs.
   - Every package carries these files. The AppImage carries the LGPL texts.
-- **P18.5** Final measurement (D28) with release builds and the generated 50,000-track library on Windows and Linux. Record memory and package sizes. Between 200 and 300 MB: the owner decides whether to adjust the target (R20 says "adjustable"). If P3 raised the target (D49), compare against that value.
+- **P18.5** Final measurement (D28) with release builds and the generated 50,000-track library on Windows and Linux. Record memory and package sizes. Between 200 and 300 MB: the owner decides whether to adjust the target (R20 says "adjustable"). If P3 raised the target for an OS (D49), compare that OS against its raised value.
 - **P18.6** Docs:
   - README: features, install per OS (WebView2 note, AppImage FUSE note), portable mode, keyboard shortcuts, online lookups and the files they write, data locations, build from source, license.
   - Complete `docs/file-formats.md` and `docs/theming-and-brand.md` (every R17 item).
