@@ -99,7 +99,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| P0-AC1 | Pass on Linux. Windows CI pending at push (N7). | `npm run check` (63 tests), `cargo fmt`, `cargo clippy` (also for target `x86_64-pc-windows-msvc`, no link), `cargo test` (3 tests), bindings check. CI run 38160684257: `frontend`, `rust (ubuntu-22.04)` and both `tauri-build` jobs pass. `rust (windows-latest)` failed the bindings check (N7). |
+| P0-AC1 | Pass | Local Linux: `npm run check` (63 tests), `cargo fmt`, `cargo clippy` (also for target `x86_64-pc-windows-msvc`, no link), `cargo test` (3 tests), bindings check. CI run 38160684257 failed `rust (windows-latest)` at the bindings check (N7). After the fix, CI runs 38162065518 (push) and 38162069020 (pull request) on `9111ece` pass all five jobs on ubuntu-22.04 and windows-latest. |
 | P0-AC2 | Pass (Xvfb) | `npm run tauri dev`: one window titled "Clawdio", 1200 x 800, minimum 800 x 560, 960,000 px of `#0B0B0B`. |
 | P0-AC3 | Pass (Xvfb) | With `colors.bg.canvas` set to `#123456`, the window showed `#123456`. `git status` showed no other change. A unit test shows that only the canvas line of the generated CSS changes. |
 | P0-AC4 | Pass | Vitest: without `colors.text.muted`, `npm run tokens` exits 1 with "colors.text.muted is missing". |
@@ -124,7 +124,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - E1: P0-AC8 not verified: no Windows machine in this environment (B5).
 - E2: WebKit Playwright tests run in CI only. This environment has Chromium only.
 - E3: P0-AC2 and P0-AC3 ran on an Xvfb display, not on a desktop session.
-- E4: the Windows part of P0-AC1 runs in CI only.
+- E4: the Windows part of P0-AC1 ran in CI only.
 
 **Blockers:** B6 (section 5.4), closed during the phase.
 

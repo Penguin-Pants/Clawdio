@@ -24,9 +24,9 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 6 | 200 | 38 | 7 | 8 | 42 | 0 |
-| design.md | 76 | 5 | 44 | 11 | 15 | 0 | 1 | 0 |
-| Branding prompt | 39 | 7 | 20 | 4 | 7 | 0 | 1 | 0 |
+| Requirements | 301 | 7 | 199 | 38 | 7 | 8 | 42 | 0 |
+| design.md | 76 | 6 | 44 | 10 | 15 | 0 | 1 | 0 |
+| Branding prompt | 39 | 10 | 18 | 4 | 6 | 0 | 1 | 0 |
 | Asset manifest | 18 | 0 | 11 | 3 | 4 | 0 | 0 | 0 |
 | tokens.json | 20 | 6 | 12 | 2 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
@@ -110,7 +110,7 @@
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Planned |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Planned |
-| R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Planned |
+| R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
 | R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Planned |
@@ -470,7 +470,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-7.4 | No marquees, border beams, animated gradients, confetti, particles or per-track animation | §7 | P17.8 | P17-AC3 | REV, E2E | Planned (D6) |
 | DES-7.5 | CSS transitions over a motion dependency | §7 | P0.7 | P2-AC13 | E2E | Planned (D6) |
 | DES-7.6 | Check Magic UI docs before choosing components | §7 | none | none | REV | Planned (D6) |
-| DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Planned (D6) |
+| DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Done (P0, D6) |
 | DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Planned |
 | DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Planned |
 | DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
@@ -502,9 +502,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-M1 | Use design.md, asset-manifest, tokens.json and the mockup | Mission | P0.6, P1.1, P2.10 | P0-AC3, P1-AC1 | REV | Planned |
 | BRD-M2 | Follow AGENTS.md and the repo structure; read the requirements in full | Mission | P0.1 | P0-AC7 | REV | Resolved (C1) |
 | BRD-1.1 | Inspect README, requirements, AGENTS.md, source, UI, manifests, scripts, icon pipeline, docs, tests | Phase 1.1 | P0.17 | P0-AC7 | REV | Done (P0) |
-| BRD-1.2 | Identify framework, wrapper, OS integration, styling, brand files, old names | Phase 1.2 | P0.4 | P0-AC1 | REV | Planned |
+| BRD-1.2 | Identify framework, wrapper, OS integration, styling, brand files, old names | Phase 1.2 | P0.4 | P0-AC1 | REV | Done (P0) |
 | BRD-1.3 | Map package paths into the repo without duplication | Phase 1.3 | P1.4, P1.6 | P1-AC2, P1-AC6 | REV | Resolved (C5) |
-| BRD-1.4 | Check React and Tailwind compatibility for Magic UI | Phase 1.4 | P0.10 | P0-AC1 | REV | Resolved (C8) |
+| BRD-1.4 | Check React and Tailwind compatibility for Magic UI | Phase 1.4 | P0.10 | P0-AC1 | REV | Done (P0, C8) |
 | BRD-1.5 | Read the current Magic UI docs before using components | Phase 1.5 | P2.16 | P18-AC13 | REV | Planned (D6) |
 | BRD-1.6 | Name risks; choose the smallest safe change set; ask only on destructive, licensing or architecture issues | Phase 1.6 | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-2.1 | Original SVG wordmark: red "Claw", steel "dio", bars in the "o" | Phase 2.1 | P1.1 | P1-AC4 | UT, REV | Planned |
@@ -521,7 +521,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-3.7 | Promo art, invented song data and reference-only menus are not requirements | Phase 3.7 | none | none | REV | Resolved (C9) |
 | BRD-3.8 | No streaming, radio, podcasts, accounts or other new features | Phase 3.8 | P0.1 | P14-AC11 | REV | Non-goal |
 | BRD-3.9 | Keep library parsing, playback, queues, lyrics, metadata, settings and portable offline use working | Phase 3.9 | P0.16 | P0-AC1 | CI | Resolved (C1) |
-| BRD-4.1 | Run format, lint, typecheck, tests and builds | Phase 4.1 | P0.5, P0.16 | P0-AC1 | CI | Planned |
+| BRD-4.1 | Run format, lint, typecheck, tests and builds | Phase 4.1 | P0.5, P0.16 | P0-AC1 | CI | Done (P0) |
 | BRD-4.2 | Verify SVG syntax, exports, icon sizes and app metadata | Phase 4.2 | P1.5, P1.6, P18.1 | P1-AC1, P1-AC2, P18-AC11 | UT, CI | Planned |
 | BRD-4.3 | Check normal and narrow windows, contrast, state and small-icon legibility | Phase 4.3 | P17.4, P1.7 | P17-AC4, P1-AC3 | MAN-L | Planned |
 | BRD-4.4 | Two-pass critical self-review; fix confirmed problems only | Phase 4.4 | P0.1 | P0-AC7 | REV | Done (P0) |
