@@ -1,12 +1,12 @@
 # Clawdio Build Plan
 
-**Version:** 1.3, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
+**Version:** 1.5, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
-- The repository holds documents and brand inputs only. No code, tests or `AGENTS.md` exist yet.
+- The repository holds documents, brand inputs and the owner's `AGENTS.md`. No code or tests exist yet.
 - The plan has 19 phases (P0 to P18). P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - No genuine blocker stops P0. Gates and owner inputs are in section 5.4.
@@ -21,7 +21,7 @@
 2. Before a phase, read the phase, the traceability rows that cite it and the source sections on its Scope line.
 3. Inspect the code and tests that the phase changes.
 4. Implement only the phase tasks. Record other defects and ideas in section 11. Do not implement them.
-5. Run TWO-PASS REVIEW (defined in `AGENTS.md`, task P0.1) on the complete phase diff. Classify each finding as F1 to F4.
+5. Run TWO-PASS REVIEW (defined in `AGENTS.md`) on the complete phase diff. Classify each finding as F1 to F4.
 6. Run the phase verification. Each acceptance criterion must pass or carry a recorded reason. Example: "Windows manual check not run: no Windows machine in this environment."
 7. Update section 2, the phase record (section 2.1) and the Status column of the traceability matrix.
 8. Commit and push only after the validation command set (section 1.2) passes.
@@ -102,7 +102,7 @@ _No entries yet._
 | `docs/design.md` | Visual design, components, interactions, motion, Magic UI use | UI source of truth |
 | `docs/claude-code-implementation-prompt.md` | Brand identity, assets, naming, brand validation | Brand source of truth |
 | `docs/asset-manifest.md`, `theme/tokens.json`, `assets/reference/clawdio-approved-mockup.png` | Inputs the branding prompt names | Same authority as the branding prompt for assets and tokens. The mockup is direction only. |
-| `AGENTS.md` | Repository conventions | Missing. P0.1 creates it (B1). |
+| `AGENTS.md` | Repository conventions, TWO-PASS REVIEW, finding classes | Supplied by the owner (commit `2f147a2`). P0.1 adds the project rules. |
 | `docs/REQUIREMENTS_REVIEW.md` | Review of spec v1.3 | Context only. Version 1.5 of the requirements already applied its section G. Items it names that v1.4 or v1.5 changed (for example `brand/DESIGN.md`) are superseded. |
 
 **Conflict rule.** Functional behavior follows the requirements. UI decisions follow `design.md`. Brand identity follows the branding prompt. Section 5.1 lists every conflict found and its resolution. A conflict that this rule cannot resolve is an owner question (section 5.3) or a blocker (section 5.4).
@@ -128,6 +128,8 @@ Inspection on October 11, 2026, at commit `9c297ca` (branch `main`, merge of pul
 
 **Not present:** source code, package manifests, lockfiles, tests, CI workflows, build scripts, an icon pipeline, `LICENSE`, `NOTICE` and `AGENTS.md`.
 
+**Update (October 11, 2026):** the owner added `AGENTS.md` and `CLAUDE.md` (commit `2f147a2`). The review sections were added to `AGENTS.md` afterwards.
+
 **What this means for the plan**
 
 - **Implemented:** nothing. The branding prompt asks to "preserve" working library, playback and other behavior. With no code, this becomes a rule: each phase keeps the tests of earlier phases green.
@@ -144,16 +146,16 @@ Inspection on October 11, 2026, at commit `9c297ca` (branch `main`, merge of pul
 
 | ID | Sources | Conflict | Resolution |
 |---|---|---|---|
-| C1 | Prompt (mission, Phase 1, Phase 3.9, constraints) vs repository | The prompt assumes an existing player, `AGENTS.md` and tests. None exist. | Build v1 with the brand inputs from P0. P0.1 creates `AGENTS.md`. "Preserve behavior" becomes "keep earlier tests green". |
+| C1 | Prompt (mission, Phase 1, Phase 3.9, constraints) vs repository | The prompt assumes an existing player, `AGENTS.md` and tests. None existed at planning time. | Build v1 with the brand inputs from P0. The owner supplied `AGENTS.md`; P0.1 extends it. "Preserve behavior" becomes "keep earlier tests green". |
 | C2 | design.md §11 vs R12, R26 | §11 forbids playlist editing and Favorites "unless supported by existing requirements". R12 and R26 require them. | Requirements govern features. Both are in scope (P11). |
 | C3 | design.md §6 (Volume: "clearly defined mute and level") vs R6 ("Nothing else") | A mute toggle is a playback function that R6 does not list. | No mute toggle. The volume icon shows the muted glyph at level 0. |
-| C4 | design.md §4 (Geist Sans or Inter) vs R16 (local fonts, the owner may bundle one OFL font) | design.md asks for a named font. R16 allows one bundled OFL font. | Bundle Geist Sans (OFL 1.1) as the one font (D7). System fonts are the fallback. The owner may veto (Q3). |
+| C4 | design.md §4 (Geist Sans or Inter) vs R16 (local fonts, the owner may bundle one OFL font) | design.md asks for a named font. R16 allows one bundled OFL font. | Bundle Geist Sans (OFL 1.1) as the one font (D7). System fonts are the fallback. The owner confirmed this on October 11, 2026 (Q3, closed). |
 | C5 | asset-manifest (PNG 16 to 1024 px and `.ico` in `assets/branding/export/`) vs R31 (the build generates platform icons from `clawdio-icon-full.svg`) | Two homes for the same raster files. | Commit SVG sources and SVG exports only. `tauri icon` writes rasters to `src-tauri/icons/` (D9). No 1024 px PNG, because no package needs it. |
 | C6 | asset-manifest ("About view renamed Clawdio") vs R5 menu (Widgets, Layouts, Settings, Rescan) and design.md §11 | No About view exists. A new menu entry is a new feature. | An About section inside the Settings dialog. No new menu entry (D12). |
 | C7 | asset-manifest (`assets/branding/reference/`) vs R31 and design.md front matter (`assets/reference/`) | Moving the mockup breaks two references. | Keep `assets/reference/`. |
 | C8 | design.md §7 (Blur Fade or Magic Card "may be appropriate") vs R30 `[D]` (only components with a function in R5, R6 or R29; no decorative effects) | Both candidates are decorative. Both need Motion. | No Magic UI components. Motion is not a dependency. CSS transitions only (D6). The owner may name a component (Q4). |
 | C9 | Mockup (sidebar views, no Stop, macOS window buttons, fortress art, invented songs) vs R5, R6, R28, R29, design.md §1, §5, §9, prompt Phase 3.7 | The mockup shows a fixed shell and reference-only content. | Requirements and design.md §5 govern the shell. The mockup gives color, logo direction and the transport look. |
-| C10 | R31 `[D]` (name, window title, bundle identifier and User-Agent from one build config value) vs OS data folders keyed to the identifier | Tauri config cannot derive one field from another. Deriving the identifier from the display name would move user data on a rename. | `productName` in `src-tauri/tauri.conf.json` is the one value for name, window title, User-Agent and About. `identifier` is in the same file and changes only by owner decision (D2, Q2). |
+| C10 | R31 `[D]` (name, window title, bundle identifier and User-Agent from one build config value) vs OS data folders keyed to the identifier | Tauri config cannot derive one field from another. Deriving the identifier from the display name would move user data on a rename. | `productName` in `src-tauri/tauri.conf.json` is the one value for name, window title, User-Agent and About. `identifier` is in the same file and changes only by owner decision. The owner confirmed it on October 11, 2026 (D2, Q2 closed). |
 | C11 | design.md §6 ("Album cards") vs R5 (thumbnail "in Album rows") and R28 (lists, no grid) | R28 has no album grid. | Album rows follow the card guidance: cover, title, artist, quiet hover. |
 | C12 | design.md §4 ("main view title 24 px") vs the docking shell | Widgets have no page title. | Type scale map in section 6.12. |
 | C13 | tokens.json values vs design.md §3 ("ensure contrast", "do not use red alone") | `brand.red` on `bg.canvas` is 3.96:1. `text.primary` on `brand.red` is 4.24:1 and on `state.redHover` 3.67:1. `brand.red` on `state.selected` is 2.77:1. `brand.steel` on `bg.canvas` is 2.22:1. | Color role rules (D10), enforced by a test (P0.15). |
@@ -225,8 +227,8 @@ None of these blocks work. Each has a default.
 | ID | Question | Default | Needed by |
 |---|---|---|---|
 | Q1 | Copyright holder and publisher name. design.md says "Dr. Claw Development". Dr. Claw is a character name owned by a third party (risk K7). | Use the design.md value. | Before P18 release |
-| Q2 | Bundle identifier. Changing it after release moves user settings. | `io.github.penguinpants.clawdio` | Before P4 |
-| Q3 | Bundle Geist Sans, or use system fonts only. | Bundle Geist Sans | Before P0.9 |
+| Q2 | Bundle identifier. Changing it after release moves user settings. | **Answered October 11, 2026:** use `io.github.penguinpants.clawdio` | Closed |
+| Q3 | Bundle Geist Sans, or use system fonts only. | **Answered October 11, 2026:** bundle Geist Sans | Closed |
 | Q4 | Name any Magic UI component that serves R5, R6 or R29. | None | Any time |
 | Q5 | Supply real exports for AC-4: one Apple XML, one MusicBee M3U8, one legacy `.m3u`. | Synthetic fixtures until supplied | P12 sign-off |
 | Q6 | Sign off the wordmark, app icon and monogram. | Assets stand until changed | After P1 |
@@ -237,7 +239,7 @@ None of these blocks work. Each has a default.
 
 | ID | Item | Effect | Resolution path |
 |---|---|---|---|
-| B1 | `AGENTS.md` does not exist. The task and the prompt require it. | None after P0.1. | P0.1 creates it. |
+| B1 | `AGENTS.md` did not exist. The task and the prompt require it. | None. | Closed October 11, 2026: the owner supplied `AGENTS.md`; the review sections were added; P0.1 adds the project rules. |
 | B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the gate. | P3 verdict. Over 300 MB: owner decides between a native UI and less layout freedom. |
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
@@ -600,24 +602,22 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 **Objective.** A buildable, empty Clawdio window on Windows and Linux. Repository rules, quality gates, the token pipeline and the single name value exist.
 
-**Scope.** AGENTS.md gap (B1). R15. R30 (stack, tokens to Tailwind at build time). R31 (theme from tokens, single name value, placeholder icon). Section 6 (stack, license, branding constraint, Strawberry rule). design.md §3 (token source), §4 (font, tabular numerals), §8 (reduced motion base). Prompt Phase 1 (audit), Phase 3.1 (token mapping). tokens.json (all keys).
+**Scope.** AGENTS.md project rules (B1 closed). R15. R30 (stack, tokens to Tailwind at build time). R31 (theme from tokens, single name value, placeholder icon). Section 6 (stack, license, branding constraint, Strawberry rule). design.md §3 (token source), §4 (font, tabular numerals), §8 (reduced motion base). Prompt Phase 1 (audit), Phase 3.1 (token mapping). tokens.json (all keys).
 
 **Depends on.** None.
 
 **Tasks.**
 
 - **P0.0** Environment: install the Linux build packages from section 6.17 (`sudo apt-get install ...`) and the Playwright browsers (`npx playwright install --with-deps chromium webkit`) where the environment allows it. Record in the phase record what could not be installed (section 1.2).
-- **P0.1** Create `AGENTS.md` with these sections. Keep it under 200 lines.
+- **P0.1** Extend the owner's `AGENTS.md` (added at commit `2f147a2`). Keep every owner rule unchanged. The sections "Review (TWO-PASS REVIEW)" and "Finding classification" already exist (added October 11, 2026). Add one section "Project rules" with these items, in lists of at most 5 (Output rule 05), and format the file with `mdformat --number`:
   1. Source precedence (section 3 of this plan).
-  2. Scope rules: implement only the current phase. Section 4 non-goals and section 7 deferred items are out. Do not copy Strawberry code (GPL-3.0). Record other ideas as proposed follow-ups.
+  2. Scope rules: implement only the current phase. Section 4 non-goals and section 7 deferred items are out. Do not copy Strawberry code (GPL-3.0). Record other ideas as F3 proposals.
   3. Architecture rules: D1, D13, D14, D15, D34 and D46 of this plan, in one line each.
   4. Coding standards. Rust: edition 2021, `cargo fmt`, `cargo clippy -D warnings`, `thiserror` errors in the core, no `unwrap` or `expect` on user data outside tests. TypeScript: `strict`, ESLint, Prettier, no `any` in IPC code. Every shadcn/ui component added to the repo follows the P0.10 focus rule.
   5. Test rules: every phase adds tests for its acceptance criteria. Tests use generated fixtures in temp folders. Tests never touch a real music folder.
   6. Validation command set (section 1.2 of this plan).
-  7. **TWO-PASS REVIEW.** Pass 1: list every risk in the phase diff (correctness, scope, security, accessibility, performance, docs). Pass 2: test each item against the code, the tests and the source documents. Drop items that do not hold. Fix confirmed items or classify them.
-  8. **Finding classification.** F1 Blocking: breaks an acceptance criterion, a test, a security rule or a source requirement. Fix before commit. F2 In scope: a defect in code this phase changed. Fix in this phase. F3 Out of scope: a defect or idea outside this phase. Record it in section 11 of the build plan. Do not implement it. F4 Rejected: the finding does not hold. Record one line with the reason.
-  9. Workflow: one phase at a time. Commit messages start with the phase ID (for example `P5: add incremental scan`). Push only after the validation command set passes. Update the build plan status, the phase record and the traceability status in the same push.
-  10. Platform reporting: name every check that could not run in the current environment. Never claim a check that did not run.
+  7. Workflow: one phase at a time. Commit messages start with the phase ID (for example `P5: add incremental scan`). Push only after the validation command set passes. Update the build plan status, the phase record and the traceability status in the same push.
+  8. Platform reporting: name every check that could not run in the current environment. Never claim a check that did not run.
 - **P0.2** Add `LICENSE` (MIT, holder from Q1, default "Dr. Claw Development" as in design.md). Add `NOTICE` with a header and an empty component table: component, version, license, source location.
 - **P0.3** Scaffold the frontend: `package.json` (name `clawdio`, private), `index.html` (empty `<title>`), `vite.config.ts`, `tsconfig.json` (`strict: true`), `src/main.tsx`, `src/App.tsx` (renders an empty `main` element). Use the versions in section 6.2.
 - **P0.4** Scaffold Rust: root `Cargo.toml` workspace with members `crates/clawdio-core` and `src-tauri`. `crates/clawdio-core/src/lib.rs` with one test. `src-tauri` from the Tauri v2 template, adapted:
@@ -651,7 +651,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P0-AC4** Delete `colors.text.muted` from a copy of the token file and run `npm run tokens` on it. The command fails and names `colors.text.muted`.
 - **P0-AC5** The contrast test passes for every role pair in section 6.12.
 - **P0-AC6** `npm run check:sources` passes. Adding `#fff` to a file in `src/` makes it fail. Adding the product name to a file in `crates/` makes it fail.
-- **P0-AC7** `AGENTS.md` exists with the ten sections of P0.1. `LICENSE` is MIT. `NOTICE` lists Geist.
+- **P0-AC7** `AGENTS.md` keeps every owner rule, holds the Review and Finding classification sections and the eight project rules of P0.1, and passes `mdformat --number --check`. `LICENSE` is MIT. `NOTICE` lists Geist.
 - **P0-AC8** In a Windows release build, F5, Ctrl+R, Ctrl+P and Ctrl+Shift+I do nothing.
 - **P0-AC9** The capability file grants only `core:default`. The CSP string matches section 6.13. A release build logs no CSP violation in the WebView console.
 
@@ -1596,6 +1596,8 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed. Closed Q2 and Q3 removed from the open items in the traceability matrix. C4 and C10 now record the Q2 and Q3 answers. AGT-1 and AGT-2 stay Planned until P0-AC7 passes.
+- **1.4 (October 11, 2026):** owner answered Q2 (keep the identifier in D2) and Q3 (bundle Geist Sans as in D7). Both questions are closed.
 - **1.3 (October 11, 2026):** automated review round Z applied (section 12.1). Added P13-AC6 and tightened P3, P5, P6, P9, P11, P13, P14 and P16.
 - **1.2 (October 11, 2026):** automated review rounds X and Y applied (section 12.1). Revised D32, D42 and K14. Added P9-AC11, P14-AC15 and P16-AC9 and tightened P3, P5, P10, P14, P16 and P18 criteria.
 - **1.1 (October 11, 2026):** two-pass review applied (section 12). Added C17, C18, D44 to D48, Q7, Q8, K19, K20, tasks P0.0, P4.11, P4.12 and new criteria in P2, P5, P6, P7, P9, P11, P14 and P16. Revised D10, D17, D19, D20 and D32.

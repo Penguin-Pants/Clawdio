@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.3, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.3. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.5, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.5. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -28,7 +28,7 @@
 | Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
 | Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
 | tokens.json | 20 | 16 | 4 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 2 | 0 | 0 | 2 | 0 | 0 | 0 |
+| AGENTS.md | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
 
@@ -598,8 +598,8 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| AGT-1 | Repository instructions for standards, architecture, workflow and conventions. The file does not exist. | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Resolved (B1) |
-| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification | Task brief | P0.1 | P0-AC7 | REV | Resolved (B1) |
+| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Planned |
+| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Planned |
 
 ---
 
@@ -618,7 +618,7 @@ These tasks have no single source requirement. They exist so that other rows can
 
 ## 8. Open items that need outside input
 
-These are not gaps in the plan. Each has a task, a criterion and a path to closure.
+These are not gaps in the plan. Each has a task, a criterion and a path to closure. Closed questions leave this table. Their answers stay in section 5.3 of the plan.
 
 | Item | Rows | What is needed | Owner of the next step |
 |---|---|---|---|
@@ -626,8 +626,6 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
 | B4, Q5 Real exports | R14-12, AC-4, VER-2 | One Apple XML, one MusicBee M3U8, one legacy `.m3u` | Owner supplies files |
 | Q1 Publisher name | DES-2.1 | Confirm "Dr. Claw Development" or give another holder | Owner, before P18 |
-| Q2 Identifier | R31-4 | Confirm `io.github.penguinpants.clawdio` | Owner, before P4 |
-| Q3 Font | R16-2, DES-4.1 | Confirm bundled Geist Sans | Owner, before P0.9 |
 | Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets | Owner, after P1 |
 | Q7 Set cover overwrite | R8-9 | Confirm "ask, then replace" (C17) | Owner, before P10 |
 | Q8 Small icon layers | DES-2.4, AST-2, AST-13 | Allow the 16 and 24 px layers from the simple icon if the full icon fails | Owner, after P1 |
