@@ -278,7 +278,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - **Status:** Done with exceptions.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `1990a37`. Messages start with `P3:`.
-- **Packages:** `@tanstack/react-virtual` 3.14.15, `unicode-normalization` 0.1.25, `thiserror` 2.0.21, `image` 0.25.10 (`jpeg`, only with `fixtures`), Tauri feature `protocol-asset`.
+- **Packages:** `@tanstack/react-virtual` 3.14.15, `unicode-normalization` 0.1.25, `thiserror` 2.0.21, `image` 0.25.10 (`jpeg`, only with `fixtures`). The Tauri feature `protocol-asset` was added and then removed with the `thumb://` scheme (D41, 1.11).
 
 | Criterion | Result | Evidence |
 |---|---|---|
@@ -557,7 +557,7 @@ Versions were checked against crates.io, npm and project sources on October 11, 
 
 | Area | Package | Version | Notes |
 |---|---|---|---|
-| App shell | `tauri` / `tauri-build` | 2.12.3 / 2.7.2 | `protocol-asset` feature for thumbnails |
+| App shell | `tauri` / `tauri-build` | 2.12.3 / 2.7.2 | No extra features; thumbnails use the `thumb://` scheme (D41). Feature `test` in dev-dependencies only |
 | CLI and JS API | `@tauri-apps/cli` / `@tauri-apps/api` | 2.12.2 / 2.12.3 | `mockIPC`, `mockConvertFileSrc` for tests |
 | Plugins | `tauri-plugin-single-instance`, `-log`, `-dialog`, `-opener` | 2.5.3, 2.10.1, 2.8.2, 2.7.1 | Dialog and opener used from Rust only |
 | Audio | `rodio` | 0.22.2 | `Player`, `DeviceSinkBuilder` with error callback (D3) |
