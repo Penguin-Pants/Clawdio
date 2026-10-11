@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.6, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
+**Version:** 1.7, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -227,7 +227,7 @@ None of these blocks work. Each has a default.
 
 | ID | Question | Default | Needed by |
 |---|---|---|---|
-| Q1 | Copyright holder and publisher name. design.md says "Dr. Claw Development". Dr. Claw is a character name owned by a third party (risk K7). | Use the design.md value. | Before P18 release |
+| Q1 | Copyright holder and publisher name. design.md says "Dr. Claw Development". Dr. Claw is a character name owned by a third party (risk K7). | **Answered October 11, 2026:** keep "Dr. Claw Development". The owner accepts risk K7. | Closed |
 | Q2 | Bundle identifier. Changing it after release moves user settings. | **Answered October 11, 2026:** use `io.github.penguinpants.clawdio` | Closed |
 | Q3 | Bundle Geist Sans, or use system fonts only. | **Answered October 11, 2026:** bundle Geist Sans | Closed |
 | Q4 | Name any Magic UI component that serves R5, R6 or R29. | None | Any time |
@@ -382,7 +382,7 @@ tests/e2e/
 - `widgets/`: one folder per widget (`library`, `transport`, `now-playing`, `playlists`, `queue`, `lyrics`).
 - `dialogs/`: Settings, online notice, new playlist, delete playlist, import report, metadata preview, Set cover confirm.
 - `store/`: `player.ts`, `library.ts`, `ui.ts` (Zustand).
-- `lib/ipc/`: `commands.ts` (typed `invoke` wrappers), `events.ts` (typed `listen`), `bindings/` (generated), `mock.ts` (test mode).
+- `lib/ipc/`: `commands.ts` (typed `invoke` wrappers), `events.ts` (typed `listen`), `bindings/` (generated).
 - `components/ui/`: shadcn/ui components, added only when a phase uses them.
 
 ### 6.7 IPC contract
@@ -619,7 +619,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   6. Validation command set (section 1.2 of this plan).
   7. Workflow: one phase at a time. Commit messages start with the phase ID (for example `P5: add incremental scan`). Push only after the validation command set passes. Update the build plan status, the phase record and the traceability status in the same push.
   8. Platform reporting: name every check that could not run in the current environment. Never claim a check that did not run.
-- **P0.2** Add `LICENSE` (MIT, holder from Q1, default "Dr. Claw Development" as in design.md). Add `NOTICE` with a header and an empty component table: component, version, license, source location.
+- **P0.2** Add `LICENSE` (MIT, holder "Dr. Claw Development", Q1). Add `NOTICE` with a header and an empty component table: component, version, license, source location.
 - **P0.3** Scaffold the frontend: `package.json` (name `clawdio`, private), `index.html` (empty `<title>`), `vite.config.ts`, `tsconfig.json` (`strict: true`), `src/main.tsx`, `src/App.tsx` (renders an empty `main` element). Use the versions in section 6.2.
 - **P0.4** Scaffold Rust: root `Cargo.toml` workspace with members `crates/clawdio-core` and `src-tauri`. `crates/clawdio-core/src/lib.rs` with one test. `src-tauri` from the Tauri v2 template, adapted:
   - `tauri.conf.json`: `productName` "Clawdio", `identifier` from D2, `version` "0.1.0", `app.windows` empty.
@@ -746,7 +746,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P2.12** Global keys in `src/lib/keyboard.ts`: Reset layout (Ctrl+Shift+L, D17). F6 and Shift+F6 move focus to the next or previous visible widget in reading order (top to bottom, then left to right). A widget in a hidden tab is skipped.
 - **P2.13** `src/components/icons.tsx` (R31): semantic icon names map to Lucide components. A file `assets/branding/ui-icons/<name>.svg`, when present at build time, replaces the icon of that name. It renders through a CSS mask in `currentColor`. Under `forced-colors: active`, mask icons and the art placeholder set `forced-color-adjust: none` and paint in `CanvasText`. Add `assets/branding/ui-icons/README.md` that explains this.
 - **P2.14** shadcn components added in this phase: `dropdown-menu`, `toggle-group`, `select`, `input`, `tooltip`, `dialog`. Apply the P0.10 focus rule to each. Set menu and dialog open and close animation durations to `--clawdio-motion-panel`.
-- **P2.15** Test infrastructure: `playwright.config.ts` with Chromium and WebKit projects. `src/lib/ipc/mock.ts` installs `mockIPC` and `mockConvertFileSrc` when `VITE_MOCK_IPC=1`. `npm run test:e2e` builds with mock IPC, serves the build with `vite preview` and sends the section 6.13 CSP as a response header. Tests fail on any `securitypolicyviolation` event. Update `ci.yml`: the `frontend` job installs the browsers and runs `npm run test:e2e`.
+- **P2.15** Test infrastructure: `playwright.config.ts` with Chromium and WebKit projects. All mock code and mock data stay in `tests/e2e/` (`AGENTS.md` Edits rule 9). `tests/e2e/install-mocks.ts` installs `mockIPC` and `mockConvertFileSrc` with data from `tests/e2e/data/`. `tests/e2e/entry.ts` imports `./install-mocks` first, then `src/main.tsx`. `vite.e2e.config.ts` extends `vite.config.ts`, and its `transformIndexHtml` hook points the page script at `tests/e2e/entry.ts`. `tsconfig.json` includes `tests/e2e/` and `vite.e2e.config.ts`, so `npm run typecheck` and ESLint cover the mocks. Add one rule to `scripts/check-sources.mjs`: it fails when a file under `src/` imports `@tauri-apps/api/mocks`. `npm run test:e2e` builds with `vite.e2e.config.ts`, serves the build with `vite preview` and sends the section 6.13 CSP as a response header. Tests fail on any `securitypolicyviolation` event. Update `ci.yml`: the `frontend` job installs the browsers and runs `npm run test:e2e`.
 - **P2.16** `docs/theming-and-brand.md`: dock chrome token table (widget headers, splitters, drop zones) and "Copied Magic UI components: none" (R17, R30, D6).
 
 **Acceptance criteria.**
@@ -769,8 +769,9 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P2-AC16** With forced colors emulated (Playwright `forcedColors: 'active'`, Chromium), focus rings, mask icons and the art placeholder stay visible.
 - **P2-AC17** Splitters show a resize cursor on hover and a 2 px line while dragging. Drop zones show the overlay. Only the active target has the red border.
 - **P2-AC18** No `securitypolicyviolation` event fires during the e2e run.
+- **P2-AC19** No file under `src/` holds mock code or mock data: `npm run check:sources` fails when a file under `src/` imports `@tauri-apps/api/mocks`, and `npm run test:e2e` runs with the mocks from `tests/e2e/`.
 
-**Verification.** Vitest: registry, layouts, store, icon override. Playwright (both engines): P2-AC1 to P2-AC10 and P2-AC12 to P2-AC18 (P2-AC16 in Chromium only). Manual Linux: drag and drop feel, P2-AC6 at the real minimum window.
+**Verification.** Vitest: registry, layouts, store, icon override. Playwright (both engines): P2-AC1 to P2-AC10 and P2-AC12 to P2-AC18 (P2-AC16 in Chromium only). `npm run check:sources` with a test import of `@tauri-apps/api/mocks` under `src/`, then `npm run test:e2e`: P2-AC19. Manual Linux: drag and drop feel, P2-AC6 at the real minimum window.
 
 **Phase checkpoint.** Screenshots of the default arrangement and of a tabbed group at 1200 x 800 and 800 x 560 attached to the phase record.
 
@@ -1412,7 +1413,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K4 | WebView2 accelerator keys need COM interop | Ctrl+F or F5 reach the browser | D37 module with a manual check | P0 |
 | K5 | Dockview splitters have no keyboard support; a focused tab closes on Delete | Keyboard users cannot resize; Library could close | Menu path covers R29; Library tab guard (P2.3); keyboard moves deferred by the source | P2 |
 | K6 | Apple XML format is not documented by Apple | Import mismatches | Fixtures from public samples; owner exports (Q5) | P12 |
-| K7 | "Dr. Claw Development" names a third-party character. A villain-cat brand can look derivative. | Trademark or takedown risk | Original vector shapes only (P1-AC7); owner confirms the publisher name (Q1) | P1, P18 |
+| K7 | "Dr. Claw Development" names a third-party character. A villain-cat brand can look derivative. | Trademark or takedown risk | Original vector shapes only (P1-AC7); owner kept the publisher name and accepted the risk on October 11, 2026 (Q1) | P1, P18 |
 | K8 | Brand palette contrast (C13) | Unreadable text | D10 rules and the contrast test | P0, P17 |
 | K9 | Asset protocol globs skip dot folders on Linux | Thumbnails fail to load | D41; P3-AC5 | P3 |
 | K10 | MusicBrainz blocks clients that exceed 1 request per second | Lookups fail | Shared limiter; stop on 503 | P14 |
@@ -1466,7 +1467,6 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
-| F-05 | Move the e2e IPC mock out of `src/`: an e2e entry file under `tests/e2e/` installs `mockIPC` with its data, then loads `src/main.tsx`. Drop `src/lib/ipc/mock.ts` and `VITE_MOCK_IPC` from P2.15. | `AGENTS.md` Edits rule 9 ("Mock data only in tests"). P2.15 puts test-only mock code in the app source tree. | Owner review of D35 (C19) |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
@@ -1598,6 +1598,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.7 (October 11, 2026):** owner approved F-05: P2.15 keeps all e2e mock code and data in `tests/e2e/`, and P2-AC19 checks it. Owner answered Q1: keep "Dr. Claw Development" and accept K7.
 - **1.6 (October 11, 2026):** owner kept D35. Added C19 (the `fixtures` feature is an approved exception to `AGENTS.md` Edits rule 9, "Mock data only in tests"). P0.1 test rules name the exception. Traceability row AGT-3 added. Follow-up F-05 proposed.
 - **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed. Closed Q2 and Q3 removed from the open items in the traceability matrix. C4 and C10 now record the Q2 and Q3 answers. AGT-1 and AGT-2 stay Planned until P0-AC7 passes.
 - **1.4 (October 11, 2026):** owner answered Q2 (keep the identifier in D2) and Q3 (bundle Geist Sans as in D7). Both questions are closed.
