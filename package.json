@@ -13,6 +13,7 @@
     "build": "vite build",
     "tokens": "node scripts/build-tokens.mjs",
     "icons": "node scripts/icons.mjs",
+    "contact-sheet": "bash scripts/contact-sheet.sh",
     "lint": "eslint . && prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

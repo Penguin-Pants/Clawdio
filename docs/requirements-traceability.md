@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.9, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.9. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.10, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.10. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 

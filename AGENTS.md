@@ -107,7 +107,7 @@ Clawdio rules. They add to the Agent Rules. The plan is `docs/build-plan.md`.
 
 - D14: the library index lives in Rust memory. SQLite is a rebuildable cache. The UI fetches rows for the visible window only.
 - D15: `ts-rs` writes the IPC types to `src/lib/ipc/bindings/` during `cargo test`. Commit them.
-- D34: no hex color literal in `src/` (except the generated token file). No product name literal in `src/`, `crates/` or `src-tauri/src/`.
+- D34: no hex color literal and no Tailwind default palette color in `src/` (except the generated token file). No product name literal in `src/`, `crates/` or `src-tauri/src/`.
 
 #### Coding standards
 

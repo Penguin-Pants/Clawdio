@@ -8,6 +8,8 @@
 
 /* shadcn/ui semantic variables, mapped to token variables (build plan section 6.12, D10). */
 :root {
+  /* Native scrollbars and form controls follow the dark-only theme (F-08). */
+  color-scheme: dark;
   --background: var(--color-bg-canvas);
   --foreground: var(--color-text-primary);
   --card: var(--color-bg-surface);

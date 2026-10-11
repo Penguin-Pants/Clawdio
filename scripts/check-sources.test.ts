@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkSources, checkText, readProductName } from "./check-sources.mjs";
+import { checkSources, checkText, readPaletteNames, readProductName } from "./check-sources.mjs";
 import { REPO_ROOT, runScript, tempDir, writeFile } from "./test-helpers";
 
 const productName = readProductName(REPO_ROOT);
@@ -58,6 +58,44 @@ describe("check-sources", () => {
     const hits = (text: string) => checkText("src/a.ts", text, { productName }).length;
     expect(hits("#abc #abcd #aabbcc #aabbccdd")).toBe(4);
     expect(hits("#abcde #abcdefabc #defaultValue")).toBe(0);
+  });
+
+  it("reads the palette color names from the installed Tailwind theme", () => {
+    const names = readPaletteNames();
+    expect(names).toEqual(expect.arrayContaining(["black", "white", "red", "zinc", "neutral"]));
+    expect(names).not.toContain("bg");
+  });
+
+  it("fails when a file in src/ uses a Tailwind palette color class (F-07)", () => {
+    const text = 'const c = "bg-red-500 hover:text-white bg-black/50 ring-offset-zinc-900";';
+    expect(checkText("src/a.tsx", text, { productName }).map((v) => [v.rule, v.text])).toEqual([
+      ["palette-color", "bg-red-500"],
+      ["palette-color", "text-white"],
+      ["palette-color", "bg-black/50"],
+      ["palette-color", "ring-offset-zinc-900"],
+    ]);
+  });
+
+  it("fails when CSS in src/ applies a palette class or reads a palette variable (F-07)", () => {
+    const css = "a { @apply text-zinc-400; color: var(--color-red-500); }";
+    expect(checkText("src/a.css", css, { productName }).map((v) => v.text)).toEqual([
+      "text-zinc-400",
+      "--color-red-500",
+    ]);
+  });
+
+  it("allows token, semantic and keyword color classes", () => {
+    const text =
+      'const c = "bg-bg-canvas text-text-muted bg-state-red-active border-border ring-ring bg-primary " +\n' +
+      '  "text-foreground border-transparent fill-current bg-destructive/10 text-primary-foreground";';
+    expect(checkText("src/a.tsx", text, { productName })).toEqual([]);
+  });
+
+  it("checks palette colors only under src/ and names the rule in the message", () => {
+    expect(checkText("crates/core/src/a.rs", '// "bg-red-500"', { productName })).toEqual([]);
+    const run = runScript("check-sources.mjs", ["--root", fixtureRoot({ "src/x.tsx": 'const c = "text-white";\n' })]);
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("src/x.tsx:1: palette color text-white");
   });
 
   it("fails with a message when tauri.conf.json has no productName", () => {

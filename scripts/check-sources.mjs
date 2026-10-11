@@ -1,8 +1,10 @@
-// Source guards (D34, P0.14).
+// Source guards (D34, P0.14, F-07).
 // - No hex color literal under src/, except the generated token file.
+// - No Tailwind default palette color (class or CSS variable) under src/.
 // - No product name (same letter case) under src/, crates/ or src-tauri/src/.
 // Usage: node scripts/check-sources.mjs [--root <dir>]
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,10 +15,61 @@ const HEX_ROOTS = ["src"];
 const NAME_ROOTS = ["src", "crates", "src-tauri/src"];
 // 3, 4, 6 or 8 hex digits after "#", not part of a longer word or an HTML entity ("&#123;").
 const HEX_COLOR = /(?<![\w&])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi;
+// Tailwind utilities that take a color.
+const COLOR_UTILITIES = [
+  "bg",
+  "text",
+  "border(?:-[xytrblse])?",
+  "outline",
+  "ring",
+  "ring-offset",
+  "inset-ring",
+  "shadow",
+  "inset-shadow",
+  "drop-shadow",
+  "text-shadow",
+  "fill",
+  "stroke",
+  "from",
+  "via",
+  "to",
+  "accent",
+  "caret",
+  "decoration",
+  "divide",
+  "placeholder",
+].join("|");
 
 /**
- * @typedef {{ file: string, line: number, rule: "hex-color" | "product-name", text: string }} Violation
+ * @typedef {{ file: string, line: number, rule: "hex-color" | "palette-color" | "product-name", text: string }} Violation
  */
+
+/**
+ * Color names of Tailwind's default palette, read from the installed `tailwindcss/theme.css`,
+ * so a Tailwind update that adds colors needs no change here.
+ * @returns {string[]}
+ */
+export function readPaletteNames() {
+  const theme = readFileSync(createRequire(import.meta.url).resolve("tailwindcss/theme.css"), "utf8");
+  return [...new Set([...theme.matchAll(/--color-([a-z]+)(?:-\d+)?\s*:/g)].map((match) => match[1]))].sort();
+}
+
+/**
+ * Matches a palette color class (`bg-red-500`, `hover:text-white`, `bg-black/50`) or a palette
+ * CSS variable (`--color-red-500`). Token classes such as `bg-state-red-active` do not match.
+ * @param {string[]} names
+ * @returns {RegExp}
+ */
+export function palettePattern(names) {
+  const colors = names.join("|");
+  return new RegExp(
+    `(?<![\\w-])(?:(?:${COLOR_UTILITIES})-(?:${colors})(?:-\\d{2,3})?(?:/[\\w.%]+)?|--color-(?:${colors})(?:-\\d{2,3})?)(?![\\w-])`,
+    "g",
+  );
+}
+
+/** @type {RegExp | undefined} */
+let defaultPalette;
 
 /**
  * Files with a scanned extension below `dir`, as paths relative to `root` with "/".
@@ -58,10 +111,11 @@ export function readProductName(root) {
  * Violations in one file's text.
  * @param {string} file relative path with "/"
  * @param {string} text
- * @param {{ productName: string }} options
+ * @param {{ productName: string, palette?: RegExp }} options
  * @returns {Violation[]}
  */
-export function checkText(file, text, { productName }) {
+export function checkText(file, text, { productName, palette }) {
+  const paletteColor = palette ?? (defaultPalette ??= palettePattern(readPaletteNames()));
   const checkHex = HEX_ROOTS.some((dir) => file.startsWith(`${dir}/`)) && !HEX_EXEMPT.has(file);
   const checkName = NAME_ROOTS.some((dir) => file.startsWith(`${dir}/`));
   /** @type {Violation[]} */
@@ -71,6 +125,9 @@ export function checkText(file, text, { productName }) {
     if (checkHex) {
       for (const match of content.matchAll(HEX_COLOR)) {
         violations.push({ file, line, rule: "hex-color", text: match[0] });
+      }
+      for (const match of content.matchAll(paletteColor)) {
+        violations.push({ file, line, rule: "palette-color", text: match[0] });
       }
     }
     if (checkName && content.includes(productName)) {
@@ -92,10 +149,12 @@ export function checkSources(root) {
 
 /** @param {Violation} violation */
 export function formatViolation({ file, line, rule, text }) {
-  const reason =
-    rule === "hex-color"
-      ? `hex color ${text}: use a token variable (theme/tokens.json)`
-      : `product name "${text}": read it from the build config (tauri.conf.json productName)`;
+  const reasons = {
+    "hex-color": `hex color ${text}: use a token variable (theme/tokens.json)`,
+    "palette-color": `palette color ${text}: use a token or semantic color class (theme/tokens.json)`,
+    "product-name": `product name "${text}": read it from the build config (tauri.conf.json productName)`,
+  };
+  const reason = reasons[rule];
   return `${file}:${line}: ${reason}`;
 }
 
