@@ -1596,7 +1596,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
-- **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed.
+- **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed. Closed Q2 and Q3 removed from the open items in the traceability matrix.
 - **1.4 (October 11, 2026):** owner answered Q2 (keep the identifier in D2) and Q3 (bundle Geist Sans as in D7). Both questions are closed.
 - **1.3 (October 11, 2026):** automated review round Z applied (section 12.1). Added P13-AC6 and tightened P3, P5, P6, P9, P11, P13, P14 and P16.
 - **1.2 (October 11, 2026):** automated review rounds X and Y applied (section 12.1). Revised D32, D42 and K14. Added P9-AC11, P14-AC15 and P16-AC9 and tightened P3, P5, P10, P14, P16 and P18 criteria.
