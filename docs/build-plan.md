@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.5, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
+**Version:** 1.6, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -164,6 +164,7 @@ Inspection on October 11, 2026, at commit `9c297ca` (branch `main`, merge of pul
 | C16 | design.md §6 ("Album cards: unobtrusive hover"), §8 (no animation on repeated list rows) | Hover feedback on 50,000 rows. | Rows change background color with no transition. Transitions are for buttons, menus and dialogs only. |
 | C17 | R8 ("It never overwrites existing art") vs R8 "Set cover" ("The app saves it as `cover.jpg`") | "Set cover" on an album that already has `cover.jpg` must either overwrite or fail. | Ask, then replace atomically (D19). R8's rule applies to the automatic fetch. Owner confirms (Q7). |
 | C18 | Section 5 (a cover file that fails to decode is ignored and "the online lookup still applies") vs R8 (never overwrite; no automatic retry) | When the broken file is `cover.jpg`, a fetched image cannot be saved, so every startup would look the album up again. | A broken `cover.jpg` and a corrupt `sidecar.json` make the album a non-candidate. Each is logged (D44). A broken file with another cover name does not block the lookup. |
+| C19 | `AGENTS.md` Edits rule 9 ("Mock data only in tests") vs R20 (Milestone 0 before feature work, every widget populated with test data) | At P3 the app cannot read music yet, so the spike must generate its data inside the app build. Playwright mocks run only the UI in a browser and cannot measure memory across all app processes. | Keep D35: the `fixtures` Cargo feature in `src-tauri` is an approved exception to Edits rule 9. It is off by default and never goes into a release bundle (P3.6 builds the bundles without it). P0.1 names the exception in the project rules. P6.7 deletes it (P6-AC8). The owner confirmed this on October 11, 2026. |
 
 ### 5.2 Plan decisions
 
@@ -205,7 +206,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D32 | A decode error is any of: (a) a failure to open or probe a file; (b) an error that the engine's own Symphonia source reports while decoding: an I/O error other than end of stream, or more than 3 packet decode errors in a row (a single bad packet is skipped and logged); (c) an end of stream more than 2 s before a duration that the container states (WAV header, Ogg granule position, MP3 Xing, VBRI or LAME header). An estimated duration never triggers rule (c). The engine decodes with this source instead of `rodio::Decoder`, because `rodio::Decoder` hides errors and Symphonia reports a cut-off file as a normal end of stream. | R6 decode rule. Codex review finding X4. |
 | D33 | Window minimum 800 x 560, default 1200 x 800. Widget minimums (width x height): Library 320 x 240, Transport controls 320 x 88, Now playing 240 x 88, Playlists 200 x 160, Play queue 200 x 160, Lyrics 200 x 160. P3 may tune them and records the change. | Section 5 (window smaller than layout). |
 | D34 | Source guards: no hex color literals in `src/` (except the generated token file). No product name literal in `src/`, `crates/` or `src-tauri/src/`. SVG rules in P1.5. | design.md §10, section 6 branding constraint, AC-15. |
-| D35 | Milestone 0 test data uses a `fixtures` Cargo feature. P6 deletes it. | Spike data without dead code later. |
+| D35 | Milestone 0 test data uses a `fixtures` Cargo feature. P6 deletes it. The owner confirmed this on October 11, 2026 (C19). | Spike data without dead code later. |
 | D36 | Test audio: tiny seed files made with ffmpeg and committed (under 100 KB). Test trees and the 50,000-track library are generated at test time. | No copyrighted audio. No large files in git. |
 | D37 | Windows release builds turn off WebView2 browser accelerator keys (find, reload, print, DevTools) through `ICoreWebView2Settings3`. Tauri 2.12 has no option for it. | Ctrl+F belongs to R25. F5 must not reload the app. |
 | D38 | The portable build relies on Tauri's built-in "WebView2 Runtime not found" dialog (Tauri 2.6 and later), which links to the Microsoft download page. `main` exits with code 1 on `WebviewRuntimeNotInstalled` and does not panic. | R22. No extra code. |
@@ -614,7 +615,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   2. Scope rules: implement only the current phase. Section 4 non-goals and section 7 deferred items are out. Do not copy Strawberry code (GPL-3.0). Record other ideas as F3 proposals.
   3. Architecture rules: D1, D13, D14, D15, D34 and D46 of this plan, in one line each.
   4. Coding standards. Rust: edition 2021, `cargo fmt`, `cargo clippy -D warnings`, `thiserror` errors in the core, no `unwrap` or `expect` on user data outside tests. TypeScript: `strict`, ESLint, Prettier, no `any` in IPC code. Every shadcn/ui component added to the repo follows the P0.10 focus rule.
-  5. Test rules: every phase adds tests for its acceptance criteria. Tests use generated fixtures in temp folders. Tests never touch a real music folder.
+  5. Test rules: every phase adds tests for its acceptance criteria. Tests use generated fixtures in temp folders. Tests never touch a real music folder. Approved exception to Edits rule 9 (C19): the `fixtures` Cargo feature (D35) holds generated data in `src-tauri` from P3 until P6.7 deletes it.
   6. Validation command set (section 1.2 of this plan).
   7. Workflow: one phase at a time. Commit messages start with the phase ID (for example `P5: add incremental scan`). Push only after the validation command set passes. Update the build plan status, the phase record and the traceability status in the same push.
   8. Platform reporting: name every check that could not run in the current environment. Never claim a check that did not run.
@@ -1465,6 +1466,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
+| F-05 | Move the e2e IPC mock out of `src/`: an e2e entry file under `tests/e2e/` installs `mockIPC` with its data, then loads `src/main.tsx`. Drop `src/lib/ipc/mock.ts` and `VITE_MOCK_IPC` from P2.15. | `AGENTS.md` Edits rule 9 ("Mock data only in tests"). P2.15 puts test-only mock code in the app source tree. | Owner review of D35 (C19) |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
@@ -1596,6 +1598,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.6 (October 11, 2026):** owner kept D35. Added C19 (the `fixtures` feature is an approved exception to `AGENTS.md` Edits rule 9, "Mock data only in tests"). P0.1 test rules name the exception. Traceability row AGT-3 added. Follow-up F-05 proposed.
 - **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed. Closed Q2 and Q3 removed from the open items in the traceability matrix. C4 and C10 now record the Q2 and Q3 answers. AGT-1 and AGT-2 stay Planned until P0-AC7 passes.
 - **1.4 (October 11, 2026):** owner answered Q2 (keep the identifier in D2) and Q3 (bundle Geist Sans as in D7). Both questions are closed.
 - **1.3 (October 11, 2026):** automated review round Z applied (section 12.1). Added P13-AC6 and tightened P3, P5, P6, P9, P11, P13, P14 and P16.
