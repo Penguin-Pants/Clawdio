@@ -17,6 +17,15 @@ The script stops with an error that names the key path when a key is missing or 
 
 Unknown keys cause a warning and are ignored.
 
+## Source guards
+
+`npm run check:sources` (part of `npm run check`) fails when a file under `src/` holds a color that does not come from the tokens:
+
+- A hex color literal, such as `#fff`. The generated token file is the only exception.
+- A Tailwind default palette color: a class such as `bg-red-500`, `text-white` or `bg-black/50`, or a variable such as `--color-red-500`. The palette names come from the installed Tailwind theme.
+
+Use token classes (`bg-bg-surface`, `text-text-muted`) or the shadcn/ui semantic classes (`bg-primary`, `text-foreground`). The same command fails on the product name in source code (plan decision D34).
+
 ## Token map
 
 | Token | CSS variable | UI roles |
@@ -94,6 +103,7 @@ The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D1
 ## Focus, motion and high contrast
 
 - Focus: every interactive element shows a 2 px `brand.red` ring with a 2 px offset (`:focus-visible`).
+- Color scheme: `:root` sets `color-scheme: dark`, so native scrollbars and form controls are dark.
 - Motion: hover and focus transitions use `motion.fast`. Menus and dialogs use `motion.panel`.
 - Reduced motion: see `motion.reduced` above.
 - Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`.
@@ -133,4 +143,4 @@ These files hold the brand (requirements R17, R31). A brand change replaces file
 4. `npm run dev` and `npm run build` run it first. It skips the work when every icon file is newer than the SVG.
 5. The generated files in `src-tauri/icons/` are committed, so `cargo` builds work without the Tauri CLI. After an icon change, commit them.
 
-To change the app icon, replace `clawdio-icon-full.svg`, run `npm run icons` (or any build) and commit the new files in `src-tauri/icons/`. `docs/images/icon-legibility.png` shows the icon at 16, 24, 32 and 48 px and the wordmark at the 20 px header height.
+To change the app icon, replace `clawdio-icon-full.svg`, run `npm run icons` (or any build) and commit the new files in `src-tauri/icons/`. `docs/images/icon-legibility.png` shows the icon at 16, 24, 32 and 48 px, the wordmark at the 20 px header height and at the 72 px README height. `npm run contact-sheet` (`scripts/contact-sheet.sh`) builds it again after a brand change. It runs on Linux and needs ImageMagick 6, `rsvg-convert` and the DejaVu Sans font.
