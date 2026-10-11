@@ -1,5 +1,11 @@
-# Clawdio
-Minimalist open source music player for Windows / Linux
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/export/clawdio-wordmark-primary.svg">
+    <img alt="Clawdio" src="assets/branding/export/clawdio-wordmark-light.svg" height="72">
+  </picture>
+</h1>
+
+Minimalist local music player
 
 ## Build from source
 
@@ -23,7 +29,7 @@ Minimalist open source music player for Windows / Linux
 | Install dependencies | `npm ci` |
 | Run the app with live reload | `npm run tauri dev` |
 | Build the app | `npm run tauri build` |
-| Frontend checks (lint, types, tests, source guards) | `npm run check` |
+| Frontend checks (lint, types, tests, source and SVG guards) | `npm run check` |
 | Rust checks | `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` |
 
 The theme comes from `theme/tokens.json`. The build compiles it to CSS. See `docs/theming-and-brand.md`.

@@ -102,3 +102,35 @@ The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D1
 ## Font
 
 The UI font is Geist Sans (variable, OFL 1.1) from `@fontsource-variable/geist`. The fallback is `system-ui, "Segoe UI", Ubuntu, Cantarell, sans-serif`. `NOTICE` holds the license.
+
+## Brand inputs
+
+These files hold the brand (requirements R17, R31). A brand change replaces files here and needs no feature code change. All brand shapes are original vectors. The mockup is direction only.
+
+| File | Use | To replace it |
+|---|---|---|
+| `theme/tokens.json` | Theme colors, radii and motion | Edit the values and rebuild |
+| `assets/branding/source/clawdio-wordmark.svg` | Master wordmark | Edit it, then update the three wordmark exports |
+| `assets/branding/source/clawdio-cat.svg` | Master cat head | Edit it, then update `clawdio-icon-full.svg` and `clawdio-icon-mono.svg` |
+| `assets/branding/source/clawdio-monogram.svg` | Master monogram. The app draws it as the art placeholder mask. | Replace it with another square SVG |
+| `assets/branding/export/clawdio-wordmark-primary.svg` | Wordmark for dark backgrounds: the app header and the README in dark mode | Replace it with another SVG of the same use |
+| `assets/branding/export/clawdio-wordmark-light.svg` | Wordmark for light backgrounds: the README in light mode | Same |
+| `assets/branding/export/clawdio-wordmark-mono.svg` | One-color wordmark (`currentColor`) for use outside the app | Same |
+| `assets/branding/export/clawdio-icon-full.svg` | App icon. The build makes every platform icon from it. | Replace it with another square SVG and rebuild |
+| `assets/branding/export/clawdio-icon-simple.svg` | Monogram icon. A fallback source for the 16 and 24 px icon layers (owner decision Q8). The build does not use it now. | Replace it with another square SVG |
+| `assets/branding/export/clawdio-icon-mono.svg` | One-color cat icon (`currentColor`) for use outside the app | Replace it with another square SVG |
+| `assets/reference/clawdio-approved-mockup.png` | Visual direction only. Not used by the app or the build. | Not needed |
+
+### SVG rules
+
+`npm run check:svg` (part of `npm run check`) checks every SVG under `assets/branding/`. Each file must parse as XML and have a `viewBox`. It must not contain the elements `<image>`, `<text>`, `<filter>`, `<foreignObject>` and `<script>`. It must not have an `http` reference (the `xmlns` namespace is allowed).
+
+### How the platform icons are made
+
+1. `npm run icons` (`scripts/icons.mjs`) runs `tauri icon` on `assets/branding/export/clawdio-icon-full.svg`.
+2. It keeps only the files that `bundle.icon` in `src-tauri/tauri.conf.json` lists and deletes the other outputs: `32x32.png`, `64x64.png`, `128x128.png`, `128x128@2x.png` (256 px), `icon.png` (512 px) and `icon.ico` (16, 24, 32, 48, 64 and 256 px).
+3. It checks the pixel size of each file and fails on a wrong size.
+4. `npm run dev` and `npm run build` run it first. It skips the work when every icon file is newer than the SVG.
+5. The generated files in `src-tauri/icons/` are committed, so `cargo` builds work without the Tauri CLI. After an icon change, commit them.
+
+To change the app icon, replace `clawdio-icon-full.svg`, run `npm run icons` (or any build) and commit the new files in `src-tauri/icons/`. `docs/images/icon-legibility.png` shows the icon at 16, 24, 32 and 48 px and the wordmark at the 20 px header height.

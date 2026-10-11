@@ -6,6 +6,7 @@
 // Decorative and "bar required" pairs have no threshold: D10 gives them a second cue instead.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { contrastRatio } from "../../scripts/contrast.mjs";
 
 type Tokens = { colors: Record<string, Record<string, string>> };
 
@@ -14,30 +15,12 @@ const tokens: Tokens = JSON.parse(readFileSync(new URL("../../theme/tokens.json"
 const TEXT = 4.5;
 const NON_TEXT = 3;
 
-/** RGB channels (0 to 255) of a token color, by token path such as "bg.canvas". */
-function color(path: string): number[] {
+/** A token color by path, for example "bg.canvas". */
+function color(path: string): string {
   const [group, name] = path.split(".");
   const value = tokens.colors[group]?.[name];
   if (!value) throw new Error(`no token colors.${path}`);
-  const digits = value.slice(1);
-  const full = digits.length === 3 ? [...digits].map((digit) => digit + digit).join("") : digits;
-  if (!/^[0-9a-f]{6}$/i.test(full)) throw new Error(`colors.${path}: use #RGB or #RRGGBB, got ${value}`);
-  return [0, 2, 4].map((start) => parseInt(full.slice(start, start + 2), 16));
-}
-
-/** WCAG 2.2 relative luminance. */
-function luminance(channels: number[]): number {
-  const [r, g, b] = channels.map((value) => {
-    const channel = value / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/** WCAG contrast ratio, from 1 to 21. */
-function contrast(a: number[], b: number[]): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
+  return value;
 }
 
 const SURFACES = ["bg.canvas", "bg.surface", "bg.elevated", "bg.hover"];
@@ -59,24 +42,17 @@ const excludedPairs: [string, string, number][] = [
   ["brand.red", "state.selected", NON_TEXT],
 ];
 
-describe("contrast helper", () => {
-  it("gives 21 for black on white and 1 for equal colors", () => {
-    expect(contrast([0, 0, 0], [255, 255, 255])).toBeCloseTo(21, 5);
-    expect(contrast([119, 119, 119], [119, 119, 119])).toBe(1);
-  });
-});
-
 describe("color role pairs (section 6.12)", () => {
   it.each(passPairs)("%s on %s reaches %s:1", (fg, bg, threshold) => {
-    expect(contrast(color(fg), color(bg))).toBeGreaterThanOrEqual(threshold);
+    expect(contrastRatio(color(fg), color(bg))).toBeGreaterThanOrEqual(threshold);
   });
 
   it.each(excludedPairs)("%s on %s stays below %s:1 (excluded by D10)", (fg, bg, threshold) => {
-    expect(contrast(color(fg), color(bg))).toBeLessThan(threshold);
+    expect(contrastRatio(color(fg), color(bg))).toBeLessThan(threshold);
   });
 
   it("state.redActive as an indicator stays below 3:1 on its worst surface (excluded by D10)", () => {
-    const worst = Math.min(...SURFACES.map((bg) => contrast(color("state.redActive"), color(bg))));
+    const worst = Math.min(...SURFACES.map((bg) => contrastRatio(color("state.redActive"), color(bg))));
     expect(worst).toBeLessThan(NON_TEXT);
   });
 });

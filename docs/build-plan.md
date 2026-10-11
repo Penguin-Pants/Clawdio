@@ -65,7 +65,7 @@ A phase is Done when all of these are true:
 | Phase | Name | Depends on | Status |
 |---|---|---|---|
 | P0 | Foundation and conventions | none | Done with exceptions |
-| P1 | Brand identity assets and icon pipeline | P0 | Not started |
+| P1 | Brand identity assets and icon pipeline | P0 | Blocked (B7) |
 | P2 | Themed docking shell | P1, Q6 sign-off | Not started |
 | P3 | Milestone 0 footprint gate | P2 | Not started |
 | P4 | End-to-end slice | P3 | Not started |
@@ -147,6 +147,62 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Unverified action versions: see N6. CI ran them.
 
 **Follow-ups:** F-06, F-07, F-08.
+
+#### P1. Brand identity assets and icon pipeline (October 11, 2026)
+
+- **Status:** Blocked (B7). Every task is done. P1-AC4 fails one clause that the P1.1 geometry cannot meet, so the owner decides (B7, F-09). Q6 sign-off is open.
+- **Commits:** branch `clawd/happy-gates-m2ikwy-p1`, based on the P0 branch. Messages start with `P1:`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P1-AC1 | Pass | `npm run check:svg`: 9 SVG files pass. `scripts/check-svg.test.ts` covers each rule. |
+| P1-AC2 | Pass | `npm run icons` exits 0 and checks every pixel size (`scripts/icons.mjs`). `identify src-tauri/icons/icon.ico`: 16x16, 24x24, 32x32, 48x48, 64x64, 256x256. PNGs: `32x32.png` 32, `64x64.png` 64, `128x128.png` 128, `128x128@2x.png` 256, `icon.png` 512. |
+| P1-AC3 | Pass | `docs/images/icon-legibility.png`. 16 px layer: two ear tips (7 px apart), a closed head outline and two red eye marks (2 px apart). 24, 32 and 48 px: every feature is clear. Rim `#B7B7B7` on `#171717`: 8.94:1. At 16 px the rim is 96 x 0.7 / 64 = 1.05 px and each eye (200 x 120 units) is 2.19 x 1.31 px. The Q8 fallback is not needed. |
+| P1-AC4 | Fail in one clause (B7) | Pass: no `<text>`; "Claw" is `#E10606`; the "o" holds five bars; each bar is 18 units (1.13 px at 20 px); light variant `#E10606` 4.96:1 and `#4A4A4A` 8.86:1 on white. Fail: at 20 px each gap is 0.5 px and renders as dim red, so the bars do not show as separate. At 40 px (2x) some gaps still blend. |
+| P1-AC5 | Pass (Linux) | `clawdio-icon-full.svg` replaced with a green square and a white circle. `npm run tauri build -- --debug` built the binary and the `.deb`. Only that SVG and the six files in `src-tauri/icons/` changed (checksums of every other file match). The new binary's window icon (`_NET_WM_ICON`, 32 px) is `#00A651` with white. The `.deb` launcher icons are green. See N8 for the rpm and AppImage steps. |
+| P1-AC6 | Pass | `grep -r branding/placeholder` (without `node_modules`, `target`, `dist`) finds only this plan, which describes P0.11, P1.6 and P1-AC6. |
+| P1-AC7 | Pass | Originality statement below. |
+
+**Originality statement (P1-AC7).** Every shape in the nine SVG files was built in this phase from primitives with numeric coordinates: straight-line polygons, quadratic curves, circles and one arc. A one-time generator script made the files and was not committed (Edits rule 8); the SVG files are the sources. No path was traced from the mockup. No image data is embedded. No third-party character art or emblem is reproduced. The mockup was used for direction only: colors, the wordmark layout, the eye style and the bars.
+
+**Notes**
+
+- N1 (P1.1): the letters carry the 12 degree slant. The ring and its bars stay upright, because a slanted bar would cross the ring.
+- N2 (P1.1): the outer bars touch the inner ring edge. Five bars of 18 units with 8-unit gaps (122 units) is the widest row in which the outer 38.4-unit bars fit inside the 64-unit inner radius.
+- N3 (P1.3): the first monogram draft read as an "e" (heavy top arm, low mouth). The final C has equal arms and a centered mouth, with the eye cut into the top arm.
+- N4 (P1.4): `clawdio-icon-mono.svg` cuts the eyes out of the one-color silhouette, so they stay visible in one color.
+- N5 (P1.5): `check-svg.mjs` parses with jsdom, an existing dev dependency. `xmlns` namespace attributes are not http references.
+- N6 (P1-AC2): the size check reads PNG headers and the ICO directory in Node, so it runs on every OS. The task text names ImageMagick `identify`; its output is in the table.
+- N7 (P1.6, P1.8): without the placeholder, `icons.mjs` stops with an error when `clawdio-icon-full.svg` is missing. Vite inlines the small brand SVGs as `data:` URLs, which `img-src` allows.
+- N8 (P1-AC5): after the binary and the `.deb`, the bundler spent more than 10 minutes compressing the 200 MB debug binary into the rpm. The run was stopped there (exit 143), so no rpm or AppImage was made. The criterion needs the new executable icon, which the binary and the `.deb` show.
+- N9: the contrast helper moved to `scripts/contrast.mjs`. The P0 contrast test and the new brand asset test share it (Edits rules 5 and 6).
+
+**Exceptions**
+
+- E1: P1-AC5 on Windows (the `.exe` icon) not verified: no Windows machine (B5). The verification line asks for Linux.
+- E2: the rpm and AppImage steps of the P1-AC5 build did not complete (N8).
+- E3: the P1-AC3 visual check is the agent's. The owner checks it at the Q6 sign-off.
+
+**Blockers:** B7 (section 5.4).
+
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 2, F4 11.
+
+- F2: the first monogram read as an "e" (N3). Fixed. `tsc` found no types for jsdom in `check-svg.mjs`; `@types/jsdom` 28.0.3 added (no types exist for jsdom 29; the code uses only `JSDOM` and `DOMParser`).
+- F3: F-09 (the P1-AC4 bar gap cannot be met, B7) and F-10 (a committed contact sheet script). Section 11.
+- F4:
+  - `xmlns` holds an http URL: it is a namespace name, not a reference.
+  - Embedded raster without `<image>`: an SVG can show raster data only through `<image>`, `<feImage>` (inside the forbidden `<filter>`) or `<foreignObject>`.
+  - A clone without `clawdio-icon-full.svg` cannot build: the file is committed, and the script names it in the error.
+  - `Wordmark` has an empty `alt` until the name is read: the IPC call returns at startup, and outside the app the image has no name to give.
+  - Each `useAppName` call makes one IPC call: P2 and P4 use one or two instances.
+  - The art placeholder mask is a `data:` URL: `img-src` allows `data:`.
+  - Forced colors can hide the mask: P2.13 sets `forced-color-adjust: none` for mask icons and the art placeholder.
+  - The generator script is not committed: the SVG files are the sources (P1.1 to P1.3).
+  - Brand asset tests read the SVG structure: they check stated rules (colors, bar count, scale), not drawing details.
+  - DOM parsing in `check-svg.mjs` runs no script: `DOMParser` does not execute content.
+  - Eyes as holes in the mono icon: one fill cannot show filled eyes on a filled head (N4).
+
+**Follow-ups:** F-09, F-10.
 
 ---
 
@@ -303,6 +359,7 @@ None of these blocks work, except Q6: P2 waits for the Q6 sign-off (owner answer
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
 | B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
+| B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 cannot be Done. P2 waits for Q6 in any case. | Owner decision with the Q6 sign-off. Options in F-09. |
 
 ---
 
@@ -1528,6 +1585,8 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-06 | Change the P0.15 wording: an "Excluded" row that names one role on several surfaces (the `state.redActive` row) stays excluded while its worst surface is below the threshold. | Section 6.12 lists `state.redActive` at 3.16:1 on canvas and 3.03:1 on surface, so the per-pair rule fails P0-AC5. The test applies the row rule (P0 note N1). | P0 review |
 | F-07 | Add a source guard against Tailwind default palette classes (for example `bg-red-500` or `text-white`) in `src/`, or reset the default palette in `globals.css` and give the shadcn overlay color a token. | The hex guard (D34) does not catch palette classes, so a color from outside `theme/tokens.json` can enter the UI (design.md §10). | P0 review |
 | F-08 | Set `color-scheme: dark` on `:root` in `globals.css`. | Native scrollbars and form controls follow the color scheme. Without it they can render light in the dark-only app (DES-0). | P0 review |
+| F-09 | Owner choice for B7: (a) accept the bars as one red shape at 20 px, separate from about 40 px; (b) change P1-AC4 to check separation at a larger size, for example the 72 px README height; (c) change P1.1 to three bars (18 units wide, 16-unit gaps fit the ring and give 1 px gaps at 20 px); (d) show the header wordmark at 40 px or more. | The P1.1 geometry cannot give separate bars at 20 px (B7). | P1 review |
+| F-10 | Commit a script that builds `docs/images/icon-legibility.png` from the generated icons. | The contact sheet must be rebuilt after each brand change (Q6 rounds, P17, P18.8). The P1 script was one-time (Edits rule 8). | P1 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
