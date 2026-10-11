@@ -153,10 +153,22 @@ function ChooseFolder() {
   );
 }
 
+/** The music folder is missing at startup (D30, P5.10): the cached library does not show. */
+function FolderMissing({ name }: { name: string | null }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+      <h2 className="text-2xl">Music folder not found{name ? `: ${name}` : ""}</h2>
+      <p className="max-w-sm text-sm text-text-secondary">Connect the drive that holds it, or choose another folder.</p>
+      <Button onClick={chooseMusicFolder}>Change folder</Button>
+    </div>
+  );
+}
+
 /** Library widget (P2.8, R28): mode switch and search in its header. It cannot be hidden. */
 export function LibraryWidget() {
   const mode = useLibraryStore((state) => state.mode);
-  const noFolder = useSettingsStore((state) => state.loaded && state.view.folderState === "none");
+  const folderState = useSettingsStore((state) => (state.loaded ? state.view.folderState : "ready"));
+  const folderName = useSettingsStore((state) => state.view.folderName);
   const ref = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -174,7 +186,13 @@ export function LibraryWidget() {
         <ModeSwitch narrow={narrow} />
         <SearchField />
       </div>
-      {noFolder ? <ChooseFolder /> : <LibraryBody mode={mode} />}
+      {folderState === "none" ? (
+        <ChooseFolder />
+      ) : folderState === "missing" ? (
+        <FolderMissing name={folderName} />
+      ) : (
+        <LibraryBody mode={mode} />
+      )}
     </div>
   );
 }

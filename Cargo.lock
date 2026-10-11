@@ -548,11 +548,13 @@ dependencies = [
 name = "clawdio-core"
 version = "0.1.0"
 dependencies = [
+ "image",
  "lofty",
  "log",
  "rusqlite",
  "serde",
  "serde_json",
+ "symphonia",
  "tempfile",
  "thiserror 2.0.21",
  "ts-rs",
@@ -1899,6 +1901,7 @@ dependencies = [
  "byteorder-lite",
  "moxcms",
  "num-traits",
+ "png 0.18.1",
  "zune-core",
  "zune-jpeg",
 ]

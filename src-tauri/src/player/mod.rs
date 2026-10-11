@@ -40,6 +40,9 @@ pub enum Command {
     /// restores the saved queue with it (R27).
     #[cfg_attr(not(feature = "fixtures"), allow(dead_code))]
     SetQueue(QueueSnapshot, PlayerSnapshot),
+    /// Stops playback, resets the position and empties the queue (P5.9, a new music folder).
+    /// The reply comes when it is done.
+    Clear(Sender<()>),
     GetQueue(Sender<QueueSnapshot>),
     GetState(Sender<PlayerSnapshot>),
     Shutdown,
@@ -176,6 +179,15 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
         }
     }
 
+    /// Stops playback and empties the queue (P5.9).
+    pub fn clear(&mut self) {
+        self.output.stop();
+        self.queue = QueueSnapshot::default();
+        self.player.status = PlayerStatus::Stopped;
+        self.player.position_ms = 0;
+        self.announce();
+    }
+
     pub fn set_queue(&mut self, queue: QueueSnapshot, player: PlayerSnapshot) {
         self.queue = queue;
         self.player = player;
@@ -208,6 +220,10 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             Command::Toggle => self.toggle(),
             Command::Stop => self.stop(),
             Command::SetQueue(queue, player) => self.set_queue(queue, player),
+            Command::Clear(done) => {
+                self.clear();
+                let _ = done.send(());
+            }
             Command::GetQueue(reply) => {
                 let _ = reply.send(self.queue.clone());
             }
@@ -276,6 +292,13 @@ impl PlayerHandle {
         let (reply, answer) = mpsc::channel();
         self.send(Command::GetState(reply));
         answer.recv().unwrap_or_default()
+    }
+
+    /// Stops playback and empties the queue, and waits until the player thread is done.
+    pub fn clear(&self) {
+        let (reply, answer) = mpsc::channel();
+        self.send(Command::Clear(reply));
+        let _ = answer.recv();
     }
 }
 
@@ -360,6 +383,17 @@ mod tests {
             "the position shows the start of the last song (R6)"
         );
         assert!(recorder.0.lock().unwrap().contains(&"at 500".to_owned()));
+    }
+
+    #[test]
+    fn clear_stops_and_empties_the_queue() {
+        let (mut engine, _) = engine();
+        engine.play_list(vec![0, 1], 1);
+        engine.output_mut().advance(Duration::from_millis(300));
+        engine.clear();
+        assert_eq!(engine.state().status, PlayerStatus::Stopped);
+        assert_eq!(engine.state().position_ms, 0);
+        assert_eq!(*engine.queue(), QueueSnapshot::default());
     }
 
     #[test]

@@ -7,14 +7,32 @@ import { library } from "./library-data";
 const params = new URLSearchParams(window.location.search);
 const withLibrary = params.get("data") === "library";
 
-/** Mock settings. "?first=1" starts like a fresh profile; the state persists over reloads. */
+/**
+ * Mock settings. "?first=1" starts like a fresh profile and "?missing=1" with the music folder
+ * missing (D30). The state persists over reloads.
+ */
 const SETTINGS_KEY = "e2e-settings";
+const LAST_SCAN = { added: 12, removed: 1, skipped: 2 };
 const settings = JSON.parse(
   sessionStorage.getItem(SETTINGS_KEY) ??
     JSON.stringify(
       params.get("first") === "1"
-        ? { folderName: null, folderState: "none", onlineLookups: false, noticePending: true, portable: false }
-        : { folderName: "music", folderState: "ready", onlineLookups: false, noticePending: false, portable: false },
+        ? {
+            folderName: null,
+            folderState: "none",
+            onlineLookups: false,
+            noticePending: true,
+            portable: false,
+            lastScan: null,
+          }
+        : {
+            folderName: "music",
+            folderState: params.get("missing") === "1" ? "missing" : "ready",
+            onlineLookups: false,
+            noticePending: false,
+            portable: false,
+            lastScan: LAST_SCAN,
+          },
     ),
 );
 
@@ -34,6 +52,9 @@ function settingsCommand(command: string, args: Args): unknown {
       return saveSettings({ noticePending: false });
     case "choose_music_folder":
       return saveSettings({ folderName: "music", folderState: "ready" });
+    case "rescan":
+      document.body.dataset.rescans = String(Number(document.body.dataset.rescans ?? 0) + 1);
+      return null;
     case "player_play_list":
     case "player_toggle":
     case "player_stop":
@@ -119,7 +140,10 @@ mockIPC((command, args) => {
     case "plugin:event|unlisten":
     case "plugin:log|log":
       return 0;
-    default:
-      return settingsCommand(command, (args ?? {}) as Args) ?? libraryCommand(command, (args ?? {}) as Args);
+    default: {
+      // A settings command that returns null is handled; only undefined falls through.
+      const handled = settingsCommand(command, (args ?? {}) as Args);
+      return handled !== undefined ? handled : libraryCommand(command, (args ?? {}) as Args);
+    }
   }
 });

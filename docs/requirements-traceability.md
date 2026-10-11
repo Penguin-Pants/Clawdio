@@ -53,28 +53,28 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R1-1 | One user-chosen folder; import mp3, ogg and wav; ignore other types | §2 R1 | P4.5, P5.2 | P5-AC2 | IT | Planned (D16) |
-| R1-2 | Ogg means Vorbis; skip and report Opus and other codecs | §2 R1 | P5.2 | P5-AC2 | IT | Planned |
-| R1-3 | WAV: PCM integer and float and ADPCM as the pinned decoder supports; others are "unsupported codec" | §2 R1 | P5.2 | P5-AC2 | IT | Planned (D3) |
+| R1-1 | One user-chosen folder; import mp3, ogg and wav; ignore other types | §2 R1 | P4.5, P5.2 | P5-AC2 | IT | Done (P5, D16) |
+| R1-2 | Ogg means Vorbis; skip and report Opus and other codecs | §2 R1 | P5.2 | P5-AC2 | IT | Done (P5) |
+| R1-3 | WAV: PCM integer and float and ADPCM as the pinned decoder supports; others are "unsupported codec" | §2 R1 | P5.2 | P5-AC2 | IT | Done (P5, D3) |
 | R1.1-1 | First run: "Choose music folder" in the main area; other widgets show hints; transport disabled | §2 R1.1 | P4.6, P2.9 | P4-AC2, P2-AC12 | E2E | Done (P4) |
-| R2-1 | Startup sync adds new files and removes missing files; the folder wins | §2 R2 | P5.3 | P5-AC4, P5-AC15 | IT | Planned |
-| R2-2 | Incremental scan by path, size and modified time | §2 R2 | P5.3 | P5-AC7 | IT | Planned |
+| R2-1 | Startup sync adds new files and removes missing files; the folder wins | §2 R2 | P5.3 | P5-AC4, P5-AC15 | IT | Done (P5) |
+| R2-2 | Incremental scan by path, size and modified time | §2 R2 | P5.3 | P5-AC7 | IT | Done (P5) |
 | R2-3 | The scan does not block the UI | §2 R2 | P4.7, P6.8 | P6-AC6 | MEAS, MAN-L, MAN-W | Planned |
-| R2-4 | Manual Rescan command | §2 R2 | P5.4, P2.6 | P5-AC5, P5-AC6 | IT, E2E | Planned |
+| R2-4 | Manual Rescan command | §2 R2 | P5.4, P2.6 | P5-AC5, P5-AC6 | IT, E2E | Done (P5) |
 | R2-5 | Target 50,000 tracks | §2 R2 | P5.13, P3.1, P4.12 | P3-AC1, P6-AC6, P18-AC6 | MEAS | Planned |
-| R2-6 | Status line counts at scan end; Settings shows last counts and "Open log folder"; log holds per-file reasons | §2 R2 | P5.4, P4.3, P5.2 | P5-AC6, P5-AC2 | IT, E2E | Planned |
-| R2-7 | Skip files and folders whose names start with "."; do not follow links or junctions to folders; Rescan does nothing while a scan runs | §2 R2 | P5.1, P5.4 | P5-AC3, P5-AC5 | IT | Planned |
-| R2-8 | Remove missing files only after a complete traversal; cancel or failure removes nothing | §2 R2 | P5.3 | P5-AC4 | IT | Planned |
-| R2-9 | Readable, empty root removes all tracks | §2 R2 | P5.3 | P5-AC4 | IT | Planned |
-| R3-1 | Grouping by folder names; tags never change grouping | §2 R3 | P5.6 | P5-AC1 | IT | Planned |
-| R3-2 | First folder is the artist, second the album, deeper folders fold into the album | §2 R3 | P5.6 | P5-AC1 | UT, IT | Planned |
-| R3-3 | File directly under an artist folder goes to "Unknown Album" | §2 R3 | P5.6 | P5-AC1 | UT | Planned |
-| R3-4 | File at the root goes to "Unknown Album" under "Unknown Artist" | §2 R3 | P5.6 | P5-AC1 | UT | Planned |
-| R3-5 | Display names unchanged; sort ignores case and accents, natural numbers, byte-order ties; Unknown groups last | §2 R3 | P5.5, P5.6 | P5-AC1 | UT | Planned (D4) |
+| R2-6 | Status line counts at scan end; Settings shows last counts and "Open log folder"; log holds per-file reasons | §2 R2 | P5.4, P4.3, P5.2 | P5-AC6, P5-AC2 | IT, E2E | Done (P5) |
+| R2-7 | Skip files and folders whose names start with "."; do not follow links or junctions to folders; Rescan does nothing while a scan runs | §2 R2 | P5.1, P5.4 | P5-AC3, P5-AC5 | IT | Done (P5) |
+| R2-8 | Remove missing files only after a complete traversal; cancel or failure removes nothing | §2 R2 | P5.3 | P5-AC4 | IT | Done (P5) |
+| R2-9 | Readable, empty root removes all tracks | §2 R2 | P5.3 | P5-AC4 | IT | Done (P5) |
+| R3-1 | Grouping by folder names; tags never change grouping | §2 R3 | P5.6 | P5-AC1 | IT | Done (P5) |
+| R3-2 | First folder is the artist, second the album, deeper folders fold into the album | §2 R3 | P5.6 | P5-AC1 | UT, IT | Done (P5) |
+| R3-3 | File directly under an artist folder goes to "Unknown Album" | §2 R3 | P5.6 | P5-AC1 | UT | Done (P5) |
+| R3-4 | File at the root goes to "Unknown Album" under "Unknown Artist" | §2 R3 | P5.6 | P5-AC1 | UT | Done (P5) |
+| R3-5 | Display names unchanged; sort ignores case and accents, natural numbers, byte-order ties; Unknown groups last | §2 R3 | P5.5, P5.6 | P5-AC1 | UT | Done (P5, D4) |
 | R4-1 | Title: tag, then sidecar, then file name without the prefix | §2 R4 | P5.7, P16.6 | P5-AC10, P16-AC3 | UT, IT | Planned |
-| R4-2 | Track-number prefix definition and examples | §2 R4 | P5.7 | P5-AC10 | UT | Planned |
+| R4-2 | Track-number prefix definition and examples | §2 R4 | P5.7 | P5-AC10 | UT | Done (P5) |
 | R4-3 | Track number: tag, then sidecar, then prefix | §2 R4 | P5.7, P16.6 | P5-AC1, P16-AC3 | UT | Planned |
-| R4-4 | Song order: disc order, track number, file name; disc order rule; case ignored | §2 R4 | P5.7 | P5-AC11 | UT, IT | Planned |
+| R4-4 | Song order: disc order, track number, file name; disc order rule; case ignored | §2 R4 | P5.7 | P5-AC11 | UT, IT | Done (P5) |
 
 ### 1.3 Section 2: widgets and layout (R5, R28 to R31)
 
@@ -232,8 +232,8 @@
 | R18-1 | Settings (folder path, lookup switch) and window size in the OS config folder | §2 R18 | P4.4, P4.2 | P4-AC6, P4-AC7 | IT, MAN-L | Done (P4) |
 | R18.1-1 | Portable marker: settings, arrangement, state, cache, logs and WebView profile in `data/` | §2 R18.1 | P4.1, P4.2, P4.3 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned (D47) |
 | R18.1-2 | Music folder path relative to the executable folder on the same volume, else absolute | §2 R18.1 | P4.1 | P9-AC7, P18-AC10 | UT, MAN-W | Planned |
-| R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Planned |
-| R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Planned |
+| R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Done (P5) |
+| R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Done (P5) |
 | R19-3 | No lookup markers in the cache; a rebuild causes no new lookups | §2 R19 | P14.3 | P14-AC8 | IT | Planned |
 | R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Planned |
 | R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
@@ -249,7 +249,7 @@
 | R22-2 | Portable build shows an error with a download link when WebView2 is missing | §2 R22 | P18.2 | P18-AC4 | MAN-W | Planned (D38) |
 | R22-3 | Linux glibc baseline: AppImage glibc 2.35; `.deb` for Debian 12 and Ubuntu 22.04 | §2 R22 | P18.3 | P18-AC5 | MAN-L | Planned |
 | R23-1 | Log file in the OS log folder with size-based rotation | §2 R23 | P4.3 | P4-AC5 | IT | Done (P4, D40) |
-| R23-2 | Settings has "Open log folder" | §2 R23 | P4.3, P5.4 | P5-AC6 | E2E, MAN-L | Planned |
+| R23-2 | Settings has "Open log folder" | §2 R23 | P4.3, P5.4 | P5-AC6 | E2E, MAN-L | Done (P5) |
 | R23-3 | Every skip-and-log event goes to the log | §2 R23 | P5.2, P9.4, P11.2, P14.3, P14.5 | P5-AC2, P9-AC4, P11-AC6, P14-AC5, P14-AC10 | IT | Planned |
 
 ### 1.8 Section 3: preferences and examples
@@ -289,18 +289,18 @@
 | E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Done (P4) |
 | E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Planned |
 | E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Planned (D30) |
-| E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Planned (D16) |
-| E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Planned |
-| E-6 | Missing tags: R4 fallbacks | §5 | P5.7 | P5-AC1, P5-AC10 | UT | Planned |
+| E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5, D16) |
+| E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5) |
+| E-6 | Missing tags: R4 fallbacks | §5 | P5.7 | P5-AC1, P5-AC10 | UT | Done (P5) |
 | E-7 | Tag and folder disagree: folder wins, no warning | §5 | P5.6 | P5-AC1, P6-AC7 | IT | Planned |
-| E-8 | Folders that differ only by case (Linux) are separate | §5 | P5.12 | P5-AC1 | IT | Planned |
-| E-9 | Non-ASCII names work on both systems | §5 | P5.12 | P5-AC14 | IT | Planned |
+| E-8 | Folders that differ only by case (Linux) are separate | §5 | P5.12 | P5-AC1 | IT | Done (P5) |
+| E-9 | Non-ASCII names work on both systems | §5 | P5.12 | P5-AC14 | IT | Done (P5) |
 | E-10 | Windows paths over 260 characters work | §5 | P5.1, P5.12 | P5-AC14 | IT | Planned |
 | E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Planned |
 | E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Planned |
 | E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Planned |
 | E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Planned |
-| E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Planned |
+| E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Done (P5) |
 | E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Resolved (C18) |
 | E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Planned |
 | E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Planned |
@@ -326,8 +326,8 @@
 | CON-5 | Audio engine: rodio pinned, Symphonia with `mp3`, lofty; gapless-ready design | §6 | P7.2, P7.5 | P7-AC1 | REV | Planned (D3) |
 | CON-6 | License: MIT app; Symphonia MPL-2.0; LGPL in the AppImage; license texts, versions and sources per release; NOTICE file; no Strawberry code | §6 | P0.2, P18.4 | P18-AC7, P18-AC8 | REV, CI | Planned |
 | CON-7 | Platforms: Windows and Linux | §6 | P0.16, P18.3 | P0-AC1, P18-AC5 | CI | Planned |
-| CON-8 | Formats: mp3, Ogg Vorbis, wav | §6 | P5.2 | P5-AC2 | IT | Planned |
-| CON-9 | The music folder is the source of truth | §6 | P5.3 | P5-AC4 | IT | Planned |
+| CON-8 | Formats: mp3, Ogg Vorbis, wav | §6 | P5.2 | P5-AC2 | IT | Done (P5) |
+| CON-9 | The music folder is the source of truth | §6 | P5.3 | P5-AC4 | IT | Done (P5) |
 | CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Planned |
 | CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Planned |
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
@@ -371,7 +371,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-8 | Magic UI optional; no Motion unless a component needs it | §8.8 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DEC-9 | Portable mode and Windows portable zip | §8.9 | P4.1, P18.2 | P4-AC4, P18-AC4 | MAN-W | Planned |
 | DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Done (P2) |
-| DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Planned |
+| DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Done (P5) |
 | DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Planned |
 | DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Planned |
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Planned |
@@ -459,7 +459,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-6.6 | Timeline: charcoal track, red progress, keyboard seeking | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Planned |
 | DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Resolved (C3) |
 | DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Planned |
-| DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Planned (D12) |
+| DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Done (P5, D12) |
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
 | DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Planned |
 | DES-6.12 | Error states: plain, actionable text for missing and invalid files | §6 | P5.10, P11.8 | P5-AC12, P11-AC3, P11-AC10 | E2E, IT | Planned |

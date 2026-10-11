@@ -1,12 +1,13 @@
 //! Index queries behind the library commands (section 6.7). P6.1 finishes them.
 //! A query matches folded text (D4) against artist, album and song title (R6).
 
-use std::cmp::Ordering;
+use std::collections::BTreeSet;
 
+use super::group::group_cmp;
 use super::{Album, AlbumId, Artist, ArtistId, LibraryIndex, Track, TrackId};
 use crate::api::{AlbumRow, ArtistRow, SongRow, SongScope, TreeAlbum, TreeArtist};
 use crate::error::CoreError;
-use crate::fold::fold;
+use crate::fold::{fold, natural_cmp};
 
 /// A folded search query. Empty matches everything.
 struct Query(String);
@@ -25,24 +26,40 @@ impl Query {
     }
 }
 
-fn by_key(a: (&str, &str), b: (&str, &str)) -> Ordering {
-    a.0.cmp(b.0).then_with(|| a.1.cmp(b.1))
-}
-
 impl LibraryIndex {
     fn live_tracks<'a>(&'a self, album: &'a Album) -> impl Iterator<Item = &'a Track> + 'a {
         album.tracks.iter().filter_map(|id| self.track(*id))
     }
 
-    /// Songs of an album in album order: disc, track number, file path.
+    /// Songs of an album in R4 order: disc order, track number, file name (case ignored).
+    /// Disc order is the disc tag, else the natural-order position of the song's sub-folder,
+    /// else 0 for files directly in the album folder.
     fn album_songs<'a>(&'a self, album: &'a Album) -> Vec<&'a Track> {
         let mut songs: Vec<&Track> = self.live_tracks(album).collect();
-        songs.sort_by(|a, b| {
-            (a.disc, a.track_no.unwrap_or(u32::MAX), &a.rel_path).cmp(&(
-                b.disc,
-                b.track_no.unwrap_or(u32::MAX),
-                &b.rel_path,
-            ))
+        let mut folders: Vec<&str> = songs
+            .iter()
+            .filter_map(|song| song.data.subfolder.as_deref())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        folders.sort_by(|a, b| natural_cmp(a, b));
+        let disc_order = |song: &Track| {
+            song.data.disc.unwrap_or_else(|| {
+                song.data.subfolder.as_deref().map_or(0, |folder| {
+                    folders
+                        .iter()
+                        .position(|f| *f == folder)
+                        .map_or(0, |i| i as u32 + 1)
+                })
+            })
+        };
+        songs.sort_by_cached_key(|song| {
+            (
+                disc_order(song),
+                song.data.track_no.unwrap_or(u32::MAX),
+                song.file_key.clone(),
+                song.data.rel_path.clone(),
+            )
         });
         songs
     }
@@ -58,7 +75,7 @@ impl LibraryIndex {
             .filter_map(|id| self.album(*id))
             .filter(|album| self.has_songs(album))
             .collect();
-        albums.sort_by(|a, b| by_key((&a.key, &a.name), (&b.key, &b.name)));
+        albums.sort_by(|a, b| group_cmp(&a.name, &b.name));
         albums
     }
 
@@ -74,7 +91,7 @@ impl LibraryIndex {
                     .any(|album| self.has_songs(album))
             })
             .collect();
-        artists.sort_by(|a, b| by_key((&a.key, &a.name), (&b.key, &b.name)));
+        artists.sort_by(|a, b| group_cmp(&a.name, &b.name));
         artists
     }
 
@@ -225,11 +242,15 @@ impl LibraryIndex {
                     id: track.id,
                     artist_id: track.artist,
                     album_id: track.album,
-                    title: track.title.clone(),
-                    tag_artist: track.tag_artist.clone().filter(|tag| *tag != artist_name),
+                    title: track.data.title.clone(),
+                    tag_artist: track
+                        .data
+                        .tag_artist
+                        .clone()
+                        .filter(|tag| *tag != artist_name),
                     artist_name,
                     album_name: album.map(|a| a.name.clone()).unwrap_or_default(),
-                    duration_ms: track.duration_ms,
+                    duration_ms: track.data.duration_ms,
                 })
             })
             .collect()
@@ -289,10 +310,9 @@ mod tests {
             artist: artist.into(),
             album: album.into(),
             title: title.into(),
-            tag_artist: None,
             track_no: Some(no),
-            disc: 0,
             duration_ms: 1000 * no,
+            ..NewTrack::default()
         }
     }
 
@@ -441,5 +461,86 @@ mod tests {
         let rows = index.rows(&ids).unwrap();
         assert_eq!(rows[0].tag_artist, None);
         assert_eq!(rows[1].tag_artist.as_deref(), Some("Freddie Mercury"));
+    }
+
+    fn disc_track(path: &str, sub: Option<&str>, disc: Option<u32>, no: Option<u32>) -> NewTrack {
+        NewTrack {
+            rel_path: path.into(),
+            artist: "A".into(),
+            album: "B".into(),
+            subfolder: sub.map(str::to_owned),
+            title: path.rsplit('/').next().unwrap().into(),
+            disc,
+            track_no: no,
+            ..NewTrack::default()
+        }
+    }
+
+    fn album_titles(index: &LibraryIndex) -> Vec<String> {
+        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        index
+            .rows(&ids)
+            .unwrap()
+            .into_iter()
+            .map(|row| row.title)
+            .collect()
+    }
+
+    #[test]
+    fn songs_order_by_disc_then_track_then_file_name() {
+        // No disc tags: the sub-folders give the disc order (natural order: 2 before 10).
+        let mut index = LibraryIndex::new();
+        index.insert(disc_track(
+            "A/B/Disc 10/1.mp3",
+            Some("Disc 10"),
+            None,
+            Some(1),
+        ));
+        index.insert(disc_track(
+            "A/B/Disc 2/2.mp3",
+            Some("Disc 2"),
+            None,
+            Some(2),
+        ));
+        index.insert(disc_track(
+            "A/B/Disc 2/1.mp3",
+            Some("Disc 2"),
+            None,
+            Some(1),
+        ));
+        index.insert(disc_track("A/B/intro.mp3", None, None, None));
+        index.insert(disc_track("A/B/b.mp3", None, None, Some(1)));
+        index.insert(disc_track("A/B/A.mp3", None, None, Some(1)));
+        assert_eq!(
+            album_titles(&index),
+            ["A.mp3", "b.mp3", "intro.mp3", "1.mp3", "2.mp3", "1.mp3"]
+        );
+        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        let paths: Vec<&str> = ids.iter().map(|id| index.rel_path(*id).unwrap()).collect();
+        assert_eq!(
+            &paths[3..],
+            ["A/B/Disc 2/1.mp3", "A/B/Disc 2/2.mp3", "A/B/Disc 10/1.mp3"]
+        );
+
+        // Disc tags win over the folders.
+        let mut index = LibraryIndex::new();
+        index.insert(disc_track("A/B/x/1.mp3", Some("x"), Some(2), Some(1)));
+        index.insert(disc_track("A/B/y/2.mp3", Some("y"), Some(1), Some(2)));
+        index.insert(disc_track("A/B/y/1.mp3", Some("y"), Some(1), Some(1)));
+        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        let paths: Vec<&str> = ids.iter().map(|id| index.rel_path(*id).unwrap()).collect();
+        assert_eq!(paths, ["A/B/y/1.mp3", "A/B/y/2.mp3", "A/B/x/1.mp3"]);
+    }
+
+    #[test]
+    fn a_path_inserted_again_keeps_its_id_and_takes_the_new_data() {
+        let mut index = LibraryIndex::new();
+        let first = index.insert(disc_track("A/B/1.mp3", None, None, Some(1)));
+        let second = index.insert(disc_track("A/B/1.mp3", None, None, Some(7)));
+        assert_eq!(first, second, "a rescan does not shift ids (D46)");
+        assert_eq!(index.len(), 1);
+        assert_eq!(index.track(first).unwrap().data.track_no, Some(7));
+        assert!(index.remove_path("A/B/1.mp3"));
+        assert!(index.is_empty());
     }
 }

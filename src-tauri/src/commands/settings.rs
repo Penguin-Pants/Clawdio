@@ -21,13 +21,21 @@ fn io_error(error: impl std::fmt::Display) -> IpcError {
     }
 }
 
-/// The name of a folder for display. IPC carries no paths (D13).
+/// The name of a folder for display. IPC carries no paths (D13), so a drive or file system
+/// root gets a label.
 fn display_name(folder: &Path) -> String {
-    folder
-        .file_name()
-        .unwrap_or(folder.as_os_str())
-        .to_string_lossy()
-        .into_owned()
+    if let Some(name) = folder.file_name() {
+        return name.to_string_lossy().into_owned();
+    }
+    match folder.components().next() {
+        Some(std::path::Component::Prefix(prefix)) => match prefix.kind() {
+            std::path::Prefix::Disk(letter) | std::path::Prefix::VerbatimDisk(letter) => {
+                format!("Drive {}", char::from(letter).to_ascii_uppercase())
+            }
+            _ => "Network folder".into(),
+        },
+        _ => "Root folder".into(),
+    }
 }
 
 /// The view of the settings for the webview.
@@ -46,15 +54,21 @@ pub fn view(state: &AppState, settings: &Settings) -> SettingsView {
         online_lookups: settings.online_lookups,
         notice_pending: !settings.online_notice_done,
         portable: state.dirs.portable,
+        last_scan: settings.last_scan,
     }
 }
 
-/// Changes the settings, saves them and returns the new view.
-fn update(app: &AppHandle, change: impl FnOnce(&mut Settings)) -> CommandResult<SettingsView> {
+/// Changes the settings, saves them and returns the new view. A failed save changes nothing.
+pub(crate) fn update(
+    app: &AppHandle,
+    change: impl FnOnce(&mut Settings),
+) -> CommandResult<SettingsView> {
     let state = app.state::<AppState>();
     let mut settings = state.settings.lock().map_err(io_error)?;
-    change(&mut settings);
-    save(&state.dirs.config, &settings).map_err(io_error)?;
+    let mut changed = settings.clone();
+    change(&mut changed);
+    save(&state.dirs.config, &changed).map_err(io_error)?;
+    *settings = changed;
     let view = view(&state, &settings);
     emit(app, SETTINGS_CHANGED, view.clone());
     Ok(view)
@@ -87,7 +101,8 @@ fn readable_folder(path: &Path) -> Result<(), IpcError> {
 }
 
 /// Opens the native folder picker from Rust (D13), stores the chosen folder by the R18.1 rule
-/// and starts a scan. Canceling the picker changes nothing.
+/// and scans it (P5.9: the running scan stops, playback stops, the queue, the index and the
+/// cache clear). Canceling the picker changes nothing.
 #[tauri::command]
 pub async fn choose_music_folder(app: AppHandle) -> CommandResult<SettingsView> {
     let picked = app.dialog().file().blocking_pick_folder();
@@ -103,11 +118,28 @@ pub async fn choose_music_folder(app: AppHandle) -> CommandResult<SettingsView> 
     };
     let stored = store_music_path(&folder, &base, portable);
     let view = update(&app, |settings| settings.music_folder = Some(stored))?;
+    // Playback of the old folder stops before the root changes, so no old id plays from the
+    // new folder (P5.9).
+    app.state::<crate::player::PlayerHandle>().clear();
     if let Ok(mut root) = app.state::<MusicRoot>().0.write() {
         *root = Some(folder.clone());
     }
-    jobs::start_scan(&app, folder, true);
+    jobs::start_scan(&app, folder, jobs::ScanKind::NewFolder);
     Ok(view)
+}
+
+/// Rescans the music folder (R2). Does nothing while a scan runs (P5-AC5).
+#[tauri::command]
+pub fn rescan(app: AppHandle) {
+    let root = app
+        .state::<MusicRoot>()
+        .0
+        .read()
+        .ok()
+        .and_then(|root| root.clone());
+    if let Some(root) = root {
+        jobs::start_rescan(&app, root);
+    }
 }
 
 #[tauri::command]
@@ -137,6 +169,14 @@ mod tests {
     #[test]
     fn the_view_names_the_folder_without_its_path() {
         assert_eq!(display_name(Path::new("/home/a/Music")), "Music");
-        assert_eq!(display_name(Path::new("/")), "/");
+        assert_eq!(display_name(Path::new("/")), "Root folder");
+        #[cfg(windows)]
+        {
+            assert_eq!(display_name(Path::new(r"d:\")), "Drive D");
+            assert_eq!(
+                display_name(Path::new(r"\\server\share\")),
+                "Network folder"
+            );
+        }
     }
 }

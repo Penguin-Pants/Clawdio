@@ -68,8 +68,8 @@ pub fn fill_library(index: &mut LibraryIndex) {
                     tag_artist: (s == 3).then(|| format!("{artist} feat. Guest")),
                     title,
                     track_no: Some(s),
-                    disc: 0,
                     duration_ms: 120_000 + (a * 13 + b * 7 + s * 11) % 240 * 1_000,
+                    ..NewTrack::default()
                 });
             }
         }

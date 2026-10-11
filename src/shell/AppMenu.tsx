@@ -16,7 +16,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
+import { commands } from "@/lib/ipc/commands";
 import { MODE_LABELS } from "@/widgets/library/LibraryWidget";
 import { RESET_SHORTCUT_LABEL } from "@/lib/keyboard";
 import { LAYOUTS, LAYOUT_TITLES, applyLayout, resetLayout, setWidgetVisible } from "./layouts";
@@ -28,6 +30,7 @@ export function AppMenu() {
   const setSettingsOpen = useUiStore((state) => state.setSettingsOpen);
   const mode = useLibraryStore((state) => state.mode);
   const setMode = useLibraryStore((state) => state.setMode);
+  const hasFolder = useSettingsStore((state) => state.view.folderState === "ready");
   // The tooltip would cover the open menu, so it is off while the menu shows.
   const [open, setOpen] = useState(false);
   return (
@@ -81,7 +84,9 @@ export function AppMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setSettingsOpen(true)}>Settings</DropdownMenuItem>
-        <DropdownMenuItem disabled>Rescan</DropdownMenuItem>
+        <DropdownMenuItem disabled={!hasFolder} onClick={() => void commands.rescan().catch(() => {})}>
+          Rescan
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -5,6 +5,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::api::ScanCounts;
 use crate::atomic::write_atomic;
 
 pub const SETTINGS_FILE: &str = "settings.json";
@@ -27,6 +28,9 @@ pub struct Settings {
     /// True once the user answered the first-run notice (R7).
     pub online_notice_done: bool,
     pub window: Option<WindowSize>,
+    /// Counts of the last scan (R2). Older files have no value.
+    #[serde(default)]
+    pub last_scan: Option<ScanCounts>,
 }
 
 impl Default for Settings {
@@ -37,6 +41,7 @@ impl Default for Settings {
             online_lookups: false,
             online_notice_done: false,
             window: None,
+            last_scan: None,
         }
     }
 }
@@ -112,6 +117,11 @@ mod tests {
                 width: 1000.0,
                 height: 700.0,
             }),
+            last_scan: Some(ScanCounts {
+                added: 3,
+                removed: 2,
+                skipped: 1,
+            }),
             ..Settings::default()
         };
         save(dir.path(), &settings).unwrap();
@@ -124,6 +134,14 @@ mod tests {
         std::fs::write(dir.path().join(SETTINGS_FILE), "{ not json").unwrap();
         assert!(matches!(load(dir.path()), Loaded::Invalid(reason) if reason.contains("corrupt")));
         assert_eq!(load_or_default(dir.path()), (Settings::default(), false));
+    }
+
+    #[test]
+    fn a_file_without_scan_counts_reads() {
+        let dir = tempfile::tempdir().unwrap();
+        let text = r#"{"version":1,"musicFolder":null,"onlineLookups":false,"onlineNoticeDone":true,"window":null}"#;
+        std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
+        assert!(matches!(load(dir.path()), Loaded::Read(s) if s.last_scan.is_none()));
     }
 
     #[test]

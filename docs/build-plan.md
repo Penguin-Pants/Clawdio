@@ -69,7 +69,7 @@ A phase is Done when all of these are true:
 | P2 | Themed docking shell | P1, Q6 sign-off | Done with exceptions |
 | P3 | Milestone 0 footprint gate | P2 | Done with exceptions |
 | P4 | End-to-end slice | P3 | Done with exceptions |
-| P5 | Library scan and cache | P4 | Not started |
+| P5 | Library scan and cache | P4 | Done with exceptions |
 | P6 | Library widget and search | P5 | Not started |
 | P7 | Playback engine and Play queue | P6 | Not started |
 | P8 | OS media integration | P7 | Not started |
@@ -366,6 +366,68 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Windows drive-letter case in `relative_to`: both paths come from OS APIs in canonical form, and the fallback is a valid absolute path.
 
 **Follow-ups:** F-13.
+
+---
+
+#### P5. Library scan and cache (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `2300ac4`. Messages start with `P5:`.
+- **Packages:** `symphonia` 0.5.5 (`wav`, `pcm`, `adpcm`) and `image` 0.25.10 (`jpeg`, `png`) in the core. Cache schema version 3.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P5-AC1 | Pass | `tests/scan.rs` golden test against `tests/golden/fixture-tree.json` (fixture tree from `tests/common/tree.rs`). |
+| P5-AC2 | Pass | Opus and A-law: unsupported codec. `corrupt.mp3`: corrupt file. MP3 data in a `.wav`: unsupported type. `notes.txt` not counted. One log line each (log capture). |
+| P5-AC3 | Pass (Linux) | Hidden names skipped. The folder link loop is not entered. A link to a file is scanned. |
+| P5-AC4 | Pass | Cancel removes nothing. A complete scan removes a missing file and a file that became corrupt. A missing root removes nothing. An empty root removes all. |
+| P5-AC5 | Pass (Linux, manual) | Rescan pressed at "Scanning: 17500 files" during the startup scan: one scan in the log. |
+| P5-AC6 | Pass | Manual Linux: status line "Scan complete: 50000 added, 0 removed, 0 skipped" and `lastScan` in `settings.json`. E2E: Settings shows the last counts. |
+| P5-AC7 | Pass | A second scan reads no file, also after a restart; skipped files count again without a read (`ScanReport.read`). Manual: restart of 50,000 tracks, "0 read". |
+| P5-AC8 | Pass | The cache fills a new index with the same library; a deleted cache rebuilds it. |
+| P5-AC9 | Pass | Another `user_version` deletes and rebuilds the file (unit and integration tests). Manual: the P4 cache (version 1) was rebuilt. |
+| P5-AC10 | Pass | `library/title.rs` tests and the golden file ("01 - ", "02. ", "1-03 ", "004_"; "1984" stays). |
+| P5-AC11 | Pass | Golden file: disc tags win over folder order; without tags "Disc 2" comes before "Disc 10". |
+| P5-AC12 | Pass with exception | Manual Linux: "Music folder not found: lib50k" and "Change folder"; the cache file is unchanged. E2E: Change folder leads to the library. The native picker step did not run (E1). |
+| P5-AC13 | Pass | Core test: a canceled old scan, a clear and a new scan leave only new paths in the index and the cache. App: one scan at a time (gate), and the player queue clears before the index (`Command::Clear`). |
+| P5-AC14 | Pass (Linux); Windows long path in CI | Non-ASCII names in the golden file. A name that is not valid UTF-8 is skipped and logged once. The path over 260 characters is a Windows-only test (`p5_ac14_...`). |
+| P5-AC15 | Pass | A file added after a scan appears only after the next scan. |
+| P5-AC16 | Pass | Cover state none, valid and broken and the embedded picture flag are cached; a restart decodes no cover; a changed cover decodes again. |
+
+**Notes**
+
+- N1: IMA ADPCM WAV: lofty 0.25.4 cannot parse it, Symphonia decodes it. Such a file is a track without tags, with the Symphonia duration (R1).
+- N2: P5.10 asks for "<path>" in the message. D13 wins (as in 1.11): the message shows the folder name.
+- N3: the generator takes `--edge-cases` and `--covers N` (P5.13), with a test.
+- N4: `truncated.mp3` and `damaged.ogg` scan as tracks; their decode errors belong to P7.
+- N5: a part of the folder that cannot be read makes the scan "incomplete": nothing is removed.
+
+**Exceptions**
+
+- E1: the GTK folder picker under Xvfb lists no files, so the picker step of P5-AC12 did not run. P4 uses the same command.
+- E2: P5.3 sidecar part: the scan does not read `sidecar.json` yet. The sidecar reader comes in P14.3 and the R4 sidecar step in P16.6. Those phases add the stamp check.
+- E3: the Windows-only tests (long path, junction behavior) run in CI only.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 17, F3 0, F4 9. Sources: own audit, a reviewer agent and the Codex review of `febbf71`.
+
+- F1: skipped files were read again at every scan (P5-AC7). The index and the cache (`skipped` table, schema 3) now keep their stamp and reason.
+- F2, scan: a broken file link made every scan incomplete, so nothing was ever removed (now skipped and logged). A file that could not be opened counted as corrupt and lost its track (now the scan is incomplete and keeps it). Recording a skipped file removed its track before the removal count. A changed file got a new id; it now keeps its id (D46 rationale). IMA ADPCM WAV counted as corrupt (Symphonia fallback). Cover files decoded under the index write lock (now outside it). "1-01 " as a whole name became "01 ". A folder change kept old album thumbnails.
+- F2, cache and jobs: a corrupt `library.sqlite` was never rebuilt (now deleted and created again). Canceling a waiting folder change skipped the clear. The old folder's playback stopped only after the root changed. Two quick Rescans could both start, and a panic left Rescan blocked (atomic claim and a drop guard). A canceled or failed scan replaced the last counts.
+- F2, Codex review of `febbf71` (P4 code): a drive or root folder sent its path as the name (now a label). A failed settings save still changed the live settings. Handled e2e mock commands fell through and threw. The plan named the removed `protocol-asset` feature.
+- F4:
+  - Transport controls stay enabled when the folder is missing: the queue is empty, and P7 handles play errors.
+  - Song order sorts per call: 50,000 songs sort in milliseconds; P6.1 finishes the queries.
+  - Windows junctions: std reports them as links, so the walk reads them through and skips folders.
+  - The P5-AC13 test clears by hand: the job order needs a Tauri runtime; the code path is reviewed and the player clear is tested.
+  - No test for the "part of the folder unreadable" branch: tests run as root, so permissions do not apply.
+  - P5-AC15 cannot fail: there is no watcher, and the test records that behavior.
+  - The hash guard finds nothing to catch in P5: the scan never writes. Later phases that write use it (R11).
+  - The golden file came from the implementation: it was reviewed line by line against R3 and R4 before commit.
+  - Real folders named "Unknown Artist" or "Unknown Album" sort with the unknown groups; lofty also reads embedded pictures for the flag (a 50,000-track cold scan took 9 s in the container; P6-AC6 measures).
+
+**Follow-ups:** none.
 
 ---
 

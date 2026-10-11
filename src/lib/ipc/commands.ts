@@ -40,6 +40,7 @@ export const commands = {
   setOnlineLookups: (on: boolean) => invoke<SettingsView>("set_online_lookups", { on }),
   firstRunNoticeDone: () => invoke<SettingsView>("first_run_notice_done"),
   chooseMusicFolder: () => invoke<SettingsView>("choose_music_folder"),
+  rescan: () => invoke<void>("rescan"),
   cancelJob: (id: string) => invoke<void>("cancel_job", { id }),
   openLogFolder: () => invoke<void>("open_log_folder"),
   openNotice: () => invoke<void>("open_notice"),

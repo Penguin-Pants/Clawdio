@@ -15,6 +15,7 @@ The app writes the file atomically: a temp file in the same folder, then a renam
 | `onlineLookups` | boolean | `false` | The Online lookups switch (R7). |
 | `onlineNoticeDone` | boolean | `false` | `true` after the user answers the first-run notice. |
 | `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers). |
+| `lastScan` | object or `null` | `null` | Counts of the last scan (R2): `added`, `removed` and `skipped`. Settings shows them. A file without the key reads as `null`. |
 
 Example:
 
@@ -27,6 +28,11 @@ Example:
   "window": {
     "width": 1200.0,
     "height": 800.0
+  },
+  "lastScan": {
+    "added": 50000,
+    "removed": 0,
+    "skipped": 12
   }
 }
 ```

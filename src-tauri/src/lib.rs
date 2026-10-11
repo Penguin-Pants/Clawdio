@@ -138,10 +138,11 @@ pub fn run() -> tauri::Result<()> {
             app.manage(player);
             window::create_main(app.handle())?;
 
-            // Startup scan of the stored folder (R2). The fixtures build serves its own data.
+            // Startup sync of the stored folder (R2). A missing folder leaves the cache alone
+            // (D30). The fixtures build serves its own data.
             if !cfg!(feature = "fixtures") {
                 if let Some(root) = root.filter(|path| path.is_dir()) {
-                    jobs::start_scan(app.handle(), root, false);
+                    jobs::start_scan(app.handle(), root, jobs::ScanKind::Startup);
                 }
             }
             Ok(())
@@ -164,6 +165,7 @@ pub fn run() -> tauri::Result<()> {
             commands::settings::set_online_lookups,
             commands::settings::first_run_notice_done,
             commands::settings::choose_music_folder,
+            commands::settings::rescan,
             commands::settings::cancel_job,
             commands::settings::open_log_folder,
             commands::settings::open_notice,

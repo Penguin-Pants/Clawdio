@@ -190,6 +190,17 @@ pub struct SettingsView {
     /// The first-run notice is still to be answered (R7).
     pub notice_pending: bool,
     pub portable: bool,
+    /// Counts of the last scan (R2), shown in Settings.
+    pub last_scan: Option<ScanCounts>,
+}
+
+/// The counts of a finished scan (R2): the status line and Settings show them.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ScanCounts {
+    pub added: u32,
+    pub removed: u32,
+    pub skipped: u32,
 }
 
 /// A running job for the status line (R5).

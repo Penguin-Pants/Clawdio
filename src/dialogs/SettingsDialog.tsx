@@ -60,6 +60,11 @@ export function SettingsDialog() {
           {view.folderState === "missing" && (
             <p className="text-sm text-text-secondary">The folder is not available.</p>
           )}
+          {view.lastScan && (
+            <p className="text-sm text-text-secondary">
+              Last scan: {view.lastScan.added} added, {view.lastScan.removed} removed, {view.lastScan.skipped} skipped
+            </p>
+          )}
           <div>
             <Button variant="outline" size="sm" onClick={chooseMusicFolder}>
               Change folder

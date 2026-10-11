@@ -1,0 +1,86 @@
+[
+  {
+    "albums": [
+      {
+        "album": "Début",
+        "songs": [["Human Behaviour", 1]]
+      }
+    ],
+    "artist": "Björk"
+  },
+  {
+    "albums": [
+      {
+        "album": "Wav",
+        "songs": [
+          ["Float", 1],
+          ["Adpcm", 2]
+        ]
+      }
+    ],
+    "artist": "Formats"
+  },
+  {
+    "albums": [
+      {
+        "album": "Animals",
+        "songs": [["Dogs", 1]]
+      },
+      {
+        "album": "The Wall",
+        "songs": [
+          ["In the Flesh", 1],
+          ["The Thin Ice", 2],
+          ["Hey You", 1],
+          ["Is There Anybody Out There", 2]
+        ]
+      },
+      {
+        "album": "Ummagumma",
+        "songs": [
+          ["Astronomy Domine", 1],
+          ["Careful with That Axe", 2],
+          ["Sysyphus", 1]
+        ]
+      },
+      {
+        "album": "Unknown Album",
+        "songs": [["Loose Single", null]]
+      }
+    ],
+    "artist": "Pink Floyd"
+  },
+  {
+    "albums": [
+      {
+        "album": "Examples",
+        "songs": [
+          ["Dash", 1],
+          ["Dot", 2],
+          ["Disc Dash", 3],
+          ["Underscore", 4],
+          ["1984", null]
+        ]
+      }
+    ],
+    "artist": "Prefixes"
+  },
+  {
+    "albums": [
+      {
+        "album": "音楽図鑑",
+        "songs": [["チベタン・ダンス", 2]]
+      }
+    ],
+    "artist": "坂本龍一"
+  },
+  {
+    "albums": [
+      {
+        "album": "Unknown Album",
+        "songs": [["Root Song", null]]
+      }
+    ],
+    "artist": "Unknown Artist"
+  }
+]

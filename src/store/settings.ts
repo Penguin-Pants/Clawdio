@@ -4,6 +4,7 @@ import { commands, type SettingsView } from "@/lib/ipc/commands";
 /** Before the first read: no folder, nothing pending, so no prompt flashes at start. */
 export const UNKNOWN_SETTINGS: SettingsView = {
   folderName: null,
+  lastScan: null,
   folderState: "none",
   onlineLookups: false,
   noticePending: false,
