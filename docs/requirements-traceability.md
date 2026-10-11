@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.6, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.6. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.8, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.8. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -23,8 +23,8 @@
 
 | Source | Rows | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|
-| Requirements | 301 | 205 | 37 | 8 | 9 | 42 | 0 |
-| design.md | 76 | 46 | 13 | 16 | 0 | 1 | 0 |
+| Requirements | 301 | 205 | 38 | 8 | 8 | 42 | 0 |
+| design.md | 76 | 47 | 12 | 16 | 0 | 1 | 0 |
 | Branding prompt | 39 | 26 | 4 | 8 | 0 | 1 | 0 |
 | Asset manifest | 18 | 11 | 3 | 4 | 0 | 0 | 0 |
 | tokens.json | 20 | 16 | 4 | 0 | 0 | 0 | 0 |
@@ -240,7 +240,7 @@
 | R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Planned (D28) |
 | R20-4 | AppImage exempt from the size target | §2 R20 | P18.3 | P18-AC2 | CI | Planned |
 | R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Gate (B2) |
-| R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Gate (B2) |
+| R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Planned (D49) |
 | R21-1 | Windows per-user installer, no admin | §2 R21 | P18.1 | P18-AC3 | MAN-W | Planned |
 | R21-2 | Windows portable zip with the `portable` marker | §2 R21 | P18.2 | P18-AC4 | MAN-W | Planned |
 | R21-3 | Linux AppImage (built on the R22 baseline) and `.deb` | §2 R21 | P18.3 | P18-AC1, P18-AC5 | CI, MAN-L | Planned |
@@ -424,7 +424,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-1.6 | Deep black shell, sparse red controls, monochrome utility icons | §1 | P0.7, P2.10 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-1.7 | Lair imagery is promotional, not a feature | §1 | none | none | REV | Resolved (C9) |
 | DES-1.8 | Rebuild assets as original vectors; no tracing or embedded crops; recognizable at 16 to 32 px; no third-party copies | §1 | P1.1, P1.2, P1.3, P1.5, P1.7 | P1-AC1, P1-AC3, P1-AC7 | UT, MAN-L, REV | Planned |
-| DES-2.1 | Name Clawdio; publisher Dr. Claw Development; positioning; message | §2 | P0.2, P0.4, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned (Q1) |
+| DES-2.1 | Name Clawdio; publisher Dr. Claw Development; positioning; message | §2 | P0.2, P0.4, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
 | DES-2.2 | Attributes: minimalist, precise, theatrical, self-contained, technical, controlled | §2 | none | none | REV | Reference |
 | DES-2.3 | Logo 1: primary wordmark, transparent background | §2 | P1.1, P1.4 | P1-AC4 | REV | Planned |
 | DES-2.4 | Logo 2: app icon with cat, faint arc and bars on a dark square; legible at 16 px | §2 | P1.4, P1.7 | P1-AC3 | MAN-L | Planned |
@@ -600,7 +600,7 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 |---|---|---|---|---|---|---|
 | AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Planned |
 | AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Planned |
-| AGT-3 | Mock data only in tests (Edits rule 9); the Milestone 0 `fixtures` feature is an approved exception | Edits rule 9 | P0.1, P3.1, P6.7 | P0-AC7, P6-AC8 | REV | Resolved (C19) |
+| AGT-3 | Mock data only in tests (Edits rule 9); the Milestone 0 `fixtures` feature is an approved exception | Edits rule 9 | P0.1, P2.15, P3.1, P6.7 | P0-AC7, P2-AC19, P6-AC8 | REV, E2E | Resolved (C19) |
 
 ---
 
@@ -623,11 +623,8 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 
 | Item | Rows | What is needed | Owner of the next step |
 |---|---|---|---|
-| B2 Milestone 0 gate | R20-5, R20-6, AC-1, VER-3 | P3 measurements on Windows and Linux | Agent runs P3; the owner decides if over 300 MB |
+| B2 Milestone 0 gate | R20-5, R20-6, AC-1, VER-3 | P3 measurements on Windows and Linux | Agent runs P3; over 300 MB raises the target (D49) |
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
-| B4, Q5 Real exports | R14-12, AC-4, VER-2 | One Apple XML, one MusicBee M3U8, one legacy `.m3u` | Owner supplies files |
-| Q1 Publisher name | DES-2.1 | Confirm "Dr. Claw Development" or give another holder | Owner, before P18 |
-| Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets | Owner, after P1 |
-| Q7 Set cover overwrite | R8-9 | Confirm "ask, then replace" (C17) | Owner, before P10 |
-| Q8 Small icon layers | DES-2.4, AST-2, AST-13 | Allow the 16 and 24 px layers from the simple icon if the full icon fails | Owner, after P1 |
-| B5 Test machines | All MAN-W and MAN-L rows | Windows 10 or 11 and Ubuntu 22.04 desktops | Owner or agent environment, by P18 |
+| B4, Q5 Real exports | R14-12, AC-4, VER-2 | The owner's exports for the formats they have (Apple XML, MusicBee M3U8, legacy `.m3u`). Missing formats stay "not verified". | Owner supplies files at P12 |
+| Q6 Brand sign-off | DES-1.3, DES-1.4, AST-1 to AST-3 | Review P1 assets. P2 waits for the sign-off. | Owner, after P1 |
+| B5 Test machines | All MAN-W and MAN-L rows | The owner has a Windows 10 or 11 machine only. MAN-L rows stay "not verified" and P18 records them as exceptions. | Owner runs the MAN-W checks by P18 |
