@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.1, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.1. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.2, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.2. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -105,7 +105,7 @@
 | R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Planned |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
 | R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Planned |
-| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4 | E2E, MAN-L | Planned |
+| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Planned |
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Planned |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Planned |
@@ -160,7 +160,7 @@
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Planned (D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Planned |
 | R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Planned |
-| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16 | IT | Planned (D44) |
+| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Planned (D44) |
 | R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
 | R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
 | R8-4 | Name normalization; save exact matches only | §2 R8 | P14.4 | P14-AC3 | UT | Planned (D43) |
@@ -180,7 +180,7 @@
 | R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Planned |
 | R10-2 | Fill blanks only: title, track number, year | §2 R10 | P16.1, P16.4 | P16-AC1 | UT | Planned |
 | R10-3 | "Missing" means the embedded tag is absent or empty; file-name fallbacks do not count | §2 R10 | P16.1 | P16-AC1 | UT | Planned |
-| R10-4 | Lookup by folder names, tags and file name; no fingerprinting | §2 R10 | P16.2, P16.3 | P16-AC3, P16-AC7 | IT, REV | Planned (D42) |
+| R10-4 | Lookup by folder names, tags and file name; no fingerprinting | §2 R10 | P16.2, P16.3 | P16-AC3, P16-AC7, P16-AC9 | IT, REV | Planned (D42) |
 | R10-5 | One `sidecar.json` per album folder; it also holds lookup markers | §2 R10 | P14.3, P16.5 | P16-AC3, P14-AC4 | IT | Planned |
 | R10-6 | Embedded tags win over sidecar values | §2 R10 | P16.6 | P16-AC3 | IT | Planned |
 | R11-1 | The app never modifies audio files | §2 R11 | P5.14 | P16-AC4 | IT | Planned |
