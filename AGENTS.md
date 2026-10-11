@@ -60,6 +60,8 @@ Run on the complete diff of a task or phase, before commit.
 
 #### Finding classification
 
+Give each finding exactly one class: the first class in this list that applies.
+
 - F1 Blocking: breaks an acceptance criterion, a test, a security rule or a source requirement. Fix before commit.
 - F2 In scope: a defect in code the current task changed. Fix in the current task.
 - F3 Out of scope: a defect or idea outside the current task. Propose a root-cause fix (Edits rule 2) and record it in `docs/build-plan.md` section 11 until approved.
