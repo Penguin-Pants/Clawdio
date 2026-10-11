@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.4, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.4. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.5, October 11, 2026.
+**Plan:** `docs/build-plan.md` v1.5. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -598,8 +598,8 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| AGT-1 | Repository instructions for standards, architecture, workflow and conventions. The file does not exist. | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Resolved (B1) |
-| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification | Task brief | P0.1 | P0-AC7 | REV | Resolved (B1) |
+| AGT-1 | Repository instructions for standards, architecture, workflow and conventions | Task brief, prompt mission | P0.1 | P0-AC7 | REV | Resolved (B1) |
+| AGT-2 | TWO-PASS REVIEW procedure and the shared finding classification (now in `AGENTS.md`) | Task brief | P0.1 | P0-AC7 | REV | Resolved (B1) |
 
 ---
 

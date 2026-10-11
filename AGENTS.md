@@ -1,4 +1,4 @@
-Project tier: 
+Project tier:
 Conventions version: 1.0
 
 ## Agent Rules
@@ -48,6 +48,22 @@ User has diagnosed ADHD. Optimize every reply for scannability, brevity and sing
 1. Stub first. Prove failure on an assertion, not a compile error. Write minimum code to pass.
 2. Unit test every public function and error branch. Integration test every feature slice.
 3. Assert behavior, not implementation. Delete assertions that survive an inverted requirement.
+
+#### Review (TWO-PASS REVIEW)
+
+Run on the complete diff of a task or phase, before commit.
+
+1. Pass 1, audit: list every risk in the diff. Cover correctness, scope, security, accessibility, performance and docs.
+2. Pass 2, challenge: test each risk against the code, the tests and the source documents. Drop each risk that does not hold.
+3. Classify each remaining finding as F1 to F4 and act on its class.
+4. Record the count per class and every F3 and F4 finding in the phase record (`docs/build-plan.md` section 2.1).
+
+#### Finding classification
+
+- F1 Blocking: breaks an acceptance criterion, a test, a security rule or a source requirement. Fix before commit.
+- F2 In scope: a defect in code the current task changed. Fix in the current task.
+- F3 Out of scope: a defect or idea outside the current task. Propose a root-cause fix (Edits rule 2) and record it in `docs/build-plan.md` section 11 until approved.
+- F4 Rejected: the finding does not hold. Record one line with the reason.
 
 #### Tooling
 
