@@ -24,11 +24,11 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 8 | 199 | 37 | 7 | 8 | 42 | 0 |
-| design.md | 76 | 16 | 34 | 10 | 15 | 0 | 1 | 0 |
-| Branding prompt | 39 | 16 | 14 | 3 | 5 | 0 | 1 | 0 |
+| Requirements | 301 | 27 | 182 | 36 | 6 | 8 | 42 | 0 |
+| design.md | 76 | 25 | 27 | 9 | 14 | 0 | 1 | 0 |
+| Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
-| tokens.json | 20 | 7 | 12 | 1 | 0 | 0 | 0 | 0 |
+| tokens.json | 20 | 17 | 2 | 1 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
@@ -43,7 +43,7 @@
 |---|---|---|---|---|---|---|
 | S1-1 | Small open source player for Windows and Linux | §1 | P0.4, P18.1 | P0-AC1, P18-AC5 | CI, MAN-L, MAN-W | Planned |
 | S1-2 | One music folder; shows artist, album and song; plays mp3, ogg and wav | §1 | P4.5, P5.2, P5.6, P6.3, P7.2 | P4-AC3, P5-AC1, P5-AC2 | IT, MAN-L | Planned |
-| S1-3 | Widget UI: dock, resize, hide, show; three built-in layouts | §1 | P2.1, P2.4, P2.6 | P2-AC2, P2-AC4 | E2E | Planned |
+| S1-3 | Widget UI: dock, resize, hide, show; three built-in layouts | §1 | P2.1, P2.4, P2.6 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | S1-4 | Adds artwork, lyrics and missing metadata | §1 | P14.5, P15.1, P16.2 | P14-AC4, P15-AC1, P16-AC3 | IT | Planned |
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
 | S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
@@ -80,8 +80,8 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Planned |
-| R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Planned |
+| R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
+| R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
 | R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Planned |
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Planned |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Planned |
@@ -89,38 +89,38 @@
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Planned |
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Planned |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
-| R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Resolved (C14) |
+| R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Planned (D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Planned |
-| R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Planned |
-| R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Planned |
+| R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
+| R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
 | R28-4 | Columns mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
 | R28-5 | Top/bottom mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Planned |
 | R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Planned |
 | R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Planned |
-| R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Planned |
-| R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Planned (D8) |
+| R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Done (P2) |
+| R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
 | R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Planned |
-| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Planned |
-| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Planned |
+| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Done (P2) |
+| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Done (P2) |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
 | R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Planned |
 | R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Planned |
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
-| R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Planned |
+| R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Planned |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
-| R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Planned |
+| R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Done (P2) |
 | R30-5 | Milestone 0 uses React, Tailwind, shadcn/ui and the docking library | §2 R30 | P3.3, P3.4, P3.2 | P3-AC1, P3-AC5 | MEAS | Planned |
 | R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Planned |
 | R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Planned |
 | R31-2 | Build generates platform icons from `clawdio-icon-full.svg`; placeholder until it exists | §2 R31 | P0.11, P1.6 | P1-AC2, P1-AC5, P1-AC6 | CI, MAN-L | Done (P1, D9) |
 | R31-3 | Built-in dark theme is `theme/tokens.json` compiled at build time | §2 R31 | P0.6, P0.7 | P0-AC2, P0-AC3 | UT, MAN-L | Done (P0) |
 | R31-4 | Name, window title, bundle identifier and User-Agent from one build value | §2 R31 | P0.4, P0.8 | P0-AC6, P14-AC6, P18-AC11 | UT, REV | Resolved (C10) |
-| R31-5 | Lucide icons by default; a brand icon replaces an icon by name | §2 R31 | P2.13 | P2-AC11 | UT, MAN-L | Planned |
+| R31-5 | Lucide icons by default; a brand icon replaces an icon by name | §2 R31 | P2.13 | P2-AC11 | UT, MAN-L | Done (P2) |
 | R31-6 | User-selected theme file | §2 R31 | none | none | REV | Deferred |
 
 ### 1.4 Section 2: playback and controls (R6, R24, R25, R27)
@@ -146,7 +146,7 @@
 | R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5, P11-AC8 | E2E | Planned |
 | R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Planned (D24) |
 | R25-4 | Ctrl+F focuses search; Esc clears it and returns to the Library | §2 R25 | P6.6, P0.13 | P6-AC5, P0-AC8 | E2E | Planned |
-| R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Planned |
+| R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Done (P2) |
 | R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Planned |
 | R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Planned |
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Planned (D25) |
@@ -309,7 +309,7 @@
 | E-21 | Layout problems follow R29 | §5 | P9.4 | P9-AC4 | UT | Planned |
 | E-22 | Transport controls hidden: keys and media keys work; Reset layout restores | §5 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W, MAN-L | Planned |
 | E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Planned (D45) |
-| E-24 | Empty Play queue, Playlists or Lyrics show a hint | §5 | P2.9 | P2-AC12 | E2E | Planned |
+| E-24 | Empty Play queue, Playlists or Lyrics show a hint | §5 | P2.9 | P2-AC12 | E2E | Done (P2) |
 | E-25 | Output stream error: stop with a message; next Play opens the default device | §5 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
 | E-27 | Closing the window quits; media keys only while running | §5 | P8.5 | P8-AC5 | MAN-L, MAN-W | Planned |
@@ -322,7 +322,7 @@
 | CON-1 | Stack: Tauri v2, Rust backend, SQLite, React, Tailwind, shadcn/ui; revisit if Milestone 0 fails | §6 | P0.3, P0.4, P3.8 | P0-AC1, P3-AC4 | CI | Planned (D1) |
 | CON-2 | Branding: no feature code depends on the name, icon or theme | §6 | P0.14 | P0-AC6, P18-AC9 | UT, MAN-L | Planned (D34) |
 | CON-3 | Docking library MIT, React bindings, passes Milestone 0, no commercial add-ons, no floating or pop-out, tabs on | §6 | P2.1, P3.8, P18.4 | P2-AC2, P3-AC4, P18-AC7 | E2E, REV | Planned (D8) |
-| CON-4 | Complexity budget: fixed widgets, no per-view overrides, named layouts, floating, pop-out or layout import and export | §6 | P0.1, P2.2 | P2-AC2 | REV | Planned |
+| CON-4 | Complexity budget: fixed widgets, no per-view overrides, named layouts, floating, pop-out or layout import and export | §6 | P0.1, P2.2 | P2-AC2 | REV | Done (P2) |
 | CON-5 | Audio engine: rodio pinned, Symphonia with `mp3`, lofty; gapless-ready design | §6 | P7.2, P7.5 | P7-AC1 | REV | Planned (D3) |
 | CON-6 | License: MIT app; Symphonia MPL-2.0; LGPL in the AppImage; license texts, versions and sources per release; NOTICE file; no Strawberry code | §6 | P0.2, P18.4 | P18-AC7, P18-AC8 | REV, CI | Planned |
 | CON-7 | Platforms: Windows and Linux | §6 | P0.16, P18.3 | P0-AC1, P18-AC5 | CI | Planned |
@@ -361,7 +361,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 
 | ID | Item | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| DEC-1 | Docking shell stays; design.md §5 rewrite (done in the repo before planning) | §8.1 | P2.1 | P2-AC1 | E2E | Planned |
+| DEC-1 | Docking shell stays; design.md §5 rewrite (done in the repo before planning) | §8.1 | P2.1 | P2-AC1 | E2E | Done (P2) |
 | DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Planned |
 | DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
 | DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Planned |
@@ -370,13 +370,13 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-7 | Tabbed groups allowed | §8.7 | P2.1 | P9-AC3 | E2E | Planned |
 | DEC-8 | Magic UI optional; no Motion unless a component needs it | §8.8 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DEC-9 | Portable mode and Windows portable zip | §8.9 | P4.1, P18.2 | P4-AC4, P18-AC4 | MAN-W | Planned |
-| DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Planned |
+| DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Planned |
 | DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Planned |
 | DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Planned |
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Planned |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
-| DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Planned |
+| DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Planned |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Planned |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -441,9 +441,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
 | DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Planned |
 | DES-4.5 | Sentence case; uppercase spaced text only for brand collateral | §4 | P17.7 | P17-AC8 | REV | Planned |
-| DES-5.1 | Six widgets; headers with grip, title and close (hideable only); drag docking; show and hide | §5 | P2.1, P2.2, P2.3, P2.6 | P2-AC1, P2-AC2, P2-AC3, P2-AC4 | E2E | Planned |
-| DES-5.2 | Fixed chrome: status line and top-right menu button; no layout hides them | §5 | P2.5, P2.6, P2.7 | P2-AC6 | E2E | Resolved (C14) |
-| DES-5.3 | Library widget: mode switch, search in header, dropdown when narrow | §5 | P2.8 | P2-AC5 | E2E | Planned |
+| DES-5.1 | Six widgets; headers with grip, title and close (hideable only); drag docking; show and hide | §5 | P2.1, P2.2, P2.3, P2.6 | P2-AC1, P2-AC2, P2-AC3, P2-AC4 | E2E | Done (P2) |
+| DES-5.2 | Fixed chrome: status line and top-right menu button; no layout hides them | §5 | P2.5, P2.6, P2.7 | P2-AC6 | E2E | Done (P2, C14) |
+| DES-5.3 | Library widget: mode switch, search in header, dropdown when narrow | §5 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | DES-5.4 | Default arrangement, auto-save, Reset layout, tabbed groups, no floating or pop-out | §5 | P2.4, P9.3 | P2-AC1, P9-AC2, P9-AC3 | E2E | Planned |
 | DES-5.5 | Main area prioritizes browsing, metadata and art | §5 | P2.4, P6.4 | P2-AC1 | E2E | Planned |
 | DES-5.6 | Persistent, reachable transport controls; keys and media keys when Transport is hidden | §5 | P7.7, P7.11, P8.2 | P7-AC5, P8-AC4 | E2E, MAN-W | Planned |
@@ -451,8 +451,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D45) |
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Planned |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Planned |
-| DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Planned |
-| DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Planned |
+| DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
+| DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Planned |
 | DES-6.4 | Album cards: cover, title, artist, quiet hover | §6 | P6.4, P10.3 | P10-AC4 | E2E | Resolved (C11) |
 | DES-6.5 | Transport: large play/pause, neutral stop and skip, shuffle and repeat toggles, clear focus ring | §6 | P7.7 | P7-AC8, P7-AC9 | E2E | Planned |
@@ -463,16 +463,16 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
 | DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Planned |
 | DES-6.12 | Error states: plain, actionable text for missing and invalid files | §6 | P5.10, P11.8 | P5-AC12, P11-AC3, P11-AC10 | E2E, IT | Planned |
-| DES-6.13 | Lucide outline icons; no mismatched or decorative icons in navigation | §6 | P2.13 | P2-AC11 | UT, REV | Planned |
+| DES-6.13 | Lucide outline icons; no mismatched or decorative icons in navigation | §6 | P2.13 | P2-AC11 | UT, REV | Done (P2) |
 | DES-7.1 | Magic UI only if the stack supports it | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DES-7.2 | Install only components with real value | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DES-7.3 | Blur Fade or Magic Card may fit About or empty states | §7 | none | none | REV | Resolved (C8) |
 | DES-7.4 | No marquees, border beams, animated gradients, confetti, particles or per-track animation | §7 | P17.8 | P17-AC3 | REV, E2E | Planned (D6) |
-| DES-7.5 | CSS transitions over a motion dependency | §7 | P0.7 | P2-AC13 | E2E | Planned (D6) |
+| DES-7.5 | CSS transitions over a motion dependency | §7 | P0.7 | P2-AC13 | E2E | Done (P2, D6) |
 | DES-7.6 | Check Magic UI docs before choosing components | §7 | none | none | REV | Planned (D6) |
 | DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Done (P0, D6) |
-| DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Planned |
-| DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Planned |
+| DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
+| DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
 | DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
 | DES-8.4 | No animation on repeated rows, the seek bar or live times | §8 | P0.7, P6.4, P7.7 | P2-AC13 | E2E | Resolved (C16) |
 | DES-8.5 | No recurring decorative motion during playback | §8 | P17.8 | P17-AC3 | REV | Planned (D6) |
@@ -499,7 +499,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| BRD-M1 | Use design.md, asset-manifest, tokens.json and the mockup | Mission | P0.6, P1.1, P2.10 | P0-AC3, P1-AC1 | REV | Planned |
+| BRD-M1 | Use design.md, asset-manifest, tokens.json and the mockup | Mission | P0.6, P1.1, P2.10 | P0-AC3, P1-AC1 | REV | Done (P2) |
 | BRD-M2 | Follow AGENTS.md and the repo structure; read the requirements in full | Mission | P0.1 | P0-AC7 | REV | Resolved (C1) |
 | BRD-1.1 | Inspect README, requirements, AGENTS.md, source, UI, manifests, scripts, icon pipeline, docs, tests | Phase 1.1 | P0.17 | P0-AC7 | REV | Done (P0) |
 | BRD-1.2 | Identify framework, wrapper, OS integration, styling, brand files, old names | Phase 1.2 | P0.4 | P0-AC1 | REV | Done (P0) |
@@ -575,22 +575,22 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 | TOK-1 | `colors.brand.red` | `#E10606` | P0.6, P2.10, P7.7 | P0-AC5, P2-AC7 | UT, E2E | Planned (D10) |
 | TOK-2 | `colors.brand.steel` | `#4A4A4A` | P0.6, P1.4 | P1-AC4 | UT, REV | Done (P1, D10) |
 | TOK-3 | `colors.bg.canvas` | `#0B0B0B` | P0.6, P0.7 | P0-AC2, P0-AC3 | MAN-L | Done (P0) |
-| TOK-4 | `colors.bg.surface` | `#111111` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
-| TOK-5 | `colors.bg.elevated` | `#171717` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
-| TOK-6 | `colors.bg.hover` | `#1D1D1D` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
-| TOK-7 | `colors.border.default` | `#292929` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
-| TOK-8 | `colors.border.strong` | `#343434` | P0.6, P2.10 | P2-AC7 | E2E | Planned |
+| TOK-4 | `colors.bg.surface` | `#111111` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |
+| TOK-5 | `colors.bg.elevated` | `#171717` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |
+| TOK-6 | `colors.bg.hover` | `#1D1D1D` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |
+| TOK-7 | `colors.border.default` | `#292929` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |
+| TOK-8 | `colors.border.strong` | `#343434` | P0.6, P2.10 | P2-AC7 | E2E | Done (P2) |
 | TOK-9 | `colors.text.primary` | `#EDEDED` | P0.6, P0.7 | P0-AC5 | UT | Done (P0) |
 | TOK-10 | `colors.text.secondary` | `#B7B7B7` | P0.6 | P0-AC5 | UT | Done (P0) |
 | TOK-11 | `colors.text.muted` | `#999999` | P0.6 | P0-AC4, P0-AC5 | UT | Done (P0) |
 | TOK-12 | `colors.state.selected` | `#5B1010` | P0.6, P6.4 | P0-AC5 | UT, E2E | Planned |
 | TOK-13 | `colors.state.redHover` | `#F01C1C` | P0.6 | P0-AC5 | UT | Done (P0, D10) |
 | TOK-14 | `colors.state.redActive` | `#C40404` | P0.6, P0.7 | P0-AC5 | UT | Done (P0, D10) |
-| TOK-15 | `radii.control` | `10px` | P0.6, P0.7 | P2-AC7 | E2E | Planned |
-| TOK-16 | `radii.card` | `12px` | P0.6 | P2-AC7 | E2E | Planned |
-| TOK-17 | `radii.dialog` | `16px` | P0.6 | P2-AC7 | E2E | Planned |
-| TOK-18 | `motion.fast` | `140ms` | P0.6, P0.7 | P2-AC13 | E2E | Planned |
-| TOK-19 | `motion.panel` | `200ms` | P0.6, P0.7 | P2-AC13 | E2E | Planned |
+| TOK-15 | `radii.control` | `10px` | P0.6, P0.7 | P2-AC7 | E2E | Done (P2) |
+| TOK-16 | `radii.card` | `12px` | P0.6 | P2-AC7 | E2E | Done (P2) |
+| TOK-17 | `radii.dialog` | `16px` | P0.6 | P2-AC7 | E2E | Done (P2) |
+| TOK-18 | `motion.fast` | `140ms` | P0.6, P0.7 | P2-AC13 | E2E | Done (P2) |
+| TOK-19 | `motion.panel` | `200ms` | P0.6, P0.7 | P2-AC13 | E2E | Done (P2) |
 | TOK-20 | `motion.reduced` | "honor system setting" | P0.6, P0.7 | P2-AC8, P17-AC3 | E2E, MAN-L | Planned |
 
 ---

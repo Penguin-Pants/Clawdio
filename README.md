@@ -31,6 +31,7 @@ Minimalist local music player
 | Build the app | `npm run tauri build` |
 | Frontend checks (lint, types, tests, source and SVG guards) | `npm run check` |
 | Rust checks | `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` |
+| UI tests (Playwright, Chromium and WebKit, mocked IPC) | `npx playwright install chromium webkit`, then `npm run test:e2e` |
 
 The theme comes from `theme/tokens.json`. The build compiles it to CSS. See `docs/theming-and-brand.md`.
 

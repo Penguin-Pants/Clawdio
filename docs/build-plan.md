@@ -66,7 +66,7 @@ A phase is Done when all of these are true:
 |---|---|---|---|
 | P0 | Foundation and conventions | none | Done with exceptions |
 | P1 | Brand identity assets and icon pipeline | P0 | Done with exceptions |
-| P2 | Themed docking shell | P1, Q6 sign-off | Not started |
+| P2 | Themed docking shell | P1, Q6 sign-off | Done with exceptions |
 | P3 | Milestone 0 footprint gate | P2 | Not started |
 | P4 | End-to-end slice | P3 | Not started |
 | P5 | Library scan and cache | P4 | Not started |
@@ -204,6 +204,75 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Eyes as holes in the mono icon: one fill cannot show filled eyes on a filled head (N4).
 
 **Follow-ups:** F-10. F-09 is closed (option (b), section 13).
+
+#### P2. Themed docking shell (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, base `8143bc3`. Messages start with `P2:`.
+- **Packages:** `dockview-react` 8.5.1 (MIT), `zustand` 5.0.15, `@playwright/test` 1.64.0 and `@axe-core/playwright` 4.13.0 (dev). shadcn/ui components added with the 4.21.4 CLI: `dropdown-menu`, `toggle-group` (with `toggle`), `select`, `input`, `tooltip`, `dialog`.
+- **Screenshots:** `docs/images/p2-default-1200x800.png`, `p2-default-800x560.png`, `p2-tabbed-1200x800.png`, `p2-tabbed-800x560.png`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P2-AC1 | Pass (Chromium) | `tests/e2e/docking.spec.ts`. Unit: `src/shell/layouts.test.ts`. |
+| P2-AC2 | Pass (Chromium, Xvfb) | `docking.spec.ts`: edge dock, tabbed group, splitter resize, no context menu, no float or pop-out item. The debug app under Xvfb (WebKitGTK): an `xdotool` drag of the Transport controls header to the Library edge showed the red-bordered drop zone and docked the widget. |
+| P2-AC3 | Pass (Chromium) | `docking.spec.ts`: no close control, disabled menu item, Delete and Backspace on the focused tab, moving Library to an edge and into a tabbed group keeps one Library. Unit: the guard tests. |
+| P2-AC4 | Pass (Chromium) | `layouts.spec.ts`: show and hide each hideable widget, mode radio items, each layout, Reset layout from the menu and Ctrl+Shift+L, 20 layout applications. |
+| P2-AC5 | Pass (Chromium) | `layouts.spec.ts`: search and mode switch in the header; dropdown at 350 px; search text kept. Selection: `src/store/library.test.ts`, `LibraryWidget.test.tsx` (no list UI before P3, N3). |
+| P2-AC6 | Pass (Chromium) | `layouts.spec.ts` at an 800 x 560 viewport: default arrangement, plus Play queue, and six stacked widgets with the D45 clamp. Unit: `src/shell/clamp.test.ts`. |
+| P2-AC7 | Pass (Chromium) | `appearance.spec.ts`: computed group, tab bar, tab and splitter colors equal the tokens; no red at rest. |
+| P2-AC8 | Pass (Chromium) | `appearance.spec.ts`: every element 0s at rest, with the menu open and with the dialog open. |
+| P2-AC9 | Pass (Chromium) | `appearance.spec.ts`: axe, no serious or critical violation in the three states. |
+| P2-AC10 | Pass (Chromium) | `keyboard.spec.ts`: order, wrap, Shift+F6, hidden tab skipped, 2 px red ring. Unit: `src/lib/keyboard.test.ts`. |
+| P2-AC11 | Pass | Unit: `src/components/icons.test.tsx`. Manual build: `assets/branding/ui-icons/menu.svg` added, e2e build rebuilt, the menu button showed a `mask-icon` span with the file as its mask; the file was then removed. |
+| P2-AC12 | Pass (Chromium) | `layouts.spec.ts`. |
+| P2-AC13 | Pass (Chromium) | `appearance.spec.ts`: button, toggle and input 0.14s; menu and dialog 0.2s; seek track and time labels 0s. No list rows exist before P3 (N3). |
+| P2-AC14 | Pass with exception (Chromium) | `appearance.spec.ts`: button, input, toggle, tab, menu item and select item reach 3:1. Switch and slider do not exist yet (E3). |
+| P2-AC15 | Pass (Chromium) | `appearance.spec.ts`: grayscale page, mean brightness of the underline rows and the menu item bar columns. |
+| P2-AC16 | Pass (Chromium) | `appearance.spec.ts`: focus ring, a mask icon probe and the art placeholder under emulated forced colors. |
+| P2-AC17 | Pass (Chromium) | `docking.spec.ts`: resize cursor, 1 px line on hover, 2 px while dragging, overlay with a 2 px red border. |
+| P2-AC18 | Pass (Chromium) | `tests/e2e/test-base.ts` fails every test on a `securitypolicyviolation` event. |
+| P2-AC19 | Pass | `scripts/check-sources.test.ts`: an import of `@tauri-apps/api/mocks` and files named `mock.ts`, `ipcMocks.tsx` and `library-fixture.ts` under `src/` fail the guard. `npm run test:e2e` builds with `tests/e2e/entry.ts`. Review: no inline mock data in `src/`. |
+
+**Notes**
+
+- N1 (P2.1): Dockview 8.5 runs with `dndStrategy: "pointer"`. Pointer events drive drags in every engine, so docking does not depend on HTML5 drag and drop in WebView2 or WebKitGTK. No tab context menu is configured, so no float or pop-out command exists.
+- N2 (P2.3): a tab cannot hold a focusable child (axe `nested-interactive`). The close control in a widget header is a pointer-only element with a tooltip. Keyboard users hide widgets from the menu (R29 non-drag path).
+- N3 (P2.5, P2.13): Library lists, list rows, the switch (P4) and the slider (P7) do not exist yet. Their checks run in the phases that add them and in P17.
+- N4 (P2.6): the menu uses group labels (Widgets, Library mode, Layouts) instead of submenus.
+- N5 (P2.11): the clamp (`src/shell/clamp.ts`) sets explicit group constraints from the largest minimum of the widgets in each group, so every tab of a tabbed group fits.
+- N6 (P2.15): Playwright 1.64 expects Chromium build 1248. This environment has build 1194 at `/opt/pw-browsers/chromium`, so local runs set `PW_CHROMIUM_PATH`. CI installs the expected browsers.
+- N7 (P2.15): test hooks (`window.e2e`) live in `tests/e2e/entry.ts` and act on the real dock.
+- N8: `ArtPlaceholder` (P1) used percent padding, which grows with the parent width. It now centers the monogram at 60 % of the square.
+- N9: the production JavaScript bundle is 856 kB (minified, before compression). P3 measures the footprint.
+
+**Exceptions**
+
+- E1: WebKit e2e runs in CI only. This environment has Chromium only.
+- E2: P2-AC16 runs in Chromium only, as the verification line states.
+- E3: P2-AC14 for the switch and the slider: neither exists in P2 (N3). P17-AC2 audits every focusable type.
+- E4: manual Linux checks ran under Xvfb with `xdotool`, not on a desktop session. P2-AC6 at the real minimum window was not verified in the app: without a window manager the webview did not follow a window resize. The 800 x 560 browser viewport check passed.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 3, F2 4, F3 1, F4 10.
+
+- F1: the generated shadcn components broke the P0.10 focus rule (`outline-none`, `outline-hidden`, `ring-3` and `ring-ring/50` focus classes) and the palette guard (`bg-black/10`). Fixed. The close button inside a tab failed axe (`nested-interactive`, P2-AC9). Fixed (N2). The inset focus ring of menu items covered the 2 px highlight bar (P2-AC15). The ring now sits outside the item.
+- F2: `ArtPlaceholder` padding (N8). Light tooltip from the template (`bg-foreground`); now elevated with a border. The select list had no padding, so the item ring was clipped. The e2e hook duplicated the add-widget code; `layouts.ts` now exports `addWidget` and `replaceArrangement` (Edits rule 5).
+- F3: F-12 (section 11).
+- F4:
+  - The close control is not keyboard reachable: a tab cannot hold a focusable child; the menu hides widgets (N2).
+  - The Library guard runs after a microtask while a move also fires a remove event: the e2e test moves Library to an edge and into a tabbed group and finds one Library.
+  - F6 skips the header strip and the status line: P2.12 cycles widgets only.
+  - The clamp lowers every group on an axis by one factor: D45 asks for "in proportion"; P2-AC6 passes.
+  - Selection survival has no e2e test: no list exists before P3; unit tests cover the store, and P6-AC2 covers the UI.
+  - `tests/e2e/data/app.json` holds the product name: the guard covers `src/`, `crates/` and `src-tauri/src/`; mock data belongs in `tests/e2e/`.
+  - The e2e server sends the CSP without a nonce: D48 covers the release nonce; P17 and P18 check a release build.
+  - `NOTICE` does not list Dockview, Base UI, zustand or the copied shadcn/ui components: P18.4 builds the full list (P18-AC7).
+  - Clicking the pressed mode toggle empties the group value: the value is controlled and keeps the mode.
+  - The narrow switch decision measures the whole widget: the header spans the widget width.
+
+**Follow-ups:** F-12.
 
 ---
 
@@ -1585,6 +1654,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
+| F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 

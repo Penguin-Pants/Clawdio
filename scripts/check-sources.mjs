@@ -2,6 +2,8 @@
 // - No hex color literal under src/, except the generated token file.
 // - No Tailwind default palette color (class or CSS variable) under src/.
 // - No product name (same letter case) under src/, crates/ or src-tauri/src/.
+// - No IPC mock under src/: no import of @tauri-apps/api/mocks and no file named *mock* or
+//   *fixture* (P2.15, AGENTS.md Edits rule 9). E2E mocks live in tests/e2e/.
 // Usage: node scripts/check-sources.mjs [--root <dir>]
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -13,6 +15,9 @@ const SKIPPED_DIRS = new Set(["node_modules", "target", "dist", "gen"]);
 const HEX_EXEMPT = new Set(["src/styles/tokens.generated.css"]);
 const HEX_ROOTS = ["src"];
 const NAME_ROOTS = ["src", "crates", "src-tauri/src"];
+const MOCK_ROOTS = ["src"];
+const MOCK_IMPORT = "@tauri-apps/api/mocks";
+const MOCK_FILE_NAME = /mock|fixture/i;
 // 3, 4, 6 or 8 hex digits after "#", not part of a longer word or an HTML entity ("&#123;").
 const HEX_COLOR = /(?<![\w&])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi;
 // Tailwind utilities that take a color.
@@ -41,7 +46,7 @@ const COLOR_UTILITIES = [
 ].join("|");
 
 /**
- * @typedef {{ file: string, line: number, rule: "hex-color" | "palette-color" | "product-name", text: string }} Violation
+ * @typedef {{ file: string, line: number, rule: "hex-color" | "palette-color" | "product-name" | "mock-import" | "mock-file", text: string }} Violation
  */
 
 /**
@@ -118,8 +123,13 @@ export function checkText(file, text, { productName, palette }) {
   const paletteColor = palette ?? (defaultPalette ??= palettePattern(readPaletteNames()));
   const checkHex = HEX_ROOTS.some((dir) => file.startsWith(`${dir}/`)) && !HEX_EXEMPT.has(file);
   const checkName = NAME_ROOTS.some((dir) => file.startsWith(`${dir}/`));
+  const checkMocks = MOCK_ROOTS.some((dir) => file.startsWith(`${dir}/`));
   /** @type {Violation[]} */
   const violations = [];
+  const fileName = file.slice(file.lastIndexOf("/") + 1);
+  if (checkMocks && MOCK_FILE_NAME.test(fileName)) {
+    violations.push({ file, line: 0, rule: "mock-file", text: fileName });
+  }
   text.split(/\r?\n/).forEach((content, index) => {
     const line = index + 1;
     if (checkHex) {
@@ -132,6 +142,9 @@ export function checkText(file, text, { productName, palette }) {
     }
     if (checkName && content.includes(productName)) {
       violations.push({ file, line, rule: "product-name", text: productName });
+    }
+    if (checkMocks && content.includes(MOCK_IMPORT)) {
+      violations.push({ file, line, rule: "mock-import", text: MOCK_IMPORT });
     }
   });
   return violations;
@@ -153,6 +166,8 @@ export function formatViolation({ file, line, rule, text }) {
     "hex-color": `hex color ${text}: use a token variable (theme/tokens.json)`,
     "palette-color": `palette color ${text}: use a token or semantic color class (theme/tokens.json)`,
     "product-name": `product name "${text}": read it from the build config (tauri.conf.json productName)`,
+    "mock-import": `${text} import: IPC mocks belong in tests/e2e/`,
+    "mock-file": `file name "${text}": mock and fixture files belong in tests/e2e/`,
   };
   const reason = reasons[rule];
   return `${file}:${line}: ${reason}`;

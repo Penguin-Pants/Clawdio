@@ -108,4 +108,11 @@
     background-color: Highlight;
     color: HighlightText;
   }
+
+  /* Mask icons and the art placeholder paint their background, which forced colors remove (P2.13). */
+  [data-slot="mask-icon"],
+  [data-slot="art-placeholder-mark"] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
 }

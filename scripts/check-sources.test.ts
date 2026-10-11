@@ -60,6 +60,26 @@ describe("check-sources", () => {
     expect(hits("#abcde #abcdefabc #defaultValue")).toBe(0);
   });
 
+  it("fails when a file in src/ imports the IPC mocks (P2-AC19)", () => {
+    const root = fixtureRoot({ "src/lib/ipc/setup.ts": 'import { mockIPC } from "@tauri-apps/api/mocks";\n' });
+    const run = runScript("check-sources.mjs", ["--root", root]);
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("src/lib/ipc/setup.ts:1: @tauri-apps/api/mocks import");
+  });
+
+  it.each(["src/mock.ts", "src/lib/ipcMocks.tsx", "src/store/library-fixture.ts"])(
+    "fails when %s has mock or fixture in its file name (P2-AC19)",
+    (path) => {
+      const run = runScript("check-sources.mjs", ["--root", fixtureRoot({ [path]: "export {};\n" })]);
+      expect(run.status).toBe(1);
+      expect(run.stderr).toContain(`${path}:0: file name`);
+    },
+  );
+
+  it("allows mocks outside src/ (P2-AC19)", () => {
+    expect(checkText("tests/e2e/install-mocks.ts", 'import "@tauri-apps/api/mocks";', { productName })).toEqual([]);
+  });
+
   it("reads the palette color names from the installed Tailwind theme", () => {
     const names = readPaletteNames();
     expect(names).toEqual(expect.arrayContaining(["black", "white", "red", "zinc", "neutral"]));

@@ -9,14 +9,17 @@ const monogramMask: CSSProperties = {
 
 /**
  * Quiet art placeholder (P1.8, design.md section 5): a square on the elevated surface with the
- * monogram drawn by a CSS mask in the muted text color. It is decorative.
+ * monogram (60 % of the square, centered) drawn by a CSS mask in the muted text color. It is decorative.
  */
 export function ArtPlaceholder({ className }: { className?: string }) {
   return (
-    <div aria-hidden="true" className={cn("aspect-square rounded-card bg-bg-elevated p-[20%]", className)}>
+    <div
+      aria-hidden="true"
+      className={cn("grid aspect-square place-items-center rounded-card bg-bg-elevated", className)}
+    >
       <div
         data-slot="art-placeholder-mark"
-        className="size-full bg-text-muted mask-contain mask-center mask-no-repeat"
+        className="size-3/5 bg-text-muted mask-contain mask-center mask-no-repeat"
         style={monogramMask}
       />
     </div>

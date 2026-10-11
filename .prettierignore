@@ -8,3 +8,6 @@ src-tauri/icons/
 src/lib/ipc/bindings/
 src/styles/tokens.generated.css
 theme/tokens.json
+dist-e2e/
+test-results/
+playwright-report/
