@@ -3,6 +3,7 @@
 use clawdio_core::api::{PlayerSnapshot, QueueSnapshot};
 use tauri::{AppHandle, Emitter};
 
+use crate::media_controls::{self, Publisher};
 use crate::player::PlayerEvents;
 
 pub const LIBRARY_CHANGED: &str = "library-changed";
@@ -20,23 +21,47 @@ pub fn emit<S: serde::Serialize + Clone>(app: &AppHandle, event: &str, payload: 
     }
 }
 
-/// The player's events go to the webview.
-pub struct AppEvents(pub AppHandle);
+/// The player's events go to the webview and to the OS media controls (P8.3).
+pub struct AppEvents {
+    app: AppHandle,
+    media: Publisher,
+}
+
+impl AppEvents {
+    pub fn new(app: AppHandle) -> Self {
+        AppEvents {
+            app,
+            media: Publisher::default(),
+        }
+    }
+}
 
 impl PlayerEvents for AppEvents {
     fn state(&self, player: PlayerSnapshot) {
-        emit(&self.0, PLAYER_STATE, player);
+        if let Some(update) = self.media.state(&player) {
+            media_controls::apply(&self.app, update);
+        }
+        emit(&self.app, PLAYER_STATE, player);
     }
 
     fn queue(&self, queue: &QueueSnapshot) {
-        emit(&self.0, QUEUE_CHANGED, queue.clone());
+        if let Some(update) = self
+            .media
+            .queue(queue, |id| media_controls::song(&self.app, id))
+        {
+            media_controls::apply(&self.app, update);
+        }
+        emit(&self.app, QUEUE_CHANGED, queue.clone());
     }
 
     fn position(&self, position_ms: u32) {
-        emit(&self.0, PLAYER_POSITION, position_ms);
+        if let Some(update) = self.media.position(position_ms) {
+            media_controls::apply(&self.app, update);
+        }
+        emit(&self.app, PLAYER_POSITION, position_ms);
     }
 
     fn message(&self, text: String) {
-        emit(&self.0, STATUS_MESSAGE, text);
+        emit(&self.app, STATUS_MESSAGE, text);
     }
 }

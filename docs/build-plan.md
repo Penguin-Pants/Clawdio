@@ -72,7 +72,7 @@ A phase is Done when all of these are true:
 | P5 | Library scan and cache | P4 | Done with exceptions |
 | P6 | Library widget and search | P5 | Done with exceptions |
 | P7 | Playback engine and Play queue | P6 | Done with exceptions |
-| P8 | OS media integration | P7 | Not started |
+| P8 | OS media integration | P7 | Done with exceptions |
 | P9 | Persistence: state, arrangement and instance | P8 | Not started |
 | P10 | Local artwork and thumbnails | P9 | Not started |
 | P11 | Playlists and Favorites | P10 | Not started |
@@ -538,6 +538,49 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Space against D17: text fields, menus, dialogs and select popups keep Space (unit and e2e tests).
   - D13: IPC carries ids and indexes; messages carry the file name only.
   - The three-failures count: it resets only on a normal end or a user action.
+
+**Follow-ups:** F-13 (open).
+
+---
+
+#### P8. OS media integration (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `7596b11`. Messages start with `P8:`.
+- **Packages:** `souvlaki` 0.8.3 with default features (D39). `dbus` 0.9.12 on Linux, the version souvlaki already uses (N2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P8-AC1 | Not verified (E1) | No Windows desktop. The Windows build passes in CI; the window handle goes to souvlaki (P8.1). |
+| P8-AC2 | Pass with exception (E2) | Manual Linux (Xvfb, a private D-Bus session, release build): `playerctl -l` lists `io_github_penguinpants_clawdio`; `play`, `pause`, `play-pause`, `next`, `previous` and `stop` changed the app, and the app showed the same song and state; `playerctl metadata` showed title, artist and album. Unit: `media_controls.rs` (event map, D-Bus name, metadata on track change, state, position once per second). |
+| P8-AC3 | Pass | Manual Linux: with `DBUS_SESSION_BUS_ADDRESS=unix:path=/nonexistent` the log has "media: cannot attach the media controls" and a double-click plays. |
+| P8-AC4 | Exception (E1) | OS events go straight to the player thread (`media_controls.rs` `attach`); no widget is involved. Manual Windows not done. |
+| P8-AC5 | Pass (Linux) | Manual Linux: a close request (`WM_DELETE_WINDOW`) to the main window ended the process, with and without D-Bus, and the MPRIS entry went away. Windows not verified. |
+
+**Notes**
+
+- N1: the controls live on the main thread (Windows ties them to the window). Player events reach them through `run_on_main_thread`. Metadata goes out on each track change, the state on each state change, and the position once per second while playing. MPRIS reads the last position, so it stays within about 1 s of the app.
+- N2: souvlaki 0.8.3's D-Bus thread handles one update per loop, and its loop waits up to 1 s for a D-Bus message. With one position update per second the updates queued up and the OS state fell behind. A `media-wake` thread reads `PlaybackStatus` once per update, which ends that wait. D39 stays as decided.
+- N3: no cover before P10 (P8.3).
+- N4: rodio's note on stderr when the sink closes is off.
+
+**Exceptions**
+
+- E1: no Windows desktop: P8-AC1, P8-AC4 and the Windows part of P8-AC5 are for P18 manual checks.
+- E2: P8-AC2 position: the ALSA null device plays faster than real time, so `playerctl position` against the app clock was not measured. By design the gap is at most the 1 s update interval.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 1, F3 0, F4 5. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F1: souvlaki's D-Bus thread fell behind by one update per second, so the OS state lagged the app (N2, fixed with the wake thread).
+- F2: rodio printed a note on stderr at each exit (N4).
+- F4:
+  - The player thread reads the library lock for metadata: the scan holds the write lock only briefly per batch.
+  - A souvlaki thread that stops makes the next update fail: the app logs it once and stops sending.
+  - The wake read after the controls went away: it fails and is logged at debug level.
+  - D34: the display name comes from the package info and the D-Bus name from the identifier.
+  - Exit: `RunEvent::Exit` runs on the main thread, where the controls live, and detaches them.
 
 **Follow-ups:** F-13 (open).
 

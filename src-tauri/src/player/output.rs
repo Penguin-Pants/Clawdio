@@ -80,7 +80,7 @@ impl RodioOutput {
         let _ = self.device_lost();
         if self.sink.is_none() {
             let failed = self.device_error.clone();
-            let sink = DeviceSinkBuilder::from_default_device()
+            let mut sink = DeviceSinkBuilder::from_default_device()
                 .and_then(|builder| {
                     builder
                         .with_error_callback(move |error| {
@@ -97,6 +97,8 @@ impl RodioOutput {
                         .open_stream()
                 })
                 .map_err(|error| OutputError::Device(error.to_string()))?;
+            // The app closes the sink on purpose (a lost device, the exit): no stderr note.
+            sink.log_on_drop(false);
             let player = Player::connect_new(sink.mixer());
             player.set_volume(self.volume);
             self.player = Some(player);

@@ -11,6 +11,7 @@ use clawdio_core::queue::{Queue, Removed, Step};
 use super::output::{AudioOutput, OutputError};
 use super::{PlayerEvents, Resolve, DEVICE_MESSAGE, MAX_FAILURES};
 
+#[derive(Debug)]
 pub enum Command {
     /// Replaces the queue with `ids` and plays from `start` (R6 queue rule).
     PlayList {

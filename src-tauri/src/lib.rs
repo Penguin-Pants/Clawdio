@@ -3,6 +3,7 @@
 mod commands;
 mod events;
 mod jobs;
+mod media_controls;
 mod player;
 mod state;
 mod thumbs;
@@ -103,7 +104,7 @@ pub fn run() -> tauri::Result<()> {
             };
             let (player, _thread) = PlayerHandle::spawn(
                 RodioOutput::default,
-                AppEvents(app.handle().clone()),
+                AppEvents::new(app.handle().clone()),
                 resolve,
             );
 
@@ -118,7 +119,9 @@ pub fn run() -> tauri::Result<()> {
             app.manage(Thumbs(thumbs));
             app.manage(widgets);
             app.manage(player);
-            window::create_main(app.handle())?;
+            let window = window::create_main(app.handle())?;
+            // Media keys and the OS now-playing panel (P8). A failure is logged only.
+            media_controls::attach(app.handle(), &window);
 
             // Startup sync of the stored folder (R2). A missing folder leaves the cache alone
             // (D30).
@@ -172,6 +175,7 @@ pub fn run() -> tauri::Result<()> {
         .run(|app, event| {
             // Stop the audio thread before the process ends.
             if let tauri::RunEvent::Exit = event {
+                media_controls::detach();
                 app.state::<PlayerHandle>().send(player::Command::Shutdown);
             }
         });
