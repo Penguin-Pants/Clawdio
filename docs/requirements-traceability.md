@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 27 | 182 | 36 | 6 | 8 | 42 | 0 |
+| Requirements | 301 | 32 | 181 | 34 | 6 | 6 | 42 | 0 |
 | design.md | 76 | 25 | 27 | 9 | 14 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 12 | 4 | 1 | 1 | 0 | 0 | 0 |
@@ -114,7 +114,7 @@
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
 | R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Done (P2) |
-| R30-5 | Milestone 0 uses React, Tailwind, shadcn/ui and the docking library | §2 R30 | P3.3, P3.4, P3.2 | P3-AC1, P3-AC5 | MEAS | Planned |
+| R30-5 | Milestone 0 uses React, Tailwind, shadcn/ui and the docking library | §2 R30 | P3.3, P3.4, P3.2 | P3-AC1, P3-AC5 | MEAS | Done (P3) |
 | R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Planned |
 | R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Planned |
 | R31-2 | Build generates platform icons from `clawdio-icon-full.svg`; placeholder until it exists | §2 R31 | P0.11, P1.6 | P1-AC2, P1-AC5, P1-AC6 | CI, MAN-L | Done (P1, D9) |
@@ -240,8 +240,8 @@
 | R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
 | R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Planned (D28) |
 | R20-4 | AppImage exempt from the size target | §2 R20 | P18.3 | P18-AC2 | CI | Planned |
-| R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Gate (B2) |
-| R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Planned (D49) |
+| R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Done (P3, B2) |
+| R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Done (P3, D49) |
 | R21-1 | Windows per-user installer, no admin | §2 R21 | P18.1 | P18-AC3 | MAN-W | Planned |
 | R21-2 | Windows portable zip with the `portable` marker | §2 R21 | P18.2 | P18-AC4 | MAN-W | Planned |
 | R21-3 | Linux AppImage (built on the R22 baseline) and `.deb` | §2 R21 | P18.3 | P18-AC1, P18-AC5 | CI, MAN-L | Planned |
@@ -319,7 +319,7 @@
 
 | ID | Constraint | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| CON-1 | Stack: Tauri v2, Rust backend, SQLite, React, Tailwind, shadcn/ui; revisit if Milestone 0 fails | §6 | P0.3, P0.4, P3.8 | P0-AC1, P3-AC4 | CI | Planned (D1) |
+| CON-1 | Stack: Tauri v2, Rust backend, SQLite, React, Tailwind, shadcn/ui; revisit if Milestone 0 fails | §6 | P0.3, P0.4, P3.8 | P0-AC1, P3-AC4 | CI | Done (P3, D1) |
 | CON-2 | Branding: no feature code depends on the name, icon or theme | §6 | P0.14 | P0-AC6, P18-AC9 | UT, MAN-L | Planned (D34) |
 | CON-3 | Docking library MIT, React bindings, passes Milestone 0, no commercial add-ons, no floating or pop-out, tabs on | §6 | P2.1, P3.8, P18.4 | P2-AC2, P3-AC4, P18-AC7 | E2E, REV | Planned (D8) |
 | CON-4 | Complexity budget: fixed widgets, no per-view overrides, named layouts, floating, pop-out or layout import and export | §6 | P0.1, P2.2 | P2-AC2 | REV | Done (P2) |
@@ -382,7 +382,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
 | VER-1 | Verify the R13 path base after the interop test | §8 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | VER-2 | Verify the MusicBee M3U8 export | §8 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
-| VER-3 | Verify the Milestone 0 outcome | §8 | P3.8 | P3-AC4 | MEAS | Gate (B2) |
+| VER-3 | Verify the Milestone 0 outcome | §8 | P3.8 | P3-AC4 | MEAS | Done (P3, B2) |
 
 ### 1.14 Section 9: acceptance checks
 

@@ -45,7 +45,7 @@ function libraryCommand(command: string, args: Args): unknown {
     case "library_tree":
       return library.tree(args.query as string);
     case "album_art":
-      return null;
+      return "album.jpg";
     case "queue_get":
       return library.queue;
     case "player_state":
@@ -61,6 +61,10 @@ function libraryCommand(command: string, args: Args): unknown {
 }
 
 mockConvertFileSrc("linux");
+// The browser cannot load thumb:// URLs, so they map to the test thumbnails in tests/e2e/public/.
+(
+  window as unknown as { __TAURI_INTERNALS__: { convertFileSrc: (path: string, protocol?: string) => string } }
+).__TAURI_INTERNALS__.convertFileSrc = (path, protocol = "asset") => `/${protocol}/${path}`;
 mockIPC((command, args) => {
   switch (command) {
     case "plugin:app|name":

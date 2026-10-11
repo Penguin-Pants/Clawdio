@@ -20,7 +20,7 @@ for (let a = 0; a < 20; a += 1) {
       artistId: a,
       name: `Album ${String.fromCharCode(65 + b)}${a}`,
       artistName: artist.name,
-      thumb: null,
+      thumb: "album.jpg",
     };
     albums.push(album);
     for (let s = 1; s <= 10; s += 1) {

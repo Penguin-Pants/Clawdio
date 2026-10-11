@@ -7,11 +7,18 @@ const POPULATED = [
   '[data-widget="nowPlaying"] p.text-lg',
 ];
 
-/** True when all six widgets are in the page and show data. */
+/** The Now playing art: a thumbnail that loaded through the `thumb://` scheme (P3-AC5). */
+function artLoaded(root: ParentNode): boolean {
+  const art = root.querySelector<HTMLImageElement>('[data-widget="nowPlaying"] img');
+  return art !== null && art.complete && art.naturalWidth > 0;
+}
+
+/** True when all six widgets are in the page, show data and the Now playing art loaded. */
 export function measurementPopulated(root: ParentNode = document): boolean {
   return (
     root.querySelector('[data-widget="transport"]') !== null &&
-    POPULATED.every((selector) => root.querySelector(selector))
+    POPULATED.every((selector) => root.querySelector(selector)) &&
+    artLoaded(root)
   );
 }
 

@@ -67,7 +67,7 @@ A phase is Done when all of these are true:
 | P0 | Foundation and conventions | none | Done with exceptions |
 | P1 | Brand identity assets and icon pipeline | P0 | Done with exceptions |
 | P2 | Themed docking shell | P1, Q6 sign-off | Done with exceptions |
-| P3 | Milestone 0 footprint gate | P2 | Blocked (B8) |
+| P3 | Milestone 0 footprint gate | P2 | Done with exceptions |
 | P4 | End-to-end slice | P3 | Not started |
 | P5 | Library scan and cache | P4 | Not started |
 | P6 | Library widget and search | P5 | Not started |
@@ -276,17 +276,17 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 #### P3. Milestone 0 footprint gate (October 11, 2026)
 
-- **Status:** Blocked (B8). Linux part done.
+- **Status:** Done with exceptions.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `1990a37`. Messages start with `P3:`.
 - **Packages:** `@tanstack/react-virtual` 3.14.15, `unicode-normalization` 0.1.25, `thiserror` 2.0.21, `image` 0.25.10 (`jpeg`, only with `fixtures`), Tauri feature `protocol-asset`.
 
 | Criterion | Result | Evidence |
 |---|---|---|
 | P3-AC1 | Pass (Linux, Xvfb) | Fixtures build in each mode with all six widgets populated (`CLAWDIO_MEASURE_MODE`). Browser: `tests/e2e/milestone.spec.ts` (Songs list to its end, filters, tree expansion, axe). Rust: `src-tauri/src/fixtures.rs` tests (50,000 songs, 2,000 thumbnails, widget data). |
-| P3-AC2 | Linux only | `docs/milestone-0.md`: 468 MB (Columns, worst mode median, build `e62ddca`). Windows: B8. |
+| P3-AC2 | Pass | `docs/milestone-0.md`. Linux: 468 MB (agent container) and 390 MB (CI runner). Windows: 112 MB (`measure.yml` run 38171140952). Worst mode medians, all six widgets, environments recorded. |
 | P3-AC3 | Pass | `.deb` 3.3 MB (local). NSIS installer 2.2 MB (`measure.yml` run 38169331542). |
-| P3-AC4 | Linux only | Linux over 300 MB: target raised to 468 MB (D49). Windows verdict open. |
-| P3-AC5 | Pass (Linux) | Thumbnails load from `~/.cache/io.github.penguinpants.clawdio/thumbs` (a dot folder) through the `thumb://` scheme (D41 as changed in 1.11). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. Windows: B8. |
+| P3-AC4 | Pass | Linux over 300 MB: target raised to 468 MB (D49). Windows 112 MB: pass, keeps 200 MB. Both bundles under 30 MB. |
+| P3-AC5 | Pass | Thumbnails load from the cache folder (`~/.cache/...` on Linux) through the `thumb://` scheme (D41 as changed in 1.11). The measurement ready signal waits for the Now playing thumbnail to decode, so every `measure.yml` run checks it on Linux and Windows (run on the commit after `2d76032`). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. |
 
 **Notes**
 
@@ -296,15 +296,15 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N4: song rows cache at most 2,000 rows per list (`ROW_CACHE_LIMIT`).
 - N5: the e2e mocks serve a 600-song library with `?data=library` (`tests/e2e/library-data.ts`).
 - N6: the measurement ran in a container with Xvfb and software rendering (K15). `WebKitWebProcess` is 338 of the 468 MB.
+- N8: the ready signal also waits for the Now playing art to decode, so a broken thumbnail fails the measurement. The e2e build serves `tests/e2e/public/thumb/album.jpg` for it.
 - N7: the first Linux run (`1990a37`, before the D14 fix and the ready signal) gave 470 MB. The run on `e62ddca` gave 468 MB; `docs/milestone-0.md` holds it.
 
 **Exceptions**
 
-- E1: Windows memory, NSIS size and Windows thumbnails not measured (B8).
-- E2: the Linux numbers come from Xvfb, not a desktop session (K15). P18.5 measures again.
-- E3: `scripts/measure-memory.ps1` has not run (B8).
+- E1: all numbers come from a container or CI virtual machines with software rendering, not desktop sessions (K15). P18.5 measures again.
+- E2: the manual scroll check (P3 verification) ran under Xvfb only.
 
-**Blockers:** B8.
+**Blockers:** B8, closed by the owner's approval of `measure/p3`.
 
 **TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 6. One finding (absolute thumbnail paths over IPC, D13 against D41) went to the owner, who chose the `thumb://` scheme (section 13, 1.11).
 
@@ -471,13 +471,13 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | ID | Item | Effect | Resolution path |
 |---|---|---|---|
 | B1 | `AGENTS.md` did not exist. The task and the prompt require it. | None. | Closed October 11, 2026: the owner supplied `AGENTS.md`; the review sections were added; P0.1 adds the project rules. |
-| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | P3 verdict. **Owner answer October 11, 2026:** over 300 MB on an OS raises that OS's memory target to its measured value, and the build continues (D49). |
+| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | Closed October 11, 2026: P3 verdict recorded in `docs/milestone-0.md`. Linux 468 MB raised the Linux target (D49); Windows 112 MB passes. **Owner answer October 11, 2026:** over 300 MB on an OS raises that OS's memory target to its measured value, and the build continues (D49). |
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
 | B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 | B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 could not be Done. | Closed October 11, 2026: the owner chose F-09 option (b). P1-AC4 checks bar separation at the 72 px README height. The assets did not change. |
-| B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 cannot close; P4 waits for the Windows verdict (B2). | Owner: allow a push of the task branch to `measure/p3`, or merge the P3 work and dispatch `measure.yml`. |
+| B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 could not close; P4 waited for the Windows verdict (B2). | Closed October 11, 2026: the owner allowed pushes to `measure/p3`. Run 38171140952 measured Windows. |
 
 ---
 

@@ -20,6 +20,8 @@ export default mergeConfig(
   base,
   defineConfig({
     plugins: [e2eEntry],
+    // Test thumbnails served at /thumb/<name>; the mocks map thumb:// URLs here.
+    publicDir: "tests/e2e/public",
     build: { outDir: "dist-e2e" },
     preview: { port: 4173, strictPort: true, headers: { "Content-Security-Policy": csp } },
   }),
