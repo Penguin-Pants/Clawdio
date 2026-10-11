@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.7, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
+**Version:** 1.8, October 11, 2026 (after the two-pass review and three automated review rounds, section 12).
 **Status:** Ready for execution. No phase has started.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -17,7 +17,7 @@
 
 ### 1.1 Rules for the coding agent
 
-1. Execute phases in numeric order. Start a phase only when every phase on its "Depends on" line has the status Done or Done with exceptions. An open gate in section 5.4 blocks only the phase it names.
+1. Execute phases in numeric order. Start a phase only when every phase on its "Depends on" line has the status Done or Done with exceptions. An open gate in section 5.4 blocks only the phase it names. An owner sign-off on the "Depends on" line must also be given.
 2. Before a phase, read the phase, the traceability rows that cite it and the source sections on its Scope line.
 3. Inspect the code and tests that the phase changes.
 4. Implement only the phase tasks. Record other defects and ideas in section 11. Do not implement them.
@@ -66,9 +66,9 @@ A phase is Done when all of these are true:
 |---|---|---|---|
 | P0 | Foundation and conventions | none | Not started |
 | P1 | Brand identity assets and icon pipeline | P0 | Not started |
-| P2 | Themed docking shell | P1 | Not started |
+| P2 | Themed docking shell | P1, Q6 sign-off | Not started |
 | P3 | Milestone 0 footprint gate | P2 | Not started |
-| P4 | End-to-end slice | P3 (pass) | Not started |
+| P4 | End-to-end slice | P3 | Not started |
 | P5 | Library scan and cache | P4 | Not started |
 | P6 | Library widget and search | P5 | Not started |
 | P7 | Playback engine and Play queue | P6 | Not started |
@@ -162,7 +162,7 @@ Inspection on October 11, 2026, at commit `9c297ca` (branch `main`, merge of pul
 | C14 | R5 (menu button "fixed in the top-right corner") vs the mockup header with the wordmark | The button needs a place that no layout covers. | A 32 px header strip above the dock: wordmark left, menu button right (D11). |
 | C15 | Prompt constraints ("Do not commit or open PRs unless repository workflow requires it") vs a phased build | No workflow exists until `AGENTS.md`. | `AGENTS.md` (P0.1) defines commits per phase after validation. |
 | C16 | design.md §6 ("Album cards: unobtrusive hover"), §8 (no animation on repeated list rows) | Hover feedback on 50,000 rows. | Rows change background color with no transition. Transitions are for buttons, menus and dialogs only. |
-| C17 | R8 ("It never overwrites existing art") vs R8 "Set cover" ("The app saves it as `cover.jpg`") | "Set cover" on an album that already has `cover.jpg` must either overwrite or fail. | Ask, then replace atomically (D19). R8's rule applies to the automatic fetch. Owner confirms (Q7). |
+| C17 | R8 ("It never overwrites existing art") vs R8 "Set cover" ("The app saves it as `cover.jpg`") | "Set cover" on an album that already has `cover.jpg` must either overwrite or fail. | Ask, then replace atomically (D19). R8's rule applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | C18 | Section 5 (a cover file that fails to decode is ignored and "the online lookup still applies") vs R8 (never overwrite; no automatic retry) | When the broken file is `cover.jpg`, a fetched image cannot be saved, so every startup would look the album up again. | A broken `cover.jpg` and a corrupt `sidecar.json` make the album a non-candidate. Each is logged (D44). A broken file with another cover name does not block the lookup. |
 | C19 | `AGENTS.md` Edits rule 9 ("Mock data only in tests") vs R20 (Milestone 0 before feature work, every widget populated with test data) | At P3 the app cannot read music yet, so the spike must generate its data inside the app build. Playwright mocks run only the UI in a browser and cannot measure memory across all app processes. | Keep D35: the `fixtures` Cargo feature in `src-tauri` is an approved exception to Edits rule 9. It is off by default and never goes into a release bundle (P3.6 builds the bundles without it). P0.1 names the exception in the project rules. P6.7 deletes it (P6-AC8). The owner confirmed this on October 11, 2026. |
 
@@ -190,7 +190,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D16 | Scan classes: files with other extensions are ignored and not counted (R1). "Unsupported type": an audio extension with other content. "Unsupported codec": an Ogg stream that is not Vorbis, or a WAV encoding other than PCM integer, PCM float or ADPCM (for example A-law, mu-law or MP3 in WAV), or one of those three that Symphonia 0.5.5 cannot decode. "Corrupt file": a parse or probe failure. | R2 skip reasons. |
 | D17 | Reset layout is Ctrl+Shift+L. Space toggles play and pause everywhere except in text fields and inside open menus and dialogs. On a focused button outside a dialog, Space toggles playback and Enter activates the button. | R25 exempts only typing. Menus and dialogs keep Space for their own controls. |
 | D18 | A transient status message shows for 5 s, then the line returns to "Ready" or the running job. | R5 status line. |
-| D19 | "Set cover" over an existing `cover.jpg` asks for confirmation, then replaces it atomically. | C17. R8's "never overwrites" applies to the automatic fetch. Owner confirms (Q7). |
+| D19 | "Set cover" over an existing `cover.jpg` asks for confirmation, then replaces it atomically. | C17. R8's "never overwrites" applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | D20 | The "Add to playlist" submenu lists all playlists except Favorites, so only the heart adds to Favorites and Favorites never holds duplicates. "Remove from playlist" and Delete work on Favorites entries like on any playlist. The name "Favorites" is reserved in any letter case. | R12 (Favorites toggles), R25 (Delete in a playlist), R26 (a normal playlist). |
 | D21 | A new playlist name that matches an existing file (ignoring case) is rejected with a message. Import names: each forbidden character becomes "_", leading and trailing spaces and dots are removed, a reserved name gets " (imported)" and a taken name gets " (2)", " (3)" and so on. | R12 rule applied to R14 output names. |
 | D22 | Apple XML: import each playlist in the file that has no `Master` key and no `Distinguished Kind` key. One `.m3u8` per playlist. | R14. Library-wide system playlists are not user playlists. |
@@ -220,6 +220,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D46 | Track ids are monotonic within a session and never reused. A removed track stays as a tombstone until the next start, and an unknown or removed id returns a typed error. The index lives in the core behind `Arc<RwLock<_>>`. The player thread owns the queue: every `player_*` and `queue_*` command goes through its channel. | Rescans must not shift ids under the queue, the selection or a pending `library_rows` call. |
 | D47 | On Linux, portable mode applies to the AppImage. "Next to the executable" means next to the AppImage file (the `APPIMAGE` environment variable), for both the marker and the R18.1 path rule. | Inside an AppImage the executable runs from a temporary mount. |
 | D48 | Tauri's CSP nonce injection stays on. If a release build reports a `style-src` violation, add `dangerousDisableAssetCspModification: ["style-src"]` and record it. The e2e suite serves the section 6.13 CSP and fails on any violation. | A nonce makes browsers ignore `'unsafe-inline'`. Inline styles from libraries must not break silently. |
+| D49 | Milestone 0 over 300 MB on either OS: record the worst value per OS as the new memory target and continue. No stop. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
 
 ### 5.3 Owner confirmations
 
@@ -231,20 +232,20 @@ None of these blocks work. Each has a default.
 | Q2 | Bundle identifier. Changing it after release moves user settings. | **Answered October 11, 2026:** use `io.github.penguinpants.clawdio` | Closed |
 | Q3 | Bundle Geist Sans, or use system fonts only. | **Answered October 11, 2026:** bundle Geist Sans | Closed |
 | Q4 | Name any Magic UI component that serves R5, R6 or R29. | None | Any time |
-| Q5 | Supply real exports for AC-4: one Apple XML, one MusicBee M3U8, one legacy `.m3u`. | Synthetic fixtures until supplied | P12 sign-off |
-| Q6 | Sign off the wordmark, app icon and monogram. | Assets stand until changed | After P1 |
-| Q7 | Confirm that "Set cover" may replace an existing `cover.jpg` after a confirmation (C17). | Ask, then replace | Before P10 |
-| Q8 | If the full icon is not legible at 16 or 24 px after P1, may the 16 and 24 px layers come from `clawdio-icon-simple.svg`? R31 names one source file. | One source (`clawdio-icon-full.svg`) | After P1 |
+| Q5 | Supply real exports for AC-4: one Apple XML, one MusicBee M3U8, one legacy `.m3u`. | **Answered October 11, 2026:** the owner supplies the formats they have. A missing format stays "not verified". The files never go into the public repo. | P12 sign-off |
+| Q6 | Sign off the wordmark, app icon and monogram. | **Answered October 11, 2026:** the owner reviews after P1. P2 waits for the sign-off. | After P1 (P2 waits) |
+| Q7 | Confirm that "Set cover" may replace an existing `cover.jpg` after a confirmation (C17). | **Answered October 11, 2026:** ask, then replace | Closed |
+| Q8 | If the full icon is not legible at 16 or 24 px after P1, may the 16 and 24 px layers come from `clawdio-icon-simple.svg`? R31 names one source file. | **Answered October 11, 2026:** yes, only if P1.7 shows that the full icon fails at 16 or 24 px | Closed |
 
 ### 5.4 Blockers and gates
 
 | ID | Item | Effect | Resolution path |
 |---|---|---|---|
 | B1 | `AGENTS.md` did not exist. The task and the prompt require it. | None. | Closed October 11, 2026: the owner supplied `AGENTS.md`; the review sections were added; P0.1 adds the project rules. |
-| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the gate. | P3 verdict. Over 300 MB: owner decides between a native UI and less layout freedom. |
+| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | P3 verdict. **Owner answer October 11, 2026:** over 300 MB raises the memory target to the measured value and the build continues (D49). |
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
-| B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. |
+| B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
 
 ---
 
@@ -535,7 +536,7 @@ Uppercase spaced text is not used in the app UI (design.md §4).
 
 | Budget | Value | Source | Checked in |
 |---|---|---|---|
-| Idle memory, 50,000 tracks, all processes | under 200 MB; stop over 300 MB | R20 | P3, P18 |
+| Idle memory, 50,000 tracks, all processes | under 200 MB; over 300 MB raises the target (D49) | R20 | P3, P18 |
 | Windows installer, Linux `.deb` | under 30 MB each | R20 | P3, P18 |
 | Input to next paint during the first scan | 100 ms or less, every event | AC-2 | P6 |
 | `player-position` events | 4 per second while playing | Plan | P7 |
@@ -687,7 +688,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - `clawdio-wordmark-light.svg` (light backgrounds: "dio" `#4A4A4A`).
   - `clawdio-wordmark-mono.svg` (one fill, `currentColor`).
   - `clawdio-icon-full.svg`: 1024 square, corner radius 192, fill `#171717`. A faint arc in `#E10606` at 35 percent opacity behind the head. The cat from P1.2 scaled to 70 percent width. Five bars in `#E10606` along the bottom edge.
-  - `clawdio-icon-simple.svg`: the monogram on the same square. It is the fallback for the 16 and 24 px icon layers if P1.7 shows that the full icon fails there (Q8). The app does not use it otherwise.
+  - `clawdio-icon-simple.svg`: the monogram on the same square. It is the source for the 16 and 24 px icon layers if P1.7 shows that the full icon fails there (Q8, owner approved). The app does not use it otherwise.
   - `clawdio-icon-mono.svg`: the cat silhouette and eyes in one fill (`currentColor`) for monochrome contexts outside the app (documentation, third-party listings). The app does not use it.
 - **P1.5** `scripts/check-svg.mjs` (part of `npm run check`). Every SVG under `assets/branding/` must: parse as XML, have a `viewBox`, contain no `<image>`, `<text>`, `<filter>`, `<foreignObject>` or `<script>` element and no `http` reference.
 - **P1.6** Switch the icon pipeline to `clawdio-icon-full.svg`. Remove `assets/branding/placeholder/`. Regenerate and commit the icon files that `bundle.icon` lists (D9).
@@ -702,15 +703,15 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 - **P1-AC1** `check-svg.mjs` passes for all nine SVG files.
 - **P1-AC2** `npm run icons` exits 0. `src-tauri/icons/icon.ico` holds the 16, 24, 32, 48, 64 and 256 px layers (`identify` output in the phase record). The Linux PNGs listed in D9 exist with the right pixel sizes.
-- **P1-AC3** At 16 and 32 px the contact sheet shows two separate red eye marks, two ear tips and the head edge. The rim color has a contrast of at least 3:1 against the icon square (computed: `#B7B7B7` on `#171717`, 8.94:1). Geometry check: the rim stroke and each eye measure at least 1 px at 16 px. If the 16 or 24 px layer still fails the visual check, record it and ask Q8.
+- **P1-AC3** At 16 and 32 px the contact sheet shows two separate red eye marks, two ear tips and the head edge. The rim color has a contrast of at least 3:1 against the icon square (computed: `#B7B7B7` on `#171717`, 8.94:1). Geometry check: the rim stroke and each eye measure at least 1 px at 16 px. If the 16 or 24 px layer still fails the visual check, record it, make `scripts/icons.mjs` render those two layers from `clawdio-icon-simple.svg` (Q8, owner approved) and run P1.7 again.
 - **P1-AC4** The wordmark files contain no `<text>`. "Claw" is `#E10606`. The "o" holds five bars. At the 20 px header height each bar is at least 1 px wide and the bars are separate (contact sheet). In the light variant both colors reach at least 3:1 on `#FFFFFF`.
-- **P1-AC5** Replace `clawdio-icon-full.svg` with any other square SVG and run `npm run tauri build -- --debug`. The new executable shows the new icon. No other source file changed; only the generated files in `src-tauri/icons/` differ (D9; AC-15 icon part).
+- **P1-AC5** Replace `clawdio-icon-full.svg` with any other square SVG and run `npm run tauri build -- --debug`. The new executable shows the new icon. No other source file changed; only the generated files in `src-tauri/icons/` differ (D9; AC-15 icon part). If the Q8 fallback is on, the test replaces `clawdio-icon-simple.svg` too, and P1.10 tells users to replace both files.
 - **P1-AC6** No file references `assets/branding/placeholder/`.
 - **P1-AC7** Originality statement in the phase record: all shapes come from primitives in this phase. No path was traced from the mockup. No third-party character art or emblem is reproduced.
 
 **Verification.** Automated: P1-AC1, P1-AC2 (script checks sizes with ImageMagick `identify` when present), P1-AC6 (grep). Manual: P1-AC3, P1-AC4, P1-AC5 (Linux), P1-AC7 (review). Prompt Phase 4.2 and 4.3 checks for icons happen here.
 
-**Phase checkpoint.** Ask the owner for brand sign-off (Q6). Do not wait for it. P2 continues because the brand files can change later with no code change.
+**Phase checkpoint.** Ask the owner for brand sign-off (Q6) with the contact sheet and the export previews. Wait for it: P2 starts only after the sign-off (owner answer, October 11, 2026).
 
 ---
 
@@ -720,7 +721,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 **Scope.** R5 (widget set, Search in the Library header, status line, menu button). R28 (one widget, mode switch, dropdown when narrow, cannot hide). R29 (drag docking, splitters, tabbed groups, no floating or pop-out, built-in layouts, default arrangement, Reset layout and its shortcut, non-drag path, menu and status line cannot be hidden). R30 (dock chrome styled by tokens, Magic UI list). R31 (Lucide icons, brand icon override by name). R25 (F6, focus visible). design.md §5, §6 (app shell, widget header, tooltips), §8. Section 5 (empty widget hints, window smaller than layout). Section 6 (docking constraint, complexity budget).
 
-**Depends on.** P1.
+**Depends on.** P1 and the owner's Q6 sign-off.
 
 **Tasks.**
 
@@ -803,14 +804,14 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P3.5** `scripts/measure-memory.sh` (Linux) and `scripts/measure-memory.ps1` (Windows). Method per D28. Each script runs the app three times per Library mode with `CLAWDIO_MEASURE_MODE`, so every widget is mounted and populated. The value per mode is the median of its three runs (D28). The gate value per OS is the worst mode. Output JSON: per-process values, total per mode, environment.
 - **P3.6** `.github/workflows/measure.yml` (triggers: `workflow_dispatch` and pushes to `measure/**` branches). Build release with `--features fixtures` on ubuntu-22.04 (under `xvfb-run`) and windows-latest. Run the scripts. Build NSIS and `.deb` bundles without fixtures and report their sizes. Upload results as artifacts.
 - **P3.7** `docs/milestone-0.md`: method, environment, numbers per OS, bundle sizes, verdict and notes on scroll behavior.
-- **P3.8** Verdict per R20: under 200 MB passes. 200 to 300 MB continues and the owner is told the number. Over 300 MB on either OS stops the plan: set P3 to Blocked and write the owner decision request (native UI or less layout freedom). Package size: under 30 MB passes. Over 30 MB, the owner is told and decides, because R20 calls the targets adjustable. A size result alone does not block P4.
+- **P3.8** Verdict per R20: under 200 MB passes. 200 to 300 MB continues and the owner is told the number. Over 300 MB on either OS: record the worst value per OS as the new memory target in `docs/milestone-0.md`, tell the owner the number and continue (D49). Package size: under 30 MB passes. Over 30 MB, the owner is told and decides, because R20 calls the targets adjustable. A size result alone does not block P4.
 
 **Acceptance criteria.**
 
 - **P3-AC1** With fixtures, each Library mode scrolls the 50,000 songs. 2,000 thumbnails load. Every widget shows data.
 - **P3-AC2** Idle memory is measured on Windows and Linux by the D28 method, with all six widgets shown, in each Library mode. The worst mode per OS is the gate value. The environment is recorded.
 - **P3-AC3** NSIS installer and `.deb` sizes are recorded against the 30 MB target.
-- **P3-AC4** The verdict is recorded for memory and for package size. Over 300 MB on either OS sets P3 to Blocked.
+- **P3-AC4** The verdict is recorded for memory and for package size. Over 300 MB on either OS records the new memory target (D49).
 - **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the asset protocol (no broken images).
 
 **Verification.** CI workflow `measure.yml` plus local Linux runs. Manual: scroll each mode, open each widget. The owner gets the numbers in the phase report.
@@ -1171,7 +1172,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P12-AC3** Source files are byte-identical after import.
 - **P12-AC4** The Windows-1252 file decodes "é" correctly.
 - **P12-AC5** Tracks with no file location appear in the report only.
-- **P12-AC6** The owner's real exports (Q5) import with a correct matched and missing report (AC-4). Until they arrive this criterion is "not verified".
+- **P12-AC6** The owner's real exports (Q5) import with a correct matched and missing report (AC-4), for each format the owner supplies. A format with no file stays "not verified". The files are never committed.
 
 **Verification.** Rust tests (P12-AC1 to P12-AC5). Playwright (report dialog). Manual with owner files (P12-AC6).
 
@@ -1372,7 +1373,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - `scripts/frontend-licenses.mjs` reads the license files of production npm dependencies and writes `THIRD_PARTY_LICENSES_WEB.txt`.
   - `scripts/notice.mjs` generates the `NOTICE` component table from the complete inventories: every production Rust crate (`cargo metadata`; version, license, crates.io or repository URL), every production npm package (version, license, repository URL), every library inside the AppImage (`dpkg-query` in the build container; version, license, Ubuntu source package URL) and the copied or bundled assets (Geist OFL, shadcn/ui MIT, Lucide ISC with the Feather MIT notice). Symphonia's entry also names its tagged GitHub release. CI runs the script and fails when the committed `NOTICE` differs.
   - Every package carries these files. The AppImage carries the LGPL texts.
-- **P18.5** Final measurement (D28) with release builds and the generated 50,000-track library on Windows and Linux. Record memory and package sizes. Between 200 and 300 MB: the owner decides whether to adjust the target (R20 says "adjustable").
+- **P18.5** Final measurement (D28) with release builds and the generated 50,000-track library on Windows and Linux. Record memory and package sizes. Between 200 and 300 MB: the owner decides whether to adjust the target (R20 says "adjustable"). If P3 raised the target (D49), compare against that value.
 - **P18.6** Docs:
   - README: features, install per OS (WebView2 note, AppImage FUSE note), portable mode, keyboard shortcuts, online lookups and the files they write, data locations, build from source, license.
   - Complete `docs/file-formats.md` and `docs/theming-and-brand.md` (every R17 item).
@@ -1598,6 +1599,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.8 (October 11, 2026):** owner answered Q5 (supply the formats they have), Q6 (review after P1; P2 waits), Q7 (ask, then replace), Q8 (simple icon for 16 and 24 px only if needed), B5 (Windows machine only) and B2 (raise the target over 300 MB, new D49).
 - **1.7 (October 11, 2026):** owner approved F-05: P2.15 keeps all e2e mock code and data in `tests/e2e/`, and P2-AC19 checks it. Owner answered Q1: keep "Dr. Claw Development" and accept K7.
 - **1.6 (October 11, 2026):** owner kept D35. Added C19 (the `fixtures` feature is an approved exception to `AGENTS.md` Edits rule 9, "Mock data only in tests"). P0.1 test rules name the exception. Traceability row AGT-3 added. Follow-up F-05 proposed.
 - **1.5 (October 11, 2026):** `AGENTS.md` supplied by the owner. TWO-PASS REVIEW and finding classes added to it. P0.1 now extends the file instead of creating it. B1 closed. Closed Q2 and Q3 removed from the open items in the traceability matrix. C4 and C10 now record the Q2 and Q3 answers. AGT-1 and AGT-2 stay Planned until P0-AC7 passes.
