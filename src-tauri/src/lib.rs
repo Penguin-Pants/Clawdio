@@ -8,7 +8,7 @@ mod linux_memory;
 mod media_controls;
 /// Microphone ducking detector (P20.2): Windows only; the tests run everywhere.
 #[cfg(any(windows, test))]
-pub mod mic;
+mod mic;
 mod online;
 mod persist;
 mod player;

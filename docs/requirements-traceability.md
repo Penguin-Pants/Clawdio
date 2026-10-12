@@ -49,7 +49,7 @@
 | S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
 | S1-8 | Imports many playlists at once; finds songs also in another format | §1 | P19.1, P19.3 | P19-AC1, P19-AC3 | UT, IT | Done (P19) |
-| S1-9 | Lowers or pauses music while another app uses the microphone (Windows) | §1 | P20.2, P20.3 | P20-AC1, P20-AC4 | UT, MAN-W | Planned |
+| S1-9 | Lowers or pauses music while another app uses the microphone (Windows) | §1 | P20.2, P20.3 | P20-AC1, P20-AC4 | UT, MAN-W | Done (P20); MAN-W open |
 
 ### 1.2 Section 2: library (R1 to R4)
 
@@ -155,7 +155,7 @@
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
-| R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Planned |
+| R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
 | R34-4 | Pause: resume only when the duck caused the pause | §2 R34.4 | P20.3 | P20-AC1 | UT | Done (P20) |
 | R34-5 | Timing: fade down, fixed wait of about 1 s, fade up; no wait setting | §2 R34.5 | P20.3 | P20-AC1 | UT | Done (P20, D52) |
@@ -373,7 +373,7 @@
 | CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Done (P14) |
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
 | CON-13 | Microphone ducking is Windows only in this version | §6 | P20.2, P20.4 | P20-AC3, P20-AC6 | E2E, REV | Planned |
-| CON-14 | Microphone privacy: read only the in-use state; never record; never log app names | §6 | P20.2 | P20-AC5, P20-AC6 | MAN-W, REV | Planned |
+| CON-14 | Microphone privacy: read only the in-use state; never record; never log app names | §6 | P20.2 | P20-AC5, P20-AC6 | MAN-W, REV | Done (P20); MAN-W open |
 
 ### 1.12 Section 7: deferred ideas
 
@@ -430,7 +430,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-20 | Repair is a user command, not automatic on Rescan | §8.20 | P19.5 | P19-AC4 | IT | Done (P19) |
 | DEC-21 | Repair writes unique matches, then reports; no preview | §8.21 | P19.5 | P19-AC4 | IT | Done (P19) |
 | DEC-22 | Import and repair rescan first | §8.22 | P19.4 | P19-AC5 | IT | Done (P19) |
-| DEC-23 | Ducking trigger: another app records from a microphone | §8.23 | P20.0, P20.2 | P20-AC4 | MAN-W | Planned |
+| DEC-23 | Ducking trigger: another app records from a microphone | §8.23 | P20.0, P20.2 | P20-AC4 | MAN-W | Done (P20, D54) |
 | DEC-24 | Ducking on Windows first; Linux deferred | §8.24 | P20.4 | P20-AC3 | E2E | Planned |
 | DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Done (P20) |
 | DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Done (P20) |
@@ -442,7 +442,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | VER-1 | Verify the R13 path base after the interop test | §8 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | VER-2 | Verify the MusicBee M3U8 export | §8 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
 | VER-3 | Verify the Milestone 0 outcome | §8 | P3.8 | P3-AC4 | MEAS | Done (P3, B2) |
-| VER-4 | Verify that Windows reports microphone use by another app without opening the microphone | §8 | P20.0 | P20-AC4, P20-AC5 | MAN-W | Planned |
+| VER-4 | Verify that Windows reports microphone use by another app without opening the microphone | §8 | P20.0 | P20-AC4, P20-AC5 | MAN-W | Done (P20.0 probe, D54) |
 
 ### 1.14 Section 9: acceptance checks
 
@@ -691,5 +691,5 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
 | B4, Q5 Real exports | R14-12, AC-4, VER-2 | The owner's exports for the formats they have (Apple XML, MusicBee M3U8, legacy `.m3u`). Missing formats stay "not verified". | Owner supplies files at P12 |
 | B5 Test machines | All MAN-W and MAN-L rows | The owner has a Windows 10 or 11 machine only. MAN-L rows stay "not verified" and P18 records them as exceptions. | Owner runs the MAN-W checks by P18 |
-| K21 Microphone API | R34-2, VER-4, AC-23, AC-24 | P20.0 spike result on Windows with Handy and one call app | Agent runs P20.0; the owner decides if no API works |
+| K21 Microphone API | R34-2, VER-4, AC-23, AC-24 | P20.0 spike result on Windows with Handy and one call app | Closed October 12, 2026 (D54) |
 | Real playlists | AC-22 | The owner's playlist folder for the P19-AC8 manual check. The files are never committed. | Owner runs P19-AC8 on Windows |

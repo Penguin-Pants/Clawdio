@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.15, October 12, 2026 (P20 started; owner decisions on the P20.0 probe and D53, section 13).
+**Version:** 1.16, October 12, 2026 (P20.0 result: D54; K21 closed, section 13).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -84,7 +84,7 @@ A phase is Done when all of these are true:
 | P17 | UI quality audit | P16 | Done with exceptions |
 | P18 | Release readiness | P17, gate B3 closed | In progress |
 | P19 | Bulk import and missing-song repair | P18 (waived, section 13 v1.14) | Done with exceptions |
-| P20 | Microphone ducking (Windows) | P19 | In progress |
+| P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
 | P21 | Release readiness after v1.6 | P20 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
@@ -1185,19 +1185,19 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 #### P20. Microphone ducking (October 12, 2026)
 
-- **Status:** In progress. Blocked by K21: the P20.0 result needs the owner's Windows test with the probe.
+- **Status:** Done with exceptions. K21 closed by the P20.0 probe (D54).
 - **Commits:** branch `clawd/practical-galileo-6jmhwb`, from `c0fbc84`. Messages start with `P20:`.
 - **Packages:** `windows` 0.62.2 (Windows only), the copy Tauri already uses, with audio, COM, registry and threading features. No new crate.
 - **Owner decisions:** build a probe and the rest of P20 while the spike waits (P20.0 order changed); hide the control off Windows (D53).
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| P20.0 | Waiting (K21) | `src-tauri/examples/mic_probe.rs` prints, every 250 ms, the count of other apps that record by each candidate: audio sessions on the active capture endpoints, and the privacy consent store (`LastUsedTimeStop` 0). CI uploads it as the `mic-probe` artifact of the `rust (windows-latest)` job. The detector uses the audio sessions until the result is in; the result becomes a new D entry. |
+| P20.0 | Pass (owner, Windows) | A probe printed both candidate counts every 250 ms (CI artifact `mic-probe`, run 38289157298). Handy push-to-talk and a WhatsApp call each gave 0, 1, 0 on both signals. D54 keeps the audio sessions; the consent-store code and the probe were removed after the result. |
 | P20-AC1 | Pass | `player/duck.rs` tests on a fake clock (Off, both modes, the 1 s wait, busy again, Play, user pause, Stop, mode changes, change to Off, ramps with start, middle, end, duration and an interrupted fade); `player/engine.rs` tests (track change, volume change, Stop during a Pause duck). |
 | P20-AC2 | Pass | `settings.rs` tests: a pre-P20 file keeps its values, percentages outside 5 to 90 or off the step are refused; engine test: the snapshot volume (saved by R27) stays the user volume during a duck. |
 | P20-AC7 | Pass | `mic.rs` tests: overlapping users, an active user at start, Off resets. |
 | P20-AC3 | Pass (Chromium) | `tests/e2e/ducking.spec.ts`: modes, slider only for Lower volume, the saved choice, no control with `?linux=1` (D53). Full Chromium suite: 102 passed. WebKit in CI. |
-| P20-AC4 | Not run (E1) | Manual Windows with Handy and a call app. |
+| P20-AC4 | Not run (E1) | Manual Windows with Handy and a call app in the app itself. The P20.0 probe ran the same signal code with both apps. |
 | P20-AC5 | Not run (E1) | Manual Windows privacy page. |
 | P20-AC6 | Pass in part (E2) | `mic` is compiled only for Windows and tests; `ducking_logs_only_busy_and_free` captures the log. The detector logs busy, free and a Windows error text only. The Windows code passed clippy for `x86_64-pc-windows-msvc` in a scratch crate; the full app check for that target runs in CI (`ring` needs the MSVC compiler). |
 
@@ -1209,10 +1209,10 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Exceptions**
 
-- E1: no Windows machine here; P20.0, P20-AC4 and P20-AC5 wait for the owner.
+- E1: no Windows machine here; P20-AC4 and P20-AC5 wait for the owner's manual check of the app.
 - E2: the full Windows clippy and tests run in CI only.
 
-**Blockers:** K21 (P20.0 result).
+**Blockers:** none. K21 closed (D54).
 
 **TWO-PASS REVIEW:** F1 0, F2 1, F3 0, F4 4. Source: own audit.
 
@@ -1354,6 +1354,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D49 | Milestone 0 over 300 MB on an OS: that OS's worst value becomes its memory target, and the build continues. No stop. An OS at or under 300 MB keeps the 200 MB target. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
 | D50 | Linux only: the app sets `WEBKIT_DISABLE_COMPOSITING_MODE=1` and `WEBKIT_DISABLE_DMABUF_RENDERER=1` before GTK starts (a value the user set wins), limits glibc to two malloc arenas and trims the heap after each scan (`src-tauri/src/linux_memory.rs`). | Owner asked for a Linux memory reduction (B9, October 12, 2026). Measured worst mode: 519 MB to 298 MB (container), 450 MB to 294 MB (CI VM); input latency did not get worse (max 24 ms against 64 ms). |
 | D51 | Import name rule (R32): a source whose cleaned name matches an existing playlist (ignoring case) is skipped and reported. Inside one import, a name that an earlier source of the same import took gets " (2)", " (3)" and so on. The reserved-name rule of D21 stays. | Owner decisions 17 and 18 (requirements v1.6). A repeat import must not duplicate playlists. |
+| D54 | Microphone signal (P20.0, R34.2): the active audio sessions on the active capture endpoints (WASAPI `IAudioSessionManager2`), other than the app's own process, read every 250 ms. The app opens no capture stream. The privacy consent store gave the same result and was dropped: one signal, a documented API. | P20.0 probe on the owner's Windows machine, October 12, 2026: both signals went 0, 1, 0 for Handy push-to-talk (6.1 s to 9.6 s) and for a WhatsApp call (204.3 s to 207.9 s). |
 | D53 | Microphone ducking off Windows (R34.7): Settings does not show the ducking control at all, in place of a disabled control with "Windows only". The settings keys still load and save. | Owner decision, October 12, 2026 ("hide the setting on Linux"). |
 | D52 | Duck timing (R34.5): fade down 150 ms, wait 1 s after the microphone is free, fade up 500 ms. Fades are linear on the output gain. Pause mode resumes with the same 500 ms fade in. The values are constants, not settings. | Owner decision 26 (short fixed wait, then a fade). R34.5 gives "about" values. |
 
@@ -2656,7 +2657,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K18 | Two portable copies share the single-instance key | The second copy only focuses the first | Accepted behavior (section 5 "second launch") | P9 |
 | K19 | shadcn/ui templates ship focus styles below 3:1 on this palette | Invisible focus | P0.10 focus rule; P2-AC14 | P0, P2 |
 | K20 | The agent environment lacks native build packages | Validation cannot run locally | P0.0; section 1.2 fallback | P0 |
-| K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | P20.0 spike before other P20 work; stop and ask the owner on failure | P20 |
+| K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | Closed October 12, 2026: the P20.0 probe found two working signals; D54 | P20 |
 | K22 | A tool that keeps the microphone open (Handy "Always-On Microphone") holds the duck | Music stays quiet | Settings help text (P20.4); requirements section 5 | P20 |
 
 ---
@@ -2841,6 +2842,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.16 (October 12, 2026):** P20.0 result from the owner's Windows probe: D54 (audio sessions). K21 closed. P20 Done with exceptions (P20-AC4 and P20-AC5 are manual Windows checks).
 - **1.15 (October 12, 2026):** owner decisions for P20: the P20.0 spike becomes a probe the owner runs on Windows, and the other P20 tasks proceed meanwhile; D53 hides the ducking control off Windows (P20.4 and P20-AC3 changed). P20 In progress, blocked by K21.
 - **1.14 (October 12, 2026):** owner decision: P19 may start while P18 waits on B3 and B5 (the owner tested the app on Windows). P18 stays In progress; P21 repeats the release checks. P19 done with exceptions.
 - **1.13 (October 12, 2026):** requirements v1.6 (R32 to R34, AC-22 to AC-24). Added phases P19, P20 and P21 (release checks again after P20), D51, D52, K21 and K22. D21 points to D51 for import names. The header now gives the current version. Owner request: `ci.yml` skips changes that touch only `**/*.md` and `docs/**` (section 6.17).
