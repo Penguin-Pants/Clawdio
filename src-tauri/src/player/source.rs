@@ -127,7 +127,7 @@ impl TrackSource {
             Some("mp3") if !mp3_states_length(path) => None,
             _ => params.n_frames,
         };
-        Ok(TrackSource {
+        let mut source = TrackSource {
             track_id: track.id,
             format,
             decoder,
@@ -140,7 +140,10 @@ impl TrackSource {
             bad_packets: PacketErrors::default(),
             ended: false,
             errors,
-        })
+        };
+        // The first packet gives the format the device path reads before the first sample.
+        source.refill();
+        Ok(source)
     }
 
     /// The length the container states, if it states one.
@@ -200,9 +203,16 @@ impl TrackSource {
                         continue;
                     }
                     let spec = *decoded.spec();
+                    let channels = (spec.channels.count() as u16).max(1);
+                    if self.frames == 0 {
+                        self.channels = channels;
+                        self.rate = spec.rate.max(1);
+                    } else if (channels, spec.rate) != (self.channels, self.rate) {
+                        // The source states one format for the whole file (one span).
+                        return self.fail("the audio format changes inside the file".into());
+                    }
                     let mut samples = SampleBuffer::<f32>::new(decoded.capacity() as u64, spec);
                     samples.copy_interleaved_ref(decoded);
-                    self.channels = (spec.channels.count() as u16).max(1);
                     self.frames += (samples.samples().len() / usize::from(self.channels)) as u64;
                     self.buffer.clear();
                     self.buffer.extend_from_slice(samples.samples());
@@ -236,8 +246,13 @@ impl Iterator for TrackSource {
 }
 
 impl Source for TrackSource {
+    /// One span for the whole file. rodio reads the channels and rate again at each span end,
+    /// and a span end at each packet made the queue report the next source's format there.
     fn current_span_len(&self) -> Option<usize> {
-        Some(self.buffer.len().saturating_sub(self.position))
+        if self.ended && self.position >= self.buffer.len() {
+            return Some(0);
+        }
+        None
     }
 
     fn channels(&self) -> rodio::ChannelCount {
@@ -365,5 +380,63 @@ pub mod tests {
         assert!(errors.bad(), "the fourth in a row ends it");
         errors.good();
         assert!(!errors.bad(), "a good packet resets the count");
+    }
+}
+
+/// The source as the device plays it: rodio's queue and mixer read the span length, channels
+/// and rate at each span end and convert to the device format.
+#[cfg(test)]
+mod device_path_tests {
+    use super::tests::seed;
+    use super::*;
+    use rodio::source::{EmptyCallback, UniformSourceIterator};
+    use std::num::NonZero;
+    use std::sync::mpsc;
+
+    fn open(name: &str) -> TrackSource {
+        let (sender, _) = mpsc::channel();
+        TrackSource::open(&seed(name), sender).unwrap()
+    }
+
+    /// The samples a device with `channels` and `rate` gets, with the callback source after the
+    /// track as `RodioOutput::load` appends it.
+    fn through_mixer(name: &str, channels: u16, rate: u32) -> Vec<f32> {
+        let (input, output) = rodio::queue::queue(false);
+        input.append(open(name));
+        input.append(EmptyCallback::new(Box::new(|| {})));
+        UniformSourceIterator::new(
+            output,
+            NonZero::new(channels).unwrap(),
+            NonZero::new(rate).unwrap(),
+        )
+        .collect()
+    }
+
+    #[test]
+    fn a_device_in_the_file_format_gets_every_sample_unchanged() {
+        for name in ["tone.mp3", "tone-vorbis.ogg", "tone-pcm16.wav"] {
+            let source = open(name);
+            let (channels, rate) = (source.channels().get(), source.sample_rate().get());
+            let direct: Vec<f32> = source.collect();
+            assert_eq!(through_mixer(name, channels, rate), direct, "{name}");
+        }
+    }
+
+    #[test]
+    fn a_device_at_another_rate_gets_the_full_length() {
+        for name in ["tone.mp3", "tone-vorbis.ogg", "tone-pcm16.wav"] {
+            let source = open(name);
+            let (channels, rate) = (source.channels().get(), source.sample_rate().get());
+            let frames = source.count() as f64 / f64::from(channels);
+            let device_rate = if rate == 48_000 { 44_100 } else { 48_000 };
+            let got = through_mixer(name, 2, device_rate).len() as f64 / 2.0;
+            let want = frames * f64::from(device_rate) / f64::from(rate);
+            // rodio's converter drops its last partial chunk: under 1 ms at the file end.
+            let end_loss = f64::from(device_rate) / 1000.0;
+            assert!(
+                (got - want).abs() <= end_loss,
+                "{name}: {got} frames, want {want}"
+            );
+        }
     }
 }
