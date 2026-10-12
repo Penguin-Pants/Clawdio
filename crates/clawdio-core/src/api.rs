@@ -158,7 +158,11 @@ pub enum RepeatMode {
 pub struct PlaylistRow {
     pub id: u32,
     pub name: String,
+    /// The file name, for the delete confirmation. Not a path (D13).
+    pub file_name: String,
     pub entry_count: u32,
+    /// `Playlists/Favorites.m3u8`, which Add to playlist leaves out (D20).
+    pub is_favorites: bool,
 }
 
 /// A playlist entry: a library track, or a missing file shown by its label (R13).

@@ -4,7 +4,7 @@ import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
-import { FAVORITES, addToPlaylist, usePlaylistsStore } from "@/store/playlists";
+import { addToPlaylist, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
@@ -65,7 +65,7 @@ function playlistItems(songs: () => Promise<number[]>): RowMenuItem[] {
   return [
     ...usePlaylistsStore
       .getState()
-      .rows.filter((row) => row.name.toLowerCase() !== FAVORITES.toLowerCase())
+      .rows.filter((row) => !row.isFavorites)
       .map((row) => ({ label: row.name, run: add(row.id) })),
     { label: "New playlist…", run: create },
   ];

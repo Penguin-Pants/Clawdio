@@ -726,7 +726,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 1, F2 3, F3 0, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 2, F2 11, F3 1, F4 12. Sources: own audit (in `8f51528`) and a reviewer agent (fixed in the next commit).
 
 - F1: new files from `write_atomic` were mode 0600, unreadable for other users and services (N2).
 - F2: the row heart broke the listbox pattern for axe (N3). The P7 test expected a disabled "Add to playlist" (now a submenu). The P6-AC4 WebKit race was fixed with the P10 fixes.
@@ -734,8 +734,13 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - A scan reload losing an edit: edits write the file first, and the scan reads the files after.
   - Lock order: every path takes the playlists lock before the library lock.
   - IPC paths: commands carry ids, positions and names; errors are fixed texts (D13).
+- Reviewer:
+  - F1: the heart during the startup scan, or "New playlist" with a name the scan skipped, replaced the file on disk with a new one (data loss). Favorites now loads from disk when the set has not read it, and a name with a file on disk in any letter case is taken; tested.
+  - F2: a playlist made while a scan ran dropped out of the set at the scan's end (`load` now keeps known files that exist; tested). A missing entry's label sent its path, which can be absolute, against D13 (now the `#EXTINF` title or the file name; tested). The P11-AC3 test wrote the old file back before the check (a read-only folder test now runs for non-root users). A line break in a tag split an entry (now a space; tested). The dialog checked names in every folder and create only in `Playlists/` (one check now, with the disk). The D20 filter matched any playlist named "favorites" (now a flag from Rust). Menu keys were labels, which can repeat. The delete dialog named `<name>.m3u8` for files with another extension case (now the file name from Rust).
+  - F3: F-18 (letter case on Windows).
+  - F4: a scan reload overwriting an edit, lock order, BOM and CRLF, `..` out of the folder, ids across rescans, every copy removed, Unicode case, "CON .mix", the row heart and play from an entry hold.
 
-**Follow-ups:** F-13 to F-17 (open).
+**Follow-ups:** F-13 to F-18 (open).
 
 ---
 
@@ -2119,6 +2124,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
 | F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-18 | On Windows, resolve playlist entries without letter case when the exact path is not a library track (`../björk/…` for `Björk/…`). | NTFS ignores case, so VLC opens such an entry, but the app shows it as missing. | P11 review |
 | F-17 | Remove thumbnail files whose key no longer matches an album (a changed cover or a rescan leaves old files), for example at the end of a complete scan. Mark an album "in progress" so two workers do not make it twice. | The thumbnail folder grows with each art change; duplicate work costs CPU only. | P10 review |
 | F-16 | The scan's cover state (D44) decodes by file extension; the art source decodes by content. A PNG named `cover.jpg` is "broken" for online lookups but shows as art. Decode by content in `scan::update_covers` too. | Two decode rules for one file. | P10 review |
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |

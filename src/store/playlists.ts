@@ -11,9 +11,6 @@ interface PlaylistsState {
   load: () => Promise<void>;
 }
 
-/** The name of the heart's playlist (R26). The Add to playlist submenu leaves it out (D20). */
-export const FAVORITES = "Favorites";
-
 export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   rows: [],
   favorites: new Set(),

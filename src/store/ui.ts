@@ -7,7 +7,7 @@ export const MESSAGE_MS = 5000;
 /** The app's small dialogs: a new playlist name, a delete confirmation, an error (P11). */
 export type AppDialog =
   | { kind: "newPlaylist"; addTracks?: number[] }
-  | { kind: "deletePlaylist"; id: number; name: string }
+  | { kind: "deletePlaylist"; id: number; fileName: string }
   | { kind: "error"; text: string };
 
 /** A running job in the status line (R5). `cancel` is absent when the job cannot be canceled. */

@@ -19,16 +19,17 @@ export interface RowMenuItem {
 }
 
 function MenuItems({ items }: { items: RowMenuItem[] }) {
-  return items.map((item) =>
+  // Keys by place: two playlists in different folders can share a name.
+  return items.map((item, index) =>
     item.items ? (
-      <DropdownMenuSub key={item.label}>
+      <DropdownMenuSub key={index}>
         <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           <MenuItems items={item.items} />
         </DropdownMenuSubContent>
       </DropdownMenuSub>
     ) : (
-      <DropdownMenuItem key={item.label} disabled={!item.run} onClick={item.run}>
+      <DropdownMenuItem key={index} disabled={!item.run} onClick={item.run}>
         {item.label}
       </DropdownMenuItem>
     ),

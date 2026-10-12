@@ -34,7 +34,13 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
     playlists_list: () =>
       [...lists]
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))
-        .map((list) => ({ id: list.id, name: list.name, entryCount: list.entries.length })),
+        .map((list) => ({
+          id: list.id,
+          name: list.name,
+          fileName: `${list.name}.m3u8`,
+          entryCount: list.entries.length,
+          isFavorites: list.name === FAVORITES,
+        })),
     playlist_entries: ({ id }) => find(id).entries,
     playlist_name_check: ({ name }) => nameProblem(name as string),
     playlist_create: ({ name }) => {

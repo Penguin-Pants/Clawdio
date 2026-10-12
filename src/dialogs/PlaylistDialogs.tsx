@@ -88,14 +88,14 @@ function NewPlaylistDialog({ addTracks }: { addTracks?: number[] }) {
 }
 
 /** Delete playlist (R12): a confirmation that names the file. */
-function DeletePlaylistDialog({ id, name }: { id: number; name: string }) {
+function DeletePlaylistDialog({ id, fileName }: { id: number; fileName: string }) {
   const close = useUiStore((state) => state.closeDialog);
   return (
     <>
       <DialogHeader>
         <DialogTitle>Delete playlist</DialogTitle>
         <DialogDescription>
-          Delete the file <code>{name}.m3u8</code>? The songs stay in your music folder.
+          Delete the file <code>{fileName}</code>? The songs stay in your music folder.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
@@ -136,7 +136,7 @@ function Body({ dialog }: { dialog: AppDialog }) {
     case "newPlaylist":
       return <NewPlaylistDialog addTracks={dialog.addTracks} />;
     case "deletePlaylist":
-      return <DeletePlaylistDialog id={dialog.id} name={dialog.name} />;
+      return <DeletePlaylistDialog id={dialog.id} fileName={dialog.fileName} />;
     case "error":
       return <ErrorDialog text={dialog.text} />;
   }

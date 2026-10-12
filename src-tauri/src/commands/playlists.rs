@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 use clawdio_core::api::{IpcError, PlaylistEntry, PlaylistRow};
-use clawdio_core::playlist::{name, PlaylistError};
+use clawdio_core::playlist::PlaylistError;
 use tauri::{AppHandle, Manager, State};
 
 use super::{lock_error, CommandResult};
@@ -82,13 +82,12 @@ pub fn playlist_entries(
 /// The message for a new playlist name, or null when it is valid (R12, D21), for the name
 /// dialog's inline check.
 #[tauri::command]
-pub fn playlist_name_check(
-    playlists: State<'_, Playlists>,
-    name: String,
-) -> CommandResult<Option<String>> {
+pub fn playlist_name_check(app: AppHandle, name: String) -> CommandResult<Option<String>> {
+    let root = root(&app)?;
+    let playlists = app.state::<Playlists>();
     let set = playlists.0.lock().map_err(|_| lock_error())?;
-    let rows = set.rows();
-    Ok(name::check(&name, rows.iter().map(|row| row.name.as_str()))
+    Ok(set
+        .check_name(&root, &name)
         .err()
         .map(|error| error.to_string()))
 }

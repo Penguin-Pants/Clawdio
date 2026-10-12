@@ -29,6 +29,58 @@ pub enum PlaylistError {
     Delete,
     #[error("The playlist no longer exists")]
     Unknown,
+    #[error("The playlist file cannot be read")]
+    Unreadable,
+}
+
+fn favorites_path() -> String {
+    format!("{PLAYLISTS_FOLDER}/{FAVORITES}.m3u8")
+}
+
+/// The entries of a playlist file, or None when it cannot be read as UTF-8 text (logged).
+fn read_entries(root: &Path, rel_path: &str) -> Option<Vec<Entry>> {
+    match std::fs::read(root.join(rel_path)).map(String::from_utf8) {
+        Ok(Ok(text)) => Some(m3u::parse(&text)),
+        Ok(Err(_)) => {
+            log::warn!("playlist: {rel_path} is not UTF-8 text; skipped");
+            None
+        }
+        Err(error) => {
+            log::warn!("playlist: cannot read {rel_path}: {error}; skipped");
+            None
+        }
+    }
+}
+
+/// The path of `Playlists/<name>.m3u8` on disk in any letter case, if one exists.
+fn on_disk(root: &Path, name: &str) -> Option<String> {
+    let wanted = format!("{name}.m3u8").to_lowercase();
+    std::fs::read_dir(root.join(PLAYLISTS_FOLDER))
+        .ok()?
+        .filter_map(Result::ok)
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .find(|file| file.to_lowercase() == wanted)
+        .map(|file| format!("{PLAYLISTS_FOLDER}/{file}"))
+}
+
+/// The label of a missing entry: its title from `#EXTINF`, else its file name. Never the
+/// path, which can be absolute (D13).
+fn label(entry: &Entry) -> String {
+    let title = entry
+        .info
+        .as_deref()
+        .and_then(|info| info.split_once(','))
+        .map(|(_, title)| title.trim())
+        .filter(|title| !title.is_empty());
+    match title {
+        Some(title) => title.to_owned(),
+        None => entry
+            .path
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(&entry.path)
+            .to_owned(),
+    }
 }
 
 /// One playlist file.
@@ -74,21 +126,20 @@ pub struct PlaylistSet {
 }
 
 impl PlaylistSet {
-    /// Reads the files the scan found (P11.2). A file that cannot be read as UTF-8 text is
-    /// skipped and logged. A known file keeps its id.
+    /// Reads the files the scan found (P11.2). A known playlist whose file still exists stays
+    /// too, so one made while the scan ran is not lost. A file that cannot be read as UTF-8
+    /// text is skipped and logged. A known file keeps its id.
     pub fn load(&mut self, root: &Path, rel_paths: &[String]) {
-        let mut playlists = Vec::with_capacity(rel_paths.len());
-        for rel_path in rel_paths {
-            let text = match std::fs::read(root.join(rel_path)).map(String::from_utf8) {
-                Ok(Ok(text)) => text,
-                Ok(Err(_)) => {
-                    log::warn!("playlist: {rel_path} is not UTF-8 text; skipped");
-                    continue;
-                }
-                Err(error) => {
-                    log::warn!("playlist: cannot read {rel_path}: {error}; skipped");
-                    continue;
-                }
+        let mut paths = rel_paths.to_vec();
+        for known in &self.playlists {
+            if !paths.contains(&known.rel_path) && root.join(&known.rel_path).is_file() {
+                paths.push(known.rel_path.clone());
+            }
+        }
+        let mut playlists = Vec::with_capacity(paths.len());
+        for rel_path in &paths {
+            let Some(entries) = read_entries(root, rel_path) else {
+                continue;
             };
             let id = match self.playlists.iter().find(|p| p.rel_path == *rel_path) {
                 Some(known) => known.id,
@@ -101,7 +152,7 @@ impl PlaylistSet {
                 id,
                 rel_path: rel_path.clone(),
                 name: name_of(rel_path),
-                entries: m3u::parse(&text),
+                entries,
             });
         }
         self.playlists = playlists;
@@ -132,7 +183,14 @@ impl PlaylistSet {
             .map(|p| PlaylistRow {
                 id: p.id,
                 name: p.name.clone(),
+                file_name: p
+                    .rel_path
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or(&p.rel_path)
+                    .to_owned(),
                 entry_count: p.entries.len() as u32,
+                is_favorites: p.rel_path.eq_ignore_ascii_case(&favorites_path()),
             })
             .collect()
     }
@@ -150,7 +208,7 @@ impl PlaylistSet {
                     label: if track.is_some() {
                         String::new()
                     } else {
-                        entry.path.clone()
+                        label(entry)
                     },
                 })
                 .collect(),
@@ -197,9 +255,19 @@ impl PlaylistSet {
         }
     }
 
-    /// Creates `Playlists/<name>.m3u8` (R12, R13). The name follows R12 and D21.
-    pub fn create(&mut self, root: &Path, name: &str) -> Result<u32, PlaylistError> {
+    /// Checks a new name: R12, D21 against the known playlists in `Playlists/`, and a file of
+    /// that name on disk in any letter case (one the scan has not read yet, or skipped).
+    pub fn check_name(&self, root: &Path, name: &str) -> Result<(), NameError> {
         name::check(name, self.names_in_playlists_folder())?;
+        if on_disk(root, name).is_some() {
+            return Err(NameError::Taken);
+        }
+        Ok(())
+    }
+
+    /// Creates `Playlists/<name>.m3u8` (R12, R13). It never replaces a file on disk.
+    pub fn create(&mut self, root: &Path, name: &str) -> Result<u32, PlaylistError> {
+        self.check_name(root, name)?;
         let playlist = self.new_playlist(name);
         let id = playlist.id;
         self.commit(root, playlist)?;
@@ -270,10 +338,31 @@ impl PlaylistSet {
     }
 
     fn favorites(&self) -> Option<&Playlist> {
-        let path = format!("{PLAYLISTS_FOLDER}/{FAVORITES}.m3u8");
+        let path = favorites_path();
         self.playlists
             .iter()
             .find(|p| p.rel_path.eq_ignore_ascii_case(&path))
+    }
+
+    /// Favorites from the set, else from the disk (the scan may not have read it yet), else a
+    /// new one. An existing file is never replaced by an empty list.
+    fn favorites_or_new(&mut self, root: &Path) -> Result<Playlist, PlaylistError> {
+        if let Some(favorites) = self.favorites() {
+            return Ok(favorites.clone());
+        }
+        if let Some(rel_path) = on_disk(root, FAVORITES) {
+            let entries = read_entries(root, &rel_path).ok_or(PlaylistError::Unreadable)?;
+            self.next_id += 1;
+            let playlist = Playlist {
+                id: self.next_id - 1,
+                name: name_of(&rel_path),
+                rel_path,
+                entries,
+            };
+            self.playlists.push(playlist.clone());
+            return Ok(playlist);
+        }
+        Ok(self.new_playlist(FAVORITES))
     }
 
     /// The tracks in Favorites, for the hearts (R26).
@@ -291,10 +380,7 @@ impl PlaylistSet {
         track: TrackId,
         index: &LibraryIndex,
     ) -> Result<bool, PlaylistError> {
-        let mut changed = match self.favorites() {
-            Some(favorites) => favorites.clone(),
-            None => self.new_playlist(FAVORITES),
-        };
+        let mut changed = self.favorites_or_new(root)?;
         let tracks = changed.tracks(index);
         let before = changed.entries.len();
         let mut keep = tracks.iter().map(|t| *t != Some(track));
@@ -401,8 +487,9 @@ mod tests {
             entries[0],
             PlaylistEntry {
                 track: None,
-                label: "../Gone/x.mp3".into()
-            }
+                label: "Gone".into()
+            },
+            "the #EXTINF title, not the path (D13)"
         );
         assert_eq!(entries[1].track, Some(0));
         set.add(dir.path(), id, &[1], &index).unwrap();
@@ -496,5 +583,108 @@ mod tests {
         }
         let names: Vec<String> = set.rows().into_iter().map(|row| row.name).collect();
         assert_eq!(names, ["Favorite songs", "mix 2", "Mix 10"]);
+    }
+
+    #[test]
+    fn a_missing_entry_label_is_never_a_path() {
+        let entry = |path: &str, info: Option<&str>| Entry {
+            path: path.into(),
+            info: info.map(str::to_owned),
+        };
+        assert_eq!(label(&entry("C:\\Users\\me\\x.mp3", None)), "x.mp3");
+        assert_eq!(label(&entry("/home/me/y.ogg", Some("-1,"))), "y.ogg");
+        assert_eq!(label(&entry("../a.mp3", Some("12,A - B"))), "A - B");
+    }
+
+    /// The heart during the startup scan: Favorites is on disk but not read yet. Its entries
+    /// stay; the new song is added after them.
+    #[test]
+    fn the_heart_never_replaces_a_favorites_file_the_set_has_not_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let index = index();
+        std::fs::create_dir_all(dir.path().join("Playlists")).unwrap();
+        let old = "#EXTM3U\n#EXTINF:1,Old\n../Old/one.mp3\n";
+        std::fs::write(dir.path().join("Playlists/favorites.m3u8"), old).unwrap();
+        let mut set = PlaylistSet::default();
+        assert!(set.toggle_favorite(dir.path(), 0, &index).unwrap());
+        let text = read(dir.path(), "Playlists/favorites.m3u8");
+        assert!(text.starts_with(old), "{text}");
+        assert!(text.contains("Human Behaviour"));
+        assert!(
+            !dir.path().join("Playlists/Favorites.m3u8").exists() || cfg!(not(target_os = "linux"))
+        );
+    }
+
+    #[test]
+    fn create_never_replaces_a_file_on_disk() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("Playlists")).unwrap();
+        std::fs::write(dir.path().join("Playlists/MIX.m3u8"), [0xff, 0xfe]).unwrap();
+        let mut set = PlaylistSet::default();
+        assert_eq!(
+            set.create(dir.path(), "Mix"),
+            Err(PlaylistError::Name(NameError::Taken))
+        );
+        assert_eq!(
+            std::fs::read(dir.path().join("Playlists/MIX.m3u8")).unwrap(),
+            [0xff, 0xfe]
+        );
+    }
+
+    /// A playlist made while a scan ran stays when the scan's list arrives without it.
+    #[test]
+    fn load_keeps_a_known_playlist_whose_file_exists() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut set = PlaylistSet::default();
+        let id = set.create(dir.path(), "New").unwrap();
+        set.load(dir.path(), &[]);
+        assert_eq!(set.rows()[0].id, id);
+        std::fs::remove_file(dir.path().join("Playlists/New.m3u8")).unwrap();
+        set.load(dir.path(), &[]);
+        assert!(set.rows().is_empty(), "a deleted file goes");
+    }
+
+    #[test]
+    fn rows_name_the_file_and_mark_favorites() {
+        let dir = tempfile::tempdir().unwrap();
+        let index = index();
+        let mut set = PlaylistSet::default();
+        set.toggle_favorite(dir.path(), 0, &index).unwrap();
+        set.create(dir.path(), "Mix").unwrap();
+        let rows = set.rows();
+        assert_eq!(
+            (rows[0].name.as_str(), rows[0].is_favorites),
+            ("Favorites", true)
+        );
+        assert_eq!(
+            (rows[1].file_name.as_str(), rows[1].is_favorites),
+            ("Mix.m3u8", false)
+        );
+    }
+
+    /// P11-AC3 with the file in place: a read-only folder. Root can write it, so the test
+    /// runs for other users (CI).
+    #[cfg(unix)]
+    #[test]
+    fn a_read_only_folder_keeps_the_old_file_byte_for_byte() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let index = index();
+        let mut set = PlaylistSet::default();
+        let id = set.create(dir.path(), "Mix").unwrap();
+        set.add(dir.path(), id, &[0], &index).unwrap();
+        let folder = dir.path().join("Playlists");
+        let before = std::fs::read(folder.join("Mix.m3u8")).unwrap();
+        std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o555)).unwrap();
+        if tempfile::NamedTempFile::new_in(&folder).is_ok() {
+            std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
+            eprintln!("skipped: this user can write a read-only folder (root)");
+            return;
+        }
+        let result = set.add(dir.path(), id, &[1], &index);
+        let after = std::fs::read(folder.join("Mix.m3u8")).unwrap();
+        std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(result, Err(PlaylistError::Write));
+        assert_eq!(after, before);
     }
 }

@@ -119,7 +119,7 @@ export function PlaylistsWidget() {
           { label: "Play", run: () => playLine(line) },
           {
             label: "Delete playlist",
-            run: () => openDialog({ kind: "deletePlaylist", id: line.playlist.id, name: line.playlist.name }),
+            run: () => openDialog({ kind: "deletePlaylist", id: line.playlist.id, fileName: line.playlist.fileName }),
           },
         ]
       : [

@@ -32,8 +32,15 @@ pub fn parse(text: &str) -> Vec<Entry> {
 }
 
 /// The `#EXTINF` text of a library track: length in whole seconds, then "artist - title".
+/// Line breaks in tags become spaces, so one entry stays two lines.
 pub fn info(duration_ms: u32, artist: &str, title: &str) -> String {
-    format!("{},{artist} - {title}", duration_ms / 1000)
+    let one_line = |text: &str| text.replace(['\r', '\n'], " ");
+    format!(
+        "{},{} - {}",
+        duration_ms / 1000,
+        one_line(artist),
+        one_line(title)
+    )
 }
 
 /// M3U8 text for `entries`. An entry with no `#EXTINF` text gets an unknown length (-1) and
@@ -177,5 +184,14 @@ mod tests {
         );
         assert_eq!(resolve("Mix.m3u8", "/home/u/1.mp3"), None);
         assert_eq!(resolve("Mix.m3u8", "C:\\Music\\1.mp3"), None);
+    }
+
+    #[test]
+    fn line_breaks_in_tags_do_not_split_an_entry() {
+        let entry = Entry {
+            path: "a.mp3".into(),
+            info: Some(info(1000, "A\nB", "T\r\nU")),
+        };
+        assert_eq!(parse(&write(std::slice::from_ref(&entry))), [entry]);
     }
 }
