@@ -12,3 +12,10 @@ dist-e2e/
 test-results/
 playwright-report/
 src/shell/layout-fixtures/corrupt.json
+
+# Generated license files (P18.4).
+THIRD_PARTY_LICENSES_RUST.html
+THIRD_PARTY_LICENSES_WEB.txt
+NOTICE
+licenses/
+about.hbs

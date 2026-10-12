@@ -24,10 +24,10 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 194 | 44 | 10 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 57 | 6 | 2 | 10 | 0 | 1 | 0 |
-| Branding prompt | 39 | 21 | 10 | 2 | 5 | 0 | 1 | 0 |
-| Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
+| Requirements | 301 | 206 | 36 | 6 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
+| Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
+| Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
 
@@ -107,7 +107,7 @@
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
 | R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9) |
 | R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9) |
-| R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Planned (D17) |
+| R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
@@ -115,8 +115,8 @@
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
 | R30-4 | Tokens map to Tailwind variables at build time; theme styles headers, splitters and drop zones; theme sets no layout | §2 R30 | P0.6, P2.10 | P0-AC3, P2-AC7, P2-AC13 | UT, E2E | Done (P2) |
 | R30-5 | Milestone 0 uses React, Tailwind, shadcn/ui and the docking library | §2 R30 | P3.3, P3.4, P3.2 | P3-AC1, P3-AC5 | MEAS | Done (P3) |
-| R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Planned |
-| R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Planned |
+| R30-6 | Copied components keep their MIT notice | §2 R30 | P18.4 | P18-AC7 | REV | Done (P18) |
+| R31-1 | Branding package in the repo; brand changes need no feature code change | §2 R31 | P0.14, P18.8 | P0-AC6, P18-AC9 | UT, MAN-L | Done (P18) |
 | R31-2 | Build generates platform icons from `clawdio-icon-full.svg`; placeholder until it exists | §2 R31 | P0.11, P1.6 | P1-AC2, P1-AC5, P1-AC6 | CI, MAN-L | Done (P1, D9) |
 | R31-3 | Built-in dark theme is `theme/tokens.json` compiled at build time | §2 R31 | P0.6, P0.7 | P0-AC2, P0-AC3 | UT, MAN-L | Done (P0) |
 | R31-4 | Name, window title, bundle identifier and User-Agent from one build value | §2 R31 | P0.4, P0.8 | P0-AC6, P14-AC6, P18-AC11 | UT, REV | Resolved (C10) |
@@ -224,11 +224,11 @@
 | R15-1 | Starts in a built-in dark theme | §2 R15 | P0.7 | P0-AC2 | MAN-L | Done (P0) |
 | R16-1 | User-selected theme file | §2 R16 | none | none | REV | Deferred |
 | R16-2 | Fonts installed locally with a system fallback; the owner may bundle one OFL font | §2 R16 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
-| R17-1 | Docs: tokens the app reads and the UI part each controls, including headers, splitters and drop zones | §2 R17 | P0.17, P2.16 | P18-AC13 | REV | Planned |
-| R17-2 | Docs: sidecar schema | §2 R17 | P14.9, P16.8 | P18-AC13 | REV | Planned |
-| R17-3 | Docs: arrangement file schema | §2 R17 | P9.6 | P18-AC13 | REV | Planned |
-| R17-4 | Docs: brand inputs | §2 R17 | P1.10 | P18-AC13 | REV | Planned |
-| R17-5 | Docs: copied Magic UI components | §2 R17 | P2.16 | P18-AC13 | REV | Planned (D6) |
+| R17-1 | Docs: tokens the app reads and the UI part each controls, including headers, splitters and drop zones | §2 R17 | P0.17, P2.16 | P18-AC13 | REV | Done (P18) |
+| R17-2 | Docs: sidecar schema | §2 R17 | P14.9, P16.8 | P18-AC13 | REV | Done (P18) |
+| R17-3 | Docs: arrangement file schema | §2 R17 | P9.6 | P18-AC13 | REV | Done (P18) |
+| R17-4 | Docs: brand inputs | §2 R17 | P1.10 | P18-AC13 | REV | Done (P18) |
+| R17-5 | Docs: copied Magic UI components | §2 R17 | P2.16 | P18-AC13 | REV | Done (P18, D6) |
 | R18-1 | Settings (folder path, lookup switch) and window size in the OS config folder | §2 R18 | P4.4, P4.2 | P4-AC6, P4-AC7 | IT, MAN-L | Done (P4) |
 | R18.1-1 | Portable marker: settings, arrangement, state, cache, logs and WebView profile in `data/` | §2 R18.1 | P4.1, P4.2, P4.3 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned (D47) |
 | R18.1-2 | Music folder path relative to the executable folder on the same volume, else absolute | §2 R18.1 | P4.1 | P9-AC7, P18-AC10 | UT, MAN-W | Planned |
@@ -320,8 +320,8 @@
 | ID | Constraint | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | CON-1 | Stack: Tauri v2, Rust backend, SQLite, React, Tailwind, shadcn/ui; revisit if Milestone 0 fails | §6 | P0.3, P0.4, P3.8 | P0-AC1, P3-AC4 | CI | Done (P3, D1) |
-| CON-2 | Branding: no feature code depends on the name, icon or theme | §6 | P0.14 | P0-AC6, P18-AC9 | UT, MAN-L | Planned (D34) |
-| CON-3 | Docking library MIT, React bindings, passes Milestone 0, no commercial add-ons, no floating or pop-out, tabs on | §6 | P2.1, P3.8, P18.4 | P2-AC2, P3-AC4, P18-AC7 | E2E, REV | Planned (D8) |
+| CON-2 | Branding: no feature code depends on the name, icon or theme | §6 | P0.14 | P0-AC6, P18-AC9 | UT, MAN-L | Done (P18, D34) |
+| CON-3 | Docking library MIT, React bindings, passes Milestone 0, no commercial add-ons, no floating or pop-out, tabs on | §6 | P2.1, P3.8, P18.4 | P2-AC2, P3-AC4, P18-AC7 | E2E, REV | Done (P18, D8) |
 | CON-4 | Complexity budget: fixed widgets, no per-view overrides, named layouts, floating, pop-out or layout import and export | §6 | P0.1, P2.2 | P2-AC2 | REV | Done (P2) |
 | CON-5 | Audio engine: rodio pinned, Symphonia with `mp3`, lofty; gapless-ready design | §6 | P7.2, P7.5 | P7-AC1 | REV | Done (P7, D3) |
 | CON-6 | License: MIT app; Symphonia MPL-2.0; LGPL in the AppImage; license texts, versions and sources per release; NOTICE file; no Strawberry code | §6 | P0.2, P18.4 | P18-AC7, P18-AC8 | REV, CI | Planned |
@@ -394,7 +394,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-4 | Real Apple XML, MusicBee M3U8 and legacy `.m3u` import with a correct report | §9.4 | P12.7 | P12-AC6 | MAN-W | Planned (Q5) |
 | AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Done (P15) |
 | AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Done (P14) |
-| AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Planned |
+| AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Done (P18) |
 | AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9) |
 | AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Done (P14) |
 | AC-10 | Unplugging the device stops playback with a message; Play resumes on the default device | §9.10 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
@@ -402,7 +402,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Done (P9) |
 | AC-13 | Transport hidden: keys and media keys work; Reset layout restores | §9.13 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W | Planned |
 | AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Done (P6) |
-| AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Planned |
+| AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Done (P18) |
 | AC-16 | With reduce motion on, no animation plays (Magic UI clause applies only if components are named) | §9.16 | P0.7, P17.3 | P2-AC8, P17-AC3 | E2E, MAN-L, MAN-W | Planned |
 | AC-17 | Portable folder and music folder copied to another drive: settings, arrangement, queue survive | §9.17 | P4.1, P9.1 | P9-AC7, P18-AC10 | MAN-W | Planned |
 | AC-18 | Two-disc album plays disc 1 then disc 2 in track order | §9.18 | P5.7, P7.1 | P5-AC11, P7-AC6 | IT, MAN-L | Done (P7) |
@@ -488,7 +488,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Done (P0, D34) |
 | DES-10.6 | No loss of audio, playlist, library, lyric or metadata behavior | §10 | P0.16 | P0-AC1 | CI | Resolved (C1) |
 | DES-10.7 | Offline startup and operation | §10 | P14.1 | P14-AC1, P14-AC13 | IT | Done (P14) |
-| DES-10.8 | No unnecessary dependencies or decorative features | §10 | P18.4 | P18-AC8 | CI, REV | Planned (D6) |
+| DES-10.8 | No unnecessary dependencies or decorative features | §10 | P18.4 | P18-AC8 | CI, REV | Done (P18, D6) |
 | DES-10.9 | Mockup-only features kept apart from requirements | §10 | none | none | REV | Resolved (C9) |
 | DES-11.1 | Brand work adds no features (online services, accounts, dashboards, analytics, notifications); playlist editing and Favorites only as required | §11 | P0.1 | P0-AC7 | REV | Resolved (C2) |
 | DES-11.2 | Preserve the existing playback architecture | §11 | P0.16 | P0-AC1 | CI | Resolved (C1) |
@@ -527,16 +527,16 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-4.4 | Two-pass critical self-review; fix confirmed problems only | Phase 4.4 | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-4.5 | Validate Windows and Linux artifacts; report checks not performed | Phase 4.5 | P18.7 | P18-AC12 | MAN-W, MAN-L | Planned |
 | BRD-4.6 | Update design.md only for justified implementation differences | Phase 4.6 | P17.9 | P17-AC7 | REV | Done (P17) |
-| BRD-FD1 | Final summary: changes with paths | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
-| BRD-FD2 | Final summary: assets and export sizes | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
-| BRD-FD3 | Final summary: Magic UI components or the reason for none | Final deliverable | P18.9 | P18-AC13 | REV | Planned |
-| BRD-FD4 | Final summary: tests and builds run, with results | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
+| BRD-FD1 | Final summary: changes with paths | Final deliverable | P18.9 | P18-AC12 | REV | Done (P18) |
+| BRD-FD2 | Final summary: assets and export sizes | Final deliverable | P18.9 | P18-AC12 | REV | Done (P18) |
+| BRD-FD3 | Final summary: Magic UI components or the reason for none | Final deliverable | P18.9 | P18-AC13 | REV | Done (P18) |
+| BRD-FD4 | Final summary: tests and builds run, with results | Final deliverable | P18.9 | P18-AC12 | REV | Done (P18) |
 | BRD-FD5 | Final summary: limitations and unverified platform checks | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
-| BRD-FD6 | Final summary: deviations from the reference and why | Final deliverable | P18.9, P17.9 | P17-AC7 | REV | Planned |
+| BRD-FD6 | Final summary: deviations from the reference and why | Final deliverable | P18.9, P17.9 | P17-AC7 | REV | Done (P18) |
 | BRD-X1 | Do not rewrite the player architecture for branding | Constraints | none | none | REV | Resolved (C1) |
 | BRD-X2 | Do not claim tests that did not run | Constraints | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-X3 | Respect AGENTS.md | Constraints | P0.1 | P0-AC7 | REV | Done (P0) |
-| BRD-X4 | No unnecessary libraries, animations or features | Constraints | P18.4 | P18-AC8 | REV | Planned (D6) |
+| BRD-X4 | No unnecessary libraries, animations or features | Constraints | P18.4 | P18-AC8 | REV | Done (P18, D6) |
 | BRD-X5 | Commit or open PRs only when the workflow requires it | Constraints | P0.1 | P0-AC7 | REV | Done (P0, C15) |
 
 ---
@@ -557,7 +557,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AST-8 | README banner and social image only if helpful | Checklist | P1.9 | none | REV | Done (P1, D9) |
 | AST-9 | App title, executable metadata, manifests and About show Clawdio | Checklist | P0.4, P4.10, P18.1 | P18-AC11 | MAN-W, MAN-L | Resolved (C6) |
 | AST-10 | Icon works in the Windows taskbar and Linux launchers | Checklist | P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
-| AST-11 | Fonts and illustrations compatible with open-source redistribution | Checklist | P0.9, P18.4 | P18-AC7 | REV | Planned (D7) |
+| AST-11 | Fonts and illustrations compatible with open-source redistribution | Checklist | P0.9, P18.4 | P18-AC7 | REV | Done (P18, D7) |
 | AST-12 | Missing-artwork placeholder with quiet branding | Checklist | P1.8, P10.3 | P10-AC4 | E2E | Done (P10) |
 | AST-13 | Logo legible at real icon sizes | Checklist | P1.7 | P1-AC3 | MAN-L | Done (P1) |
 | AST-14 | Test light backgrounds and high contrast | Checklist | P1.4, P17.6, P2.13 | P1-AC4, P17-AC6, P2-AC16 | REV, MAN-W | Planned |

@@ -130,7 +130,7 @@ Copied Magic UI components: none (requirements R17 and R30, plan decision D6). M
 - Color scheme: `:root` sets `color-scheme: dark`, so native scrollbars and form controls are dark.
 - Motion: hover and focus transitions use `motion.fast`. Menus and dialogs use `motion.panel`.
 - Reduced motion: see `motion.reduced` above.
-- Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`. Mask icons (UI icon overrides) and the art placeholder paint in `CanvasText`.
+- Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`. Mask icons (UI icon overrides) and the art placeholder paint in `CanvasText`. Pressed toggles use `Highlight` with `HighlightText`; the switch shows `Canvas` with a `CanvasText` thumb when off and `Highlight` with a `HighlightText` thumb when on; the slider track is `GrayText` and its range and thumb are `Highlight` (P17.6).
 - Times use tabular numerals (`tabular` class).
 
 ## Font

@@ -51,3 +51,83 @@ P7-AC12, P11-AC8).
 | Large text (P17-AC5) | Pass with `GDK_DPI_SCALE` 1.25 and 1.4 (October 12, 2026): no overlap and no clipped control. The first run clipped Transport controls and Now playing at their 88 px minimum; P17 raised both minimums to 112 px. GNOME itself is not in the container. | Not run (150 percent display scale) |
 | Reduced motion (P17-AC3) | Playwright emulation: every state of the sweep has no transition or animation. GNOME "Reduce animation" not run (no GNOME). | Not run ("Animation effects" off) |
 | Forced colors (P17-AC6) | Playwright (Chromium emulation): focus ring, pressed toggles, the switch and the slider show. | Not run (Windows high contrast) |
+
+## Platform matrix (P18.7, B5)
+
+| Platform | Machine | Used for |
+|---|---|---|
+| Ubuntu 24.04 (container) | Agent container (WebKitGTK 2.52.6, 4 CPUs, 16 GB), Xvfb, software rendering, ALSA null output, a private D-Bus session, no window manager, root user | Release build, `.deb` and AppImage builds, manual Linux checks, memory |
+| Ubuntu 22.04 and Windows (CI) | GitHub-hosted runners | `cargo test` on Linux and Windows, Playwright in Chromium and WebKit, debug builds, license checks |
+| Windows 10 or 11 desktop | Not available (B5: the owner supplies one) | Every manual Windows check |
+| Ubuntu 22.04 desktop, Debian 12 | Not available (B5 owner answer: Windows machine only) | Not verified: no Ubuntu desktop |
+
+## Packages (P18.1 to P18.3, October 12, 2026)
+
+| Check | Linux | Windows |
+|---|---|---|
+| `.deb` builds, under 30 MB | Pass: 9.26 MiB (local release build, Ubuntu 24.04 container; `release.yml` builds in Ubuntu 22.04) | Not applicable |
+| AppImage builds, size recorded | Pass: 83.65 MiB (local, Ubuntu 24.04 libraries; it holds the LGPL and GPL texts) | Not applicable |
+| NSIS installer and portable zip, under 30 MB | Not applicable | Not run: no Windows machine. `release.yml` builds and checks them on a tag. |
+| One tag builds all four packages (P18-AC1) | Not run: no tag was pushed in this session. | Not run |
+| Desktop entry: name, icon, `AudioVideo;Audio;Player;` | Pass: `.deb` desktop file read with `dpkg-deb` | Not applicable |
+| Each package holds `LICENSE`, `NOTICE` and the third-party files | Pass: `.deb` (`/usr/lib/Clawdio`) and AppImage | Not run (zip layout is in `release.yml`) |
+| `.deb` installs on Debian 12 and Ubuntu 22.04; AppImage runs (P18-AC5) | Not verified: no Ubuntu desktop and no Debian 12 machine | Not applicable |
+| Installer: current user, no admin prompt; WebView2 bootstrapper (P18-AC3) | Not applicable | Not run |
+| Portable exe without WebView2 shows the download link (P18-AC4, D38) | Not applicable | Not run |
+| Taskbar and app grid icon, executable metadata (P18-AC11) | Not verified: no GNOME | Not run |
+
+## Footprint (P18.5, AC-1, October 12, 2026)
+
+Release build without fixtures, portable folder, a library made by `gen_test_library` with
+50,000 tracks and `--covers 2000`, `scripts/measure-memory.sh` with 3 runs per mode, 60 s idle.
+Value: sum of PSS over the app process tree, worst mode median (D28).
+
+| OS | Tree | Columns | Top/bottom | Gate value | Target | Result |
+|---|---|---|---|---|---|---|
+| Linux (Ubuntu 24.04 container, Xvfb, software rendering) | 496 MB | 519 MB | 517 MB | 519 MB | 468 MB (raised at P3, D49) | Over the target. Owner decision (R20 targets are adjustable). |
+| Windows | Not run | Not run | Not run | Not run | 200 MB | `measure.yml` runs only on a `measure/**` branch push (owner approval) |
+
+Process split in a Columns run: `WebKitWebProcess` 338 MB, `clawdio` 157 MB, `WebKitNetworkProcess` 22 MB.
+At P3 (fixture data) the same container gave 468 MB, with `WebKitWebProcess` at 338 MB.
+`malloc_trim(0)` on the idle app process gave back 23 MB (follow-up F-19).
+
+## Licenses (P18.4)
+
+| Check | Result |
+|---|---|
+| `cargo deny check` (P18-AC8) | Pass (local, cargo-deny 0.20.2). CI job `licenses` runs it. |
+| `THIRD_PARTY_LICENSES_RUST.html` current | Pass (cargo-about 0.9.2) |
+| `THIRD_PARTY_LICENSES_WEB.txt` current | Pass (27 production npm packages) |
+| `NOTICE` current | Pass: assets, Rust crates of both shipped targets and npm packages. The release workflow adds the AppImage libraries from `dpkg-query` in the build container. |
+
+## Brand swap demo (P18.8, AC-15, October 12, 2026)
+
+Pass on Linux. A test `theme/tokens.json` and a test `clawdio-icon-full.svg` changed the CSS colors and the generated icons. Only the two inputs and `src-tauri/icons/` changed. The Q8 fallback is off, so `clawdio-icon-simple.svg` was not used. The swap was reverted.
+
+## Acceptance checks (AC-1 to AC-21)
+
+"Auto" means the automated tests named in the plan pass on that OS in CI. "Not run" names the reason.
+
+| Check | Linux | Windows |
+|---|---|---|
+| AC-1 Footprint | Over the target: 519 MB against 468 MB (see "Footprint"). Owner decision. | Not run (P3 value 112 MB from CI) |
+| AC-2 Responsive first scan | Exception: 2 of 3 runs under 100 ms (container, software rendering) | Not run |
+| AC-3 Playlist interop | Pass (VLC, see above) | Not run: no Windows machine. B3 stays open. |
+| AC-4 Import of real exports | Not run: the owner did not supply exports (Q5, B4) | Not run (Q5) |
+| AC-5 Lyrics query | Pass (auto) | Pass (auto, CI) |
+| AC-6 Artwork | Pass (auto); the Set cover picker did not run under Xvfb | Auto pass; manual not run |
+| AC-7 Theme build | Pass (`npm run check`, CI on Linux) | Not run: the build does not depend on the OS |
+| AC-8 Missing folder | Pass (manual Linux) | Not run |
+| AC-9 Cache rebuild | Pass (manual Linux and auto) | Auto pass; manual not run |
+| AC-10 Device unplugged | Not run: no device in the container (unit test passes) | Not run |
+| AC-11 Docking per mode | Pass (Playwright Chromium and WebKit) | Not run in the app |
+| AC-12 Layouts, tabs | Pass (Playwright) | Not run in the app |
+| AC-13 Hidden Transport, media keys, Reset | Pass: keys (Playwright), MPRIS (`playerctl`), Ctrl+Shift+L | Not run: media keys need a Windows desktop |
+| AC-14 Library cannot close, mode switch | Pass (Playwright) | Not run in the app |
+| AC-15 Brand swap | Pass (above) | Not run |
+| AC-16 Reduced motion | Pass (Playwright emulation); GNOME setting not run | Not run |
+| AC-17 Portable copy to another drive | Exception: data in `data/` checked; drive letters are Windows only | Not run |
+| AC-18 Two-disc order | Pass (auto) | Pass (auto, CI) |
+| AC-19 Decode error skip | Pass (auto) | Pass (auto, CI) |
+| AC-20 First song before the scan ends | Pass (P4-AC3, cold cache); P7-AC10 exception (warm scan ends in 2 s) | Not run |
+| AC-21 Embedded lyrics | Pass (auto and manual Linux) | Pass (auto, CI) |

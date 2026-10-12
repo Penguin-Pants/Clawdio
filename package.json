@@ -21,7 +21,8 @@
     "check:svg": "node scripts/check-svg.mjs",
     "check": "npm run lint && npm run typecheck && npm run test && npm run check:sources && npm run check:svg",
     "test:e2e": "npm run tokens && npm run icons && vite build -c vite.e2e.config.ts && playwright test",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "licenses": "cargo about generate --workspace about.hbs -o THIRD_PARTY_LICENSES_RUST.html && node scripts/frontend-licenses.mjs && node scripts/notice.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",

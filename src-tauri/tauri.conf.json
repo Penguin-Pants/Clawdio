@@ -17,7 +17,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "deb", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",
@@ -25,6 +25,41 @@
       "icons/128x128@2x.png",
       "icons/icon.png",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "Dr. Claw Development",
+    "copyright": "Copyright (c) 2026 Dr. Claw Development",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "homepage": "https://github.com/Penguin-Pants/Clawdio",
+    "category": "Music",
+    "shortDescription": "Minimalist local music player",
+    "longDescription": "A lightweight, portable, local-first music player for MP3, WAV and OGG files.",
+    "resources": {
+      "../LICENSE": "LICENSE",
+      "../NOTICE": "NOTICE",
+      "../THIRD_PARTY_LICENSES_RUST.html": "THIRD_PARTY_LICENSES_RUST.html",
+      "../THIRD_PARTY_LICENSES_WEB.txt": "THIRD_PARTY_LICENSES_WEB.txt"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libasound2 | libasound2t64"],
+        "desktopTemplate": "clawdio.desktop"
+      },
+      "appimage": {
+        "files": {
+          "usr/share/licenses/clawdio/LGPL-2.1.txt": "../licenses/LGPL-2.1.txt",
+          "usr/share/licenses/clawdio/LGPL-3.0.txt": "../licenses/LGPL-3.0.txt",
+          "usr/share/licenses/clawdio/GPL-3.0.txt": "../licenses/GPL-3.0.txt"
+        }
+      }
+    }
   }
 }

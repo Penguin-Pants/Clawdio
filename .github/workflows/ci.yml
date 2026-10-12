@@ -71,3 +71,32 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: npm ci
       - run: npm run tauri build -- --debug --no-bundle
+
+  # P18.4: licenses on the allow-list, and the committed license files match the inventories.
+  licenses:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install cargo-deny 0.20.2 and cargo-about 0.9.2
+        run: |
+          mkdir -p "$RUNNER_TEMP/tools" "$HOME/.local/bin"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLf -O https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+          curl -sSLf -O https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.2/cargo-about-0.9.2-x86_64-unknown-linux-musl.tar.gz
+          # SHA-256 values from the .sha256 files of the two releases.
+          sha256sum -c - <<'SUMS'
+          9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f  cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+          9099a59e820c38a68b9d65f300662a567d56562f9a10f6aa4c7e86c17c2566af  cargo-about-0.9.2-x86_64-unknown-linux-musl.tar.gz
+          SUMS
+          for archive in *.tar.gz; do tar xzf "$archive"; done
+          find "$RUNNER_TEMP/tools" -type f \( -name cargo-deny -o -name cargo-about \) -exec cp {} "$HOME/.local/bin/" \;
+      - run: cargo deny check
+      - name: THIRD_PARTY_LICENSES_RUST.html is current
+        run: cargo about generate --workspace about.hbs -o THIRD_PARTY_LICENSES_RUST.html && git diff --exit-code THIRD_PARTY_LICENSES_RUST.html
+      - run: node scripts/frontend-licenses.mjs --check
+      - run: node scripts/notice.mjs --check

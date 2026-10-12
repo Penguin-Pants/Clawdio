@@ -82,7 +82,7 @@ A phase is Done when all of these are true:
 | P15 | Lyrics fetch | P14 | Done |
 | P16 | Metadata fill | P15 | Done |
 | P17 | UI quality audit | P16 | Done with exceptions |
-| P18 | Release readiness | P17, gate B3 closed | Not started |
+| P18 | Release readiness | P17, gate B3 closed | In progress |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1054,6 +1054,77 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 ---
 
+#### P18. Release readiness (October 12, 2026)
+
+- **Status:** In progress. Blocked by B3, B5, B9 and B10 (owner input). The code and docs work of P18.1 to P18.6, P18.8 and P18.9 is done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5ab34c2`. Messages start with `P18:`.
+- **Packages:** none in the app. CI tools: `cargo-deny` 0.20.2 and `cargo-about` 0.9.2 (prebuilt, SHA-256 checked).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P18-AC1 | Not verified | `.github/workflows/release.yml` (tags `v*`): NSIS and portable zip on windows-latest, `.deb` and AppImage in `ubuntu:22.04`, size check, SHA-256 sums, draft release. No tag was pushed in this session. |
+| P18-AC2 | Pass on Linux (E1) | Local release build: `.deb` 9.26 MiB, AppImage 83.65 MiB (recorded). NSIS: not run (no Windows machine; `release.yml` fails at 30 MB or more). |
+| P18-AC3 | Not run (E1) | `tauri.conf.json`: NSIS `installMode` `currentUser`, `webviewInstallMode` `downloadBootstrapper`. |
+| P18-AC4 | Not run (E1) | D38 holds: Tauri shows "Could not find the WebView2 Runtime" with the download link (`tauri-runtime-wry` 2.12.1 `src/lib.rs:4680`), then `main` exits with code 1. |
+| P18-AC5 | Not verified (E2) | No Ubuntu 22.04 desktop and no Debian 12 machine (B5 owner answer). |
+| P18-AC6 | Fail on Linux (B9); Windows not run (B10) | `docs/release-checklist.md` "Footprint": 519 MB worst mode against the raised 468 MB target. |
+| P18-AC7 | Pass on Linux (E3) | The `.deb` holds `LICENSE`, `NOTICE` and both third-party files; the AppImage holds them and the LGPL and GPL texts. `NOTICE`: 3 assets, the Rust crates of both shipped targets and 27 npm packages; CI job `licenses` checks all generated files. |
+| P18-AC8 | Pass | `cargo deny check` (licenses, advisories, bans, sources). |
+| P18-AC9 | Pass (Linux) | Brand swap demo: only the two inputs and `src-tauri/icons/` changed; reverted. |
+| P18-AC10 | Not run (E1) | Drive letters are Windows only. |
+| P18-AC11 | Pass in part (E1, E2) | Linux: window title and `.deb` desktop entry show the name. GNOME app grid and every Windows item not run. |
+| P18-AC12 | Not met | `docs/release-checklist.md` records all 21 checks and the platform matrix. AC-1 fails on Linux (B9); AC-3 on Windows waits for B3; Windows rows wait for B5. |
+| P18-AC13 | Pass | `docs/theming-and-brand.md` (token map, dock chrome, brand inputs, Magic UI: none) and `docs/file-formats.md` (settings, state, arrangement, playlists, lyrics, sidecar). |
+
+**Notes**
+
+- N1: the bundle category is "Music": Tauri 2.12 rejects "Audio" (P18.1). The desktop template `src-tauri/clawdio.desktop` gives `AudioVideo;Audio;Player;`.
+- N2: `deny.toml` checks the two shipped targets only (Linux and Windows x86_64).
+- N3: the committed `NOTICE` has no AppImage table. `release.yml` makes it from the AppImage with `scripts/appimage-libs.sh` (package, version, the License fields of the Debian copyright file, source package) and builds the AppImage again with it. A library that no package owns fails the job.
+- N4: the local packages came from an Ubuntu 24.04 container. `release.yml` builds in Ubuntu 22.04 (glibc 2.35).
+- N5: the README gains Features, Install (WebView2, FUSE and SmartScreen notes), Portable mode, Keyboard shortcuts and Data locations.
+
+**Exceptions**
+
+- E1: no Windows machine (B5). Every MAN-W item is "not run". MAN-W rows of the traceability matrix stay Planned.
+- E2: no Ubuntu desktop and no Debian 12 machine (B5 owner answer). Manual Linux items ran in a container under Xvfb without GNOME.
+- E3: the zip and NSIS contents and the AppImage library table are made by `release.yml`, which did not run.
+- E4: the earlier "Done with exceptions" items stay open for the same reasons; `docs/release-checklist.md` lists them per AC.
+
+**Blockers:** B3 (Windows interop), B5 (Windows machine), B9 (Linux memory verdict), B10 (Windows measurement branch). P18 cannot be Done until B3 closes.
+
+**TWO-PASS REVIEW:** F1 0, F2 5, F3 1, F4 8. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The AppImage library rows had no license.
+  - A library without a package owner left `NOTICE` silently.
+  - The release container did not install the toolchain of `rust-toolchain.toml` explicitly.
+  - The licenses job ran downloaded tools without a checksum check.
+  - The README had no SmartScreen note (K16).
+- F3: F-20 (tag and version check in `release.yml`).
+- F4:
+  - "No WebView2 dialog exists": Tauri shows it (P18-AC4 evidence).
+  - The licenses job has no toolchain step: hosted runners install `rust-toolchain.toml` on first use, as every CI job does.
+  - No `sudo` in the container: the steps run as root.
+  - Node and CA certificates in the container: `setup-node` and the package step supply them.
+  - The portable zip has no size gate: the plan gates NSIS and `.deb` only.
+  - Unsigned Windows files: K16 and F-01.
+  - AC-7 and AC-15 marked Done with Windows "not run": the theme and brand build does not depend on the OS.
+  - Scope: nothing outside the P18 task list.
+
+**Final summary (P18.9)**
+
+- Changes with paths: the phase records P0 to P18 list them. P18 adds `deny.toml`, `about.toml`, `about.hbs`, `scripts/frontend-licenses.mjs`, `scripts/notice.mjs`, `scripts/appimage-libs.sh`, `licenses/`, `.github/workflows/release.yml`, the `licenses` CI job, the bundle config and `src-tauri/clawdio.desktop`.
+- Assets and export sizes: the SVG masters and `src-tauri/icons/` (PNG 16 to 1024 px; ICO 16, 24, 32, 48, 64 and 256 px), as the P1 record lists.
+- Magic UI: none. No component had a function the app needs (D6, `docs/theming-and-brand.md`).
+- Tests and builds: `npm run check`, `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace` and Chromium e2e pass locally; CI runs WebKit e2e and the Windows tests. The release build, `.deb` and AppImage built locally.
+- Limitations and unverified platform checks: `docs/release-checklist.md` (Windows: every manual check; Linux desktop: GNOME, real audio, device unplug).
+- Deviations from the reference: `docs/design.md` implementation notes (P17-AC7).
+
+**Follow-ups:** F-19 and F-20 (new); F-13 to F-18 open.
+
+---
+
 ## 3. Source documents and precedence
 
 | Source | Role | Authority |
@@ -1209,6 +1280,8 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 | B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 could not be Done. | Closed October 11, 2026: the owner chose F-09 option (b). P1-AC4 checks bar separation at the 72 px README height. The assets did not change. |
 | B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 could not close; P4 waited for the Windows verdict (B2). | Closed October 11, 2026: the owner allowed pushes to `measure/p3`. Run 38171140952 measured Windows. |
+| B9 | P18.5 Linux idle memory is 519 MB, over the raised Linux target of 468 MB (D49). R20 calls the targets adjustable; P18.5 and P18-AC6 give the decision to the owner. | P18-AC6 and AC-1 fail on Linux until the owner accepts the value or asks for a reduction (F-19 gives back about 23 MB). | Owner decision. |
+| B10 | The P18.5 Windows numbers need `measure.yml` on windows-latest, which runs on a push to a `measure/**` branch (as B8). The agent may push only to its task branch. | P18-AC6 on Windows and the NSIS size stay "not run". | Owner allows a push to `measure/p18`, or runs `measure.yml` from the default branch. |
 
 ---
 
@@ -2440,6 +2513,8 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
+| F-19 | On Linux, call glibc `malloc_trim(0)` once after a scan and after a large queue load. | The idle app process keeps freed scan memory: `malloc_trim(0)` on the idle 50,000-track app gave back 23 MB of 157 MB (P18.5). It does not close B9 alone. | P18 |
+| F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
