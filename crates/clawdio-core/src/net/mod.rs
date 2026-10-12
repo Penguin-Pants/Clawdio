@@ -3,6 +3,7 @@
 //! and the cancellation token.
 
 pub mod artwork;
+pub mod lyrics;
 pub mod normalize;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -86,6 +87,8 @@ pub enum NetError {
     NotAllowed,
     #[error("Network error: {0}")]
     Network(String),
+    #[error("The service answer cannot be read")]
+    BadAnswer,
 }
 
 /// A response body and its content type.
@@ -120,6 +123,8 @@ pub struct OnlineGate {
     client: Client,
     config: NetConfig,
     musicbrainz_last: tokio::sync::Mutex<Option<Instant>>,
+    /// LRCLIB gets one request at a time (section 6.11).
+    lrclib_turn: tokio::sync::Mutex<()>,
     requests: AtomicU64,
 }
 
@@ -163,6 +168,7 @@ impl OnlineGate {
             client,
             config,
             musicbrainz_last: tokio::sync::Mutex::new(None),
+            lrclib_turn: tokio::sync::Mutex::new(()),
             requests: AtomicU64::new(0),
         })
     }
@@ -226,6 +232,10 @@ impl OnlineGate {
             if service == Service::MusicBrainz {
                 self.musicbrainz_turn().await;
             }
+            let _lrclib = match service {
+                Service::Lrclib => Some(self.lrclib_turn.lock().await),
+                _ => None,
+            };
             if !self.is_on() {
                 return Err(NetError::Off);
             }

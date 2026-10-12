@@ -53,6 +53,8 @@ export const commands = {
   /** "Import playlist" (P12.6): Rust opens the picker. Null when the user cancels. */
   playlistImport: () => invoke<ImportReport[] | null>("playlist_import"),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
+  /** "Fetch lyrics" (P15): true when lyrics were saved; they arrive by `lyrics-changed`. */
+  lyricsFetch: (track: number) => invoke<boolean>("lyrics_fetch", { track }),
   playerPlayList: (ids: number[], start: number) => invoke<void>("player_play_list", { ids, start }),
   playerToggle: () => invoke<void>("player_toggle"),
   playerStop: () => invoke<void>("player_stop"),

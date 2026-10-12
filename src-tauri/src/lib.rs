@@ -193,6 +193,7 @@ pub fn run() -> tauri::Result<()> {
             commands::playlists::favorites,
             commands::playlists::playlist_import,
             commands::lyrics::lyrics_get,
+            commands::lyrics::lyrics_fetch,
             commands::measure::measure_mode,
             commands::measure::measure_ready,
             commands::measure::scan_running,

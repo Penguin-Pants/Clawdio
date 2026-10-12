@@ -79,7 +79,7 @@ A phase is Done when all of these are true:
 | P12 | Playlist import | P11 | Done with exceptions |
 | P13 | Local lyrics | P12 | Done |
 | P14 | Online lookups and artwork fetch | P13 | Done |
-| P15 | Lyrics fetch | P14 | Not started |
+| P15 | Lyrics fetch | P14 | Done |
 | P16 | Metadata fill | P15 | Not started |
 | P17 | UI quality audit | P16 | Not started |
 | P18 | Release readiness | P17, gate B3 closed | Not started |
@@ -889,6 +889,52 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - HTTPS on a redirect hop is checked by the same function as the first request, which has a unit test; an end-to-end HTTPS mock would add a TLS test server for no new path.
   - A cancel during the body read takes the same `select!` path as during `send`.
   - The sidecar marker write stays on the async thread: it is one small atomic file.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P15. Lyrics fetch (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `6fe6867`. Messages start with `P15:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P15-AC1 | Pass | `net/tests.rs` `the_get_request_carries_the_cleaned_title_and_duration`: a scan of an untagged "01 - Title.mp3" gives `track_name=Title`, the folder names and the decoded duration in whole seconds; the mock matches every parameter and `Lrclib-Client`. |
+| P15-AC2 | Pass | `two_seconds_off_is_accepted_and_three_is_not`: `/api/get` 2 s off is accepted; 3 s off leads to the search, where 3 s off is rejected and 2 s off is accepted (synced wins). |
+| P15-AC3 | Pass | `synced_save_as_lrc_and_plain_as_txt`; app test `fetched_lyrics_are_saved_and_announced`. |
+| P15-AC4 | Pass | `no_acceptable_result_is_none`; app test: "No lyrics found" path writes nothing and sends no `lyrics-changed`. |
+| P15-AC5 | Pass | `check_writable` runs before any request (`a_read_only_folder_is_found_first`; skips as root). The error goes to the status line. |
+| P15-AC6 | Pass | Core and app tests: switch off gives an error and 0 requests. Playwright: the button is disabled with the switch off. |
+| P15-AC7 | Pass | App test: `lyrics-changed` after the save and `lyrics_get` gives the new text. Playwright: fetched lyrics replace the hint at once. Manual Linux: a real fetch for "Björk/Debut/01 - Human Behaviour.mp3" (252 s) saved a `.lrc` and the widget showed it with the stamps hidden and "Lyrics saved" in the status line. |
+
+**Notes**
+
+- N1: the duration is the one the scan read from the audio stream properties (lofty, or Symphonia for WAV), rounded to whole seconds. The player sends no duration.
+- N2: the fetch code is in `net/lyrics.rs`, beside the other online code, and the gate serializes LRCLIB requests (section 6.11).
+- N3: a 404 from the search counts as no result. The search normally answers `[]`. A search answer that is not JSON is an error.
+- N5: among accepted search results, synced lyrics win, then the result closest to the song's duration. The 2 s rule compares milliseconds; the request sends whole seconds.
+- N6: a blank `.lrc` or `.txt` holds no lyrics (P13), so "Fetch lyrics" replaces it; any other existing file is never replaced.
+- N4: in the manual run MusicBrainz answered 503 (its rate-limit answer after earlier runs from the same address). The artwork job stopped with no marker, as R8 requires.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 3. Source: own audit, then a reviewer agent.
+
+- F2:
+  - A blank lyrics file showed "Fetch lyrics", but the create-new save then failed for good. A blank file is now replaced (N6).
+  - The 2 s rule compared against the rounded duration, so a result 2.0 s off a 200.4 s song failed. It now compares milliseconds.
+  - The folder check and the save ran on async threads. They now run on blocking threads.
+  - The search took the first synced result, not the closest one (N5).
+  - A search answer that was not JSON showed "No lyrics found". It is now an error.
+  - A fetch kept the button disabled on the next song. The busy state now belongs to its song.
+  - Weak tests: added a `/api/get` answer with no lyrics, the 2 s edge on the search alone, the closest result, a bad answer, a blank file and the LRCLIB one-at-a-time rule.
+- F4:
+  - The writable check makes and removes a temp file, as Set cover (P10) and the artwork job (P14) do; one rule for all three.
+  - No command test for a read-only folder: root writes into read-only folders here, and the check runs before the request in the code and in the unit test.
+  - The e2e mock always succeeds: the error message path is the same `showMessage` call that P10-AC5 tests.
 
 **Follow-ups:** F-13 to F-18 (open).
 

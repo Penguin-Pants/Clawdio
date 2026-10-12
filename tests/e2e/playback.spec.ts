@@ -179,3 +179,33 @@ test("P13-AC5: Fetch lyrics shows only with no source; the hint shows with no ly
   await expect(lyrics).toContainText("No lyrics for this song.");
   await expect(fetch).toHaveCount(0);
 });
+
+test("P15-AC6, P15-AC7: Fetch lyrics is off without Online lookups; fetched lyrics show at once", async ({ page }) => {
+  await page.goto("/?data=library&measure=columns");
+  const lyrics = widget(page, "lyrics");
+  const fetch = lyrics.getByRole("button", { name: "Fetch lyrics" });
+  await expect(lyrics).toContainText("Lyric line 60");
+  await page.evaluate(() => window.e2e.setLyrics(null));
+  await expect(fetch).toBeDisabled();
+
+  await page.evaluate(() =>
+    sessionStorage.setItem(
+      "e2e-settings",
+      JSON.stringify({
+        folderName: "music",
+        folderState: "ready",
+        onlineLookups: true,
+        noticePending: false,
+        portable: false,
+        lastScan: null,
+      }),
+    ),
+  );
+  await page.goto("/?data=library&measure=columns");
+  await expect(lyrics).toContainText("Lyric line 60");
+  await page.evaluate(() => window.e2e.setLyrics(null));
+  await fetch.click();
+  await expect(lyrics.getByRole("region", { name: "Lyrics text" })).toHaveText(/Fetched line one\s+Fetched line two/);
+  await expect(fetch).toHaveCount(0);
+  await expect(page.locator("footer").getByRole("status")).toHaveText("Lyrics saved");
+});

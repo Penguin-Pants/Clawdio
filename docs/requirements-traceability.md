@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 171 | 65 | 12 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 42 | 15 | 8 | 10 | 0 | 1 | 0 |
+| Requirements | 301 | 177 | 60 | 11 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 43 | 14 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -158,7 +158,7 @@
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Done (P4) |
-| R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Planned (D29) |
+| R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Done (P15, D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
 | R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Done (P14) |
 | R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Done (P14, D44) |
@@ -172,11 +172,11 @@
 | R8-9 | "Set cover" per album saves `cover.jpg`, converting if needed | §2 R8 | P10.4 | P10-AC5 | IT, MAN-L | Resolved (C17) |
 | R8-10 | MusicBrainz at most 1 request per second; User-Agent with name, version and contact URL | §2 R8 | P14.1, P14.2 | P14-AC6 | IT | Done (P14) |
 | R8-11 | Status line progress with cancel; UI stays usable | §2 R8 | P14.6 | P14-AC12 | MAN-L | Done (P14) |
-| R9-1 | Per-song action; source LRCLIB; save `.lrc` when synced, else `.txt` | §2 R9 | P15.1, P15.2 | P15-AC3, P15-AC4 | IT | Planned |
-| R9-2 | Lookup with folder artist, cleaned title, folder album, decoded duration; fallback search; accept within 2 s | §2 R9 | P15.1, P15.4 | P15-AC1, P15-AC2 | IT | Planned |
-| R9-3 | Lyrics widget shows the playing song's lyrics; LRC timestamps hidden | §2 R9 | P13.2, P13.4, P13.3 | P13-AC2, P15-AC7 | UT, E2E | Planned |
+| R9-1 | Per-song action; source LRCLIB; save `.lrc` when synced, else `.txt` | §2 R9 | P15.1, P15.2 | P15-AC3, P15-AC4 | IT | Done (P15) |
+| R9-2 | Lookup with folder artist, cleaned title, folder album, decoded duration; fallback search; accept within 2 s | §2 R9 | P15.1, P15.4 | P15-AC1, P15-AC2 | IT | Done (P15) |
+| R9-3 | Lyrics widget shows the playing song's lyrics; LRC timestamps hidden | §2 R9 | P13.2, P13.4, P13.3 | P13-AC2, P15-AC7 | UT, E2E | Done (P15) |
 | R9-4 | Source order: `.lrc`, `.txt`, embedded (USLT, LYRICS, UNSYNCEDLYRICS) | §2 R9 | P13.1 | P13-AC1, P13-AC3, P13-AC4 | IT | Done (P13, D26) |
-| R9-5 | "Fetch lyrics" only when no lyrics exist; disabled when lookups are off | §2 R9 | P13.4, P15.3 | P13-AC5, P15-AC6 | E2E | Planned |
+| R9-5 | "Fetch lyrics" only when no lyrics exist; disabled when lookups are off | §2 R9 | P13.4, P15.3 | P13-AC5, P15-AC6 | E2E | Done (P15) |
 | R9-6 | Synced line highlighting | §2 R9 | none | none | REV | Deferred |
 | R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Planned |
 | R10-2 | Fill blanks only: title, track number, year | §2 R10 | P16.1, P16.4 | P16-AC1 | UT | Planned |
@@ -392,7 +392,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-2 | During the first 50,000-track scan, select and play a scanned song; redraw within 100 ms | §9.2 | P6.8 | P6-AC6 | MEAS | Planned |
 | AC-3 | App playlist opens in MusicBee or VLC with paths intact | §9.3 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | AC-4 | Real Apple XML, MusicBee M3U8 and legacy `.m3u` import with a correct report | §9.4 | P12.7 | P12-AC6 | MAN-W | Planned (Q5) |
-| AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Planned |
+| AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Done (P15) |
 | AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Done (P14) |
 | AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Planned |
 | AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9) |
@@ -450,7 +450,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Planned |
 | DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D45) |
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Done (P10) |
-| DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Planned |
+| DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Done (P15) |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Done (P6) |

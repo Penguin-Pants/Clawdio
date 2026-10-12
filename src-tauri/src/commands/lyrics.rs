@@ -1,11 +1,16 @@
 //! Lyrics of a song (P13.3, R9): read in Rust from the song's folder or tags (D13).
 
-use clawdio_core::api::Lyrics;
+use clawdio_core::api::{IpcError, JobProgress, Lyrics};
+use clawdio_core::net::lyrics::{self as online_lyrics, LyricsQuery};
 use tauri::{AppHandle, Manager, Runtime};
 
 use super::CommandResult;
-use crate::events::{emit, LYRICS_CHANGED};
+use crate::events::{emit, JOB_PROGRESS, LYRICS_CHANGED, STATUS_MESSAGE};
+use crate::online::Online;
 use crate::state::{Library, LyricsState, MusicRoot};
+
+/// The status line job id of "Fetch lyrics".
+const LYRICS_JOB: &str = "lyrics";
 
 /// The lyrics of a track, or None when it has no source or is not in the library.
 fn read<R: Runtime>(app: &AppHandle<R>, track: u32) -> Option<Lyrics> {
@@ -44,6 +49,80 @@ fn get<R: Runtime>(app: &AppHandle<R>, track: u32) -> Option<Lyrics> {
         *served = Some((track, lyrics.clone()));
     }
     lyrics
+}
+
+fn fetch_error(message: impl Into<String>) -> IpcError {
+    IpcError {
+        code: "lyrics_fetch".into(),
+        message: message.into(),
+    }
+}
+
+fn progress<R: Runtime>(app: &AppHandle<R>, text: Option<&str>) {
+    emit(
+        app,
+        JOB_PROGRESS,
+        JobProgress {
+            id: LYRICS_JOB.into(),
+            text: text.map(str::to_owned),
+            cancelable: false,
+        },
+    );
+}
+
+/// "Fetch lyrics" (P15): asks LRCLIB for the song and saves `.lrc` or `.txt` next to it.
+/// True when lyrics were saved; the widget reads them on `lyrics-changed`. An error when
+/// Online lookups are off (no request) or the folder is read-only (checked first).
+#[tauri::command]
+pub async fn lyrics_fetch(app: AppHandle, track: u32) -> CommandResult<bool> {
+    fetch(&app, track).await
+}
+
+async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool> {
+    let gate = app
+        .try_state::<Online>()
+        .map(|online| online.gate.clone())
+        .ok_or_else(|| fetch_error("Online lookups are not available. The log has the reason"))?;
+    if !gate.is_on() {
+        return Err(fetch_error("Online lookups are off"));
+    }
+    let (song, query) = {
+        let library = app.state::<Library>();
+        let index = library.0.read().map_err(|_| super::lock_error())?;
+        let song = index
+            .track(track)
+            .ok_or_else(|| fetch_error("The song is not in the library"))?;
+        (song.rel_path().to_owned(), LyricsQuery::for_track(song))
+    };
+    let root = app
+        .state::<MusicRoot>()
+        .0
+        .read()
+        .map_err(|_| super::lock_error())?
+        .clone()
+        .ok_or_else(|| fetch_error("Choose a music folder first"))?;
+    let song = root.join(song);
+    // File work runs on a blocking thread, so a slow disk never stalls the runtime.
+    let probe = song.clone();
+    tauri::async_runtime::spawn_blocking(move || online_lyrics::check_writable(&probe))
+        .await
+        .map_err(|_| fetch_error("The song's folder cannot be checked"))?
+        .map_err(|error| fetch_error(error.to_string()))?;
+    progress(app, Some("Fetching lyrics"));
+    let found = online_lyrics::fetch(&gate, &query, &gate.job_token()).await;
+    progress(app, None);
+    let found = found.map_err(|error| fetch_error(format!("Cannot fetch lyrics: {error}")))?;
+    let Some(found) = found else {
+        emit(app, STATUS_MESSAGE, "No lyrics found");
+        return Ok(false);
+    };
+    tauri::async_runtime::spawn_blocking(move || online_lyrics::save(&song, &found))
+        .await
+        .map_err(|_| fetch_error("The lyrics file cannot be written"))?
+        .map_err(|error| fetch_error(error.to_string()))?;
+    emit(app, STATUS_MESSAGE, "Lyrics saved");
+    emit(app, LYRICS_CHANGED, ());
+    Ok(true)
 }
 
 /// After a complete scan: when the shown song's lyrics source changed, tell the widget
@@ -185,5 +264,67 @@ mod tests {
         let music = tempfile::tempdir().unwrap();
         let (app, _) = app(music.path());
         assert_eq!(get(app.handle(), 99), None);
+    }
+
+    /// The app with Online lookups pointed at a mock LRCLIB.
+    fn online(app: &tauri::App<MockRuntime>, server: &httpmock::MockServer, on: bool) {
+        use clawdio_core::net::{NetConfig, OnlineGate, Url};
+        let mut config = NetConfig::production("Test/1 ( https://example.org )".into());
+        config.lrclib = Url::parse(&format!("{}/", server.base_url())).unwrap();
+        config.allowed_hosts = vec!["127.0.0.1".into()];
+        config.https_only = false;
+        config.use_proxy = false;
+        app.manage(Online::new(OnlineGate::new(config, on).unwrap()));
+    }
+
+    /// P15-AC3, P15-AC7: found lyrics are saved and the widget is told at once.
+    #[test]
+    fn fetched_lyrics_are_saved_and_announced() {
+        let music = tempfile::tempdir().unwrap();
+        let (app, events) = app(music.path());
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.path("/api/get").query_param("track_name", "Song");
+            then.status(200)
+                .body(r#"{"duration":1.0,"syncedLyrics":"[00:00.50]hi","plainLyrics":"hi"}"#);
+        });
+        online(&app, &server, true);
+        let saved = tauri::async_runtime::block_on(fetch(app.handle(), 0));
+        assert_eq!(saved, Ok(true));
+        let lrc = music.path().join("A/B/01 Song.lrc");
+        assert_eq!(std::fs::read_to_string(lrc).unwrap(), "[00:00.50]hi\n");
+        assert_eq!(events.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            get(app.handle(), 0).map(|lyrics| lyrics.text).as_deref(),
+            Some("hi")
+        );
+    }
+
+    /// P15-AC4, P15-AC6: no result writes nothing; with the switch off no request is made.
+    #[test]
+    fn no_result_or_switch_off_writes_nothing() {
+        let music = tempfile::tempdir().unwrap();
+        let (app, events) = app(music.path());
+        let server = httpmock::MockServer::start();
+        let any = server.mock(|when, then| {
+            when.path_includes("/api/");
+            then.status(404).body("[]");
+        });
+        online(&app, &server, false);
+        let result = tauri::async_runtime::block_on(fetch(app.handle(), 0));
+        assert_eq!(
+            result.map_err(|error| error.message),
+            Err("Online lookups are off".into())
+        );
+        assert_eq!(any.calls(), 0);
+        app.state::<Online>().gate.set_on(true);
+        let result = tauri::async_runtime::block_on(fetch(app.handle(), 0));
+        assert_eq!(result, Ok(false));
+        assert_eq!(any.calls(), 2, "get, then search");
+        assert_eq!(
+            std::fs::read_dir(music.path().join("A/B")).unwrap().count(),
+            1
+        );
+        assert_eq!(events.load(Ordering::SeqCst), 0);
     }
 }

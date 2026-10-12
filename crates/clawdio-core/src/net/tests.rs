@@ -729,3 +729,347 @@ async fn a_streamed_body_over_10_mb_stops_at_the_cap() {
     let result = gate.get(Service::CoverArt, url, &gate.job_token()).await;
     assert_eq!(result, Err(NetError::TooLarge));
 }
+
+mod lyrics_fetch {
+    use super::*;
+    use crate::net::lyrics::{check_writable, fetch, save, Fetched, LyricsQuery, SaveError};
+
+    fn query(duration_s: u32) -> LyricsQuery {
+        LyricsQuery {
+            artist: "Artist".into(),
+            title: "Title".into(),
+            album: "Album".into(),
+            duration_ms: duration_s * 1000,
+        }
+    }
+
+    fn record(duration: f64, synced: Option<&str>, plain: Option<&str>) -> serde_json::Value {
+        serde_json::json!({
+            "id": 1, "trackName": "Title", "artistName": "Artist", "albumName": "Album",
+            "duration": duration, "instrumental": false,
+            "syncedLyrics": synced, "plainLyrics": plain,
+        })
+    }
+
+    /// P15-AC1 (AC-5): for "01 - Title.mp3" with no tags, the request carries the cleaned
+    /// title, the folder names and the decoded duration in whole seconds.
+    #[tokio::test]
+    async fn the_get_request_carries_the_cleaned_title_and_duration() {
+        use lofty::tag::TagType;
+        let root = tempfile::tempdir().unwrap();
+        let song = root.path().join("Artist/Album/01 - Title.mp3");
+        std::fs::create_dir_all(song.parent().unwrap()).unwrap();
+        std::fs::copy(seed(), &song).unwrap();
+        let _ = TagType::Id3v2.remove_from_path(&song, lofty::config::WriteOptions::default());
+        let _ = TagType::Id3v1.remove_from_path(&song, lofty::config::WriteOptions::default());
+        let _ = TagType::Ape.remove_from_path(&song, lofty::config::WriteOptions::default());
+        let index = std::sync::RwLock::new(LibraryIndex::default());
+        crate::scan::scan(
+            root.path(),
+            &index,
+            None,
+            &std::sync::atomic::AtomicBool::new(false),
+            |_| {},
+        );
+        let (query, duration_ms) = {
+            let index = index.read().unwrap();
+            let track = index.track_at("Artist/Album/01 - Title.mp3").unwrap();
+            (LyricsQuery::for_track(track), track.data.duration_ms)
+        };
+        assert_eq!(query.title, "Title");
+        assert_eq!(query.duration_ms, duration_ms);
+        assert!(query.duration_s() > 0);
+        let server = MockServer::start_async().await;
+        let duration = query.duration_s().to_string();
+        let get = server
+            .mock_async(|when, then| {
+                when.method(GET)
+                    .path("/api/get")
+                    .query_param("track_name", "Title")
+                    .query_param("artist_name", "Artist")
+                    .query_param("album_name", "Album")
+                    .query_param("duration", duration)
+                    .header("lrclib-client", USER_AGENT);
+                then.status(200).body(
+                    record(
+                        f64::from(query.duration_ms) / 1000.0,
+                        Some("[00:01.00]la"),
+                        None,
+                    )
+                    .to_string(),
+                );
+            })
+            .await;
+        let gate = gate(&server);
+        let found = fetch(&gate, &query, &gate.job_token()).await;
+        assert_eq!(found, Ok(Some(Fetched::Synced("[00:01.00]la".into()))));
+        assert_eq!(get.calls_async().await, 1);
+    }
+
+    /// P15-AC2: 2 s off is accepted on both endpoints; 3 s off is rejected, and a `/api/get`
+    /// result 3 s off leads to the search.
+    #[tokio::test]
+    async fn two_seconds_off_is_accepted_and_three_is_not() {
+        let server = MockServer::start_async().await;
+        let get = server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(200)
+                    .body(record(202.0, None, Some("plain")).to_string());
+            })
+            .await;
+        let gate = gate(&server);
+        let found = fetch(&gate, &query(200), &gate.job_token()).await;
+        assert_eq!(found, Ok(Some(Fetched::Plain("plain".into()))));
+        get.delete_async().await;
+
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(200)
+                    .body(record(203.0, Some("[00:01.00]x"), None).to_string());
+            })
+            .await;
+        let search = server
+            .mock_async(|when, then| {
+                when.path("/api/search")
+                    .query_param("track_name", "Title")
+                    .query_param("artist_name", "Artist");
+                then.status(200).body(
+                    serde_json::json!([
+                        record(197.0, Some("[00:01.00]far"), None),
+                        record(198.0, None, Some("near plain")),
+                        record(201.5, Some("[00:01.00]near synced"), None),
+                    ])
+                    .to_string(),
+                );
+            })
+            .await;
+        let found = fetch(&gate, &query(200), &gate.job_token()).await;
+        assert_eq!(
+            found,
+            Ok(Some(Fetched::Synced("[00:01.00]near synced".into())))
+        );
+        assert_eq!(search.calls_async().await, 1);
+    }
+
+    /// P15-AC4: a 404 leads to the search; no result within 2 s is no lyrics.
+    #[tokio::test]
+    async fn no_acceptable_result_is_none() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(404).body("{}");
+            })
+            .await;
+        let search = server
+            .mock_async(|when, then| {
+                when.path("/api/search");
+                then.status(200).body(
+                    serde_json::json!([
+                        record(203.0, None, Some("off")),
+                        record(200.0, None, Some("  "))
+                    ])
+                    .to_string(),
+                );
+            })
+            .await;
+        let gate = gate(&server);
+        assert_eq!(fetch(&gate, &query(200), &gate.job_token()).await, Ok(None));
+        assert_eq!(search.calls_async().await, 1);
+    }
+
+    /// P15-AC6: with the switch off no request is made.
+    #[tokio::test]
+    async fn the_switch_off_makes_no_lyrics_request() {
+        let server = MockServer::start_async().await;
+        let any = server
+            .mock_async(|when, then| {
+                when.path_includes("/api/");
+                then.status(200).body("[]");
+            })
+            .await;
+        let gate = OnlineGate::new(config(&server), false).unwrap();
+        assert_eq!(
+            fetch(&gate, &query(200), &gate.job_token()).await,
+            Err(NetError::Off)
+        );
+        assert_eq!(any.calls_async().await, 0);
+    }
+
+    /// P15-AC3: synced lyrics save as `.lrc`, plain as `.txt`; an existing file stays.
+    #[test]
+    fn synced_save_as_lrc_and_plain_as_txt() {
+        let folder = tempfile::tempdir().unwrap();
+        let song = folder.path().join("01 Song.mp3");
+        save(&song, &Fetched::Synced("[00:01.00]a".into())).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join("01 Song.lrc")).unwrap(),
+            "[00:01.00]a\n"
+        );
+        save(&song, &Fetched::Plain("b\n".into())).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join("01 Song.txt")).unwrap(),
+            "b\n"
+        );
+        assert_eq!(
+            save(&song, &Fetched::Plain("c".into())),
+            Err(SaveError::Exists)
+        );
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join("01 Song.txt")).unwrap(),
+            "b\n"
+        );
+    }
+
+    /// P15-AC5: a read-only folder is found before any request.
+    #[cfg(unix)]
+    #[test]
+    fn a_read_only_folder_is_found_first() {
+        use std::os::unix::fs::PermissionsExt;
+        let folder = tempfile::tempdir().unwrap();
+        let song = folder.path().join("01 Song.mp3");
+        assert_eq!(check_writable(&song), Ok(()));
+        std::fs::set_permissions(folder.path(), std::fs::Permissions::from_mode(0o555)).unwrap();
+        let writable = tempfile::NamedTempFile::new_in(folder.path()).is_ok();
+        let result = check_writable(&song);
+        std::fs::set_permissions(folder.path(), std::fs::Permissions::from_mode(0o755)).unwrap();
+        if writable {
+            eprintln!("skipped: the test runs with write access to read-only folders");
+            return;
+        }
+        assert_eq!(result, Err(SaveError::ReadOnly));
+    }
+
+    /// A `/api/get` answer with no lyrics leads to the search.
+    #[tokio::test]
+    async fn a_get_answer_without_lyrics_leads_to_the_search() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(200)
+                    .body(record(200.0, None, Some(" ")).to_string());
+            })
+            .await;
+        let search = server
+            .mock_async(|when, then| {
+                when.path("/api/search");
+                then.status(200)
+                    .body(serde_json::json!([record(200.0, None, Some("found"))]).to_string());
+            })
+            .await;
+        let gate = gate(&server);
+        let found = fetch(&gate, &query(200), &gate.job_token()).await;
+        assert_eq!(found, Ok(Some(Fetched::Plain("found".into()))));
+        assert_eq!(search.calls_async().await, 1);
+    }
+
+    /// The 2 s rule on the search alone, in milliseconds: a 200.4 s song takes a 202.4 s
+    /// result and not a 202.5 s one; the closest synced result wins.
+    #[tokio::test]
+    async fn the_search_takes_the_closest_result_within_two_seconds() {
+        for (records, expected) in [
+            (
+                vec![record(202.4, None, Some("edge"))],
+                Some(Fetched::Plain("edge".into())),
+            ),
+            (vec![record(202.5, None, Some("over"))], None),
+            (
+                vec![
+                    record(202.0, Some("[00:01.00]far"), None),
+                    record(200.5, None, Some("plain")),
+                    record(200.3, Some("[00:01.00]near"), None),
+                ],
+                Some(Fetched::Synced("[00:01.00]near".into())),
+            ),
+        ] {
+            let server = MockServer::start_async().await;
+            server
+                .mock_async(|when, then| {
+                    when.path("/api/get");
+                    then.status(404);
+                })
+                .await;
+            server
+                .mock_async(|when, then| {
+                    when.path("/api/search");
+                    then.status(200)
+                        .body(serde_json::Value::from(records).to_string());
+                })
+                .await;
+            let gate = gate(&server);
+            let mut song = query(200);
+            song.duration_ms = 200_400;
+            assert_eq!(fetch(&gate, &song, &gate.job_token()).await, Ok(expected));
+        }
+    }
+
+    /// A search answer that is not JSON is an error, not "No lyrics found".
+    #[tokio::test]
+    async fn a_bad_search_answer_is_an_error() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(404);
+            })
+            .await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/search");
+                then.status(200).body("<html>busy</html>");
+            })
+            .await;
+        let gate = gate(&server);
+        assert_eq!(
+            fetch(&gate, &query(200), &gate.job_token()).await,
+            Err(NetError::BadAnswer)
+        );
+    }
+
+    /// LRCLIB gets one request at a time (section 6.11).
+    #[tokio::test]
+    async fn lrclib_requests_run_one_at_a_time() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(200)
+                    .body("{}")
+                    .delay(Duration::from_millis(400));
+            })
+            .await;
+        let gate = std::sync::Arc::new(gate(&server));
+        let url = gate.config().lrclib.join("api/get").unwrap();
+        let start = Instant::now();
+        let calls: Vec<_> = (0..3)
+            .map(|_| {
+                let (gate, url) = (gate.clone(), url.clone());
+                tokio::spawn(async move { gate.get(Service::Lrclib, url, &gate.job_token()).await })
+            })
+            .collect();
+        for call in calls {
+            assert!(call.await.unwrap().is_ok());
+        }
+        assert!(
+            start.elapsed() >= Duration::from_millis(1200),
+            "{:?}",
+            start.elapsed()
+        );
+    }
+
+    /// A blank lyrics file holds no lyrics (P13), so a fetch replaces it.
+    #[test]
+    fn a_blank_lyrics_file_is_replaced() {
+        let folder = tempfile::tempdir().unwrap();
+        let song = folder.path().join("01 Song.mp3");
+        std::fs::write(folder.path().join("01 Song.lrc"), " \n").unwrap();
+        save(&song, &Fetched::Synced("[00:01.00]a".into())).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join("01 Song.lrc")).unwrap(),
+            "[00:01.00]a\n"
+        );
+    }
+}

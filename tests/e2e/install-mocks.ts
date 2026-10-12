@@ -155,6 +155,12 @@ function libraryCommand(command: string, args: Args): unknown {
       return true;
     case "lyrics_get":
       return lyrics;
+    case "lyrics_fetch":
+      if (!settings.onlineLookups) throw { code: "lyrics_fetch", message: "Online lookups are off" };
+      document.body.dataset.lyricsFetch = String(args.track);
+      void setLyrics({ text: "Fetched line one\nFetched line two" });
+      void emit("status-message", "Lyrics saved");
+      return true;
     case "album_retry_lookup":
       document.body.dataset.retryLookup = String(args.album);
       return null;
