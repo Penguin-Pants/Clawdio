@@ -1,11 +1,13 @@
 # Release packages (P18.3, R21): a v* tag builds the NSIS installer, the portable zip, the
 # AppImage and the .deb, checks the sizes, writes SHA-256 checksums and puts everything on a
-# draft GitHub release.
+# draft GitHub release. A manual run builds the same packages as run artifacts and makes no
+# release.
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -105,6 +107,7 @@ jobs:
 
   release:
     needs: [windows, linux]
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-22.04
     permissions:
       contents: write

@@ -67,7 +67,7 @@ P7-AC12, P11-AC8).
 |---|---|---|
 | `.deb` builds, under 30 MB | Pass: 9.26 MiB (local release build, Ubuntu 24.04 container; `release.yml` builds in Ubuntu 22.04) | Not applicable |
 | AppImage builds, size recorded | Pass: 83.65 MiB (local, Ubuntu 24.04 libraries; it holds the LGPL and GPL texts) | Not applicable |
-| NSIS installer and portable zip, under 30 MB | Not applicable | Pass for NSIS: 5.12 MiB (`measure.yml` run 38204302435). Portable zip: `release.yml` builds it on a tag. |
+| NSIS installer and portable zip, under 30 MB | Not applicable | Pass for NSIS: 5.12 MiB (`measure.yml` run 38204302435). Portable zip: `release.yml` builds it on a tag (draft release) or on a manual run (run artifact `windows`, no release). |
 | One tag builds all four packages (P18-AC1) | Not run: no tag was pushed in this session. | Not run |
 | Desktop entry: name, icon, `AudioVideo;Audio;Player;` | Pass: `.deb` desktop file read with `dpkg-deb` | Not applicable |
 | Each package holds `LICENSE`, `NOTICE` and the third-party files | Pass: `.deb` (`/usr/lib/Clawdio`) and AppImage | Not run (zip layout is in `release.yml`) |
