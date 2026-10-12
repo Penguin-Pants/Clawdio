@@ -67,12 +67,15 @@ Use red for playback emphasis, current navigation, focused controls and critical
 - Brand wordmark: custom vector lettering; do not substitute a generic font in shipped identity assets.
 - Sizes: main view title 24 px; subsection 18–20 px; regular 14 px; metadata 12–13 px; captions 11–12 px if still readable.
 - Use tabular numerals for track times. Keep labels sentence case in UI. Uppercase spaced text is reserved for brand collateral and very small decorative headings.
+- Implementation (D7): Geist Sans Variable. It is the font of the shadcn/ui preset that the app uses, so no second font dependency is added, and it has tabular numerals.
+- Implementation (C12): the docking shell has no page title, so the sizes map to these uses: 24 px for the first-run and empty-library heading; 18 px for the Now playing title and dialog titles; 14 px for body text, rows and buttons; 13 px for artist and album lines, widget titles and the status line; 12 px for durations, captions and hints.
 
 ## 5. Layout and density
 The shell is a set of dockable widgets (requirements R5, R28, R29). There is no sidebar and no separate Artists, Albums or Tracks views.
 
 - **Widgets:** Library (mandatory, cannot be hidden), Transport controls, Now playing, Playlists, Play queue and Lyrics. Each widget has a header with a drag grip, its title and, for hideable widgets, a close button. The user drags a header to the edge of another widget or of the window to dock it. Splitters resize. Widgets can be hidden and shown from the menu.
 - **Fixed chrome:** a status line at the bottom edge ("Ready", scan and lookup progress with cancel, short confirmations such as "Added to queue") and a menu button in the top-right corner (Widgets, Layouts, Settings, Rescan). No layout can hide either.
+- **Header strip (implementation, D11):** a 32 px strip at the top holds the wordmark at left and the menu button at right. The docking shell has no other fixed place for the brand, and the strip keeps the menu button out of every widget arrangement.
 - **Library widget:** one widget with a mode switch in its header: Tree (one expandable artist, album, song tree), Columns (Artist, Album and Songs side by side) and Top/bottom (Artist and Album on top, Songs below). The search field sits in the Library header. When the header is narrow, the switch collapses to a dropdown.
 - **Default arrangement (first run, "Columns" built-in layout):** Library fills the main area. Now playing and Transport controls form a bottom bar. Playlists, Play queue and Lyrics are hidden and listed in the Widgets menu. The Tree and Top/bottom built-in layouts use the same arrangement with their own Library mode. The current arrangement saves automatically and restores at start. Reset layout returns to the Columns layout. Tabbed groups are allowed; floating panels and pop-out windows are not.
 - Main area prioritizes track browsing, metadata and cover artwork.
@@ -88,10 +91,10 @@ The shell is a set of dockable widgets (requirements R5, R28, R29). There is no 
 | App shell | Matte canvas, subtle panel boundaries, stable desktop resizing |
 | Widget header | Drag grip, title and close button (hideable widgets only); flat; drop zones and splitters use the border and hover surfaces, red only for the active drop target |
 | Track rows | Dense, easy to scan; title, artist, album and duration as appropriate |
-| Album cards | Cover, title, artist; unobtrusive hover |
+| Album cards | Cover, title, artist; unobtrusive hover. Implementation (C11): the Library shows lists, not a grid (R28), so albums are rows that follow this guidance |
 | Transport | Large central play/pause, neutral stop and skip controls, shuffle and repeat toggles, clear focus ring |
 | Timeline | Charcoal track, red progress, accessible keyboard seeking |
-| Volume | Neutral icon, clearly defined mute and level |
+| Volume | Neutral icon, clearly defined mute and level. Implementation (C3): no mute toggle, because R6 lists every playback function and mute is not one; the icon shows the muted glyph at level 0 |
 | Search | Dark field, visible focus, no animated distractions |
 | Settings | Small number of options grouped by user task |
 | Dialogs | Matte panels, no heavy red glow |
@@ -109,6 +112,7 @@ MagicUI is a collection of React/Tailwind components, not a standalone desktop U
 - A normal CSS transition is preferable to a full motion dependency for navigation and transport.
 - Inspect MagicUI's current component and installation docs before selecting any exact component or command: https://magicui.design/docs/components and https://magicui.design/docs/installation
 - Never introduce a new framework just to meet the MagicUI request without raising the architecture trade-off.
+- Implementation (D6): no MagicUI component is used. None of its components fits a virtualized list or a functional control, and motion comes only from CSS transitions that the reduced-motion rule turns off (R30).
 
 ## 8. Motion
 - Hover and focus feedback: 120–180 ms.

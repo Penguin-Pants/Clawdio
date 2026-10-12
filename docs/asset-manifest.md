@@ -45,8 +45,8 @@ assets/branding/
 - [x] README banner and social image only if helpful
 - [ ] Application title, executable metadata, manifests and About view renamed Clawdio
 - [ ] Icon works in Windows taskbar and Linux app launchers
-- [ ] Fonts and illustration assets compatible with open-source redistribution
-- [ ] Missing-artwork placeholder with quiet branding
+- [x] Fonts and illustration assets compatible with open-source redistribution
+- [x] Missing-artwork placeholder with quiet branding
 - [x] Logo legible at actual icon sizes
 - [ ] Test light backgrounds and high contrast
 - [x] No copyrighted MAD / Inspector Gadget artwork reproduced

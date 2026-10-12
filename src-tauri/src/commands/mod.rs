@@ -1,0 +1,25 @@
+//! Commands: thin wrappers over the core (section 6.5). IPC carries ids and names, never paths
+//! from the webview (D13).
+
+pub mod art;
+pub mod layout;
+pub mod library;
+pub mod lyrics;
+pub mod measure;
+pub mod metadata;
+pub mod player;
+pub mod playlists;
+pub mod settings;
+
+use clawdio_core::api::IpcError;
+
+/// Command result with the typed error shape (section 6.14).
+pub type CommandResult<T> = Result<T, IpcError>;
+
+/// The index lock is poisoned only after a panic in a writer.
+pub fn lock_error() -> IpcError {
+    IpcError {
+        code: "internal".into(),
+        message: "the library index is not available".into(),
+    }
+}

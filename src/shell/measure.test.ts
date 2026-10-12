@@ -1,0 +1,53 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { measurementPopulated, waitForPopulated } from "./measure";
+
+const POPULATED_HTML = `
+  <section data-widget="library"><div role="option">All</div><div role="option">Artist</div></section>
+  <section data-widget="transport"></section>
+  <section data-widget="nowPlaying"></section>
+  <section data-widget="playlists"></section>
+  <section data-widget="queue"></section>
+  <section data-widget="lyrics"></section>`;
+
+afterEach(() => {
+  document.body.innerHTML = "";
+  vi.useRealTimers();
+});
+
+describe("measurementPopulated (P3.5, P6.7)", () => {
+  it("is true when all six widgets are in the page and the Library shows rows", () => {
+    document.body.innerHTML = POPULATED_HTML;
+    expect(measurementPopulated()).toBe(true);
+    document.querySelector('[data-widget="queue"]')?.remove();
+    expect(measurementPopulated()).toBe(false);
+  });
+
+  it("does not count the Library 'All' row alone", () => {
+    document.body.innerHTML = POPULATED_HTML;
+    document.querySelectorAll('[data-widget="library"] [role="option"]')[1]?.remove();
+    expect(measurementPopulated()).toBe(false);
+  });
+});
+
+describe("waitForPopulated", () => {
+  it("waits for the scan to end, and rejects after the timeout", async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = POPULATED_HTML;
+    let scanning = true;
+    let done = false;
+    const ready = waitForPopulated(async () => !scanning, 5_000).then(() => {
+      done = true;
+    });
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(done).toBe(false);
+    scanning = false;
+    await vi.advanceTimersByTimeAsync(300);
+    await ready;
+    expect(done).toBe(true);
+
+    const never = waitForPopulated(async () => false, 1_000);
+    const outcome = never.catch((error: Error) => error.message);
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(await outcome).toMatch(/did not load/);
+  });
+});

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "libraryMode": "columns",
+  "dock": {
+    "grid": {
+      "root": {
+        "type": "branch",
+        "data": [
+          {
+            "type": "leaf",
+            "data": {
+              "views": ["queue"],
+              "activeView": "queue",
+              "id": "0"
+            },
+            "size": 100
+          }
+        ],
+        "size": 800
+      },
+      "width": 1200,
+      "height": 800,
+      "orientation": "VERTICAL"
+    },
+    "panels": {
+      "queue": {
+        "id": "queue",
+        "contentComponent": "queue",
+        "tabComponent": "widget",
+        "title": "queue"
+      }
+    },
+    "activeGroup": "0"
+  }
+}

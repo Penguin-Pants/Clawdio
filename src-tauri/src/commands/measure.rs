@@ -1,0 +1,44 @@
+//! Measurement mode (P3.1): `CLAWDIO_MEASURE_MODE` names a Library mode. The UI then shows all
+//! six widgets in that mode and does not save the arrangement. Release builds keep it.
+
+use clawdio_core::api::LibraryMode;
+
+pub const MEASURE_MODE_VAR: &str = "CLAWDIO_MEASURE_MODE";
+
+/// File that `measure_ready` creates once every widget shows data (P3.5).
+pub const MEASURE_READY_VAR: &str = "CLAWDIO_MEASURE_READY";
+
+#[tauri::command]
+pub fn measure_mode() -> Option<LibraryMode> {
+    std::env::var(MEASURE_MODE_VAR)
+        .ok()
+        .and_then(|value| LibraryMode::parse(&value))
+}
+
+/// `CLAWDIO_PERF=1` turns on the responsiveness probe (P6.8, AC-2).
+pub const PERF_VAR: &str = "CLAWDIO_PERF";
+
+#[tauri::command]
+pub fn perf_mode() -> bool {
+    std::env::var(PERF_VAR).is_ok_and(|value| value == "1")
+}
+
+/// Whether a scan runs or waits to run. The measurement waits until the startup scan ends
+/// (D28: idle after the library loads).
+#[tauri::command]
+pub fn scan_running() -> bool {
+    crate::jobs::scan_running()
+}
+
+/// Called by the UI when all six widgets show data. With `CLAWDIO_MEASURE_READY` set, it writes
+/// that file, so the measurement scripts start the idle period from a populated UI.
+#[tauri::command]
+pub fn measure_ready() -> Result<(), clawdio_core::api::IpcError> {
+    let Ok(path) = std::env::var(MEASURE_READY_VAR) else {
+        return Ok(());
+    };
+    std::fs::write(path, "ready").map_err(|error| clawdio_core::api::IpcError {
+        code: "io".into(),
+        message: error.to_string(),
+    })
+}

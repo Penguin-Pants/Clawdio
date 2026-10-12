@@ -1,0 +1,79 @@
+import { create } from "zustand";
+import type { ImportReport, MetadataPreview } from "@/lib/ipc/commands";
+import type { WidgetId } from "@/shell/widgets";
+
+/** How long a transient status message shows (D18). */
+export const MESSAGE_MS = 5000;
+
+/** The app's small dialogs: a new playlist name, a delete confirmation, an error (P11), the
+ * import report (P12) and the metadata preview (P16). */
+export type AppDialog =
+  | { kind: "newPlaylist"; addTracks?: number[] }
+  | { kind: "deletePlaylist"; id: number; fileName: string }
+  | { kind: "error"; text: string }
+  | { kind: "importReport"; reports: ImportReport[] }
+  | { kind: "metadataPreview"; album: number; preview: MetadataPreview };
+
+/** A running job in the status line (R5). `cancel` is absent when the job cannot be canceled. */
+export interface StatusJob {
+  id: string;
+  text: string;
+  cancel?: () => void;
+}
+
+interface UiState {
+  /** Widgets that are in the dock now, in registry order. */
+  visibleWidgets: WidgetId[];
+  settingsOpen: boolean;
+  /** Running jobs, oldest first. */
+  jobs: StatusJob[];
+  /** The job the status line shows: the newest running one (R5). */
+  job: StatusJob | null;
+  message: string | null;
+  dialog: AppDialog | null;
+  openDialog: (dialog: AppDialog) => void;
+  closeDialog: () => void;
+  setVisibleWidgets: (ids: WidgetId[]) => void;
+  setSettingsOpen: (open: boolean) => void;
+  startJob: (job: StatusJob) => void;
+  updateJob: (id: string, text: string) => void;
+  endJob: (id: string) => void;
+  hasJob: (id: string) => boolean;
+  /** Shows a transient message for MESSAGE_MS, then the line returns to the job or "Ready" (D18). */
+  showMessage: (text: string) => void;
+}
+
+let messageTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** The jobs and the one the status line shows. */
+const withJobs = (jobs: StatusJob[]) => ({ jobs, job: jobs.at(-1) ?? null });
+
+export const useUiStore = create<UiState>()((set, get) => ({
+  visibleWidgets: [],
+  settingsOpen: false,
+  jobs: [],
+  job: null,
+  message: null,
+  dialog: null,
+  openDialog: (dialog) => set({ dialog }),
+  closeDialog: () => set({ dialog: null }),
+  setVisibleWidgets: (visibleWidgets) => set({ visibleWidgets }),
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  startJob: (job) => set((state) => withJobs([...state.jobs.filter((other) => other.id !== job.id), job])),
+  updateJob: (id, text) =>
+    set((state) =>
+      state.jobs.some((job) => job.id === id)
+        ? withJobs(state.jobs.map((job) => (job.id === id ? { ...job, text } : job)))
+        : state,
+    ),
+  endJob: (id) =>
+    set((state) =>
+      state.jobs.some((job) => job.id === id) ? withJobs(state.jobs.filter((job) => job.id !== id)) : state,
+    ),
+  hasJob: (id) => get().jobs.some((job) => job.id === id),
+  showMessage: (text) => {
+    clearTimeout(messageTimer);
+    set({ message: text });
+    messageTimer = setTimeout(() => set({ message: null }), MESSAGE_MS);
+  },
+}));

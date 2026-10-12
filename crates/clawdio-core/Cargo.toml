@@ -7,5 +7,27 @@ repository = "https://github.com/Penguin-Pants/Clawdio"
 publish = false
 
 [dependencies]
+image = { version = "=0.25.10", default-features = false, features = ["jpeg", "png"] }
+lofty = "=0.25.4"
+log = "=0.4.34"
+rusqlite = { version = "=0.40.2", features = ["bundled"] }
 serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+symphonia = { version = "=0.5.5", default-features = false, features = ["wav", "pcm", "adpcm"] }
+tempfile = "=3.27.0"
+walkdir = "=2.5.0"
 ts-rs = "=12.0.1"
+thiserror = "=2.0.21"
+unicode-normalization = "=0.1.25"
+plist = "=1.10.1"
+encoding_rs = "=0.8.42"
+# Online lookups (P14, D29): rustls with the ring provider, which needs no C build tools
+# beyond a C compiler.
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+tokio = { version = "=1.53.2", features = ["time", "sync", "macros", "rt"] }
+tokio-util = "=0.7.20"
+
+[dev-dependencies]
+httpmock = { version = "=0.8.3", default-features = false }
+tokio = { version = "=1.53.2", features = ["rt-multi-thread", "macros", "time", "sync"] }

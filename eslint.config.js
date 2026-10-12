@@ -6,7 +6,16 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(["dist", "target", "src-tauri/target", "src-tauri/gen", "src/lib/ipc/bindings"]),
+  globalIgnores([
+    "dist",
+    "dist-e2e",
+    "test-results",
+    "playwright-report",
+    "target",
+    "src-tauri/target",
+    "src-tauri/gen",
+    "src/lib/ipc/bindings",
+  ]),
   {
     files: ["**/*.{js,mjs,ts,tsx}"],
     extends: [js.configs.recommended, tseslint.configs.recommended, reactHooks.configs.flat.recommended],

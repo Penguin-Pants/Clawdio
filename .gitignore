@@ -3,3 +3,6 @@ dist/
 target/
 src-tauri/gen/schemas/
 src/styles/tokens.generated.css
+dist-e2e/
+test-results/
+playwright-report/

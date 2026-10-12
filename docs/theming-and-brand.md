@@ -100,13 +100,37 @@ The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D1
 | text.primary outline or bar on state.selected, surface | 11.75, 16.13 | non-text 3.0 | Pass |
 | state.selected on surface (fill alone) | 1.37 | needs the left bar | Bar required |
 
+## Dock chrome
+
+`src/styles/dockview-theme.css` styles the docking library (Dockview) with token variables only (requirements R17, R30). It sets the `--dv-*` variables of `dockview-react/dist/styles/dockview.css` and adds the splitter line and the active tab underline. The theme sets no layout.
+
+| Part | State | Token |
+|---|---|---|
+| Widget body (group background) | | `colors.bg.surface` |
+| Widget header (tab bar), 32 px high | | `colors.bg.elevated`, bottom border `colors.border.default` |
+| Tab title | Active tab | `colors.text.primary` with a 2 px `colors.text.primary` underline |
+| Tab title | Inactive tab | `colors.text.muted`, no underline |
+| Tab close control | Hover | `colors.bg.hover` |
+| Splitter | At rest | 1 px `colors.border.default` |
+| Splitter | Hover | 1 px `colors.border.strong` and a resize cursor |
+| Splitter | Dragging | 2 px `colors.border.strong` |
+| Drop zone | Drag over | `colors.bg.hover` overlay (85 % opacity) |
+| Drop zone | Active target | 2 px `colors.brand.red` border |
+| Focus ring on a tab | Keyboard focus | 2 px `colors.brand.red`, drawn inside the tab |
+
+Red shows in the dock only on the active drop target and on focus rings.
+
+## Magic UI components
+
+Copied Magic UI components: none (requirements R17 and R30, plan decision D6). Motion is not a dependency. Transitions are plain CSS.
+
 ## Focus, motion and high contrast
 
-- Focus: every interactive element shows a 2 px `brand.red` ring with a 2 px offset (`:focus-visible`).
+- Focus: every interactive element shows a 2 px `brand.red` ring with a 2 px offset (`:focus-visible`). Tabs, widget bodies and menu items draw it where the container does not clip it. Highlighted menu and select items also get a 2 px `text.primary` bar at the left. The pressed Library mode gets a 2 px `text.primary` underline.
 - Color scheme: `:root` sets `color-scheme: dark`, so native scrollbars and form controls are dark.
 - Motion: hover and focus transitions use `motion.fast`. Menus and dialogs use `motion.panel`.
 - Reduced motion: see `motion.reduced` above.
-- Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`.
+- Windows high contrast (`forced-colors: active`): focus rings use `Highlight`. Selected rows (`aria-selected="true"`) use `Highlight` with `HighlightText`. Mask icons (UI icon overrides) and the art placeholder paint in `CanvasText`. Pressed toggles use `Highlight` with `HighlightText`; the switch shows `Canvas` with a `CanvasText` thumb when off and `Highlight` with a `HighlightText` thumb when on; the slider track is `GrayText` and its range and thumb are `Highlight` (P17.6).
 - Times use tabular numerals (`tabular` class).
 
 ## Font
@@ -129,6 +153,7 @@ These files hold the brand (requirements R17, R31). A brand change replaces file
 | `assets/branding/export/clawdio-icon-full.svg` | App icon. The build makes every platform icon from it. | Replace it with another square SVG and rebuild |
 | `assets/branding/export/clawdio-icon-simple.svg` | Monogram icon. A fallback source for the 16 and 24 px icon layers (owner decision Q8). The build does not use it now. | Replace it with another square SVG |
 | `assets/branding/export/clawdio-icon-mono.svg` | One-color cat icon (`currentColor`) for use outside the app | Replace it with another square SVG |
+| `assets/branding/ui-icons/<name>.svg` | Optional UI icon overrides. A file replaces the Lucide icon of that name (R31). `assets/branding/ui-icons/README.md` lists the names. | Add, replace or delete the file and rebuild |
 | `assets/reference/clawdio-approved-mockup.png` | Visual direction only. Not used by the app or the build. | Not needed |
 
 ### SVG rules

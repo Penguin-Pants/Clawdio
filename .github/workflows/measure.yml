@@ -1,0 +1,91 @@
+# Idle memory and bundle sizes (P3.6; production setup since P6.7). GitHub dispatches a workflow only when it exists on the
+# default branch, so pushes to measure/** branches also run it.
+name: Measure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["measure/**"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  LINUX_PACKAGES: >-
+    libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev
+    libayatana-appindicator3-dev librsvg2-dev libasound2-dev libdbus-1-dev
+
+jobs:
+  memory:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES xvfb
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - name: Release build
+        run: npm run tauri build -- --no-bundle
+      # Production setup (P6.7): the 50,000-track library (P4.12, P5.13) with 2,000 covers,
+      # read by a portable copy of the release build.
+      - name: Generate the test library
+        shell: bash
+        run: cargo run --release -p clawdio-core --example gen_test_library -- "$RUNNER_TEMP/library" --tracks 50000 --edge-cases --covers 2000
+      - name: Portable app folder
+        shell: bash
+        run: node scripts/measure-setup.mjs target/release/clawdio${{ runner.os == 'Windows' && '.exe' || '' }} "$RUNNER_TEMP/library" "$RUNNER_TEMP/app"
+      - name: Measure (Linux)
+        if: runner.os == 'Linux'
+        env:
+          STARTUP_SECONDS: 600
+        run: xvfb-run -s "-screen 0 1200x800x24" scripts/measure-memory.sh "$RUNNER_TEMP/app/clawdio" memory-linux.json
+      - name: Measure (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/measure-memory.ps1 -Binary "$env:RUNNER_TEMP/app/clawdio.exe" -Output memory-windows.json -StartupSeconds 600
+      - uses: actions/upload-artifact@v4
+        with:
+          name: memory-${{ runner.os }}
+          path: memory-*.json
+
+  bundles:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            bundles: deb
+          - os: windows-latest
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      - name: Release bundle without Milestone 0 data
+        run: npm run tauri build -- --bundles ${{ matrix.bundles }}
+      - name: Bundle sizes
+        shell: bash
+        run: |
+          find target/release/bundle -type f \( -name '*.deb' -o -name '*.exe' \) -printf '%s %p\n' | tee bundle-sizes-${{ runner.os }}.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ runner.os }}
+          path: bundle-sizes-*.txt

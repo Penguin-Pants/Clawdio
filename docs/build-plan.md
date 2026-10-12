@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.10, October 11, 2026 (owner approval of F-06, F-07, F-08 and F-10, section 13).
+**Version:** 1.11, October 11, 2026 (owner decision on D41, section 13).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it.
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -66,23 +66,23 @@ A phase is Done when all of these are true:
 |---|---|---|---|
 | P0 | Foundation and conventions | none | Done with exceptions |
 | P1 | Brand identity assets and icon pipeline | P0 | Done with exceptions |
-| P2 | Themed docking shell | P1, Q6 sign-off | Not started |
-| P3 | Milestone 0 footprint gate | P2 | Not started |
-| P4 | End-to-end slice | P3 | Not started |
-| P5 | Library scan and cache | P4 | Not started |
-| P6 | Library widget and search | P5 | Not started |
-| P7 | Playback engine and Play queue | P6 | Not started |
-| P8 | OS media integration | P7 | Not started |
-| P9 | Persistence: state, arrangement and instance | P8 | Not started |
-| P10 | Local artwork and thumbnails | P9 | Not started |
-| P11 | Playlists and Favorites | P10 | Not started |
-| P12 | Playlist import | P11 | Not started |
-| P13 | Local lyrics | P12 | Not started |
-| P14 | Online lookups and artwork fetch | P13 | Not started |
-| P15 | Lyrics fetch | P14 | Not started |
-| P16 | Metadata fill | P15 | Not started |
-| P17 | UI quality audit | P16 | Not started |
-| P18 | Release readiness | P17, gate B3 closed | Not started |
+| P2 | Themed docking shell | P1, Q6 sign-off | Done with exceptions |
+| P3 | Milestone 0 footprint gate | P2 | Done with exceptions |
+| P4 | End-to-end slice | P3 | Done with exceptions |
+| P5 | Library scan and cache | P4 | Done with exceptions |
+| P6 | Library widget and search | P5 | Done with exceptions |
+| P7 | Playback engine and Play queue | P6 | Done with exceptions |
+| P8 | OS media integration | P7 | Done with exceptions |
+| P9 | Persistence: state, arrangement and instance | P8 | Done with exceptions |
+| P10 | Local artwork and thumbnails | P9 | Done with exceptions |
+| P11 | Playlists and Favorites | P10 | Done with exceptions |
+| P12 | Playlist import | P11 | Done with exceptions |
+| P13 | Local lyrics | P12 | Done |
+| P14 | Online lookups and artwork fetch | P13 | Done |
+| P15 | Lyrics fetch | P14 | Done |
+| P16 | Metadata fill | P15 | Done |
+| P17 | UI quality audit | P16 | Done with exceptions |
+| P18 | Release readiness | P17, gate B3 closed | In progress |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -205,6 +205,925 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** F-10. F-09 is closed (option (b), section 13).
 
+#### P2. Themed docking shell (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, base `8143bc3`. Messages start with `P2:`.
+- **Packages:** `dockview-react` 8.5.1 (MIT), `zustand` 5.0.15, `@playwright/test` 1.64.0 and `@axe-core/playwright` 4.13.0 (dev). shadcn/ui components added with the 4.21.4 CLI: `dropdown-menu`, `toggle-group` (with `toggle`), `select`, `input`, `tooltip`, `dialog`.
+- **Screenshots:** `docs/images/p2-default-1200x800.png`, `p2-default-800x560.png`, `p2-tabbed-1200x800.png`, `p2-tabbed-800x560.png`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P2-AC1 | Pass (Chromium) | `tests/e2e/docking.spec.ts`. Unit: `src/shell/layouts.test.ts`. |
+| P2-AC2 | Pass (Chromium, Xvfb) | `docking.spec.ts`: edge dock, tabbed group, splitter resize, no context menu, no float or pop-out item. The debug app under Xvfb (WebKitGTK): an `xdotool` drag of the Transport controls header to the Library edge showed the red-bordered drop zone and docked the widget. |
+| P2-AC3 | Pass (Chromium) | `docking.spec.ts`: no close control, disabled menu item, Delete and Backspace on the focused tab, moving Library to an edge and into a tabbed group keeps one Library. Unit: the guard tests. |
+| P2-AC4 | Pass (Chromium) | `layouts.spec.ts`: show and hide each hideable widget, mode radio items, each layout, Reset layout from the menu and Ctrl+Shift+L, 20 layout applications. |
+| P2-AC5 | Pass (Chromium) | `layouts.spec.ts`: search and mode switch in the header; dropdown at 350 px; search text kept. Selection: `src/store/library.test.ts`, `LibraryWidget.test.tsx` (no list UI before P3, N3). |
+| P2-AC6 | Pass (Chromium) | `layouts.spec.ts` at an 800 x 560 viewport: default arrangement, plus Play queue, and six stacked widgets with the D45 clamp. Unit: `src/shell/clamp.test.ts`. |
+| P2-AC7 | Pass (Chromium) | `appearance.spec.ts`: computed group, tab bar, tab and splitter colors equal the tokens; no red at rest. |
+| P2-AC8 | Pass (Chromium) | `appearance.spec.ts`: every element 0s at rest, with the menu open and with the dialog open. |
+| P2-AC9 | Pass (Chromium) | `appearance.spec.ts`: axe, no serious or critical violation in the three states. |
+| P2-AC10 | Pass (Chromium) | `keyboard.spec.ts`: order, wrap, Shift+F6, hidden tab skipped, 2 px red ring. Unit: `src/lib/keyboard.test.ts`. |
+| P2-AC11 | Pass | Unit: `src/components/icons.test.tsx`. Manual build: `assets/branding/ui-icons/menu.svg` added, e2e build rebuilt, the menu button showed a `mask-icon` span with the file as its mask; the file was then removed. |
+| P2-AC12 | Pass (Chromium) | `layouts.spec.ts`. |
+| P2-AC13 | Pass (Chromium) | `appearance.spec.ts`: button, toggle and input 0.14s; menu and dialog 0.2s; seek track and time labels 0s. No list rows exist before P3 (N3). |
+| P2-AC14 | Pass with exception (Chromium) | `appearance.spec.ts`: button, input, toggle, tab, menu item and select item reach 3:1. Switch and slider do not exist yet (E3). |
+| P2-AC15 | Pass (Chromium) | `appearance.spec.ts`: grayscale page, mean brightness of the underline rows and the menu item bar columns. |
+| P2-AC16 | Pass (Chromium) | `appearance.spec.ts`: focus ring, a mask icon probe and the art placeholder under emulated forced colors. |
+| P2-AC17 | Pass (Chromium) | `docking.spec.ts`: resize cursor, 1 px line on hover, 2 px while dragging, overlay with a 2 px red border. |
+| P2-AC18 | Pass (Chromium) | `tests/e2e/test-base.ts` fails every test on a `securitypolicyviolation` event. |
+| P2-AC19 | Pass | `scripts/check-sources.test.ts`: an import of `@tauri-apps/api/mocks` and files named `mock.ts`, `ipcMocks.tsx` and `library-fixture.ts` under `src/` fail the guard. `npm run test:e2e` builds with `tests/e2e/entry.ts`. Review: no inline mock data in `src/`. |
+
+**Notes**
+
+- N1 (P2.1): Dockview 8.5 runs with `dndStrategy: "pointer"`. Pointer events drive drags in every engine, so docking does not depend on HTML5 drag and drop in WebView2 or WebKitGTK. No tab context menu is configured, so no float or pop-out command exists.
+- N2 (P2.3): a tab cannot hold a focusable child (axe `nested-interactive`). The close control in a widget header is a pointer-only element with a tooltip. Keyboard users hide widgets from the menu (R29 non-drag path).
+- N3 (P2.5, P2.13): Library lists, list rows, the switch (P4) and the slider (P7) do not exist yet. Their checks run in the phases that add them and in P17.
+- N4 (P2.6): the menu uses group labels (Widgets, Library mode, Layouts) instead of submenus.
+- N5 (P2.11): the clamp (`src/shell/clamp.ts`) sets explicit group constraints from the largest minimum of the widgets in each group, so every tab of a tabbed group fits.
+- N6 (P2.15): Playwright 1.64 expects Chromium build 1248. This environment has build 1194 at `/opt/pw-browsers/chromium`, so local runs set `PW_CHROMIUM_PATH`. CI installs the expected browsers.
+- N7 (P2.15): test hooks (`window.e2e`) live in `tests/e2e/entry.ts` and act on the real dock.
+- N8: `ArtPlaceholder` (P1) used percent padding, which grows with the parent width. It now centers the monogram at 60 % of the square.
+- N9: the production JavaScript bundle is 856 kB (minified, before compression). P3 measures the footprint.
+
+**Exceptions**
+
+- E1: WebKit e2e runs in CI only. This environment has Chromium only.
+- E2: P2-AC16 runs in Chromium only, as the verification line states.
+- E3: P2-AC14 for the switch and the slider: neither exists in P2 (N3). P17-AC2 audits every focusable type.
+- E4: manual Linux checks ran under Xvfb with `xdotool`, not on a desktop session. P2-AC6 at the real minimum window was not verified in the app: without a window manager the webview did not follow a window resize. The 800 x 560 browser viewport check passed.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 3, F2 4, F3 1, F4 10.
+
+- F1: the generated shadcn components broke the P0.10 focus rule (`outline-none`, `outline-hidden`, `ring-3` and `ring-ring/50` focus classes) and the palette guard (`bg-black/10`). Fixed. The close button inside a tab failed axe (`nested-interactive`, P2-AC9). Fixed (N2). The inset focus ring of menu items covered the 2 px highlight bar (P2-AC15). The ring now sits outside the item.
+- F2: `ArtPlaceholder` padding (N8). Light tooltip from the template (`bg-foreground`); now elevated with a border. The select list had no padding, so the item ring was clipped. The e2e hook duplicated the add-widget code; `layouts.ts` now exports `addWidget` and `replaceArrangement` (Edits rule 5).
+- F3: F-12 (section 11).
+- F4:
+  - The close control is not keyboard reachable: a tab cannot hold a focusable child; the menu hides widgets (N2).
+  - The Library guard runs after a microtask while a move also fires a remove event: the e2e test moves Library to an edge and into a tabbed group and finds one Library.
+  - F6 skips the header strip and the status line: P2.12 cycles widgets only.
+  - The clamp lowers every group on an axis by one factor: D45 asks for "in proportion"; P2-AC6 passes.
+  - Selection survival has no e2e test: no list exists before P3; unit tests cover the store, and P6-AC2 covers the UI.
+  - `tests/e2e/data/app.json` holds the product name: the guard covers `src/`, `crates/` and `src-tauri/src/`; mock data belongs in `tests/e2e/`.
+  - The e2e server sends the CSP without a nonce: D48 covers the release nonce; P17 and P18 check a release build.
+  - `NOTICE` does not list Dockview, Base UI, zustand or the copied shadcn/ui components: P18.4 builds the full list (P18-AC7).
+  - Clicking the pressed mode toggle empties the group value: the value is controlled and keeps the mode.
+  - The narrow switch decision measures the whole widget: the header spans the widget width.
+
+**Follow-ups:** F-12.
+
+#### P3. Milestone 0 footprint gate (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `1990a37`. Messages start with `P3:`.
+- **Packages:** `@tanstack/react-virtual` 3.14.15, `unicode-normalization` 0.1.25, `thiserror` 2.0.21, `image` 0.25.10 (`jpeg`, only with `fixtures`). The Tauri feature `protocol-asset` was added and then removed with the `thumb://` scheme (D41, 1.11).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P3-AC1 | Pass (Linux, Xvfb) | Fixtures build in each mode with all six widgets populated (`CLAWDIO_MEASURE_MODE`). Browser: `tests/e2e/milestone.spec.ts` (Songs list to its end, filters, tree expansion, axe). Rust: `src-tauri/src/fixtures.rs` tests (50,000 songs, 2,000 thumbnails, widget data). |
+| P3-AC2 | Pass | `docs/milestone-0.md`. Linux: 468 MB (agent container) and 390 MB (CI runner). Windows: 112 MB (`measure.yml` run 38171140952). Worst mode medians, all six widgets, environments recorded. |
+| P3-AC3 | Pass | `.deb` 3.3 MB (local). NSIS installer 2.2 MB (`measure.yml` run 38169331542). |
+| P3-AC4 | Pass | Linux over 300 MB: target raised to 468 MB (D49). Windows 112 MB: pass, keeps 200 MB. Both bundles under 30 MB. |
+| P3-AC5 | Pass | Thumbnails load from the cache folder (`~/.cache/...` on Linux) through the `thumb://` scheme (D41 as changed in 1.11). The measurement ready signal waits for the Now playing thumbnail to decode, so every `measure.yml` run checks it on Linux and Windows (run 38172605144 on `e896960` passed on Linux and Windows). Rust test `src-tauri/src/thumbs.rs`: only plain `.jpg` names inside the folder are served. |
+
+**Notes**
+
+- N1: commands `player_state` and `measure_mode` are not in the section 6.7 list. `player_state` gives Transport controls and Now playing their start state (P4 and P7 add events). `measure_mode` reads `CLAWDIO_MEASURE_MODE`.
+- N2: queue, player, playlist and lyrics commands read `Widgets` state, empty without `fixtures`. P4, P7, P11 and P13 replace the source. `lyrics_get` ignores its track until P13.
+- N3: `fold` (D4) came forward from P5.5 for search. Natural order stays in P5.
+- N4: song rows cache at most 2,000 rows per list (`ROW_CACHE_LIMIT`).
+- N5: the e2e mocks serve a 600-song library with `?data=library` (`tests/e2e/library-data.ts`).
+- N6: the measurement ran in a container with Xvfb and software rendering (K15). `WebKitWebProcess` is 338 of the 468 MB.
+- N8: the ready signal also waits for the Now playing art to decode, so a broken thumbnail fails the measurement. The e2e build serves `tests/e2e/public/thumb/album.jpg` for it.
+- N7: the first Linux run (`1990a37`, before the D14 fix and the ready signal) gave 470 MB. The run on `e62ddca` gave 468 MB; `docs/milestone-0.md` holds it.
+
+**Exceptions**
+
+- E1: all numbers come from a container or CI virtual machines with software rendering, not desktop sessions (K15). P18.5 measures again.
+- E2: the manual scroll check (P3 verification) ran under Xvfb only.
+
+**Blockers:** B8, closed by the owner's approval of `measure/p3`.
+
+**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 6. One finding (absolute thumbnail paths over IPC, D13 against D41) went to the owner, who chose the `thumb://` scheme (section 13, 1.11).
+
+- F2 (Codex review of `fdc1db1`): artist and album lists loaded every row at once, against D14; they now load ids, then rows for the visible window (`library_artist_rows`, `library_album_rows`). A tree album selection kept the old artist; it now selects its artist too. `album_art` returned no art for an unknown track; it now returns `unknown_id` (D46). `measure-memory.sh` and `.ps1` now fail when the app exits before the sample. The first Windows run failed: `$runs` and the `-Runs` parameter are one variable in PowerShell (renamed `$runRecords`).
+- F2 (Codex review of `b71e28c`): a tree song selection kept the old artist and album; it now sets all three. The scripts sampled after a fixed delay; the UI now writes a ready file once all six widgets show data (`measure_ready`, `CLAWDIO_MEASURE_READY`) and the scripts wait for it. F6 stayed in a focused Library list; only select popups keep F6 now. The Menu and dialog close buttons had no tooltip.
+- F2: the song row cache had no limit; scrolling 50,000 rows kept every row. Now capped (N4). The fixture `widgets` assignment failed `clippy` with the feature on; CI now lints and tests with `--features clawdio/fixtures`.
+- F4:
+  - Fixture thumbnails stay in the cache folder after P6.7: the cache is rebuildable (R19).
+  - Queries sort per call: 50,000 songs sort in milliseconds; P6.1 finishes the queries.
+  - `CLAWDIO_MEASURE_MODE` holds the product name in capitals: the plan names the variable; the guard is case sensitive (D34).
+  - List keyboard navigation is missing: P6.6.
+  - The 875 kB bundle: the measured memory is the gate; P17 or P18 may split it.
+  - Codex claims `$id` in `measure-memory.ps1` collides with the automatic `$PID`: PowerShell names are case insensitive, but `id` and `pid` are different names.
+
+**Follow-ups:** none.
+
+---
+
+#### P4. End-to-end slice (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `e896960`. Messages start with `P4:`.
+- **Packages:** `walkdir` 2.5.0, `lofty` 0.25.4, `rusqlite` 0.40.2 (`bundled`), `tempfile` 3.27.0, `rodio` 0.22.2, `symphonia` 0.5.5, `tauri-plugin-log` 2.10.1, `tauri-plugin-dialog` 2.8.2, `tauri-plugin-opener` 2.7.1, `@tauri-apps/plugin-log` 2.10.1. Dev only: Tauri feature `test`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P4-AC1 | Pass | `tests/e2e/first-run.spec.ts`: the notice names the three services and the three file kinds; the choice is saved and the notice does not show again. Manual Linux: the notice shows on a fresh portable profile; "Keep off" writes `onlineNoticeDone: true`. |
+| P4-AC2 | Pass | `tests/e2e/first-run.spec.ts` and `layouts.spec.ts` (P2-AC12): "Choose music folder", disabled transport, widget hints. |
+| P4-AC3 | Pass (Linux, Xvfb) | 50,000 tracks from `gen_test_library`, release build, cold page cache: the Songs list fills while the status line shows "Scanning: 9500 files"; a double-click plays before the scan ends; Pause and Stop change the state. Rust: `player/mod.rs` tests with the test output (order, pause, stop, skip, three failures). |
+| P4-AC4 | Pass (Linux) | `portable` next to `target/release/clawdio`: `data/config/settings.json`, `data/cache/library.sqlite`, `data/logs/app.log` and `data/webview/`. No new file under `~/.config`, `~/.cache` or `~/.local/share`. Windows: not verified (E2). |
+| P4-AC5 | Pass | `src-tauri/src/lib.rs` test: the real log setup with a 200-byte limit rotates and keeps five old files. |
+| P4-AC6 | Pass | `settings.rs` tests. Manual Linux: `{ not json` gives defaults and `WARN settings: corrupt settings file ...; using defaults` in `app.log`. |
+| P4-AC7 | Pass (Linux, Xvfb) | Resized to 1000 x 700, restarted: the window opens at 1000 x 700. `window.rs` tests. |
+
+**Notes**
+
+- N1: `SettingsView` carries the music folder's name, not its path (D13). Settings shows the name.
+- N2: one scan runs at a time. A new scan waits until the canceled one stops, so the old one cannot write after a fresh scan clears the index.
+- N3: without the cache (cannot open), the scan still fills the index and logs a warning (D14).
+- N4: the portable `config` and `cache` folders appear on the first write (notice answer, first scan).
+- N5: `docs/file-formats.md` holds the `settings.json` schema.
+
+**Exceptions**
+
+- E1: manual checks ran in a container under Xvfb with the ALSA null device. The null device plays faster than real time, so the sound and the elapsed time were not checked by ear. P7-AC4 and P18 test on a desktop.
+- E2: P4-AC4 on Windows is not verified (no Windows desktop; the plan allows "not verified").
+- E3: WebKit e2e runs only in CI (no WebKit build in the container).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 6, F3 1, F4 4.
+
+- F2: a double-click on a row selected its text (rows are now `select-none`). Overlapping scans could write old rows after a fresh clear (scan gate). A cache open failure stopped the scan (scan without cache). `SettingsView` sent the absolute music folder path (D13; now the name). A minimized window could save 0 x 0 (not saved now). A late start read could overwrite a newer `player-state` event (dropped now).
+- F3: F-13 (Tree data per visible window), raised by the Codex review of `e896960`.
+- F4:
+  - A device error stops the queue: P7.4 sets this rule and adds the message.
+  - `library-changed` comes only at 500-file batches: the P4.7 batch rule.
+  - A row fetch for ids from before a fresh scan fails: the hook clears its pending ids, and the new ids load after the refresh.
+  - Windows drive-letter case in `relative_to`: both paths come from OS APIs in canonical form, and the fallback is a valid absolute path.
+
+**Follow-ups:** F-13.
+
+---
+
+#### P5. Library scan and cache (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `2300ac4`. Messages start with `P5:`.
+- **Packages:** `symphonia` 0.5.5 (`wav`, `pcm`, `adpcm`) and `image` 0.25.10 (`jpeg`, `png`) in the core. Cache schema version 3.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P5-AC1 | Pass | `tests/scan.rs` golden test against `tests/golden/fixture-tree.json` (fixture tree from `tests/common/tree.rs`). |
+| P5-AC2 | Pass | Opus and A-law: unsupported codec. `corrupt.mp3`: corrupt file. MP3 data in a `.wav`: unsupported type. `notes.txt` not counted. One log line each (log capture). |
+| P5-AC3 | Pass (Linux) | Hidden names skipped. The folder link loop is not entered. A link to a file is scanned. |
+| P5-AC4 | Pass | Cancel removes nothing. A complete scan removes a missing file and a file that became corrupt. A missing root removes nothing. An empty root removes all. |
+| P5-AC5 | Pass (Linux, manual) | Rescan pressed at "Scanning: 17500 files" during the startup scan: one scan in the log. |
+| P5-AC6 | Pass | Manual Linux: status line "Scan complete: 50000 added, 0 removed, 0 skipped" and `lastScan` in `settings.json`. E2E: Settings shows the last counts. |
+| P5-AC7 | Pass | A second scan reads no file, also after a restart; skipped files count again without a read (`ScanReport.read`). Manual: restart of 50,000 tracks, "0 read". |
+| P5-AC8 | Pass | The cache fills a new index with the same library; a deleted cache rebuilds it. |
+| P5-AC9 | Pass | Another `user_version` deletes and rebuilds the file (unit and integration tests). Manual: the P4 cache (version 1) was rebuilt. |
+| P5-AC10 | Pass | `library/title.rs` tests and the golden file ("01 - ", "02. ", "1-03 ", "004_"; "1984" stays). |
+| P5-AC11 | Pass | Golden file: disc tags win over folder order; without tags "Disc 2" comes before "Disc 10". |
+| P5-AC12 | Pass with exception | Manual Linux: "Music folder not found: lib50k" and "Change folder"; the cache file is unchanged. E2E: Change folder leads to the library. The native picker step did not run (E1). |
+| P5-AC13 | Pass | Core test: a canceled old scan, a clear and a new scan leave only new paths in the index and the cache. App: one scan at a time (gate), and the player queue clears before the index (`Command::Clear`). |
+| P5-AC14 | Pass | Non-ASCII names in the golden file. A name that is not valid UTF-8 is skipped and logged once. The path over 260 characters passes in Windows CI (`p5_ac14_...`, run on `402c5fd`). |
+| P5-AC15 | Pass | A file added after a scan appears only after the next scan. |
+| P5-AC16 | Pass | Cover state none, valid and broken and the embedded picture flag are cached; a restart decodes no cover; a changed cover decodes again. |
+
+**Notes**
+
+- N1: IMA ADPCM WAV: lofty 0.25.4 cannot parse it, Symphonia decodes it. Such a file is a track without tags, with the Symphonia duration (R1).
+- N2: P5.10 asks for "<path>" in the message. D13 wins (as in 1.11): the message shows the folder name.
+- N3: the generator takes `--edge-cases` and `--covers N` (P5.13), with a test.
+- N4: `truncated.mp3` and `damaged.ogg` scan as tracks; their decode errors belong to P7.
+- N5: a part of the folder that cannot be read makes the scan "incomplete": nothing is removed.
+
+**Exceptions**
+
+- E1: the GTK folder picker under Xvfb lists no files, so the picker step of P5-AC12 did not run. P4 uses the same command.
+- E2: P5.3 sidecar part: the scan does not read `sidecar.json` yet. The sidecar reader comes in P14.3 and the R4 sidecar step in P16.6. Those phases add the stamp check.
+- E3: the Windows-only tests (long path) run in CI only; they passed on `402c5fd`.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 17, F3 0, F4 9. Sources: own audit, a reviewer agent and the Codex review of `febbf71`.
+
+- F1: skipped files were read again at every scan (P5-AC7). The index and the cache (`skipped` table, schema 3) now keep their stamp and reason.
+- F2, scan: a broken file link made every scan incomplete, so nothing was ever removed (now skipped and logged). A file that could not be opened counted as corrupt and lost its track (now the scan is incomplete and keeps it). Recording a skipped file removed its track before the removal count. A changed file got a new id; it now keeps its id (D46 rationale). IMA ADPCM WAV counted as corrupt (Symphonia fallback). Cover files decoded under the index write lock (now outside it). "1-01 " as a whole name became "01 ". A folder change kept old album thumbnails.
+- F2, cache and jobs: a corrupt `library.sqlite` was never rebuilt (now deleted and created again). Canceling a waiting folder change skipped the clear. The old folder's playback stopped only after the root changed. Two quick Rescans could both start, and a panic left Rescan blocked (atomic claim and a drop guard). A canceled or failed scan replaced the last counts.
+- F2, Codex review of `febbf71` (P4 code): a drive or root folder sent its path as the name (now a label). A failed settings save still changed the live settings. Handled e2e mock commands fell through and threw. The plan named the removed `protocol-asset` feature.
+- F4:
+  - Transport controls stay enabled when the folder is missing: the queue is empty, and P7 handles play errors.
+  - Song order sorts per call: 50,000 songs sort in milliseconds; P6.1 finishes the queries.
+  - Windows junctions: std reports them as links, so the walk reads them through and skips folders.
+  - The P5-AC13 test clears by hand: the job order needs a Tauri runtime; the code path is reviewed and the player clear is tested.
+  - No test for the "part of the folder unreadable" branch: tests run as root, so permissions do not apply.
+  - P5-AC15 cannot fail: there is no watcher, and the test records that behavior.
+  - The hash guard finds nothing to catch in P5: the scan never writes. Later phases that write use it (R11).
+  - The golden file came from the implementation: it was reviewed line by line against R3 and R4 before commit.
+  - Real folders named "Unknown Artist" or "Unknown Album" sort with the unknown groups; lofty also reads embedded pictures for the flag (a 50,000-track cold scan took 9 s in the container; P6-AC6 measures).
+
+**Follow-ups:** none.
+
+---
+
+#### P6. Library widget and search (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `402c5fd`. Messages start with `P6:`.
+- **Packages:** none added. `image` left `src-tauri` with the `fixtures` feature.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P6-AC1 | Pass | `tests/e2e/library.spec.ts`: All rows, Artist filters Album, Album filters Songs, Top/bottom and Tree. |
+| P6-AC2 | Pass | E2E: Tree and back keeps the artist, album, song and search text. |
+| P6-AC3 | Pass | E2E: "beyonce" finds "Beyoncé"; an album name match shows all its songs; "hold" shows one. Rust: `tests/library.rs` on the scanned fixture tree ("BJORK", "debut", the Tree rule). |
+| P6-AC4 | Pass | E2E: double-click and Enter play the Songs list as shown; an album row plays from its first song; in Tree a song plays its album from that song. |
+| P6-AC5 | Pass | E2E: Up, Down, Enter, Ctrl+F, Esc; the active row has a 2 px inset outline and `aria-activedescendant`; after a wheel scroll Down moves from the active row; Tree Right, Left, `aria-level`, `aria-expanded`, `aria-selected`. A mutation (no move) fails the test. |
+| P6-AC6 | Exception (E1) | Manual Linux (Xvfb, software rendering), release build, first scan of 50,000 tracks with `CLAWDIO_PERF=1`, select, play, 30 Down keys: maximum 104 ms (1 of 28 events over 100 ms), then 48 ms and 64 ms in two more runs. Without a scan: 56 ms. Windows: not verified. |
+| P6-AC7 | Pass | E2E: "Song 3" shows "Artist 00 feat. Guest". |
+| P6-AC8 | Pass | `src-tauri/src/fixtures.rs`, the feature and its CI steps are gone. `CLAWDIO_MEASURE_MODE` and the mocks stay. |
+| P6-AC9 | Pass | E2E: the selected row's left edge reads over 100 brighter in grayscale. |
+| P6-AC10 | Pass | E2E: Shift+F10 and the ContextMenu key open the menu at the active row; Play plays; Esc returns focus to the list. |
+
+**Notes**
+
+- N1: the context menu has "Play" only. P7 adds "Add to queue", P11 "Add to playlist".
+- N2: the measurement (P6.7) runs a portable release build (`scripts/measure-setup.mjs`) on the generated library with `--edge-cases --covers 2000`. The ready signal waits for the six widgets, Library rows and the end of the startup scan (`scan_running`, D28). The queue, playlists, lyrics and Now playing art have no data until P7, P9, P11 and P13. A short local run (10 s idle): 477 to 499 MB.
+- N3: WebKitGTK 2.52 supports the Event Timing API, so the probe uses it on Linux too; the next-frame message is the fallback. Event Timing reports only events of 16 ms or more, so listeners count every input.
+- N4: `SetQueue` and `set_album_thumb` went with the fixtures. P9 and P10 add their own.
+- N5: the e2e mock library gained "Beyoncé" and folds accents like `fold` (D4).
+
+**Exceptions**
+
+- E1: P6-AC6 passed in 2 of 3 Linux runs in a container with software rendering (K15). P17 and P18.5 repeat it on desktops; Windows is not verified.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 3, F2 11, F3 0, F4 7. Sources: own audit and a reviewer agent (its fixes are in the commit after `05b430c`).
+
+- F1: a song selected under "All" in Columns did not show in Tree (P6-AC2); Tree now opens the artist and album of the selection. In Tree and on album rows the queue was the search-filtered list; R6 says "its album", so the whole album plays (P6-AC4). Ctrl+F did nothing when Library was a hidden tab (P6-AC5); the focus now waits for the tab body.
+- F2: the debounced search could drop keys. The probe logged nothing when all events were fast under Event Timing. Right-click on a Tree row opened or closed it. The menu returned focus to a wrapper, not the list. A search that hid the selected artist or album kept filtering the other lists (now "All" is selected). The row cache kept old rows after a rescan (D46 keeps ids). Ctrl+F and Ctrl+Shift+L matched the physical key, not the typed letter (AZERTY, Dvorak). Page Up and Page Down moved 10 rows, not a page. The probe test had no Event Timing case and no slow count.
+- F4:
+  - An album selected outside the filtered list made "All" active: now the selection moves to "All" (F2 above).
+  - The context menu has no trigger element: Base UI positions it at the row; focus returns to the list (tested).
+  - `library_tree` returns the whole structure: P6.1 defines it so; F-13 waits for the owner.
+  - `library-changed` refetches the id lists twice per second during a scan: section 6.9 allows it; P6-AC6 measured the cost.
+  - Tree Right on an open node with no children: the tree builder always yields children.
+  - The measurement readiness has no race: `start_scan` counts the startup scan before the UI asks `scan_running`.
+  - Older plan text names the `fixtures` CI steps: it is the P3 record of that time.
+
+**Follow-ups:** F-13 (open).
+
+---
+
+#### P7. Playback engine and Play queue (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5f7b559`. Messages start with `P7:`.
+- **Packages:** none added. `rodio` keeps only `playback`: the engine decodes with its own Symphonia source, so the rodio decoder features went.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P7-AC1 | Pass | `crates/clawdio-core/src/queue.rs`: one named test per P7.1 rule (repeat off, all, one; shuffle; shuffle off; Previous; remove playing, remove earlier; clear; append during shuffle) and a property test over 299 seeds and four rounds with repeat all that shuffle plays every entry once before a repeat. Engine: `player/engine.rs` tests for repeat all and one. |
+| P7-AC2 | Pass | `engine.rs` `stop_ends_playback_resets_the_position_and_keeps_the_queue`. |
+| P7-AC3 | Pass | `engine.rs`: `corrupt.mp3` shows "Cannot play corrupt.mp3" and the next entry plays; three failures in a row stop; a good file resets the count; `truncated.mp3` and `damaged.ogg` show "Cannot play <file name>" at their early end and the next entry plays; `tone-vbr.mp3` (no Xing header) plays to its end with no message. `source.rs`: rule (b) counts bad packets. See N2. |
+| P7-AC4 | Exception (E1) | `engine.rs` `a_lost_device_stops_with_the_message_and_play_tries_again` with the test output. No device can be unplugged in the container. |
+| P7-AC5 | Pass | `tests/e2e/playback.spec.ts`: Space toggles with Transport hidden; after a click on Next, Space sends one toggle and no second Next; Space types in the search field. Unit: `src/lib/keyboard.test.ts` (buttons, key repeat, text fields, range inputs, menus, dialogs). Manual Linux: Space paused and resumed the release build. |
+| P7-AC6 | Pass | `query.rs` `songs_order_by_disc_then_track_then_file_name`; an album row plays its song ids in that order (P6-AC4); the engine plays the queue in order (`plays_the_queue_in_order_and_stops_after_the_last_entry`). |
+| P7-AC7 | Pass | E2E: "Add to queue" appends (50 to 51 songs), the status line shows "Added to queue", the playing song stays; Play from the menu replaces the queue; "Add to playlist" is disabled. |
+| P7-AC8 | Pass | E2E: the grayscale mean of Shuffle and Repeat changes by more than 3 when on (red icon and 4 px dot); repeat one shows the `Repeat1` icon. |
+| P7-AC9 | Pass | E2E: Right Arrow on the focused seek slider seeks to 84 s; End and Home seek to the end and 0; times use `tabular-nums`. |
+| P7-AC10 | Exception (E2) | Manual Linux, release build, 50,000 generated tracks: a double-click 2 s after start played the first song in the same second the scan ended. |
+| P7-AC11 | Pass | E2E: arrows, Home and End on both sliders; `aria-valuetext` "1:23 of 2:04" and "Volume 79 percent"; the 12 px thumb at position 0; `VolumeX` at 0. |
+| P7-AC12 | Pass | E2E: Up and Down select in the Play queue; Delete removes the entry; the menu Remove and Clear queue work. |
+
+**Notes**
+
+- N1: the engine is in `player/engine.rs` (P7.2); `player/mod.rs` keeps the thread, the handle and the `PlayerEvents` trait. `PlayerEvent` went: `player-state` and `queue-changed` are separate events.
+- N2: `damaged.ogg` reaches rule (c), not rule (b) as P7-AC3 says. Symphonia 0.5.5 drops Ogg pages with bad audio and decodes garbage with no error, so no seed file triggers rule (b). The rule is a unit test on the packet counter (`source.rs`). Both damaged seeds are 6 s tones that end over 2 s early.
+- N3: rule (c) uses only a stated length: MP3 needs a Xing, Info or VBRI tag, else Symphonia estimates and the check is off (D32). New seed `tone-vbr.mp3` (1.5 KB) covers it.
+- N4: a buffer underrun from the device does not stop playback; other stream errors do (P7.4). Each command first checks for a lost device. A device that dies in the moment between that check and a seek can still block the seek, because rodio's `try_seek` waits for the mixer thread with no timeout (rodio 0.22.2 `player.rs:247`).
+- N5: Transport controls are disabled with an empty queue (P7.7), so P4-AC2's check after "Choose music folder" now expects Play disabled. P2-AC7's "no red at rest" scan skips Transport controls, whose play ring, slider ranges and thumbs are red indicators by D10 (3).
+- N6: the Library menu has Play, Add to queue and a disabled Add to playlist on song, album and artist rows. The e2e build has a mock player (`tests/e2e/mock-player.ts`) that sends the real events.
+- N7: the traceability coverage summary was recounted from the rows. Earlier phases had changed row statuses but not the counts.
+
+**Exceptions**
+
+- E1: P7-AC4 needs a real device. The device path ran only in the unit test. Manual on Windows and Linux desktops in P18.
+- E2: P7-AC10: the container scan of 50,000 tracks takes about 2 s with a warm page cache, so play during the scan was not shown. P4-AC3 showed play during a cold scan. Not checked by ear (P4 E1).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 11, F3 0, F4 12. Sources: own audit (in `b18d5d0`) and a reviewer agent (fixed in the next commit).
+
+- F1: Add to queue on an empty queue left no current entry, so Play played one song and stopped (`Queue::append` now makes the first new entry current).
+- F2:
+  - Own audit: a buffer underrun stopped playback like a lost device (N4). Unused TypeScript wrappers for `player_play` and `player_pause` (removed; the commands stay for P8). Unused rodio decoder features (removed).
+  - Reviewer: a device lost while paused, or between ticks, could block the player thread in `Player::clear` or `try_seek` (each command now checks the device first, and a new `Player` replaces `clear`). `queue_get` and `player_state` could block the main thread (now async). An ID3 tag over 16 KiB (cover art) hid the Xing tag, so rule (c) was off. A rule (b) or (c) error that arrived between the error check and the end check was lost (the tick now reads the end first). A device lost while idle needed two Play presses. After repeat all wrapped, Previous on the first entry restarted it instead of going to the last entry played. Removing the playing entry with shuffle and repeat all stopped when the cycle had ended. Two tests passed with the rule inverted: the VBR seed now asserts no stated length, and the e2e test checks that Play replaces the queue count.
+- F4:
+  - A decode error and the end callback in the same tick: the source sends the error before the end callback runs (and the tick now reads the end first).
+  - Repeat one with a file that fails at its end: the engine moves on with Next, and the failure count still stops a loop.
+  - Space on a focused button presses it on key up: the capture handler also takes key up.
+  - Seek before a file plays: the engine ignores it (tested).
+  - `Queue::next` shares the iterator method name: the plan names it; clippy's lint is allowed there with the reason.
+  - Removing the playing entry while paused starts the next entry: R6 says "starts the next entry".
+  - A stale end callback could mark the new file ended: each `load` makes a new flag.
+  - A paused player could block a seek: the mixer still runs while paused.
+  - A keyboard seek might not commit: Base UI commits on each key change.
+  - Space against D17: text fields, menus, dialogs and select popups keep Space (unit and e2e tests).
+  - D13: IPC carries ids and indexes; messages carry the file name only.
+  - The three-failures count: it resets only on a normal end or a user action.
+
+**Follow-ups:** F-13 (open).
+
+---
+
+#### P8. OS media integration (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `7596b11`. Messages start with `P8:`.
+- **Packages:** `souvlaki` 0.8.3 with default features (D39). `dbus` 0.9.12 on Linux, the version souvlaki already uses (N2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P8-AC1 | Not verified (E1) | No Windows desktop. The window handle goes to souvlaki (P8.1). The Windows CI job failed clippy on `ed0b76a` (an unneeded cast); the fix is in the next commit. |
+| P8-AC2 | Pass with exception (E2) | Manual Linux (Xvfb, a private D-Bus session, release build): `playerctl -l` lists `io_github_penguinpants_clawdio`; `play`, `pause`, `play-pause`, `next`, `previous` and `stop` changed the app, and the app showed the same song and state; `playerctl metadata` showed title, artist and album. Unit: `media_controls.rs` (event map, D-Bus name, metadata on track change, state, position once per second). |
+| P8-AC3 | Pass | Manual Linux: with `DBUS_SESSION_BUS_ADDRESS=unix:path=/nonexistent` the log has "media: cannot attach the media controls" and a double-click plays. |
+| P8-AC4 | Exception (E1) | OS events go straight to the player thread (`media_controls.rs` `attach`); no widget is involved. Manual Windows not done. |
+| P8-AC5 | Pass (Linux) | Manual Linux: a close request (`WM_DELETE_WINDOW`) to the main window ended the process, with and without D-Bus, and the MPRIS entry went away. Windows not verified. |
+
+**Notes**
+
+- N1: the controls live on the main thread (Windows ties them to the window). Player events reach them through `run_on_main_thread`. Metadata goes out on each track change, the state on each state change, and the position once per second while playing. MPRIS reads the last position, so it stays within about 1 s of the app.
+- N2: souvlaki 0.8.3's D-Bus thread handles one update per loop, and its loop waits up to 1 s for a D-Bus message. With one position update per second the updates queued up and the OS state fell behind. A `media-wake` thread reads `PlaybackStatus` once per update, which ends that wait. D39 stays as decided.
+- N3: no cover before P10 (P8.3).
+- N4: rodio's note on stderr when the sink closes is off.
+
+**Exceptions**
+
+- E1: no Windows desktop: P8-AC1, P8-AC4 and the Windows part of P8-AC5 are for P18 manual checks.
+- E2: P8-AC2 position: the ALSA null device plays faster than real time, so `playerctl position` against the app clock was not measured. By design the gap is at most the 1 s update interval.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 3, F2 2, F3 1, F4 13. Sources: own audit and a reviewer agent.
+
+- F1: souvlaki's D-Bus thread fell behind by one update per second, so the OS state lagged the app (N2, fixed with the wake thread).
+- F2: rodio printed a note on stderr at each exit (N4).
+- Reviewer agent (fixed in the commit after `ed0b76a`): F1: the HWND cast failed Windows clippy (CI red on `ed0b76a`); the record claimed a Windows CI pass that had not run. F2: a seek while paused did not reach the OS position until the next state change (the engine now announces the state on each seek; tested). F3: F-14 (no MPRIS `Seeked` signal on an app seek).
+- F4:
+  - The player thread reads the library lock for metadata: the scan holds the write lock only briefly per batch.
+  - A souvlaki thread that stops makes the next update fail: the app logs it once and stops sending.
+  - The wake read after the controls went away: it fails and is logged at debug level.
+  - D34: the display name comes from the package info and the D-Bus name from the identifier.
+  - Exit: `RunEvent::Exit` runs on the main thread, where the controls live, and detaches them.
+  - Reviewer, none hold: main-thread re-entry, souvlaki's `unwrap` on a wake read, a wake deadlock, an exit hang, a missing window handle, the lowercase name in a test (D34 is case sensitive), lock order, and tests that pass inverted.
+
+**Follow-ups:** F-13 (open).
+
+---
+
+#### P9. Persistence: state, arrangement and instance (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5f7c1ef`. Messages start with `P9:`.
+- **Packages:** `tauri-plugin-single-instance` 2.5.3 (section 6.2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P9-AC1 | Pass | `state.rs` tests: round trip, capture and resolve, missing entries dropped after a complete traversal, a missing current entry. `engine.rs`: a restored queue is paused at the saved position, and Play starts there. Manual Linux (release build, 50,000 tracks): after a restart the queue (50,000 entries), the current song and the Tree mode came back, paused. |
+| P9-AC2 | Pass | `tests/e2e/persistence.spec.ts`: in each mode a hidden Transport, a shown Play queue and the Library width survive a reload. |
+| P9-AC3 | Pass | E2E: a tabbed group survives a reload. Each built-in layout applies (P2-AC4). |
+| P9-AC4 | Pass | `src/shell/persistence.test.ts` with fixture files: corrupt JSON, version 2, an unknown and a missing `libraryMode`, a file without Library and a dock that cannot load apply Columns with one log line; an unknown widget is removed with one log line. |
+| P9-AC5 | Pass | E2E: Ctrl+Shift+L after a reload with a saved layout restores the default. |
+| P9-AC6 | Pass (Linux) | Manual Linux: a second launch exited with code 0 and one process remained. Windows not verified (E1). |
+| P9-AC7 | Exception (E1) | Manual Linux: `state.json` and `layout.json` are in `data/config` of the portable folder. The copy to another drive letter is Windows only. |
+| P9-AC8 | Pass | Vitest: the saved object has `version`, `libraryMode` and `dock` only. N2. |
+| P9-AC9 | Pass | E2E: a layout saved at 1600 x 1000 with six widgets restored at 800 x 560 fits, each group at its minimum or the D45 floor. |
+| P9-AC10 | Pass | Manual Linux: with the cache deleted the log shows "queue entries wait for the scan", then "restored 50000 queue entries" after the scan. With the music folder missing, `state.json` had the same SHA-256 after the app exited. Rust: `missing_entries_wait_for_a_complete_traversal_then_go`. |
+| P9-AC11 | Pass | E2E: a change and the close request in one task: the layout with the change is saved before the window is destroyed. |
+
+**Notes**
+
+- N1: a 50,000-entry queue makes a 3.4 MB `state.json`. Position ticks no longer start a save; queue and state changes do, and the exit saves the last position. The file is compact JSON, and an unchanged state is not written again.
+- N2: `layout.json` has the Dockview grid `width` and `height`. They are the dock size when saved, not the window size; the restore fits the grid to the current window (P9.4 step 5).
+- N3: the close request needs `core:window:allow-destroy` in the capability: `onCloseRequested` destroys the window after the save (P9.3). D13 is unchanged: no filesystem, HTTP, shell or dialog permission.
+- N4: Dockview can report a layout change after the close request, so the close writes the current layout even with no save pending.
+- N5: a queue or volume change before the restore resolves drops the saved queue; the user's action wins.
+- N6: the disk allowance of the container ran out during validation; old build output was deleted and the checks ran again.
+
+**Exceptions**
+
+- E1: no Windows desktop: P9-AC6 on Windows and P9-AC7 (another drive letter) are for P18. P9-AC6 on Linux checked the process only; the X server had no window manager, so focus and raise were not visible.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 2, F2 7, F3 1, F4 13. Sources: own audit (in `8140536`) and a reviewer agent (fixed in the next commit).
+
+- F1: saving `state.json` on each position tick wrote 3.4 MB every 2 s with a 50,000-entry queue (N1).
+- F2: the close flush waited for a pending change that Dockview had not reported yet (N4). The unit test for the close path asserted the old behavior (updated).
+- F4:
+  - The saved queue could replace a queue the user started during the scan: a user action first drops it (N5).
+  - The restore event could count as a user action: the store is ready before the Restore command goes out.
+  - Paths over IPC: the layout commands carry JSON text only; the config path is fixed in Rust (D13).
+  - Position 0 after a restore with the current entry missing: R27 drops missing entries; the next entry starts at 0.
+- Reviewer:
+  - F1: any player state event (volume, shuffle, a lost device) before the restore counted as a user action and dropped the saved queue (only a queue change does now; tested).
+  - F2: a race let the restore replace a queue the user started during the scan (the engine now ignores a restore when a queue is in use, and `ready` changes only under the pending lock; tested). The layout save error sent the config path to the webview (now a fixed message, D13). A saved entry that failed to open made Play seek the next song to the saved position (tested). An older capture could be written after the exit save, and an exit before the player applied the restore saved an empty queue (one save at a time; the restored values are the latest state; tested). `persist.rs` had no tests (four added). The P9-AC9 test passed with no minimums, and the P9-AC3 test compared text lengths (both now check the real values).
+  - F3: F-15 (the settings save error can carry the config path, P4 code).
+  - F4: `layout.json` holds the dock size in the Dockview grid: it is not the window size, which is only in `settings.json` (N2); Dockview needs it for the proportions. Track ids after a cache restore, a channel deadlock, the missing-folder path, pending entries, concurrent layout writes, the destroy permission, the P9.4 order, the single instance and lock times: none hold.
+
+**Follow-ups:** F-13, F-14 and F-15 (open).
+
+---
+
+#### P10. Local artwork and thumbnails (October 11, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5b9c82a`. Messages start with `P10:`.
+- **Packages:** none added.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P10-AC1 | Pass | `crates/clawdio-core/src/artwork.rs`: cover files rank `COVER.JPG`, `cover.png`, `Folder.PNG`, `front.jpg` (names without case); `cover.jpg` beats `folder.png` and embedded art; the third song's embedded art shows when it is the only art; a front cover beats an earlier picture of another type. |
+| P10-AC2 | Pass | `a_broken_cover_file_is_skipped_for_embedded_art`: the broken cover logs a warning and the embedded art shows. |
+| P10-AC3 | Pass | `src-tauri/src/thumbs.rs` service tests: files appear in the thumbnail folder on request and again after the folder is deleted. Manual Linux: `data/cache/thumbs` filled with 96 px and 512 px files for the visible albums, and again after the cache was deleted. |
+| P10-AC4 | Pass | `tests/e2e/art.spec.ts`: rows and Now playing show the art; "Lemonade" (no art) shows the placeholder in its row and in Now playing. |
+| P10-AC5 | Pass with exception (E1) | Rust: a PNG becomes a JPEG `cover.jpg`; a file that is not an image is refused; a read-only folder writes nothing (runs for non-root users: CI). E2E: "Set cover" is on the album menu and a read-only error shows in the status line. |
+| P10-AC6 | Pass with exception (E2) | Manual Linux: `playerctl metadata mpris:artUrl` gave the `file://` URL of the 512 px file after the cache was deleted. Unit: the metadata goes out again when the current album's art is ready, once. |
+| P10-AC7 | Pass | E2E: 61 albums; the first view asked art for fewer than 30, and after a scroll to the end the last album was asked while the total stayed below 61. |
+
+**Notes**
+
+- N1: `ArtService` keeps a request queue (newest first, at most 512) and two worker threads. The cache key is a stable FNV-1a hash of the album folder and the name, size and modified time of each art source, so changed art gets new files. Albums with no art are remembered for the session.
+- N2: cover files decode by content, so a PNG named `cover.jpg` shows. F-16 aligns the scan's D44 cover state.
+- N3: the `thumb` field left `Album` and `AlbumRow`, and `album_of` went: the rows ask `album_art(album, size)` for the visible window only.
+- N4: "Set cover" checks that the folder is writable before the picker opens, so a read-only folder fails before the user picks a file.
+
+**Exceptions**
+
+- E1: P10-AC5 manual: the GTK file picker under Xvfb shows no files, and the container runs as root, which can write a read-only folder. The conversion, refusal and confirmation paths are unit tested; the read-only test runs in CI.
+- E2: P10-AC6 on Windows: no Windows desktop (P18).
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 2, F2 8, F3 2, F4 13. Sources: own audit (in `75cc228`) and a reviewer agent (fixed in the next commit).
+
+- F1: a PNG saved as `cover.jpg` did not decode, because the format came from the extension (now by content).
+- F2: `album_of` and the `thumb` field had no caller after the change (removed). The art test helper asserted a tag on a song with no picture.
+- F3: F-16 (the scan's cover state decodes by extension).
+- F4:
+  - A paths leak in `set_cover` errors: the messages are fixed texts (D13).
+  - Blocking dialogs in `set_cover`: it is an async command, off the main thread.
+  - Many art requests while scrolling: the queue keeps the newest 512 and drops the rest.
+- Reviewer:
+  - F1: after "Set cover" the OS panel kept the URL of the deleted 512 px file (the publisher now republishes when the URL changes; tested).
+  - F2: `album_art` listed the album folder on the main thread and under the library lock (now async, and the folder listing runs after the lock). "Set cover" did not see `Cover.JPG` on a case-sensitive file system and wrote a second cover (any letter case now asks first, and the old name goes after the rename; tested). With only the 512 px file left, a row and a worker looped on `art-ready` (the worker now checks every size). Mounted rows kept old names after a rescan (a library change now refreshes them). The cache key hashed absolute paths, against D27 (now relative to the music folder; tested). The embedded-order test passed with "last picture wins" (now a later song has other art). The `art-ready` refresh had no e2e test (added with a pending album in the mock).
+  - F3: F-17 (old thumbnail files stay; two workers can make one album).
+  - F4: the source order, blocking dialogs, D19, the read-only path, D13, D41, media lock order, album ids after a rescan, frontend memory and the Set cover invalidation hold.
+
+**Follow-ups:** F-13 to F-17 (open).
+
+---
+
+#### P11. Playlists and Favorites (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `42a01a7`. Messages start with `P11:`.
+- **Packages:** none added.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P11-AC1 | Pass | `playlist/name.rs`: each R12 rejection with its message, including "favorites" in any case, "CON.mix" and "com1.roadtrip"; valid names including Cyrillic and Japanese; D21 taken names in any case. |
+| P11-AC2 | Pass | `playlist/mod.rs` `edits_give_golden_files`: create, add with a duplicate, remove and delete against golden text, byte for byte. |
+| P11-AC3 | Pass | `a_failed_write_keeps_the_old_file_and_the_set`: the write fails, the error is `Write`, and the old file and the set are unchanged. E2E: the error dialog. |
+| P11-AC4 | Pass | `missing_entries_stay_after_every_edit`; E2E: "missing" with its path, and play from an entry skips the missing one. |
+| P11-AC5 | Pass | `the_heart_toggles_favorites_and_creates_the_file` (every copy removed, file created on first use). E2E: the Now playing heart (`aria-pressed`) and the row heart. |
+| P11-AC6 | Pass | `tests/playlists.rs`: `.m3u8` in three folders (any case) listed; `.m3u`, `.pls` and hidden folders not; a non-UTF-8 file skipped and logged. |
+| P11-AC7 | Pass | `a_rescan_writes_no_playlist`: every playlist file is byte-identical after two scans. |
+| P11-AC8 | Pass | `tests/e2e/playlists.spec.ts`: Up, Down, Right, Left, Delete (also in Favorites through the same path), Enter and double-click. |
+| P11-AC9 | Pass with exception (E1) | Linux: VLC 3.0.20 played an app-written playlist with `../` paths, accents, parentheses and spaces (`docs/release-checklist.md`). Windows VLC and MusicBee: not run. |
+| P11-AC10 | Pass with exception (E2) | E2E: a failed write shows the dialog and playback goes on. Rust: the failure path. |
+| P11-AC11 | Pass | `a_deleted_cache_gives_the_same_playlists`. A new folder clears the playlists, and its scan loads the new ones (P11.10). |
+
+**Notes**
+
+- N1: the scan collects `.m3u8` paths (`ScanReport.playlists`); the set reads them after each scan. After an incomplete scan the known playlists stay. Ids are kept by path.
+- N2: new files from `write_atomic` (playlists, `cover.jpg`, settings) had mode 0600 from the temp file, so other users, media servers and shares could not read them. New files now get 0644 on Unix and a replaced file keeps its mode.
+- N3: the row heart is not a button in the accessibility tree (D23 says pointer only): axe reports a control inside a list option as nested-interactive. Keyboard and screen reader users use the Now playing heart.
+- N4: "Add to playlist" is a submenu on song, album and artist rows; it lists every playlist but Favorites (D20) and "New playlist…".
+- N5: errors from playlist edits show a dialog with a fixed message, no path (D13).
+
+**Exceptions**
+
+- E1: no Windows machine: VLC and MusicBee on Windows did not run. B3 stays open until P18 (the Linux result does not call for the owner).
+- E2: P11-AC10 manual: the container runs as root, which can write a read-only folder; the failure path is tested with a folder in place of the file.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 2, F2 11, F3 1, F4 12. Sources: own audit (in `8f51528`) and a reviewer agent (fixed in the next commit).
+
+- F1: new files from `write_atomic` were mode 0600, unreadable for other users and services (N2).
+- F2: the row heart broke the listbox pattern for axe (N3). The P7 test expected a disabled "Add to playlist" (now a submenu). The P6-AC4 WebKit race was fixed with the P10 fixes.
+- F4:
+  - A scan reload losing an edit: edits write the file first, and the scan reads the files after.
+  - Lock order: every path takes the playlists lock before the library lock.
+  - IPC paths: commands carry ids, positions and names; errors are fixed texts (D13).
+- Reviewer:
+  - F1: the heart during the startup scan, or "New playlist" with a name the scan skipped, replaced the file on disk with a new one (data loss). Favorites now loads from disk when the set has not read it, and a name with a file on disk in any letter case is taken; tested.
+  - F2: a playlist made while a scan ran dropped out of the set at the scan's end (`load` now keeps known files that exist; tested). A missing entry's label sent its path, which can be absolute, against D13 (now the `#EXTINF` title or the file name; tested). The P11-AC3 test wrote the old file back before the check (a read-only folder test now runs for non-root users). A line break in a tag split an entry (now a space; tested). The dialog checked names in every folder and create only in `Playlists/` (one check now, with the disk). The D20 filter matched any playlist named "favorites" (now a flag from Rust). Menu keys were labels, which can repeat. The delete dialog named `<name>.m3u8` for files with another extension case (now the file name from Rust).
+  - F3: F-18 (letter case on Windows).
+  - F4: a scan reload overwriting an edit, lock order, BOM and CRLF, `..` out of the folder, ids across rescans, every copy removed, Unicode case, "CON .mix", the row heart and play from an entry hold.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+---
+
+#### P12. Playlist import (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `8348415`. Messages start with `P12:`.
+- **Packages:** `plist` 1.10.1 and `encoding_rs` 0.8.42 (section 6.2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P12-AC1 | Pass | `import/matching.rs`: one test per stage (relative, longest suffix, file name, names), the narrowing of stage 4 to the stage 3 candidates, the ambiguous rule, not found and no location; normalization of drive, UNC, slashes, case and NFD. |
+| P12-AC2 | Pass | `tests/import.rs` with `tests/fixtures/import/`: Apple XML (library `Master`, a `Distinguished Kind` list, one user playlist, a track with no `Location`, `file://localhost/C:/` with `%20` and `%C3%B6`), a MusicBee-style M3U8 (absolute Windows and UNC paths), a legacy Windows-1252 `.m3u`; golden `.m3u8` text and reports. |
+| P12-AC3 | Pass | Each golden test checks the source file is byte-identical after the import. |
+| P12-AC4 | Pass | `parse.rs` and the legacy fixture: "é" from Windows-1252; UTF-8 is tried first. |
+| P12-AC5 | Pass | The streaming track is in the report as "no file location" and not in the file. |
+| P12-AC6 | Not verified (E1) | No owner export reached this session (Q5). Each format stays "not verified". |
+
+**Notes**
+
+- N1: one stage-2 rule needed a choice: the longest shared path end must hold at least a folder and the file name; a file name alone is stage 3.
+- N2: import names follow D21; "..." becomes "_" (".." first, then the edge dots).
+- N3: report labels are "artist - title", the title or the file name, never a path (D13).
+- N4: "Import playlist" opens the Rust picker; the browser e2e mock returns a fixed report.
+- N5: a reserved device name with an extension gets " (imported)" on the device part ("CON.mix" becomes "CON (imported).mix"), because "CON.mix (imported)" is still reserved. This is the D21 rule applied so the result is a valid name.
+- N6: a playlist in the file that cannot be written gets its own report line ("Not imported" with the reason); the other playlists still import. `ImportReport.error` carries the reason.
+
+**Exceptions**
+
+- E1: P12-AC6 and gate B4 need the owner's real exports (Q5: Apple XML, MusicBee M3U8, legacy `.m3u`). None was supplied in this session, so each format stays "not verified" and B4 stays open.
+
+**Blockers:** none for the code. B4 waits for the owner's files.
+
+**TWO-PASS REVIEW:** F1 1, F2 8, F3 0, F4 4. Source: own audit, then a reviewer agent on `87941ac`.
+
+- F1: an imported "CON.mix" became "CON.mix (imported)", still reserved, so the import failed (N5).
+- F2:
+  - Clippy found a complex closure type (now a `Stage` alias) and a `match` that is a `?`. The D21 test expected "Imported playlist" for "..." (the rule gives "_").
+  - Stage 2 compared every entry with every track and allocated per track. The matcher now groups tracks by file name and by title, and each stage reads only its group.
+  - The first write error stopped the import and dropped the reports of playlists already written (N6).
+  - `file://nas/share/a.mp3` lost its host. A host other than `localhost` now gives `//nas/share/a.mp3` (P12.4).
+  - Percent-decoding took `%+1` as a byte. It now needs two hex digits.
+  - The stage 1 test also passed without stage 1, and the narrowing test also passed without narrowing. Both libraries now have a second candidate that only the tested stage removes.
+- F4:
+  - The matcher holds the playlist and library locks during an import. With the grouped stages the work is small, so a snapshot copy of the library is not worth its code.
+  - Report labels and errors carry no paths (D13).
+  - The source file is only read: each golden test hashes it.
+  - Matching never leaves the library: the candidates are index tracks.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P13. Local lyrics (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `be917f2`. Messages start with `P13:`.
+- **Packages:** none new. The core reads tags with lofty 0.25.4.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P13-AC1 | Pass | `lyrics.rs` `lrc_beats_txt_beats_embedded`: an MP3 with USLT, then a `.txt`, then a `.lrc`; removing the `.lrc` gives the `.txt` again. |
+| P13-AC2 | Pass | `lyrics.rs`: stamps `[mm:ss]`, `.x`, `.xx`, `.xxx`, `:xx`, 3 minute digits and repeated stamps; the nine tag lines; blank lines and order stay; text that only looks like a stamp stays. |
+| P13-AC3 | Pass | Unit test with a USLT frame (checked in the saved tag). Manual Linux: a release build played an MP3 with a hand-written ID3v2.3 USLT frame and no lyrics file; the widget showed both lines. |
+| P13-AC4 | Pass | `ogg_lyrics_and_unsyncedlyrics_show`: Vorbis copies with `LYRICS` and with `UNSYNCEDLYRICS`. |
+| P13-AC5 | Pass | Playwright `P13-AC5`: lyrics text with no button; no source gives the hint and a disabled "Fetch lyrics"; an empty queue gives the hint with no button. |
+| P13-AC6 | Pass | `commands/lyrics.rs` test: add, edit and remove the `.lrc`, then the scan check sends `lyrics-changed` each time and not when nothing changed. Manual Linux: adding and removing the playing song's `.lrc`, then Rescan, changed the widget with no song change. |
+
+**Notes**
+
+- N1: `lyrics_get` returns null when no source has lyrics; the widget shows "Fetch lyrics" only then. A source with only blank text (an empty file, a `.lrc` of tag lines, empty embedded text) is skipped, so the next source shows, the same rule for files and tags.
+- N2: the file names are `<base name>.lrc` and `<base name>.txt` in lower case, as R9 states. On Linux a `.LRC` file is not read.
+- N3: `.txt` and embedded text show as they are; only `.lrc` loses its stamps (R9).
+- N4: the app keeps the last lyrics it sent and checks them after each complete scan (P13.3). A queue event with a new current song sends `lyrics-changed`.
+- N5: manual playback used a null ALSA device, which does not pace the audio, so a song ends at once. A one-song queue kept the song current for the check.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 6, F3 0, F4 3. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The lyrics read took the music folder lock, then the index lock: the reverse of the player's resolver. It now takes one at a time.
+  - An empty `.lrc` or `.txt` hid the next source (N1).
+  - A late answer for the song before could replace the playing song's lyrics in the scan check, so an edit went unannounced. Only the playing song's answer counts now, and the song is known before the queue event goes out.
+  - The hint flashed on each song change while the lyrics loaded. The widget now shows nothing until they arrive.
+  - The embedded lyrics read also decoded the cover art. It now skips pictures.
+  - Weak tests: Windows-1252 used only a byte that Latin-1 decodes the same; it now uses `\x93`, `\x94` and `\x80`. Added tests for blank sources, upper-case tag keys, multi-byte text after a stamp and the late-answer case.
+- F4:
+  - No size limit on lyrics files: a lyrics file of many megabytes next to a song is not a real case, and the read is async.
+  - A song change reads the lyrics twice (the track input and `lyrics-changed`); the second answer replaces the first, and the read is small.
+  - No test that the scan calls the lyrics check: the call is one line after the complete-scan return, and the manual Rescan check covers it.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P14. Online lookups and artwork fetch (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `074034d`. Messages start with `P14:`.
+- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.45 with the `ring` provider, `tokio` 1.53.2, `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P14-AC1 | Pass | `net/tests.rs` `the_switch_off_makes_zero_requests` (gate counter and mock hits 0); `online.rs` `the_switch_off_starts_no_job_and_no_retry` (scan end and "Retry lookup" with the switch off: 0 requests). |
+| P14-AC2 | Pass | `cancel_or_switch_off_aborts_a_slow_download`: a 10 s mock image; Cancel and switch off each end the lookup in under 1 s with no file. The job loop stops at the first canceled lookup. |
+| P14-AC15 | Pass | `the_job_waits_for_the_startup_scan_then_saves_the_cover`: the switch alone starts nothing before the scan ends. `check` lists the cover files again before each request (`the_folder_check_...`: a valid `folder.jpg` skips the album). |
+| P14-AC3 | Pass | `normalize.rs` tests and `one_matching_group_saves_the_cover` with the folder "1973 - Album (Remastered)". |
+| P14-AC4 | Pass | One match saves the exact JPEG; zero or two matches write `no-match`; 503 and 429 write nothing. |
+| P14-AC5 | Pass | `candidates_come_from_the_scan_flags` (embedded art, valid cover, Unknown groups, songs in the artist folder); `check` skips a marker and a read-only folder with a log line. The read-only test skips when it runs as root. |
+| P14-AC6 | Pass | `musicbrainz_requests_start_one_second_apart`: three callers, at least 2 s for three starts, User-Agent matched. `online::user_agent` builds `<productName>/<version> ( <repository> )`. |
+| P14-AC7 | Pass | `retry_clears_the_marker_and_looks_up` (app) and `a_marker_blocks_the_lookup_until_retry_clears_it` (core); Playwright `P14.7` for the menu item and its off state. |
+| P14-AC8 | Pass | Markers live in `sidecar.json` only; a new index plus a marker gives no request (`a_marker_blocks_...`). |
+| P14-AC9 | Pass | `a_bad_or_large_body_saves_nothing`: HTML, a fake JPEG and 10 MB + 1 byte. |
+| P14-AC10 | Pass | `sidecar.rs` `a_corrupt_sidecar_is_ignored_and_left_unchanged`; `check` skips the album with a log line. |
+| P14-AC11 | Pass | `redirects_follow_the_allow_list_and_the_hop_limit`: a redirect to another host is refused; 5 hops pass, 6 fail; HTTPS only and `archive.org` subdomains in the production list. |
+| P14-AC12 | Pass | Manual Linux, release build, real services: "Fetching artwork: 9 of 16 albums" with Cancel; artist browsing worked during the job; Cancel stopped it and no later marker was written. |
+| P14-AC13 | Pass | `a_service_or_network_error_writes_nothing` (no listener, 503, 429): no file, no marker. The job stops on a network error or 429/5xx and runs at the next start. |
+| P14-AC14 | Pass | A broken `folder.jpg` is a candidate; a broken `cover.jpg` (any case) or a corrupt sidecar is skipped and logged, with no request. |
+
+**Notes**
+
+- N1: rustls uses the `ring` provider (D29 names rustls only). The default `aws-lc-rs` provider needs CMake and NASM on Windows; `ring` needs only a C compiler and gives a smaller binary.
+- N2: the search sends the D43-normalized names, so "1973 - Album (Remastered)" searches "album". MusicBrainz search ignores case and accents.
+- N3: `cover.jpg` is written with a no-replace rename, so a file made at the same moment is never overwritten.
+- N4: manual check with the real services: "Björk/Debut" got its cover from Cover Art Archive and the row showed it at once; a made-up album got a `no-match` marker.
+- N5: the job runs after each complete scan while the switch is on; a scan that ends during a job queues one more pass.
+- N6: "Retry lookup" clears the marker and puts the album first in the artwork job (started at once, or the next pass), so the status line Cancel stops it and the result shows in the status line.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 4. Source: own audit, then a reviewer agent.
+
+- F2:
+  - A rerun asked for while a canceled job still unwound (switch off and on, a new folder) was lost. The job now runs again when asked, with a new token; Cancel clears the request.
+  - `cover.jpg` could not be saved on file systems with no no-replace rename and no hard links (exFAT, FAT). `write_new` now falls back to a create-new write, which still never overwrites.
+  - Folder checks, image decoding and the cover write ran on async threads. They now run on blocking threads.
+  - "Retry lookup" panicked when the HTTP client could not be built. It now gives an error.
+  - "Retry lookup" ran beside the job and Cancel did not stop it. It now goes first in the job (N6).
+  - A panic in the job left it marked as running. A guard clears the slot.
+  - Two quick switch changes could reach the gate out of order. The gate now changes under the settings lock.
+  - The README described P15 lyrics as if done and left out the `no-art` marker. It now covers P14 only and says the names are sent normalized.
+  - Weak tests: the 10 MB cap was tested only through Content-Length; a chunked 12 MB body now tests the streaming cap. Added an app test: a 503 stops the queue with no marker.
+- F4:
+  - A test of the built User-Agent would repeat its own formula; P14-AC6 checks the header the client sends.
+  - HTTPS on a redirect hop is checked by the same function as the first request, which has a unit test; an end-to-end HTTPS mock would add a TLS test server for no new path.
+  - A cancel during the body read takes the same `select!` path as during `send`.
+  - The sidecar marker write stays on the async thread: it is one small atomic file.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P15. Lyrics fetch (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `6fe6867`. Messages start with `P15:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P15-AC1 | Pass | `net/tests.rs` `the_get_request_carries_the_cleaned_title_and_duration`: a scan of an untagged "01 - Title.mp3" gives `track_name=Title`, the folder names and the decoded duration in whole seconds; the mock matches every parameter and `Lrclib-Client`. |
+| P15-AC2 | Pass | `two_seconds_off_is_accepted_and_three_is_not`: `/api/get` 2 s off is accepted; 3 s off leads to the search, where 3 s off is rejected and 2 s off is accepted (synced wins). |
+| P15-AC3 | Pass | `synced_save_as_lrc_and_plain_as_txt`; app test `fetched_lyrics_are_saved_and_announced`. |
+| P15-AC4 | Pass | `no_acceptable_result_is_none`; app test: "No lyrics found" path writes nothing and sends no `lyrics-changed`. |
+| P15-AC5 | Pass | `check_writable` runs before any request (`a_read_only_folder_is_found_first`; skips as root). The error goes to the status line. |
+| P15-AC6 | Pass | Core and app tests: switch off gives an error and 0 requests. Playwright: the button is disabled with the switch off. |
+| P15-AC7 | Pass | App test: `lyrics-changed` after the save and `lyrics_get` gives the new text. Playwright: fetched lyrics replace the hint at once. Manual Linux: a real fetch for "Björk/Debut/01 - Human Behaviour.mp3" (252 s) saved a `.lrc` and the widget showed it with the stamps hidden and "Lyrics saved" in the status line. |
+
+**Notes**
+
+- N1: the duration is the one the scan read from the audio stream properties (lofty, or Symphonia for WAV), rounded to whole seconds. The player sends no duration.
+- N2: the fetch code is in `net/lyrics.rs`, beside the other online code, and the gate serializes LRCLIB requests (section 6.11).
+- N3: a 404 from the search counts as no result. The search normally answers `[]`. A search answer that is not JSON is an error.
+- N5: among accepted search results, synced lyrics win, then the result closest to the song's duration. The 2 s rule compares milliseconds; the request sends whole seconds.
+- N6: a blank `.lrc` or `.txt` holds no lyrics (P13), so "Fetch lyrics" replaces it; any other existing file is never replaced.
+- N4: in the manual run MusicBrainz answered 503 (its rate-limit answer after earlier runs from the same address). The artwork job stopped with no marker, as R8 requires.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 3. Source: own audit, then a reviewer agent.
+
+- F2:
+  - A blank lyrics file showed "Fetch lyrics", but the create-new save then failed for good. A blank file is now replaced (N6).
+  - The 2 s rule compared against the rounded duration, so a result 2.0 s off a 200.4 s song failed. It now compares milliseconds.
+  - The folder check and the save ran on async threads. They now run on blocking threads.
+  - The search took the first synced result, not the closest one (N5).
+  - A search answer that was not JSON showed "No lyrics found". It is now an error.
+  - A fetch kept the button disabled on the next song. The busy state now belongs to its song.
+  - Weak tests: added a `/api/get` answer with no lyrics, the 2 s edge on the search alone, the closest result, a bad answer, a blank file and the LRCLIB one-at-a-time rule.
+- F4:
+  - The writable check makes and removes a temp file, as Set cover (P10) and the artwork job (P14) do; one rule for all three.
+  - No command test for a read-only folder: root writes into read-only folders here, and the check runs before the request in the code and in the unit test.
+  - The e2e mock always succeeds: the error message path is the same `showMessage` call that P10-AC5 tests.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P16. Metadata fill (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `c97d252`. Messages start with `P16:`.
+- **Packages:** none new. The cache schema is version 4 (a `sidecars` table); an older cache is rebuilt.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P16-AC1 | Pass | `net/tests.rs` `only_missing_fields_are_proposed` (a tagged title, track or year is never proposed); app test `the_preview_writes_nothing_and_confirm_applies_it` checks the preview rows. |
+| P16-AC2 | Pass | The app test compares the album folder (entries, bytes and the folder's modified time) before and after the preview: unchanged. |
+| P16-AC3 | Pass | `tests/scan.rs` `the_sidecar_fills_untagged_songs_and_follows_its_changes`: sidecar titles and track numbers for untagged songs, tags win, the same rows after a reload from the cache (a restart); the app test shows the new title in the index right after Confirm. |
+| P16-AC4 | Pass | `tests/hash_guard.rs`: MP3, Ogg and WAV files are byte-identical after Set cover, a fetched cover, markers, playlists, the heart, an import, lyrics files, the metadata sidecar and scans. |
+| P16-AC5 | Pass | `sidecar.rs` `a_corrupt_sidecar_is_replaced_only_when_confirmed`; app test: the preview names the corrupt file and leaves it, Confirm replaces it. |
+| P16-AC6 | Pass | `track_values_merge_and_other_entries_stay` (an entry for a missing song stays); the scan test keeps an orphan entry. |
+| P16-AC7 | Pass | Review: no fingerprinting crate in `Cargo.lock` (no chromaprint or AcoustID); the code matches by names and titles only. |
+| P16-AC8 | Pass | App test with a 0555 folder: the error shows, 0 requests, the folder is unchanged (skips the write part as root; the permission check itself runs). |
+| P16-AC9 | Pass | `the_album_tag_finds_what_the_folder_name_does_not`; `a_tie_or_a_weak_match_gives_no_proposal`; `two_release_groups_give_no_proposal`. |
+
+**Notes**
+
+- N1: the sidecar step of R4 and P5.3 is in the scan now: a changed, new or removed `sidecar.json` makes the scan read that album's songs again. Its stamp lives in the index and the cache.
+- N2: P16-AC8 asks for a file-system watch. The test compares the folder's entries, their bytes and the folder's modified time; making and removing a probe file changes that time, so the check catches any file made in the folder.
+- N3: D42 says to prefer a track count equal to the song count, then the earliest date, and also that a tie gives no proposal. The preference orders the at most 5 releases that are scored; equal best scores give no proposal (P16-AC9).
+- N4: a song with no disc tag maps by track number on a single-medium release (disc 1); otherwise by folded title.
+- N5: the preview names each song by its path inside the album folder (the sidecar key), never a full path (D13).
+- N6: Confirm while a scan runs shows "A scan is running. Confirm again when it ends", because both write the album's rows.
+- N7: the read-only check reads the folder permissions only (P16.1). On Windows the read-only flag of a folder does not block writes (Explorer sets it on customized folders), so Windows skips the check and a failed write shows the same error on Confirm. On Unix a folder that has write bits but belongs to another user also shows the error on Confirm.
+- N8: a proposal stays until Confirm succeeds, so a Confirm during a scan can be tried again. A proposal made for another music folder, or a sidecar that turned corrupt after the preview, asks for a new lookup.
+- N9 (owner check, not blocking): N3 reads D42 so that P16-AC9 holds. If the owner wants the track count and date preference to break ties between editions with the same track list, D42 and P16-AC9 change together.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 10, F3 0, F4 5. Source: own audit, then a reviewer agent.
+
+- F2:
+  - Confirm removed the proposal before the write, so a Confirm during a scan or after a failed write could not be tried again (N8).
+  - Confirm always replaced a corrupt sidecar, also one that turned corrupt after a preview that did not name it. It now replaces only what the preview named.
+  - Windows folders with the read-only flag were blocked though writable (N7).
+  - A proposal from before a music folder change could be applied to the old folder. It is now refused.
+  - The preview table scrolled with no keyboard access and had no name. It is now a focusable named region with a caption.
+  - A track tag of 0 counted as missing in the fill but as a value in the scan, so the proposal never showed. Both treat it as a value now.
+  - Marker writes changed the sidecar stamp without telling the index, so the next scan read the album's songs again. The job and "Retry lookup" now store the new stamp.
+  - `write_tracks` reset a `tracks` value of an unknown form. It now leaves the file and reports it as corrupt.
+  - Weak tests: added Confirm with the cache (restart and a scan that reads nothing), Confirm during a scan, a sidecar corrupted after the preview, disc mapping on two discs, and `tracks` of an unknown form.
+  - A doc comment in `commands.ts` sat above the wrong command.
+- F4:
+  - A marker write and a Confirm on the same album at the same moment could lose one update: both are atomic writes of a small file, and the user would need to confirm while that album's lookup writes.
+  - No test of the candidate order: it only picks which 5 releases are scored, and P16-AC9 covers ties.
+  - No test that a canceled scan keeps the stamps: the sidecar step runs only in the complete-scan branch, which the existing canceled-scan tests cover.
+  - `hash_guard` does not call the fill commands: the app test compares the audio bytes before and after Confirm.
+  - A Unix folder of another user passes the permission check: P16.1 allows the error on Confirm.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P17. UI quality audit (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `e3fec36`. Messages start with `P17:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P17-AC1 | Pass (Chromium); WebKit in CI | `tests/e2e/audit.spec.ts` state sweep: first run, no folder, missing folder, every widget empty, populated, selected, playing, disabled (Transport with no folder, "Fetch lyrics" with lookups off), menus, row menu, every dialog (Settings, New playlist with an error, Import report, Fill missing metadata, Cannot save the change) and a status-line error; axe has no serious or critical violation in any of them. The CI runs the same spec in WebKit. |
+| P17-AC2 | Pass on Linux (E1) | `docs/release-checklist.md` keyboard walkthrough in the release build: every R25 key and Ctrl+Shift+L, Delete in the queue and in a playlist, F6 order. Space in the real app is E2. |
+| P17-AC3 | Pass (automated) (E3) | Reduced motion emulation in every sweep state: no non-zero transition or animation duration. AC-16: no Magic UI component exists (D6), so the CSS rule covers all motion. |
+| P17-AC4 | Pass | `P17-AC4` test at 800 x 560 for Tree, Columns, Top/bottom and a tabbed layout: no control is clipped and none overlaps another; screenshots are attached to the test report. |
+| P17-AC5 | Pass on Linux (E1) | Large text emulated with `GDK_DPI_SCALE` 1.25 and 1.4 in the release build: no overlap after the minimum-height fix (N2). `P17-AC5` test: Transport controls and Now playing fit their content at their minimum height. |
+| P17-AC6 | Pass (emulation) (E1) | `P17-AC6` test in Chromium forced colors: the focus ring, a pressed toggle, the switch on and off and the slider range show with system colors. |
+| P17-AC7 | Pass | `docs/design.md` gains six implementation notes, each with its decision and reason: Geist (D7), the type map (C12), the header strip (D11), album rows (C11), no mute toggle (C3), no Magic UI (D6). |
+| P17-AC8 | Pass | `npm run check` (contrast test, source guards, SVG checks) passes. Brand audit: the wordmark is only in the header strip and About, no cat asset is in the UI, the monogram is only in the art placeholder, red appears only for focus, the play ring, active toggles, the slider, the switch, the active drop target and errors. Type and wording audit: sizes follow the 6.12 map after the hint fix (N3); labels are sentence case; every time uses tabular numerals; no uppercase spaced text. |
+| P17-AC9 | Pass | `P17-AC9` test: one frame after the click, with the open animation running, End and Enter in the menu run Rescan, and typing in the New playlist dialog fills the name. |
+
+**Notes**
+
+- N1: a narrow tabbed group cut off its active tab under the dock's overflow button. The dock now scrolls each group's active tab into view when it changes and when the tab strip changes size.
+- N2: Transport controls and Now playing need 80 px of content under a 32 px header. Their D33 minimum of 88 px clipped them when the bottom row shrank (also under large text, where the saved layout scales down). Both minimums are now 112 px, the default bottom-row height; D33 records the change. When six widgets stack at 800 x 560, the D45 clamp still lowers every minimum in proportion (Transport controls get about 59 px), as it did with 88 px (47 px).
+- N3: the empty hints, "Nothing playing" and the playlist name message were 13 px; the 6.12 map gives hints and captions 12 px.
+- N4: forced colors had no rule for pressed toggles, the switch or the slider. They now use system colors (`Highlight`, `HighlightText`, `CanvasText`, `GrayText`).
+- N5: the e2e settings mock returned one shared object, so the stores missed changes that the real IPC (a new object each time) shows. The mock now returns copies.
+- N6: under WebKitGTK, `GDK_DPI_SCALE` sets the device pixel ratio: the whole page scales, as with a display scale.
+- N7: a splitter that can move only one way (a neighbor at its minimum) lost its hover and drag line, because the theme styled only dockview's `dv-enabled` state. It now also styles `dv-minimum` and `dv-maximum`. The 112 px minimum made this common for the bottom row, which P2-AC17 caught.
+
+**Exceptions**
+
+- E1: no Windows machine. P17-AC2, P17-AC5 (150 percent display scale) and P17-AC6 (Windows high contrast) are not run on Windows; their traceability rows with MAN-W stay Planned until gate B5.
+- E2: the container has no real-time audio sink (null ALSA output), so a song ends at once and Space cannot be observed in the real app. Playwright P7-AC5 covers Space in Chromium and WebKit.
+- E3: GNOME is not in the container, so "Reduce animation" and "Large text" are emulated (Playwright reduced motion; `GDK_DPI_SCALE`).
+
+**Blockers:** none for the code. Windows checks wait for gate B5.
+
+**TWO-PASS REVIEW:** F1 0, F2 11, F3 0, F4 4. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The active tab of a narrow tabbed group was cut off (N1).
+  - Transport controls and Now playing minimums were below their content (N2).
+  - Hints and captions were 13 px (N3).
+  - Forced colors had no rules for toggles, the switch and the slider (N4).
+  - The settings mock returned one shared object (N5).
+  - A one-way splitter lost its line (N7).
+  - The P17-AC9 test asserted running animations one frame later, which a loaded runner can miss. It now sends the keys as soon as the menu items exist and checks the result.
+  - The P17-AC5 test passed when the drag did nothing. It now checks that the row is at its minimum first.
+  - The P17-AC6 focus check passed without forced colors. It now checks that the ring color is not the brand red.
+  - The tab-strip observer kept strips of rebuilt docks. It now stops watching strips that left the page.
+  - N2 did not say that the D45 clamp still lowers the minimums when six widgets stack.
+- F4:
+  - Resizing the dock scrolls a strip back to its active tab only when that tab is cut off; a strip scrolled by hand to an inactive tab keeps its place until then.
+  - The clip check reads overflow clipping only: no control uses absolute or fixed position to leave its widget.
+  - The motion check reads elements, not `::before` and `::after`: the reduced-motion rule sets both to 0 s with the same selector.
+  - The P17-AC9 menu check presses End: the result it checks is Rescan running, so a menu with another last item fails the test rather than passing it.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+---
+
+#### P18. Release readiness (October 12, 2026)
+
+- **Status:** In progress. Blocked by B3 and B5 (owner input); B9 and B10 closed October 12, 2026. The code and docs work of P18.1 to P18.6, P18.8 and P18.9 is done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5ab34c2`. Messages start with `P18:`.
+- **Packages:** none in the app. CI tools: `cargo-deny` 0.20.2 and `cargo-about` 0.9.2 (prebuilt, SHA-256 checked).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P18-AC1 | Not verified | `.github/workflows/release.yml` (tags `v*`): NSIS and portable zip on windows-latest, `.deb` and AppImage in `ubuntu:22.04`, size check, SHA-256 sums, draft release. No tag was pushed in this session. |
+| P18-AC2 | Pass | `measure.yml` run 38204302435: NSIS installer 5.12 MiB, `.deb` 9.25 MiB. Local AppImage 83.65 MiB (recorded). `release.yml` fails at 30 MB or more. |
+| P18-AC3 | Not run (E1) | `tauri.conf.json`: NSIS `installMode` `currentUser`, `webviewInstallMode` `downloadBootstrapper`. |
+| P18-AC4 | Not run (E1) | D38 holds: Tauri shows "Could not find the WebView2 Runtime" with the download link (`tauri-runtime-wry` 2.12.1 `src/lib.rs:4680`), then `main` exits with code 1. |
+| P18-AC5 | Not verified (E2) | No Ubuntu 22.04 desktop and no Debian 12 machine (B5 owner answer). |
+| P18-AC6 | Pass | `docs/release-checklist.md` "Footprint": Windows 143 MB (CI VM, run 38208222253; target 200 MB). Linux after D50: 294 MB on the CI VM (run 38208222253) and 298 MB in the container; the owner accepted the Linux value on October 12, 2026 (R20 targets are adjustable). |
+| P18-AC7 | Pass on Linux (E3) | The `.deb` holds `LICENSE`, `NOTICE` and both third-party files; the AppImage holds them and the LGPL and GPL texts. `NOTICE`: 3 assets, the Rust crates of both shipped targets and 27 npm packages; CI job `licenses` checks all generated files. |
+| P18-AC8 | Pass | `cargo deny check` (licenses, advisories, bans, sources). |
+| P18-AC9 | Pass (Linux) | Brand swap demo: only the two inputs and `src-tauri/icons/` changed; reverted. |
+| P18-AC10 | Not run (E1) | Drive letters are Windows only. |
+| P18-AC11 | Pass in part (E1, E2) | Linux: window title and `.deb` desktop entry show the name. GNOME app grid and every Windows item not run. |
+| P18-AC12 | Not met | `docs/release-checklist.md` records all 21 checks and the platform matrix. AC-3 on Windows waits for B3; the manual Windows rows wait for B5. |
+| P18-AC13 | Pass | `docs/theming-and-brand.md` (token map, dock chrome, brand inputs, Magic UI: none) and `docs/file-formats.md` (settings, state, arrangement, playlists, lyrics, sidecar). |
+
+**Notes**
+
+- N1: the bundle category is "Music": Tauri 2.12 rejects "Audio" (P18.1). The desktop template `src-tauri/clawdio.desktop` gives `AudioVideo;Audio;Player;`.
+- N2: `deny.toml` checks the two shipped targets only (Linux and Windows x86_64).
+- N3: the committed `NOTICE` has no AppImage table. `release.yml` makes it from the AppImage with `scripts/appimage-libs.sh` (package, version, the License fields of the Debian copyright file, source package) and builds the AppImage again with it. A library that no package owns fails the job.
+- N4: the local packages came from an Ubuntu 24.04 container. `release.yml` builds in Ubuntu 22.04 (glibc 2.35).
+- N5: the README gains Features, Install (WebView2, FUSE and SmartScreen notes), Portable mode, Keyboard shortcuts and Data locations.
+- N6: B9 reduction (D50). Each lever was measured alone in one Columns run: compositing off 513 to 326 MB, two arenas and a trim 513 to 491 MB, DMABUF renderer off a further 12 MB. The WebKit cache model (document viewer) and `GDK_GL=disable` saved nothing and were not kept. The README tells Linux users how to turn compositing back on.
+
+**Exceptions**
+
+- E1: no Windows machine (B5). Every MAN-W item is "not run". MAN-W rows of the traceability matrix stay Planned.
+- E2: no Ubuntu desktop and no Debian 12 machine (B5 owner answer). Manual Linux items ran in a container under Xvfb without GNOME.
+- E3: the zip and NSIS contents and the AppImage library table are made by `release.yml`, which did not run.
+- E4: the earlier "Done with exceptions" items stay open for the same reasons; `docs/release-checklist.md` lists them per AC.
+
+**Blockers:** B3 (Windows interop) and B5 (Windows machine). B9 and B10 closed. P18 cannot be Done until B3 closes.
+
+**TWO-PASS REVIEW:** F1 0, F2 5, F3 1, F4 8. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The AppImage library rows had no license.
+  - A library without a package owner left `NOTICE` silently.
+  - The release container did not install the toolchain of `rust-toolchain.toml` explicitly.
+  - The licenses job ran downloaded tools without a checksum check.
+  - The README had no SmartScreen note (K16).
+- F3: F-20 (tag and version check in `release.yml`).
+- F4:
+  - "No WebView2 dialog exists": Tauri shows it (P18-AC4 evidence).
+  - The licenses job has no toolchain step: hosted runners install `rust-toolchain.toml` on first use, as every CI job does.
+  - No `sudo` in the container: the steps run as root.
+  - Node and CA certificates in the container: `setup-node` and the package step supply them.
+  - The portable zip has no size gate: the plan gates NSIS and `.deb` only.
+  - Unsigned Windows files: K16 and F-01.
+  - AC-7 and AC-15 marked Done with Windows "not run": the theme and brand build does not depend on the OS.
+  - Scope: nothing outside the P18 task list.
+
+**Final summary (P18.9)**
+
+- Changes with paths: the phase records P0 to P18 list them. P18 adds `deny.toml`, `about.toml`, `about.hbs`, `scripts/frontend-licenses.mjs`, `scripts/notice.mjs`, `scripts/appimage-libs.sh`, `licenses/`, `.github/workflows/release.yml`, the `licenses` CI job, the bundle config and `src-tauri/clawdio.desktop`.
+- Assets and export sizes: the SVG masters and `src-tauri/icons/` (PNG 16 to 1024 px; ICO 16, 24, 32, 48, 64 and 256 px), as the P1 record lists.
+- Magic UI: none. No component had a function the app needs (D6, `docs/theming-and-brand.md`).
+- Tests and builds: `npm run check`, `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace` and Chromium e2e pass locally; CI runs WebKit e2e and the Windows tests. The release build, `.deb` and AppImage built locally.
+- Limitations and unverified platform checks: `docs/release-checklist.md` (Windows: every manual check; Linux desktop: GNOME, real audio, device unplug).
+- Deviations from the reference: `docs/design.md` implementation notes (P17-AC7).
+
+**Follow-ups:** F-20 (new); F-13 to F-18 open. F-19 was done in D50.
+
 ---
 
 ## 3. Source documents and precedence
@@ -317,7 +1236,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D30 | Music folder missing at startup: the Library body shows the message and "Change folder". The cached library is not shown. The cache is not touched. | Section 5. Playback from a missing folder would fail. |
 | D31 | Tests: Vitest with React Testing Library. Playwright (Chromium and WebKit) against Vite with mocked IPC. axe-core. No `tauri-driver` (its README says pre-alpha). OS-level checks are manual. | Reliable automation now. Chromium is close to WebView2. WebKit is close to WebKitGTK. |
 | D32 | A decode error is any of: (a) a failure to open or probe a file; (b) an error that the engine's own Symphonia source reports while decoding: an I/O error other than end of stream, or more than 3 packet decode errors in a row (a single bad packet is skipped and logged); (c) an end of stream more than 2 s before a duration that the container states (WAV header, Ogg granule position, MP3 Xing, VBRI or LAME header). An estimated duration never triggers rule (c). The engine decodes with this source instead of `rodio::Decoder`, because `rodio::Decoder` hides errors and Symphonia reports a cut-off file as a normal end of stream. | R6 decode rule. Codex review finding X4. |
-| D33 | Window minimum 800 x 560, default 1200 x 800. Widget minimums (width x height): Library 320 x 240, Transport controls 320 x 88, Now playing 240 x 88, Playlists 200 x 160, Play queue 200 x 160, Lyrics 200 x 160. P3 may tune them and records the change. | Section 5 (window smaller than layout). |
+| D33 | Window minimum 800 x 560, default 1200 x 800. Widget minimums (width x height): Library 320 x 240, Transport controls 320 x 112, Now playing 240 x 112 (P17 raised both from 88: their content needs 80 px under the 32 px header), Playlists 200 x 160, Play queue 200 x 160, Lyrics 200 x 160. P3 may tune them and records the change. | Section 5 (window smaller than layout). |
 | D34 | Source guards: no hex color literals in `src/` (except the generated token file). No Tailwind default palette color (a class such as `bg-red-500` or a variable such as `--color-red-500`) in `src/` (F-07). No product name literal in `src/`, `crates/` or `src-tauri/src/`. SVG rules in P1.5. | design.md §10, section 6 branding constraint, AC-15. |
 | D35 | Milestone 0 test data uses a `fixtures` Cargo feature. P6 deletes it. The owner confirmed this on October 11, 2026 (C19). | Spike data without dead code later. |
 | D36 | Test audio: tiny seed files made with ffmpeg and committed (under 100 KB). Test trees and the 50,000-track library are generated at test time. | No copyrighted audio. No large files in git. |
@@ -325,7 +1244,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D38 | The portable build relies on Tauri's built-in "WebView2 Runtime not found" dialog (Tauri 2.6 and later), which links to the Microsoft download page. `main` exits with code 1 on `WebviewRuntimeNotInstalled` and does not panic. | R22. No extra code. |
 | D39 | souvlaki 0.8.3 with default features (libdbus on Linux). | R24. |
 | D40 | Log: file `app.log`, 1 MB per file, 5 old files kept. | R23 size-based rotation. |
-| D41 | The asset protocol is on. Its scope is the thumbnail folder only, granted at runtime. `requireLiteralLeadingDot` is false so `~/.cache` paths work on Linux. | Thumbnails and art without exposing the music folder. |
+| D41 | Thumbnails and display art load through a `thumb://` URI scheme. Rust serves only plain `.jpg` file names from the thumbnail folder. IPC carries the file name; the webview builds the URL with `convertFileSrc(name, "thumb")`. The asset protocol is off. | D13 (no file paths over IPC). Owner decision October 11, 2026 (1.11); it replaced the asset protocol scope. |
 | D42 | Metadata fill picks a release in three steps. (1) Search releases by the folder artist and album; if that gives no single release group by the D43 normalization, search again by the most common album and artist tags of the album's songs, when they differ. (2) Among the remaining releases, score each by the number of songs whose title (tag, else the R4 file-name title) matches a track title after folding. (3) The release with the highest score wins if at least half the songs match and no other release has the same score; prefer a track count equal to the song count, then the earliest date. Otherwise there is no proposal. | R10: "It looks up by folder names, existing tags and file name." Codex review finding Y4. |
 | D43 | Name normalization for R8 and R10 matching: fold (D4); remove a leading year with an optional separator ("1973 - ", "1973. ", "(1973) "); remove each bracketed or parenthesized group that holds a 4-digit year or any of these words: remaster, remastered, deluxe, edition, expanded, anniversary, bonus, special, reissue, version, mono, stereo; remove a leading "the "; collapse spaces. | R8 gives examples, not a full list. |
 | D44 | Online candidates use flags that the scan stores: per track, whether it has an embedded picture; per album, the cover file state (none, valid, broken). A cover file is decoded only when it is new or changed. An album with a broken `cover.jpg` or a corrupt `sidecar.json` is not a candidate and is logged once per scan. | C18. R8 (no overwrite, no automatic retry). Startup must not read 50,000 files (P5-AC7). |
@@ -334,6 +1253,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D47 | On Linux, portable mode applies to the AppImage. "Next to the executable" means next to the AppImage file (the `APPIMAGE` environment variable), for both the marker and the R18.1 path rule. | Inside an AppImage the executable runs from a temporary mount. |
 | D48 | Tauri's CSP nonce injection stays on. If a release build reports a `style-src` violation, add `dangerousDisableAssetCspModification: ["style-src"]` and record it. The e2e suite serves the section 6.13 CSP and fails on any violation. | A nonce makes browsers ignore `'unsafe-inline'`. Inline styles from libraries must not break silently. |
 | D49 | Milestone 0 over 300 MB on an OS: that OS's worst value becomes its memory target, and the build continues. No stop. An OS at or under 300 MB keeps the 200 MB target. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
+| D50 | Linux only: the app sets `WEBKIT_DISABLE_COMPOSITING_MODE=1` and `WEBKIT_DISABLE_DMABUF_RENDERER=1` before GTK starts (a value the user set wins), limits glibc to two malloc arenas and trims the heap after each scan (`src-tauri/src/linux_memory.rs`). | Owner asked for a Linux memory reduction (B9, October 12, 2026). Measured worst mode: 519 MB to 298 MB (container), 450 MB to 294 MB (CI VM); input latency did not get worse (max 24 ms against 64 ms). |
 
 ### 5.3 Owner confirmations
 
@@ -355,12 +1275,15 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | ID | Item | Effect | Resolution path |
 |---|---|---|---|
 | B1 | `AGENTS.md` did not exist. The task and the prompt require it. | None. | Closed October 11, 2026: the owner supplied `AGENTS.md`; the review sections were added; P0.1 adds the project rules. |
-| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | P3 verdict. **Owner answer October 11, 2026:** over 300 MB on an OS raises that OS's memory target to its measured value, and the build continues (D49). |
+| B2 | Milestone 0 outcome (R20, section 8). | P4 and later wait for the P3 measurements. | Closed October 11, 2026: P3 verdict recorded in `docs/milestone-0.md`. Linux 468 MB raised the Linux target (D49); Windows 112 MB passes. **Owner answer October 11, 2026:** over 300 MB on an OS raises that OS's memory target to its measured value, and the build continues (D49). |
 | B3 | R13 path base (section 8). If a target player fails on `..` paths, the owner decides whether playlists move to the folder root. | P11 may close as Done with exceptions while B3 is open. P18 cannot be Done until B3 closes. | P11.9 interop test. |
 | B4 | R14 MusicBee export assumption (section 8). | AC-4 needs a real export. | Q5 sample, P12. |
 | B5 | Windows and Linux desktop machines for manual checks (media keys, device unplug, portable copy, memory). | Criteria stay "not verified" without them. | P18 needs at least one Windows 10 or 11 machine and one Ubuntu 22.04 desktop, or a recorded exception. **Owner answer October 11, 2026:** a Windows 10 or 11 machine only. P18 records each manual Linux criterion as an exception ("not verified: no Ubuntu desktop"). |
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 | B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 could not be Done. | Closed October 11, 2026: the owner chose F-09 option (b). P1-AC4 checks bar separation at the 72 px README height. The assets did not change. |
+| B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 could not close; P4 waited for the Windows verdict (B2). | Closed October 11, 2026: the owner allowed pushes to `measure/p3`. Run 38171140952 measured Windows. |
+| B9 | P18.5 Linux idle memory was 519 MB, over the raised Linux target of 468 MB (D49). | P18-AC6 on Linux. | Closed October 12, 2026: the owner asked for a reduction. D50 gives 298 MB in the container and 294 MB on the CI VM (under 468 MB; between 200 and 300 MB, so the owner is told the number, R20). The owner accepted 294 MB (CI VM) as the Linux value on October 12, 2026. |
+| B10 | The P18.5 Windows numbers need `measure.yml` on windows-latest, which runs on a push to a `measure/**` branch (as B8). | P18-AC6 on Windows and the NSIS size. | Closed October 12, 2026: the owner allowed a push to `measure/p18`. Run 38204302435: Windows 146 MB, NSIS 5.12 MiB. |
 
 ---
 
@@ -394,7 +1317,7 @@ Versions were checked against crates.io, npm and project sources on October 11, 
 
 | Area | Package | Version | Notes |
 |---|---|---|---|
-| App shell | `tauri` / `tauri-build` | 2.12.3 / 2.7.2 | `protocol-asset` feature for thumbnails |
+| App shell | `tauri` / `tauri-build` | 2.12.3 / 2.7.2 | No extra features; thumbnails use the `thumb://` scheme (D41). Feature `test` in dev-dependencies only |
 | CLI and JS API | `@tauri-apps/cli` / `@tauri-apps/api` | 2.12.2 / 2.12.3 | `mockIPC`, `mockConvertFileSrc` for tests |
 | Plugins | `tauri-plugin-single-instance`, `-log`, `-dialog`, `-opener` | 2.5.3, 2.10.1, 2.8.2, 2.7.1 | Dialog and opener used from Rust only |
 | Audio | `rodio` | 0.22.2 | `Player`, `DeviceSinkBuilder` with error callback (D3) |
@@ -629,9 +1552,9 @@ Uppercase spaced text is not used in the app UI (design.md §4).
 
 ### 6.13 Security model
 
-- **Content Security Policy:** `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'`. Nonce handling per D48.
+- **Content Security Policy:** `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' thumb: http://thumb.localhost data:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'`. Nonce handling per D48.
 - **Capabilities:** `core:default`, plus `log:default` from P4. No fs, http, shell, dialog or opener permission in the webview (D13).
-- **Asset protocol:** thumbnail folder only (D41). The music folder is never exposed to the webview.
+- **Thumbnails:** the `thumb://` scheme serves file names from the thumbnail folder only (D41). The asset protocol is off. The music folder is never exposed to the webview.
 - **Paths:** IPC never accepts a file path from the webview. Paths come from Rust pickers or from the index. Every write target is checked to be inside the music folder after normalization. Playlist names pass the R12 rule before any file operation.
 - **Network:** off by default. Allow-listed HTTPS hosts only. 10 MB cap. Images decoded before saving. No telemetry and no updater.
 - **Supply chain:** lockfiles committed. `cargo deny check` in CI (licenses, advisories, sources) from P18; `npm audit --omit=dev` reported in CI.
@@ -909,7 +1832,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   - The real query commands serve it: `library_artists`, `library_albums`, `library_song_ids`, `library_rows` and `library_tree`, with search (signatures as in section 6.7). This matches D14, so the gate measures the real memory profile.
   - The app writes 2,000 album thumbnails (96 px JPEG, generated colors and numbers) into the thumbnail folder.
   - Outside the `fixtures` feature, so release builds keep it: with `CLAWDIO_MEASURE_MODE` set to `tree`, `columns` or `topBottom`, the app applies an arrangement that shows all six widgets (Playlists, Play queue and Lyrics docked beside the default arrangement) in that Library mode. It does not save that arrangement.
-- **P3.2** Asset protocol (D41): enable it. Grant the thumbnail folder at runtime. Set `requireLiteralLeadingDot` to false so `~/.cache` paths load on Linux. Use `convertFileSrc` for image URLs.
+- **P3.2** Thumbnail scheme (D41): register `thumb://`, which serves plain `.jpg` names from the thumbnail folder. Album rows carry the file name. Use `convertFileSrc(name, "thumb")` for image URLs. (Changed in 1.11; it was the asset protocol.)
 - **P3.3** Library views with fixture data, all virtualized (section 6.2):
   - Tree: flattened rows (artist, album, song) with expand and collapse.
   - Columns: Artist, Album and Songs lists side by side. Artist and Album lists start with an "All" row.
@@ -928,7 +1851,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 - **P3-AC2** Idle memory is measured on Windows and Linux by the D28 method, with all six widgets shown, in each Library mode. The worst mode per OS is the gate value. The environment is recorded.
 - **P3-AC3** NSIS installer and `.deb` sizes are recorded against the 30 MB target.
 - **P3-AC4** The verdict is recorded for memory and for package size. An OS over 300 MB gets its measured value as its new memory target. The other OS keeps 200 MB (D49).
-- **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the asset protocol (no broken images).
+- **P3-AC5** Thumbnails load from the cache folder on Linux and Windows through the `thumb://` scheme (no broken images).
 
 **Verification.** CI workflow `measure.yml` plus local Linux runs. Manual: scroll each mode, open each widget. The owner gets the numbers in the phase report.
 
@@ -1200,7 +2123,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
   2. Else embedded art: walk the album's songs in album order (only songs with the D44 embedded-picture flag) and take the first front cover (`PictureType::CoverFront`) that decodes. If no song has a front cover that decodes, take the first picture of any type that decodes.
   3. A cover file that fails to decode is logged and skipped. The next source applies.
 - **P10.2** `thumbs.rs` (D27): 96 px and 512 px JPEG files in `DataDirs.cache/thumbs/`. Two worker threads make them on request. Command `album_art(album_id, size)` returns a path or none. Event `art-ready` tells the UI when a file appears.
-- **P10.3** UI: album rows request art only for visible rows. `<img>` uses `convertFileSrc`. Now playing shows the 512 px image. No art: `ArtPlaceholder`.
+- **P10.3** UI: album rows request art only for visible rows. `<img>` uses `convertFileSrc(name, "thumb")` (D41). Now playing shows the 512 px image. No art: `ArtPlaceholder`.
 - **P10.4** "Set cover" on the album context menu: a Rust file picker for `.jpg`, `.jpeg` and `.png`. Decode the file, convert it to JPEG (quality 90), check that the folder is writable, ask for confirmation if `cover.jpg` exists (D19), write a temp file and rename it. Remove the album's thumbnails so they regenerate. Read-only folder: show the error and write nothing.
 - **P10.5** Media controls: pass the 512 px file as a `file://` cover URL (R24). When the 512 px file for the current song's album becomes ready after the track started (`art-ready`), publish the metadata again.
 
@@ -1532,7 +2455,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K6 | Apple XML format is not documented by Apple | Import mismatches | Fixtures from public samples; owner exports (Q5) | P12 |
 | K7 | "Dr. Claw Development" names a third-party character. A villain-cat brand can look derivative. | Trademark or takedown risk | Original vector shapes only (P1-AC7); owner kept the publisher name and accepted the risk on October 11, 2026 (Q1) | P1, P18 |
 | K8 | Brand palette contrast (C13) | Unreadable text | D10 rules and the contrast test | P0, P17 |
-| K9 | Asset protocol globs skip dot folders on Linux | Thumbnails fail to load | D41; P3-AC5 | P3 |
+| K9 | Thumbnails live in a dot folder on Linux (`~/.cache`) | Thumbnails fail to load | D41 `thumb://` scheme reads by name, with no glob scope; P3-AC5 | P3 |
 | K10 | MusicBrainz blocks clients that exceed 1 request per second | Lookups fail | Shared limiter; stop on 503 | P14 |
 | K11 | AppImage needs FUSE on the user system | AppImage does not start | README note: `--appimage-extract-and-run` | P18 |
 | K12 | Hosted Ubuntu 22.04 runners may be retired | Higher glibc floor | Build in the `ubuntu:22.04` container | P18 |
@@ -1585,6 +2508,14 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
 | F-11 | Extend the color guard to CSS named colors and color functions in `src/` (for example `color: white`, `style={{ color: "red" }}` or `rgb(0 0 0)`), with an exception for `color-mix()` over token variables. | The hex and palette rules (D34) do not catch them, so a color from outside `theme/tokens.json` can still enter the UI (design.md §10). | F-07 review |
+| F-12 | Evaluate Dockview 8.5 `keyboardNavigation` (Ctrl+M keyboard docking, Ctrl+[ and Ctrl+] tab switching) as the path for F-02 (keyboard moves of widgets). It needs an owner decision, because requirements section 7 defers keyboard moves. | K5 says the dock has no keyboard path. Dockview 8.5 ships one, off by default. | P2 review |
+| F-18 | On Windows, resolve playlist entries without letter case when the exact path is not a library track (`../björk/…` for `Björk/…`). | NTFS ignores case, so VLC opens such an entry, but the app shows it as missing. | P11 review |
+| F-17 | Remove thumbnail files whose key no longer matches an album (a changed cover or a rescan leaves old files), for example at the end of a complete scan. Mark an album "in progress" so two workers do not make it twice. | The thumbnail folder grows with each art change; duplicate work costs CPU only. | P10 review |
+| F-16 | The scan's cover state (D44) decodes by file extension; the art source decodes by content. A PNG named `cover.jpg` is "broken" for online lookups but shows as art. Decode by content in `scan::update_covers` too. | Two decode rules for one file. | P10 review |
+| F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
+| F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
+| F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
+| F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
@@ -1716,6 +2647,8 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10), then accept the Linux value of 294 MB after D50. F-19 left section 11 (done in D50).
+- **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
 - **1.9 (October 11, 2026):** owner signed off the brand after P1 (Q6 closed). Owner chose F-09 option (b) for B7: P1-AC4 checks wordmark bar separation at the 72 px README height, and the 20 px rule keeps only the bar width. F-09 left section 11.
 - **1.8 (October 11, 2026):** owner answered Q5 (supply the formats they have), Q6 (review after P1; P2 waits), Q7 (ask, then replace), Q8 (simple icon for 16 and 24 px only if needed), B5 (Windows machine only) and B2 (raise the target over 300 MB, new D49).

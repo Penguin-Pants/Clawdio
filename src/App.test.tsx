@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
 describe("App", () => {
-  it("renders an empty main region", () => {
+  it("renders the header strip with the menu button, the dock and the status line", () => {
     render(<App />);
-    expect(screen.getByRole("main").childElementCount).toBe(0);
+    expect(screen.getByRole("banner")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Menu" })).toBeTruthy();
+    expect(screen.getByRole("main")).toBeTruthy();
+    expect(screen.getByRole("contentinfo").textContent).toBe("Ready");
   });
 });
