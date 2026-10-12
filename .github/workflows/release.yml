@@ -1,13 +1,18 @@
 # Release packages (P18.3, R21): a v* tag builds the NSIS installer, the portable zip, the
 # AppImage and the .deb, checks the sizes, writes SHA-256 checksums and puts everything on a
-# draft GitHub release. A manual run builds the same packages as run artifacts and makes no
-# release.
+# draft GitHub release. A manual run builds the Windows packages (and the Linux packages when
+# asked) as run artifacts and makes no release.
 name: Release
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      linux:
+        description: Also build the AppImage and the .deb
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -54,6 +59,7 @@ jobs:
           path: out/*
 
   linux:
+    if: github.event_name == 'push' || inputs.linux
     runs-on: ubuntu-22.04
     # Ubuntu 22.04 (glibc 2.35) is the oldest supported Linux (R22).
     container: ubuntu:22.04
