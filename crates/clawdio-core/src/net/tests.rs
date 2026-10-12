@@ -732,7 +732,7 @@ async fn a_streamed_body_over_10_mb_stops_at_the_cap() {
 
 mod lyrics_fetch {
     use super::*;
-    use crate::net::lyrics::{check_writable, fetch, save, Fetched, LyricsQuery, SaveError};
+    use crate::net::lyrics::{fetch, save, Fetched, LyricsQuery, SaveError};
 
     fn query(duration_s: u32) -> LyricsQuery {
         LyricsQuery {
@@ -927,6 +927,7 @@ mod lyrics_fetch {
     #[cfg(unix)]
     #[test]
     fn a_read_only_folder_is_found_first() {
+        use crate::net::lyrics::check_writable;
         use std::os::unix::fs::PermissionsExt;
         let folder = tempfile::tempdir().unwrap();
         let song = folder.path().join("01 Song.mp3");

@@ -152,7 +152,10 @@ fn a_second_import_gets_a_numbered_name() {
 #[test]
 fn a_failed_playlist_does_not_stop_the_others() {
     let root = tempfile::tempdir().unwrap();
-    let text = std::fs::read_to_string(fixture("apple.xml")).unwrap();
+    // A Windows checkout can turn the fixture's line ends into CRLF.
+    let text = std::fs::read_to_string(fixture("apple.xml"))
+        .unwrap()
+        .replace("\r\n", "\n");
     let road_trip = "<dict>\n\t\t\t<key>Name</key><string>Road Trip: 2026</string>";
     // A file name over 255 bytes cannot be written on Linux, macOS or Windows.
     let long = format!(
