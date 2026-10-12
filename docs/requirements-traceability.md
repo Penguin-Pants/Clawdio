@@ -154,8 +154,8 @@
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
-| R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC2, P20-AC3 | UT, E2E | Planned |
-| R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5 | MAN-W | Planned |
+| R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Planned |
+| R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Planned |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Planned |
 | R34-4 | Pause: resume only when the duck caused the pause | §2 R34.4 | P20.3 | P20-AC1 | UT | Planned |
 | R34-5 | Timing: fade down, fixed wait of about 1 s, fade up; no wait setting | §2 R34.5 | P20.3 | P20-AC1 | UT | Planned (D52) |
