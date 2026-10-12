@@ -6,10 +6,10 @@
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
-- The repository holds documents, brand inputs and the owner's `AGENTS.md`. No code or tests exist yet.
+- Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
 - The plan has 22 phases (P0 to P21). P19, P20 and P21 come from requirements v1.6. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
-- No genuine blocker stops P0. Owner inputs are in section 5.3 and gates in section 5.4. The owner signed off the brand (Q6) after P1.
+- Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
 
 ---
 
