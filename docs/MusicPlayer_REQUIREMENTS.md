@@ -1,11 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.6, October 12, 2026.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4, 1.5 and 1.6.
+**Status:** Decision-complete. Version 1.7, October 12, 2026.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.7.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
-- `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
+- `(v1.7)` marks an item changed or added in version 1.7 (Library frame splitters and fixed-height bar widgets, owner decisions 29 to 37 in section 8). `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
 ---
@@ -18,6 +18,7 @@ The closest open source player (Strawberry) has many features the owner does not
 - The user points it at one music folder.
 - It shows artist, album and song, and plays mp3, ogg and wav.
 - The UI is made of widgets. The user docks, resizes, hides and shows them. Three built-in layouts exist. `(v1.4)`
+- The user resizes the Artist, Album and Songs frames in the Library. Transport controls and Now playing stay thin bars wherever they dock. `(v1.7)`
 - It adds artwork, lyrics and missing metadata.
 - It keeps playlists as portable files.
 - It imports many playlists at once and finds their songs in the library, also when the source names another format of the song. `(v1.6)`
@@ -57,8 +58,8 @@ The closest open source player (Strawberry) has many features the owner does not
 
 - **R5 (v1.2).** The UI is made of widgets that the user can dock, resize, move and hide (R29).
   - **Library:** mandatory (R28).
-  - **Transport controls:** movable and hideable. Buttons: play/pause, stop, previous, next, shuffle and repeat. `[D]` The seek bar and volume control are part of this widget. `(v1.5)` It shows elapsed time and total time next to the seek bar.
-  - **Now playing:** movable and hideable. Shows album art, title, artist, album and the heart button (R26).
+  - **Transport controls:** movable and hideable. A bar widget with a fixed height (R29.1). `(v1.7)` Buttons: play/pause, stop, previous, next, shuffle and repeat. `[D]` The seek bar and volume control are part of this widget. `(v1.5)` It shows elapsed time and total time next to the seek bar.
+  - **Now playing:** movable and hideable. A bar widget with a fixed height (R29.1). `(v1.7)` Shows album art, title, artist, album and the heart button (R26).
   - **Playlists:** movable and hideable (R12 to R14).
   - **Play queue:** movable and hideable (R6).
   - **Lyrics:** movable and hideable (R9).
@@ -75,9 +76,18 @@ The closest open source player (Strawberry) has many features the owner does not
   - `[D]` In Columns and Top/bottom modes, the Artist and Album lists each start with an "All" row. An Artist selection filters the Album list. An Album selection filters the Songs list. With nothing selected, Songs shows all songs.
   - `[D]` Switching the mode keeps the current selection and search text.
   - The Library widget can move and resize. It cannot be hidden or closed.
+- **R28.1 (v1.7).** Library frame splitters.
+  - Columns mode has a splitter between Artist and Album and one between Album and Songs.
+  - Top/bottom mode has a splitter between Artist and Album and one between the top row and Songs.
+  - Tree mode has one frame and no splitter.
+  - Each frame has a minimum size, so no frame collapses. The clamp for small windows (section 5) also applies to frames.
+  - Splitters work with the mouse only. They look and behave like the dock splitters (R30). Keyboard resize is deferred (section 7).
+  - Columns and Top/bottom each keep their own frame sizes. Switching the mode does not reset them.
+  - Frame sizes are part of the arrangement (R29). They save automatically and restore at startup.
+  - Reset layout and applying any built-in layout restore the default frame sizes of all modes.
 - **R29 (v1.2).** Docking and layouts.
   - Free-form drag-and-drop docking inside the main window. The user drags a widget by its header and drops it on the edge of another widget or of the window. Splitters resize widgets.
-  - `(v1.4)` Floating panels and pop-out windows are not in v1. Tabbed groups are allowed. The app adds no code to prevent them. The saved arrangement must round-trip a tabbed group.
+  - `(v1.4)` Floating panels and pop-out windows are not in v1. Tabbed groups are allowed. The app adds no code to prevent them, except for bar widgets (R29.1). `(v1.7)` The saved arrangement must round-trip a tabbed group.
   - **Built-in layouts:** Columns (default at first run), Tree and Top/bottom. Each sets the Library mode and a widget arrangement. `[D]` Built-in layouts cannot be changed or deleted.
   - `[D]` **Default arrangement:** Library in the main area (search in its header), Now playing and Transport controls in a bottom bar. `(v1.5)` Playlists, Play queue and Lyrics are hidden and available in the Widgets menu. The Tree and Top/bottom layouts use the same arrangement with their own Library mode.
   - `(v1.4)` User-saved named layouts are deferred (section 7).
@@ -86,6 +96,15 @@ The closest open source player (Strawberry) has many features the owner does not
   - `[D]` **Reset layout** applies the built-in Columns layout. The menu button offers it, and a documented keyboard shortcut also runs it. No layout can hide the menu button or the status line. `(v1.5)`
   - `[D]` **Non-drag path:** the menu button offers show and hide for each widget, switching the Library mode and applying layouts. Moving a widget needs drag in v1.
   - `[D]` Corrupt layout file: ignore it and log it. Unknown widget in a layout: ignore that widget. Layout without the Library widget: apply the built-in Columns layout.
+- **R29.1 (v1.7).** Bar widgets: Transport controls and Now playing.
+  - Each bar widget has a fixed height: its natural content height, header included. No splitter changes it.
+  - A drop on a top or bottom edge, of the window or of a widget, gives the bar widget a row at its fixed height and the full width of that edge. The other widgets get the rest of the space.
+  - Side drops are refused. Exception: the two bar widgets can share one row, side by side. That row is as tall as the taller of the two.
+  - No side drop zone shows for a bar widget, except when the other bar widget is the drop target.
+  - Tabbing is refused both ways. A bar widget cannot join a tab group, and no widget can join a bar widget's group.
+  - A refused drop shows no drop overlay. The widget stays where it was. Nothing is logged.
+  - Other widgets keep their current drop and splitter sizing.
+  - At startup, a saved arrangement that breaks these rules is repaired. Only the widget that breaks them moves, to its default bottom-bar position (R29 default arrangement). The rest stays. Each repair is logged (R23).
 - **R30 (v1.4).** UI framework: React, Tailwind CSS v4 and shadcn/ui components. Magic UI (https://github.com/magicuidesign/magicui) is optional.
   - `[D]` A Magic UI component may be copied into the repo only when a named component serves a function in R5, R6 or R29. The docs (R17) list the copied components. If the list is empty, Motion is not a dependency. Decorative effects (backgrounds, marquees, shimmer, confetti) are out under the "few features" rule.
   - `[D]` Every animation honors the OS "reduce motion" setting. Animations never block input.
@@ -265,6 +284,7 @@ These are out under the owner's "few features" rule.
 - Smart playlists, ratings and play counts. `[D]`
 - Floating panels and pop-out windows (not selected for v1). `(v1.4)` Tabbed groups are allowed (R29).
 - Per-view layout overrides. `[D]`
+- A layout mode, an edit lock or Save and Cancel controls for the arrangement. The arrangement saves automatically (R29). `(v1.7)`
 - Playback of `.m4a`, `.flac` or other formats to make a playlist entry play (R33.2 finds another format of the song only). `(v1.6)`
 - Fuzzy or typo-tolerant matching of titles and file names. `(v1.6)`
 - Opening the microphone or measuring its sound level (R34.2). `(v1.6)`
@@ -298,6 +318,9 @@ These are out under the owner's "few features" rule.
 - **Layout problems `[D]`:** a corrupt layout file, an unknown widget or a missing Library widget follow R29.
 - **Transport controls hidden `[D] (v1.5)`:** keyboard shortcuts (R25) and media keys (R24) still work. Reset layout restores the default.
 - **Window smaller than a saved layout needs `[D]`:** the app enforces a minimum window size and a minimum size per widget. It clamps the layout to fit.
+- **Window too short for the bar widgets `(v1.7)`:** the bar widgets keep their fixed heights (R29.1). The other widgets and the Library frames shrink first, down to their minimums. Then the existing clamp applies.
+- **One bar widget shown `(v1.7)`:** it keeps its own row. Showing the other one from the Widgets menu puts it in the same row.
+- **Corrupt or unknown frame-size data `(v1.7)`:** the default frame sizes apply for that mode and the error is logged. The rest of the arrangement loads.
 - **Empty Play queue, Playlists or Lyrics widget `[D]`:** show a short hint, not a blank area.
 - **Audio device unplugged or changed during playback `[D] (v1.5)`:** on an output stream error, the app stops playback and shows a message. The next Play opens the current default device.
 - **Second app launch `[D]`:** focus the running instance. Do not start a second one.
@@ -343,6 +366,8 @@ These are out under the owner's "few features" rule.
 - Equalizer and crossfade.
 - Customizable keyboard shortcuts.
 - Moving widgets by keyboard.
+- Keyboard resize of splitters, for the dock and the Library frames (R28.1). `(v1.7)`
+- A content scale or density setting (row height, text and thumbnail size). `(v1.7)`
 - Layout import and export.
 - Floating panels and pop-out windows. `(v1.4)`
 - Named layouts: save, apply, rename and delete. `(v1.4)`
@@ -405,6 +430,20 @@ Version 1.6 adds bulk import, missing-song repair and microphone ducking, with t
 
 The owner reported that most missing songs in imports had the reason "not found" and that some sources name `.m4a` or `.flac` files. R33.2 addresses this.
 
+Version 1.7 adds Library frame splitters and fixed-height bar widgets, with these owner decisions made on October 12, 2026:
+
+29. **Component size (R28.1):** splitters between the Library frames. Content scale is deferred.
+30. **Layout mode:** none. Normal mode gets the fixes. The current arrangement keeps saving automatically (R29).
+31. **Bar height (R29.1):** Transport controls get a fixed natural height.
+32. **Side drops (R29.1):** refused for bar widgets.
+33. **Tabbing (R29.1):** refused both ways for bar widgets.
+34. **Now playing (R29.1):** a bar widget too. The two bar widgets can share one row.
+35. **Frame sizes (R28.1):** kept per Library mode.
+36. **Old arrangements (R29.1):** repair only the widget that breaks the rules.
+37. **Splitter input (R28.1):** mouse only.
+
+The owner reported that a drop of Transport controls on the window top edge gave a large square, not a thin bar. Drop size was the only drag problem named.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -435,6 +474,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 22. **Bulk import and repair `(v1.6)`:** several playlist files picked in one picker action import together, and a folder with the owner's playlists imports in one action. Entries that name `.m4a` or `.flac` files match the `.mp3` copies in the same album folders. "Find missing songs" fixes such entries in playlists imported before.
 23. **Microphone ducking `(v1.6)`:** on Windows, with Lower volume at 20%, the music drops while Handy records and comes back about 1 s after it stops. With Pause, the music pauses and resumes. The same works during a call in one call app.
 24. **No microphone access `(v1.6)`:** after a ducking test, the Windows microphone privacy settings list no microphone use by the app.
+25. **Library frames `(v1.7)`:** in Columns and Top/bottom modes, the user drags each frame splitter. Each mode keeps its sizes after a mode switch and a restart. Reset layout restores the defaults.
+26. **Bar widgets `(v1.7)`:** a drop of Transport controls on the window top edge gives a full-width row at its fixed height. A side drop beside Library and a drop into a tab group are refused. Transport controls and Now playing can share one row.
+27. **Old arrangement `(v1.7)`:** a saved arrangement with Transport controls in a tab group starts with Transport controls in the bottom bar and the rest unchanged. The log names the repair.
 
 ---
 
@@ -456,6 +498,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.7 (October 12, 2026):** Library frame splitters and fixed-height bar widgets, with owner decisions 29 to 37 (section 8).
+  - **Added:** R28.1, R29.1, an outcome bullet (section 1), one non-goal, three edge cases, two deferred ideas, acceptance checks 25 to 27.
+  - **Changed:** R5 (Transport controls and Now playing are bar widgets), R29 (tabbed groups exclude bar widgets).
 - **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 28 (section 8).
   - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, eleven edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
   - **Changed:** R13 (only import and "Find missing songs" write matches), R14 (multi-file picker, folder import, other extension).
