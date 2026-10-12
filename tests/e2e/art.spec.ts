@@ -57,9 +57,9 @@ test("P10-AC7: album art is requested only for the visible rows plus overscan", 
     element.scrollTop = element.scrollHeight;
   });
   await expect(albums(page).getByRole("option", { name: /Lemonade/ })).toBeVisible();
-  const after = new Set(await artRequests(page));
-  expect(after.has(60), "the last album, now visible").toBe(true);
-  expect(after.size).toBeLessThan(61);
+  // The row asks in an effect after it renders.
+  await expect.poll(async () => (await artRequests(page)).includes(60), { message: "the last album" }).toBe(true);
+  expect(new Set(await artRequests(page)).size).toBeLessThan(61);
 });
 
 test("P10-AC5: Set cover is on the album menu; a read-only folder shows the error", async ({ page }) => {

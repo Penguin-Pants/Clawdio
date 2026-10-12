@@ -151,8 +151,17 @@ function RowHeart({ track }: { track: number }) {
  */
 export function AlbumThumb({ album }: { album: number }) {
   const src = useAlbumArt(album, 96);
-  if (!src) return <ArtPlaceholder className="size-10 shrink-0" />;
-  return <img src={thumbUrl(src)} alt="" className="size-10 shrink-0 rounded-card object-cover" draggable={false} />;
+  // No pointer target: the art can replace the placeholder between mouse down and up, and
+  // WebKit drops a click whose mouse-down node left the page. The row takes the click.
+  if (!src) return <ArtPlaceholder className="pointer-events-none size-10 shrink-0" />;
+  return (
+    <img
+      src={thumbUrl(src)}
+      alt=""
+      className="pointer-events-none size-10 shrink-0 rounded-card object-cover"
+      draggable={false}
+    />
+  );
 }
 
 export function AlbumCells({ album }: { album: AlbumRow }) {
