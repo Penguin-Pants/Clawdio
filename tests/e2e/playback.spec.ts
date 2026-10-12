@@ -63,7 +63,7 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
   const songs = widget(page, "library").getByRole("listbox", { name: "Songs" });
   await songs.getByRole("option", { name: /Song 2 of Album B0/ }).click({ button: "right" });
   const menu = page.getByRole("menu");
-  await expect(menu.getByRole("menuitem", { name: "Add to playlist" })).toHaveAttribute("aria-disabled", "true");
+  await expect(menu.getByRole("menuitem", { name: "Add to playlist" })).toHaveAttribute("aria-haspopup", "menu");
   await menu.getByRole("menuitem", { name: "Add to queue" }).click();
   await expect(page.locator("footer").getByRole("status")).toHaveText("Added to queue");
   await expect(queue).toContainText("51 songs");

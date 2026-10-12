@@ -26,7 +26,7 @@ const COVER_NAMES: [&str; 4] = ["cover", "folder", "front", "albumart"];
 const COVER_EXTENSIONS: [&str; 3] = ["jpg", "jpeg", "png"];
 
 /// What a scan did.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ScanReport {
     /// New tracks.
     pub added: u64,
@@ -45,6 +45,15 @@ pub struct ScanReport {
     pub canceled: bool,
     /// The root could not be read, or a part of it could not: nothing was removed.
     pub failed: bool,
+    /// `.m3u8` files found, relative to the music folder (P11.2). The scan never writes them.
+    pub playlists: Vec<String>,
+}
+
+/// A `.m3u8` playlist file name, in any letter case (P11.2). `.m3u` and `.pls` are not listed.
+pub fn is_playlist(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("m3u8"))
 }
 
 /// `.mp3`, `.ogg` and `.wav`, in any letter case (R1).
@@ -183,6 +192,7 @@ pub fn scan(
 
     let wanted = |path: &Path| {
         is_audio(path)
+            || is_playlist(path)
             || path
                 .file_name()
                 .and_then(|name| name.to_str())
@@ -190,6 +200,10 @@ pub fn scan(
                 .is_some()
     };
     let end = walk(root, cancel, wanted, |file| {
+        if is_playlist(&file.path) {
+            report.playlists.push(file.rel_path.clone());
+            return;
+        }
         let parts: Vec<&str> = file.rel_path.split('/').collect();
         let Some(kind) = Kind::of(&file.path) else {
             // A cover candidate directly in an album folder.

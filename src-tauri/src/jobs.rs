@@ -11,9 +11,10 @@ use clawdio_core::cache::Cache;
 use clawdio_core::scan::{self, ScanReport};
 use tauri::{AppHandle, Manager};
 
-use crate::events::{emit, JOB_PROGRESS, LIBRARY_CHANGED, STATUS_MESSAGE};
+use crate::events::{emit, JOB_PROGRESS, LIBRARY_CHANGED, PLAYLISTS_CHANGED, STATUS_MESSAGE};
 use crate::persist::StateStore;
 use crate::player::PlayerHandle;
+use crate::state::Playlists;
 use crate::state::{AppState, Library};
 
 pub const SCAN_JOB: &str = "scan";
@@ -174,6 +175,11 @@ fn run_scan(
             // This runs even when the scan is canceled before it starts (P5-AC13).
             app.state::<StateStore>().new_folder();
             app.state::<PlayerHandle>().clear();
+            // The old folder's playlists go; the new folder's come with the scan (P11.10).
+            if let Ok(mut playlists) = app.state::<Playlists>().0.lock() {
+                playlists.clear();
+            }
+            emit(app, PLAYLISTS_CHANGED, ());
             if let Some(Err(error)) = cache.as_mut().map(Cache::clear) {
                 log::warn!("cache: cannot clear: {error}");
             }
@@ -207,6 +213,7 @@ fn run_scan(
     emit(app, STATUS_MESSAGE, text);
     // Missing saved entries go only after a complete traversal (P9.1).
     let complete = !report.canceled && !report.failed;
+    load_playlists(app, root, &report.playlists, complete);
     app.state::<StateStore>().try_restore(app, complete);
     // Settings keeps the counts of the last complete scan (R2).
     if report.canceled || report.failed {
@@ -218,6 +225,28 @@ fn run_scan(
     {
         log::warn!("settings: cannot save the scan counts: {}", error.message);
     }
+}
+
+/// Reads the playlists the scan found (P11.2). After an incomplete scan the known ones stay,
+/// so a canceled scan does not hide a playlist. A scan never writes a playlist (R13).
+fn load_playlists(app: &AppHandle, root: &std::path::Path, found: &[String], complete: bool) {
+    let playlists = app.state::<Playlists>();
+    let Ok(mut set) = playlists.0.lock() else {
+        return;
+    };
+    let mut paths = found.to_vec();
+    if !complete {
+        for row in set.rows() {
+            if let Some(known) = set.get(row.id) {
+                if !paths.contains(&known.rel_path) {
+                    paths.push(known.rel_path.clone());
+                }
+            }
+        }
+    }
+    set.load(root, &paths);
+    drop(set);
+    emit(app, PLAYLISTS_CHANGED, ());
 }
 
 /// Cancels the running job with this id (R5 status line Cancel).
@@ -261,7 +290,7 @@ mod tests {
         );
         let canceled = ScanReport {
             canceled: true,
-            ..report
+            ..report.clone()
         };
         assert_eq!(summary(&canceled), "Scan canceled: 3 added, 1 skipped");
         assert_eq!(

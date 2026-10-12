@@ -6,6 +6,8 @@ interface EventPayloads {
   "library-changed": null;
   /** An album's art file exists now: the album id (P10.2). */
   "art-ready": number;
+  /** The playlists or an entry changed (P11.4). */
+  "playlists-changed": null;
   "job-progress": JobProgress;
   "status-message": string;
   "player-state": PlayerSnapshot;

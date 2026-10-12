@@ -75,7 +75,7 @@ A phase is Done when all of these are true:
 | P8 | OS media integration | P7 | Done with exceptions |
 | P9 | Persistence: state, arrangement and instance | P8 | Done with exceptions |
 | P10 | Local artwork and thumbnails | P9 | Done with exceptions |
-| P11 | Playlists and Favorites | P10 | Not started |
+| P11 | Playlists and Favorites | P10 | Done with exceptions |
 | P12 | Playlist import | P11 | Not started |
 | P13 | Local lyrics | P12 | Not started |
 | P14 | Online lookups and artwork fetch | P13 | Not started |
@@ -686,6 +686,54 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - F2: `album_art` listed the album folder on the main thread and under the library lock (now async, and the folder listing runs after the lock). "Set cover" did not see `Cover.JPG` on a case-sensitive file system and wrote a second cover (any letter case now asks first, and the old name goes after the rename; tested). With only the 512 px file left, a row and a worker looped on `art-ready` (the worker now checks every size). Mounted rows kept old names after a rescan (a library change now refreshes them). The cache key hashed absolute paths, against D27 (now relative to the music folder; tested). The embedded-order test passed with "last picture wins" (now a later song has other art). The `art-ready` refresh had no e2e test (added with a pending album in the mock).
   - F3: F-17 (old thumbnail files stay; two workers can make one album).
   - F4: the source order, blocking dialogs, D19, the read-only path, D13, D41, media lock order, album ids after a rescan, frontend memory and the Set cover invalidation hold.
+
+**Follow-ups:** F-13 to F-17 (open).
+
+---
+
+#### P11. Playlists and Favorites (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `42a01a7`. Messages start with `P11:`.
+- **Packages:** none added.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P11-AC1 | Pass | `playlist/name.rs`: each R12 rejection with its message, including "favorites" in any case, "CON.mix" and "com1.roadtrip"; valid names including Cyrillic and Japanese; D21 taken names in any case. |
+| P11-AC2 | Pass | `playlist/mod.rs` `edits_give_golden_files`: create, add with a duplicate, remove and delete against golden text, byte for byte. |
+| P11-AC3 | Pass | `a_failed_write_keeps_the_old_file_and_the_set`: the write fails, the error is `Write`, and the old file and the set are unchanged. E2E: the error dialog. |
+| P11-AC4 | Pass | `missing_entries_stay_after_every_edit`; E2E: "missing" with its path, and play from an entry skips the missing one. |
+| P11-AC5 | Pass | `the_heart_toggles_favorites_and_creates_the_file` (every copy removed, file created on first use). E2E: the Now playing heart (`aria-pressed`) and the row heart. |
+| P11-AC6 | Pass | `tests/playlists.rs`: `.m3u8` in three folders (any case) listed; `.m3u`, `.pls` and hidden folders not; a non-UTF-8 file skipped and logged. |
+| P11-AC7 | Pass | `a_rescan_writes_no_playlist`: every playlist file is byte-identical after two scans. |
+| P11-AC8 | Pass | `tests/e2e/playlists.spec.ts`: Up, Down, Right, Left, Delete (also in Favorites through the same path), Enter and double-click. |
+| P11-AC9 | Pass with exception (E1) | Linux: VLC 3.0.20 played an app-written playlist with `../` paths, accents, parentheses and spaces (`docs/release-checklist.md`). Windows VLC and MusicBee: not run. |
+| P11-AC10 | Pass with exception (E2) | E2E: a failed write shows the dialog and playback goes on. Rust: the failure path. |
+| P11-AC11 | Pass | `a_deleted_cache_gives_the_same_playlists`. A new folder clears the playlists, and its scan loads the new ones (P11.10). |
+
+**Notes**
+
+- N1: the scan collects `.m3u8` paths (`ScanReport.playlists`); the set reads them after each scan. After an incomplete scan the known playlists stay. Ids are kept by path.
+- N2: new files from `write_atomic` (playlists, `cover.jpg`, settings) had mode 0600 from the temp file, so other users, media servers and shares could not read them. New files now get 0644 on Unix and a replaced file keeps its mode.
+- N3: the row heart is not a button in the accessibility tree (D23 says pointer only): axe reports a control inside a list option as nested-interactive. Keyboard and screen reader users use the Now playing heart.
+- N4: "Add to playlist" is a submenu on song, album and artist rows; it lists every playlist but Favorites (D20) and "New playlist…".
+- N5: errors from playlist edits show a dialog with a fixed message, no path (D13).
+
+**Exceptions**
+
+- E1: no Windows machine: VLC and MusicBee on Windows did not run. B3 stays open until P18 (the Linux result does not call for the owner).
+- E2: P11-AC10 manual: the container runs as root, which can write a read-only folder; the failure path is tested with a folder in place of the file.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 1, F2 3, F3 0, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F1: new files from `write_atomic` were mode 0600, unreadable for other users and services (N2).
+- F2: the row heart broke the listbox pattern for axe (N3). The P7 test expected a disabled "Add to playlist" (now a submenu). The P6-AC4 WebKit race was fixed with the P10 fixes.
+- F4:
+  - A scan reload losing an edit: edits write the file first, and the scan reads the files after.
+  - Lock order: every path takes the playlists lock before the library lock.
+  - IPC paths: commands carry ids, positions and names; errors are fixed texts (D13).
 
 **Follow-ups:** F-13 to F-17 (open).
 

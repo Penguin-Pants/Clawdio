@@ -38,6 +38,15 @@ export const commands = {
   playerState: () => invoke<PlayerSnapshot>("player_state"),
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),
+  /** The message for a new playlist name, or null when it is valid (R12, D21). */
+  playlistNameCheck: (name: string) => invoke<string | null>("playlist_name_check", { name }),
+  playlistCreate: (name: string) => invoke<number>("playlist_create", { name }),
+  playlistAdd: (id: number, tracks: number[]) => invoke<void>("playlist_add", { id, tracks }),
+  playlistRemoveEntry: (id: number, index: number) => invoke<void>("playlist_remove_entry", { id, index }),
+  playlistDelete: (id: number) => invoke<void>("playlist_delete", { id }),
+  /** The heart (R26): true when the track is a favorite now. */
+  favoriteToggle: (track: number) => invoke<boolean>("favorite_toggle", { track }),
+  favorites: () => invoke<number[]>("favorites"),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
   playerPlayList: (ids: number[], start: number) => invoke<void>("player_play_list", { ids, start }),
   playerToggle: () => invoke<void>("player_toggle"),

@@ -124,3 +124,34 @@ Rules (P9.4), each with one warning in `app.log`:
 4. Any error while the dock loads: the Columns layout applies.
 
 Saving: 500 ms after a layout or Library mode change, and at once when the window closes. The measurement layout (P3.1) is not saved.
+
+## Playlists (`.m3u8`)
+
+Location: anywhere in the music folder. New playlists and Favorites go to `Playlists/` at the folder root (R13). Source: `crates/clawdio-core/src/playlist/` (P11).
+
+Reading:
+
+- UTF-8; a BOM is removed. A file that is not UTF-8 text is skipped and logged.
+- Each line that is not empty and does not start with `#` is an entry. An `#EXTINF:` line belongs to the next entry. Other comment lines are ignored.
+- Entries resolve relative to the playlist file; a backslash counts as a separator. An entry that is absolute, leaves the music folder or is not a library track shows as "missing" and stays in the file.
+- `.m3u` and `.pls` files are not listed; Import reads them (P12).
+- A rescan never writes a playlist.
+
+Writing (create, add, remove, the heart):
+
+- `#EXTM3U` on the first line, then for each entry `#EXTINF:<seconds>,<artist> - <title>` and the path relative to the playlist file, with forward slashes. An entry the app did not write keeps its `#EXTINF` text; one with none gets `-1,<file name>`.
+- A rewrite keeps every entry, missing ones too, and drops other comment lines.
+- Lines end with `\n`. The file is written to a temp file in the same folder, then renamed. A new file is readable by other users (mode 0644 on Unix); a replaced file keeps its mode.
+- The file name is the playlist name (R12): no `/`, `\`, `..`, `< > : " | ? *` or control characters; no leading or trailing space or dot; not a Windows device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9, also with an extension such as "CON.mix"); not "Favorites" in any letter case; not the name of another playlist in `Playlists/` in any letter case (D21).
+
+Example (`Playlists/Road trip.m3u8`):
+
+```text
+#EXTM3U
+#EXTINF:183,Björk - Human Behaviour
+../Björk/Debut/01 Human Behaviour.mp3
+#EXTINF:-1,Song 5.mp3
+../Missing/Song 5.mp3
+```
+
+`Playlists/Favorites.m3u8` is a normal playlist (R26). The heart adds the song or removes every copy of it; the first use creates the file.

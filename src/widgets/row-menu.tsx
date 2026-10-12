@@ -1,10 +1,38 @@
 import { type RefObject, useState } from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 
-/** A context menu item. An item with no `run` shows disabled (a later phase wires it). */
+/**
+ * A context menu item: an action, or a submenu with `items`. An item with neither shows
+ * disabled.
+ */
 export interface RowMenuItem {
   label: string;
   run?: () => void;
+  items?: RowMenuItem[];
+}
+
+function MenuItems({ items }: { items: RowMenuItem[] }) {
+  return items.map((item) =>
+    item.items ? (
+      <DropdownMenuSub key={item.label}>
+        <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <MenuItems items={item.items} />
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+    ) : (
+      <DropdownMenuItem key={item.label} disabled={!item.run} onClick={item.run}>
+        {item.label}
+      </DropdownMenuItem>
+    ),
+  );
 }
 
 /** The list element inside a list frame: menus return focus to it. */
@@ -28,11 +56,7 @@ export function useRowMenu(listRef: RefObject<HTMLElement | null>) {
   const element = (
     <DropdownMenu open={request !== null} onOpenChange={(open) => !open && setRequest(null)}>
       <DropdownMenuContent anchor={request?.anchor} side="bottom" align="start" finalFocus={() => listElement(listRef)}>
-        {request?.items.map((item) => (
-          <DropdownMenuItem key={item.label} disabled={!item.run} onClick={item.run}>
-            {item.label}
-          </DropdownMenuItem>
-        ))}
+        {request && <MenuItems items={request.items} />}
       </DropdownMenuContent>
     </DropdownMenu>
   );

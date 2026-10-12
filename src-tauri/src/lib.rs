@@ -129,6 +129,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
             app.manage(widgets);
+            app.manage(state::Playlists::default());
             app.manage(player);
             let window = window::create_main(app.handle())?;
             // Media keys and the OS now-playing panel (P8). A failure is logged only.
@@ -177,8 +178,15 @@ pub fn run() -> tauri::Result<()> {
             commands::settings::cancel_job,
             commands::settings::open_log_folder,
             commands::settings::open_notice,
-            commands::widgets::playlists_list,
-            commands::widgets::playlist_entries,
+            commands::playlists::playlists_list,
+            commands::playlists::playlist_entries,
+            commands::playlists::playlist_name_check,
+            commands::playlists::playlist_create,
+            commands::playlists::playlist_add,
+            commands::playlists::playlist_remove_entry,
+            commands::playlists::playlist_delete,
+            commands::playlists::favorite_toggle,
+            commands::playlists::favorites,
             commands::widgets::lyrics_get,
             commands::measure::measure_mode,
             commands::measure::measure_ready,

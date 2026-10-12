@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OnlineNoticeDialog } from "@/dialogs/OnlineNoticeDialog";
+import { PlaylistDialogs } from "@/dialogs/PlaylistDialogs";
 import { SettingsDialog } from "@/dialogs/SettingsDialog";
 import { connectAppEvents } from "@/lib/app-events";
 import { installKeyboard } from "@/lib/keyboard";
@@ -11,6 +12,7 @@ import { AppHeader } from "@/shell/AppHeader";
 import { DockShell } from "@/shell/DockShell";
 import { StatusLine } from "@/shell/StatusLine";
 import { usePlayerStore } from "@/store/player";
+import { usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 
 /** The app shell: header strip, dock and status line. No layout hides the header or the status line (R29). */
@@ -35,6 +37,7 @@ export function App() {
     const disconnect = connectAppEvents();
     void usePlayerStore.getState().load();
     void useSettingsStore.getState().load();
+    void usePlaylistsStore.getState().load();
     return disconnect;
   }, []);
   return (
@@ -48,6 +51,7 @@ export function App() {
       </div>
       <SettingsDialog />
       <OnlineNoticeDialog />
+      <PlaylistDialogs />
     </TooltipProvider>
   );
 }

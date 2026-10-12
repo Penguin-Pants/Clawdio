@@ -5,6 +5,7 @@ import { mockConvertFileSrc, mockIPC, mockWindows } from "@tauri-apps/api/mocks"
 import app from "./data/app.json";
 import { library } from "./library-data";
 import { createPlayer } from "./mock-player";
+import { createPlaylists } from "./mock-playlists";
 
 const params = new URLSearchParams(window.location.search);
 const withLibrary = params.get("data") === "library";
@@ -37,6 +38,8 @@ const settings = JSON.parse(
           },
     ),
 );
+
+const playlists = createPlaylists(withLibrary ? structuredClone(library.playlists) : []);
 
 /** The album whose art is made after the first request (Album B5). */
 const PENDING_ART = 16;
@@ -101,7 +104,6 @@ function libraryCommand(command: string, args: Args): unknown {
       case "library_song_ids":
       case "library_tree":
       case "library_rows":
-      case "playlists_list":
         return [];
       case "lyrics_get":
       case "album_art":
@@ -143,10 +145,6 @@ function libraryCommand(command: string, args: Args): unknown {
       // Album C0 stands for a read-only album folder (P10-AC5).
       if (args.album === 2) throw { code: "set_cover", message: "The album folder is read-only" };
       return true;
-    case "playlists_list":
-      return library.playlists.map(([row]) => row);
-    case "playlist_entries":
-      return library.playlists[args.id as number]?.[1] ?? [];
     case "lyrics_get":
       return library.lyrics;
   }
@@ -182,7 +180,9 @@ mockIPC(
         const setting = settingsCommand(command, input);
         if (setting !== undefined) return setting;
         const played = player(command, input);
-        return played !== undefined ? played : libraryCommand(command, input);
+        if (played !== undefined) return played;
+        const listed = playlists(command, input);
+        return listed !== undefined ? listed : libraryCommand(command, input);
       }
     }
   },

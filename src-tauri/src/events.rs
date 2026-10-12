@@ -16,6 +16,8 @@ pub const QUEUE_CHANGED: &str = "queue-changed";
 pub const SETTINGS_CHANGED: &str = "settings-changed";
 /// An album's art files exist now; the payload is the album id (P10.2).
 pub const ART_READY: &str = "art-ready";
+/// The playlists or an entry changed (P11.4).
+pub const PLAYLISTS_CHANGED: &str = "playlists-changed";
 
 /// Emits an event and logs a failure instead of failing the caller.
 pub fn emit<R: tauri::Runtime, S: serde::Serialize + Clone>(

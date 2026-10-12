@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 113 | 113 | 22 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 38 | 19 | 8 | 10 | 0 | 1 | 0 |
+| Requirements | 301 | 135 | 96 | 17 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 39 | 18 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -83,8 +83,8 @@
 | R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
 | R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Done (P7) |
-| R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Planned |
-| R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Planned |
+| R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Done (P11) |
+| R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Done (P11) |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Planned |
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
@@ -135,16 +135,16 @@
 | R6-6 | Previous: over 3 s restarts; else previous in play order; shuffle uses the run history | §2 R6 | P7.1 | P7-AC1 | UT | Done (P7) |
 | R6-7 | Decode error: log, "Cannot play <file name>", continue; stop after three in a row | §2 R6 | P7.3, P7.12, P5.11 | P7-AC3 | IT | Done (P7, D32) |
 | R6-8 | Single click selects; double-click or Enter plays; album row plays from the first song | §2 R6 | P6.5 | P6-AC4 | E2E | Done (P6) |
-| R6-9 | Queue rule per mode and for playlists; Play and double-click replace; Add to queue appends | §2 R6 | P6.5, P7.10, P11.5 | P6-AC4, P7-AC7, P11-AC8 | E2E | Planned |
+| R6-9 | Queue rule per mode and for playlists; Play and double-click replace; Add to queue appends | §2 R6 | P6.5, P7.10, P11.5 | P6-AC4, P7-AC7, P11-AC8 | E2E | Done (P11) |
 | R6-10 | Queue edits: remove playing, remove earlier, clear | §2 R6 | P7.1, P7.9 | P7-AC1 | UT | Done (P7) |
 | R6-11 | Search: incremental, ignores case and accents, matches artist, album and title; Tree rule | §2 R6 | P6.1, P6.2 | P6-AC3 | UT, E2E | Done (P6) |
-| R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6, P6.6 | P7-AC7, P6-AC10 | E2E | Planned (D20) |
+| R6-12 | Context menu: Play, Add to queue, Add to playlist; "Added to queue" in the status line | §2 R6 | P7.10, P11.6, P6.6 | P7-AC7, P6-AC10 | E2E | Done (P11, D20) |
 | R24-1 | Media keys play/pause, next, previous work with the window in the background | §2 R24 | P8.1, P8.2 | P8-AC1, P8-AC2 | MAN-W, MAN-L | Planned (D39) |
 | R24-2 | Title, artist, album, artwork and position go to the OS panel | §2 R24 | P8.3, P10.5 | P8-AC1, P8-AC2, P10-AC6 | MAN-W, MAN-L | Planned |
 | R24-3 | Accept play, pause, toggle, next, previous, stop; log and continue if registration fails | §2 R24 | P8.2, P8.4 | P8-AC2, P8-AC3, P8-AC1 | MAN-L, MAN-W | Planned |
 | R25-1 | Space toggles play/pause, not while typing | §2 R25 | P7.11 | P7-AC5 | E2E | Done (P7, D17) |
-| R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5, P11-AC8 | E2E | Planned |
-| R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Planned (D24) |
+| R25-2 | Up and Down move; Right expands; Left collapses | §2 R25 | P6.6, P11.5 | P6-AC5, P11-AC8 | E2E | Done (P11) |
+| R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Done (P11, D24) |
 | R25-4 | Ctrl+F focuses search; Esc clears it and returns to the Library | §2 R25 | P6.6, P0.13 | P6-AC5, P0-AC8 | E2E | Planned |
 | R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Done (P2) |
 | R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Planned |
@@ -191,17 +191,17 @@
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R12-1 | Create, add, remove, delete (delete after confirmation) | §2 R12 | P11.4, P11.5 | P11-AC2 | IT, E2E | Planned |
-| R12-2 | Playlists widget: list, expand, double-click plays, "New playlist", "Add to playlist", "Remove from playlist" | §2 R12 | P11.5, P11.6 | P11-AC8 | E2E | Planned |
-| R12-3 | Duplicates allowed; Favorites toggles | §2 R12 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Planned (D20) |
-| R12-4 | Name rule: separators, "..", Windows characters, edge spaces and dots, reserved names, "Favorites" | §2 R12 | P11.3 | P11-AC1 | UT | Planned (D21) |
-| R13-1 | `.m3u8` (UTF-8) in `Playlists/` at the folder root | §2 R13 | P11.1 | P11-AC2 | IT | Planned |
+| R12-1 | Create, add, remove, delete (delete after confirmation) | §2 R12 | P11.4, P11.5 | P11-AC2 | IT, E2E | Done (P11) |
+| R12-2 | Playlists widget: list, expand, double-click plays, "New playlist", "Add to playlist", "Remove from playlist" | §2 R12 | P11.5, P11.6 | P11-AC8 | E2E | Done (P11) |
+| R12-3 | Duplicates allowed; Favorites toggles | §2 R12 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11, D20) |
+| R12-4 | Name rule: separators, "..", Windows characters, edge spaces and dots, reserved names, "Favorites" | §2 R12 | P11.3 | P11-AC1 | UT | Done (P11, D21) |
+| R13-1 | `.m3u8` (UTF-8) in `Playlists/` at the folder root | §2 R13 | P11.1 | P11-AC2 | IT | Done (P11) |
 | R13-2 | Paths relative to the playlist file with forward slashes | §2 R13 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
 | R13-3 | If a player fails on `..` paths in testing, the owner decides on moving playlists | §2 R13 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
-| R13-4 | File name is the playlist name | §2 R13 | P11.1 | P11-AC2 | IT | Planned |
-| R13-5 | Writes use a temp file, then a rename | §2 R13 | P11.1 | P11-AC3 | IT | Planned |
-| R13-6 | Startup finds `.m3u8` files anywhere; entries resolve relative to the file; other playlist files not listed | §2 R13 | P11.2 | P11-AC6 | IT | Planned |
-| R13-7 | Rescan never edits playlists | §2 R13 | P11.2 | P11-AC7 | IT | Planned |
+| R13-4 | File name is the playlist name | §2 R13 | P11.1 | P11-AC2 | IT | Done (P11) |
+| R13-5 | Writes use a temp file, then a rename | §2 R13 | P11.1 | P11-AC3 | IT | Done (P11) |
+| R13-6 | Startup finds `.m3u8` files anywhere; entries resolve relative to the file; other playlist files not listed | §2 R13 | P11.2 | P11-AC6 | IT | Done (P11) |
+| R13-7 | Rescan never edits playlists | §2 R13 | P11.2 | P11-AC7 | IT | Done (P11) |
 | R14-1 | Import M3U, M3U8 and Apple XML; PLS, XSPF and Apple text deferred | §2 R14 | P12.1 | P12-AC2 | IT | Planned |
 | R14-2 | Writes a new `.m3u8` in `Playlists/`; the original stays untouched | §2 R14 | P12.4 | P12-AC3 | IT | Planned (D21) |
 | R14-3 | Apple XML is the Apple Music or iTunes playlist export | §2 R14 | P12.1 | P12-AC2, P12-AC6 | IT | Planned (D22) |
@@ -214,8 +214,8 @@
 | R14-10 | M3U8 is UTF-8; legacy `.m3u` UTF-8, then Windows-1252 | §2 R14 | P12.1 | P12-AC4 | UT | Planned |
 | R14-11 | Entry point is a file picker; matching searches the library only | §2 R14 | P12.6 | P12-AC2 | E2E | Planned |
 | R14-12 | Verify that MusicBee exports M3U8 | §2 R14 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
-| R26-1 | Heart on Now playing and on song rows toggles the song in `Playlists/Favorites.m3u8` | §2 R26 | P11.7 | P11-AC5 | IT, E2E | Planned (D23) |
-| R26-2 | Favorites file created on first use; a normal playlist in the widget | §2 R26 | P11.7 | P11-AC5 | IT | Planned |
+| R26-1 | Heart on Now playing and on song rows toggles the song in `Playlists/Favorites.m3u8` | §2 R26 | P11.7 | P11-AC5 | IT, E2E | Done (P11, D23) |
+| R26-2 | Favorites file created on first use; a normal playlist in the widget | §2 R26 | P11.7 | P11-AC5 | IT | Done (P11) |
 
 ### 1.7 Section 2: theme, state, footprint and release (R15 to R23)
 
@@ -287,7 +287,7 @@
 | ID | Edge case | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | E-1 | No music folder set: R1.1 applies | §5 | P4.6 | P4-AC2 | E2E | Done (P4) |
-| E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Planned |
+| E-2 | Music folder changed: stop, reset, clear queue and cache, scan, reload playlists | §5 | P5.9, P11.10 | P5-AC13, P11-AC11 | IT | Done (P11) |
 | E-3 | Music folder missing at startup: message and "Change folder"; keep the cache | §5 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9, D30) |
 | E-4 | Unsupported or corrupt audio file: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5, D16) |
 | E-5 | Ogg with an unsupported codec: skip, log, count | §5 | P5.2, P5.11 | P5-AC2 | IT | Done (P5) |
@@ -303,9 +303,9 @@
 | E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Done (P5) |
 | E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Resolved (C18) |
 | E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Planned |
-| E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Planned |
-| E-19 | Unreadable playlist file: skip and log | §5 | P11.2 | P11-AC6 | IT | Planned |
-| E-20 | Playlist write failure: show the error; old file intact | §5 | P11.1, P11.8 | P11-AC3 | IT | Planned |
+| E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Done (P11) |
+| E-19 | Unreadable playlist file: skip and log | §5 | P11.2 | P11-AC6 | IT | Done (P11) |
+| E-20 | Playlist write failure: show the error; old file intact | §5 | P11.1, P11.8 | P11-AC3 | IT | Done (P11) |
 | E-21 | Layout problems follow R29 | §5 | P9.4 | P9-AC4 | UT | Done (P9) |
 | E-22 | Transport controls hidden: keys and media keys work; Reset layout restores | §5 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W, MAN-L | Planned |
 | E-23 | Window smaller than a layout: minimum sizes and clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9 | E2E | Done (P9, D45) |
@@ -374,7 +374,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Done (P5) |
 | DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Planned |
 | DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Done (P7) |
-| DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Planned |
+| DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11) |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
 | DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
@@ -462,7 +462,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Done (P5, D12) |
 | DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
 | DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Planned |
-| DES-6.12 | Error states: plain, actionable text for missing and invalid files | §6 | P5.10, P11.8 | P5-AC12, P11-AC3, P11-AC10 | E2E, IT | Planned |
+| DES-6.12 | Error states: plain, actionable text for missing and invalid files | §6 | P5.10, P11.8 | P5-AC12, P11-AC3, P11-AC10 | E2E, IT | Done (P11) |
 | DES-6.13 | Lucide outline icons; no mismatched or decorative icons in navigation | §6 | P2.13 | P2-AC11 | UT, REV | Done (P2) |
 | DES-7.1 | Magic UI only if the stack supports it | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DES-7.2 | Install only components with real value | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |

@@ -5,6 +5,21 @@ import { IconButton } from "@/components/icon-button";
 import { commands, type SongRow } from "@/lib/ipc/commands";
 import { useCommand } from "@/lib/ipc/hooks";
 import { currentTrack, usePlayerStore } from "@/store/player";
+import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
+
+/** The Now playing heart (R26, P11.7): a keyboard-reachable toggle. */
+function Heart({ track }: { track: number }) {
+  const favorite = usePlaylistsStore((state) => state.favorites.has(track));
+  return (
+    <IconButton
+      icon="heart"
+      label={favorite ? "Remove from Favorites" : "Add to Favorites"}
+      aria-pressed={favorite}
+      iconClassName={favorite ? "fill-current" : undefined}
+      onClick={() => toggleFavorite(track)}
+    />
+  );
+}
 
 /** Now playing widget (R5): art, title, artist, album and the heart (P11 wires it). */
 export function NowPlayingWidget() {
@@ -33,7 +48,7 @@ export function NowPlayingWidget() {
       ) : (
         <p className="flex-1 text-[13px] text-text-muted">Nothing playing</p>
       )}
-      {song && <IconButton icon="heart" label="Add to Favorites" disabled />}
+      {song && <Heart track={song.id} />}
     </div>
   );
 }

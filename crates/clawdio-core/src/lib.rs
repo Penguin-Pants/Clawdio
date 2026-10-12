@@ -11,6 +11,7 @@ pub mod fold;
 pub mod layout;
 pub mod library;
 pub mod paths;
+pub mod playlist;
 pub mod queue;
 pub mod scan;
 pub mod settings;

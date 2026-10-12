@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import {
   AudioLines,
   Columns3,
+  FileX,
   GripVertical,
   Heart,
   ListTree,
@@ -32,6 +33,7 @@ export const ICONS = {
   columns: Columns3,
   grip: GripVertical,
   heart: Heart,
+  missing: FileX,
   menu: Menu,
   next: SkipForward,
   pause: Pause,

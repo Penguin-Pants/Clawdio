@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex, RwLock};
 
-use clawdio_core::api::{Lyrics, PlaylistEntry, PlaylistRow};
+use clawdio_core::api::Lyrics;
 use clawdio_core::library::LibraryIndex;
 use clawdio_core::paths::DataDirs;
 use clawdio_core::settings::Settings;
@@ -26,10 +26,12 @@ pub struct AppState {
     pub scan_cancel: Mutex<Option<Arc<AtomicBool>>>,
 }
 
-/// Widget data that later phases own: playlists (P11) and lyrics (P13). Empty until then, or
-/// Empty until those phases.
+/// Widget data that a later phase owns: lyrics (P13). Empty until then.
 #[derive(Default)]
 pub struct Widgets {
-    pub playlists: Vec<(PlaylistRow, Vec<PlaylistEntry>)>,
     pub lyrics: Option<Lyrics>,
 }
+
+/// The playlists of the music folder (P11). Lock order: this, then the library index.
+#[derive(Default)]
+pub struct Playlists(pub Mutex<clawdio_core::playlist::PlaylistSet>);

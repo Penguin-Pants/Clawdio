@@ -4,6 +4,7 @@ import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
+import { FAVORITES, addToPlaylist, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
@@ -46,11 +47,42 @@ function addScope(scope: { artist: number | null; album: number | null }) {
   void commands.librarySongIds(scope, "").then(addToQueue, () => {});
 }
 
-/** The Library row menu (R6, P7.10): Play, Add to queue and Add to playlist (P11 wires it). */
-function rowItems(play: (() => void) | null, add: () => void): RowMenuItem[] | null {
-  if (!play) return null;
-  return [{ label: "Play", run: play }, { label: "Add to queue", run: add }, { label: "Add to playlist" }];
+/**
+ * The "Add to playlist" submenu (P11.6): every playlist but Favorites (D20), then "New
+ * playlist…", which creates one and adds the songs. `songs` gives the track ids on demand.
+ */
+function playlistItems(songs: () => Promise<number[]>): RowMenuItem[] {
+  const add = (id: number) => () =>
+    void songs().then(
+      (ids) => addToPlaylist(id, ids),
+      () => {},
+    );
+  const create = () =>
+    void songs().then(
+      (ids) => useUiStore.getState().openDialog({ kind: "newPlaylist", addTracks: ids }),
+      () => {},
+    );
+  return [
+    ...usePlaylistsStore
+      .getState()
+      .rows.filter((row) => row.name.toLowerCase() !== FAVORITES.toLowerCase())
+      .map((row) => ({ label: row.name, run: add(row.id) })),
+    { label: "New playlist…", run: create },
+  ];
 }
+
+/** The Library row menu (R6, P7.10, P11.6): Play, Add to queue and Add to playlist. */
+function rowItems(play: (() => void) | null, add: () => void, songs: () => Promise<number[]>): RowMenuItem[] | null {
+  if (!play) return null;
+  return [
+    { label: "Play", run: play },
+    { label: "Add to queue", run: add },
+    { label: "Add to playlist", items: playlistItems(songs) },
+  ];
+}
+
+/** The songs of an album or artist, for the menus. */
+const scopeSongs = (scope: { artist: number | null; album: number | null }) => () => commands.librarySongIds(scope, "");
 
 /**
  * "Set cover" (P10.4): Rust opens the picker and asks before it replaces `cover.jpg`. An
@@ -65,7 +97,7 @@ function setCover(album: number) {
 
 /** The album row menu: the Library items and "Set cover". */
 function albumItems(album: number, play: (() => void) | null, add: () => void): RowMenuItem[] | null {
-  const items = rowItems(play, add);
+  const items = rowItems(play, add, scopeSongs({ artist: null, album }));
   return items && [...items, { label: "Set cover", run: () => setCover(album) }];
 }
 
@@ -86,7 +118,8 @@ export function ArtistList() {
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ artist: id, album: null, song: null });
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: id, album: null }));
-  const items = (id: number | null) => rowItems(play(id), () => addScope({ artist: id, album: null }));
+  const items = (id: number | null) =>
+    rowItems(play(id), () => addScope({ artist: id, album: null }), scopeSongs({ artist: id, album: null }));
   // A search that hides the selected artist selects "All", so no hidden row filters the lists.
   useEffect(() => {
     if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
@@ -213,7 +246,12 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
   const active = selected === null ? -1 : ids.indexOf(selected);
   // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
   const play = (index: number) => () => playList(ids, index);
-  const items = (index: number) => rowItems(play(index), () => addToQueue([ids[index]]));
+  const items = (index: number) =>
+    rowItems(
+      play(index),
+      () => addToQueue([ids[index]]),
+      async () => [ids[index]],
+    );
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -242,7 +280,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
               onActivate={play(index)}
               onMenu={(anchor) => menu.open(anchor, items(index) ?? [])}
             >
-              <SongCells song={row(id)} showAlbum={showAlbum} playing={playing === id} />
+              <SongCells song={row(id)} showAlbum={showAlbum} playing={playing === id} heart />
             </Row>
           );
         }}
@@ -340,9 +378,13 @@ export function TreeList() {
     if (line?.kind === "album") {
       return albumItems(line.id, play(line), () => addScope({ artist: null, album: line.id }));
     }
-    return rowItems(play(line), () => {
-      if (line?.kind === "song") addToQueue([line.id]);
-    });
+    return rowItems(
+      play(line),
+      () => {
+        if (line?.kind === "song") addToQueue([line.id]);
+      },
+      async () => (line?.kind === "song" ? [line.id] : []),
+    );
   };
   const active = lines.findIndex((line) =>
     selection.song !== null
@@ -439,7 +481,7 @@ export function TreeList() {
                 onActivate={playLine ?? undefined}
                 onMenu={onMenu}
               >
-                <SongCells song={row(line.id)} showAlbum={false} playing={playing === line.id} />
+                <SongCells song={row(line.id)} showAlbum={false} playing={playing === line.id} heart />
               </Row>
             );
           }

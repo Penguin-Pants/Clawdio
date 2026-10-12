@@ -7,6 +7,7 @@ import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 
 export const ROW_HEIGHT = 28;
 export const ALBUM_ROW_HEIGHT = 48;
@@ -68,7 +69,7 @@ export function Row({
         onMenu(event.currentTarget);
       }}
       className={cn(
-        "flex cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap select-none hover:bg-bg-hover",
+        "group/row flex cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap select-none hover:bg-bg-hover",
         selected && "bg-state-selected shadow-[inset_2px_0_0_var(--color-text-primary)] hover:bg-state-selected",
         "group-focus/list:data-active:outline-2 group-focus/list:data-active:-outline-offset-2 group-focus/list:data-active:outline-text-primary group-focus/list:data-active:outline-solid",
         className,
@@ -87,10 +88,13 @@ export function SongCells({
   song,
   showAlbum,
   playing = false,
+  heart = false,
 }: {
   song: SongRow | undefined;
   showAlbum: boolean;
   playing?: boolean;
+  /** The Favorites heart (R26), on Library song rows. */
+  heart?: boolean;
 }) {
   if (!song) return <span className="text-text-muted">…</span>;
   return (
@@ -107,7 +111,37 @@ export function SongCells({
       </span>
       {showAlbum && <span className="max-w-[40%] truncate text-[13px] text-text-secondary">{song.albumName}</span>}
       <span className="tabular text-xs text-text-muted">{formatDuration(song.durationMs)}</span>
+      {heart && <RowHeart track={song.id} />}
     </>
+  );
+}
+
+/**
+ * The heart on a song row (R26, D23): a pointer target only. It is not a button in the
+ * accessibility tree, because a control inside a list option breaks the listbox pattern;
+ * keyboard and screen reader users use the Now playing heart. A filled heart marks a
+ * favorite; the empty one shows on row hover.
+ */
+function RowHeart({ track }: { track: number }) {
+  const favorite = usePlaylistsStore((state) => state.favorites.has(track));
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="row-heart"
+      data-favorite={favorite ? "" : undefined}
+      title={favorite ? "Remove from Favorites" : "Add to Favorites"}
+      className={cn(
+        "flex size-5 shrink-0 items-center justify-center rounded text-text-secondary hover:text-text-primary",
+        !favorite && "opacity-0 group-hover/row:opacity-100",
+      )}
+      onClick={(event) => {
+        event.stopPropagation();
+        toggleFavorite(track);
+      }}
+      onDoubleClick={(event) => event.stopPropagation()}
+    >
+      <Icon name="heart" className={cn("size-3.5", favorite && "fill-current text-text-primary")} />
+    </span>
   );
 }
 
