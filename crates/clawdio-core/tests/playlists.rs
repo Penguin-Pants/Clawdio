@@ -69,7 +69,7 @@ fn hashes(root: &Path) -> BTreeMap<String, Vec<u8>> {
 
 /// Names and entry states, for comparing two loads.
 fn states(set: &PlaylistSet, index: &LibraryIndex) -> Vec<(String, Vec<bool>)> {
-    set.rows()
+    set.rows(index)
         .into_iter()
         .map(|row| {
             let entries: Vec<PlaylistEntry> = set.entries(row.id, index).unwrap();

@@ -163,6 +163,8 @@ pub struct PlaylistRow {
     pub entry_count: u32,
     /// `Playlists/Favorites.m3u8`, which Add to playlist leaves out (D20).
     pub is_favorites: bool,
+    /// Entries with no library track, for "Find missing songs" (R33.3).
+    pub missing_count: u32,
 }
 
 /// Why an imported entry is missing (P12.5).
@@ -176,7 +178,7 @@ pub enum MissingReason {
     NoLocation,
 }
 
-/// A missing entry in an import report. The label is a title or a file name, not a path (D13).
+/// A missing entry in an import or repair report. The label is a title or a file name, not a path (D13).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -185,18 +187,65 @@ pub struct MissingImport {
     pub reason: MissingReason,
 }
 
-/// The report of one imported playlist (P12.5).
+/// What an import did with one source playlist (R32, D51).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ImportStatus {
+    Imported,
+    /// A playlist with this name exists: nothing was written.
+    Skipped,
+    /// The source cannot be read or the playlist cannot be written.
+    Failed,
+}
+
+/// The report of one source playlist (P12.5, R32).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ImportReport {
-    /// The name of the new playlist.
+    /// The name of the new playlist; for a skipped one the existing name; for a failed one
+    /// the playlist name or the file name. Never a path (D13).
     pub playlist: String,
+    pub status: ImportStatus,
     pub matched: u32,
     pub missing: Vec<MissingImport>,
-    /// Why this playlist was not imported (no file was written), or null. The others in the
-    /// same file are still imported.
+    /// Why the source failed (no file was written), or null.
     pub error: Option<String>,
+}
+
+/// The combined report of one import action (R32): each source in path order.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ImportBatch {
+    /// The prerequisite scan was canceled or failed: nothing changed (R33.1).
+    pub canceled: bool,
+    pub reports: Vec<ImportReport>,
+}
+
+/// The repair report of one playlist (R33.5).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RepairReport {
+    pub playlist: String,
+    /// Entries replaced by a unique match.
+    pub fixed: u32,
+    /// Entries still missing, with the reason (not found or more than one match).
+    pub missing: Vec<MissingImport>,
+    /// Why the playlist was not changed (read or write failure), or null.
+    pub error: Option<String>,
+}
+
+/// The combined report of "Find missing songs" (R33.3, R33.5).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RepairBatch {
+    /// The prerequisite scan was canceled or failed: nothing changed (R33.1).
+    pub canceled: bool,
+    pub reports: Vec<RepairReport>,
 }
 
 /// A playlist entry: a library track, or a missing file shown by its label (R13).

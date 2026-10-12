@@ -115,7 +115,7 @@ export const library = {
   queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
   player: { status: "paused" as const, positionMs: 83_000, volume: 80, shuffle: false, repeat: "off" as const },
   playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
-    { id: p, name: `Mix ${p + 1}`, fileName: `Mix ${p + 1}.m3u8`, entryCount: 6, isFavorites: false },
+    { id: p, name: `Mix ${p + 1}`, fileName: `Mix ${p + 1}.m3u8`, entryCount: 6, isFavorites: false, missingCount: 1 },
     Array.from({ length: 6 }, (_, e) =>
       e === 5 ? { track: null, label: `../Missing/Song ${e}.mp3` } : { track: p * 10 + e, label: "" },
     ),

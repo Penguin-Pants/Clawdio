@@ -8,4 +8,8 @@ fileName: string, entryCount: number,
 /**
  * `Playlists/Favorites.m3u8`, which Add to playlist leaves out (D20).
  */
-isFavorites: boolean, };
+isFavorites: boolean, 
+/**
+ * Entries with no library track, for "Find missing songs" (R33.3).
+ */
+missingCount: number, };

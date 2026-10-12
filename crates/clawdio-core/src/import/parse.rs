@@ -49,7 +49,7 @@ pub fn decode_m3u8(bytes: &[u8]) -> String {
 }
 
 /// "Artist - Title" from `#EXTINF:<seconds>,<text>`, when the text has that form.
-fn extinf_names(info: &str) -> (Option<String>, Option<String>) {
+pub(crate) fn extinf_names(info: &str) -> (Option<String>, Option<String>) {
     let Some((_, text)) = info.split_once(',') else {
         return (None, None);
     };

@@ -134,8 +134,8 @@ Reading:
 - UTF-8; a BOM is removed. A file that is not UTF-8 text is skipped and logged.
 - Each line that is not empty and does not start with `#` is an entry. An `#EXTINF:` line belongs to the next entry. Other comment lines are ignored.
 - Entries resolve relative to the playlist file; a backslash counts as a separator. An entry that is absolute, leaves the music folder or is not a library track shows as "missing" and stays in the file.
-- `.m3u` and `.pls` files are not listed; Import reads them (P12).
-- A rescan never writes a playlist.
+- `.m3u` and `.pls` files are not listed; Import reads `.m3u` (P12).
+- A rescan never writes a playlist. Only import and "Find missing songs" write matches (R13).
 
 Writing (create, add, remove, the heart):
 
@@ -158,13 +158,17 @@ Example (`Playlists/Road trip.m3u8`):
 
 ## Playlist import
 
-Source: `crates/clawdio-core/src/import/` (P12, R14). The source file is only read; each playlist in it becomes a new `.m3u8` in `Playlists/`.
+Source: `crates/clawdio-core/src/import/` (P12, R14, R32). The source files are only read; each playlist in them becomes a new `.m3u8` in `Playlists/`.
+
+Entry points (R32): "Import playlist" opens a picker that takes one or more files. "Import folder" takes one folder and reads every `.m3u`, `.m3u8` and `.xml` file in it and in all its subfolders; the extension comparison ignores case. Both pickers run in Rust. The sources import in path order.
+
+Rescan first (R33.1): import and "Find missing songs" run the incremental scan first, or wait for the running one, then match against the updated library. If the user cancels that scan, or it fails, nothing is matched or written and the report says "Canceled, nothing changed". The import has no Cancel of its own.
 
 | Format | Reading |
 |---|---|
 | `.m3u` | UTF-8 when valid, else Windows-1252. A BOM is removed. |
 | `.m3u8` | UTF-8. |
-| Apple XML (`.xml`) | The export of the Apple Music app or iTunes. Each playlist with no `Master` key and no `Distinguished Kind` key (D22). A track's `Location` URL becomes a path: the host goes and `%xx` is decoded (`file://localhost/C:/A%20B.mp3` gives `C:/A B.mp3`). A track with no `Location` goes to the report only. |
+| Apple XML (`.xml`) | The export of the Apple Music app or iTunes. Each playlist with no `Master` key and no `Distinguished Kind` key (D22). A track's `Location` URL becomes a path: the host goes and `%xx` is decoded (`file://localhost/C:/A%20B.mp3` gives `C:/A B.mp3`). A track with no `Location` goes to the report only. An `.xml` file that is not such an export fails in the report; the other files still import. |
 
 Matching runs on normalized paths: backslashes become slashes, a drive letter or UNC prefix goes, the text is NFC normalized and compared without case. The stages, in order:
 
@@ -175,9 +179,24 @@ Matching runs on normalized paths: backslashes become slashes, a drive letter or
 
 A stage with one hit matches. A stage with more than one hit passes only those to the next stage. More than one after the last stage is "ambiguous".
 
-Output: matched entries are written like an app playlist. Unmatched entries keep their entry text (for Apple XML, the decoded path) and `#EXTINF` text, and show as missing. The new name comes from the file name or the Apple playlist name by D21: forbidden characters become `_`, edge spaces and dots go, a reserved name gets ` (imported)`, a taken name gets ` (2)`, ` (3)` and so on.
+Extension rule (R33.2): stages 1 and 2 first look for tracks with the entry's extension. With none, they run again with the extension of the last part removed, so `Artist/Album/Song.m4a` matches `Artist/Album/Song.mp3`. Stage 1 still needs the same relative path; stage 2 still ranks by the longest shared path end, which must hold at least the album folder and the file name. A same-extension hit wins over other-extension hits. Stage 3 needs the same extension. Two other-format hits (`Song.mp3` and `Song.ogg` for `Song.m4a`) narrow like other hits and can end as "more than one match".
 
-The report lists, per new playlist, the matched count and each missing entry with its reason: not found, more than one match, or no file location. Report labels are titles or file names, not paths (D13).
+Output: each playlist is written when it is ready, so a crash keeps the playlists already written. Matched entries are written like an app playlist. Unmatched entries keep their `#EXTINF` text and show as missing. An unmatched relative entry of an `.m3u` or `.m3u8` that points inside the music folder is written relative to the new file (`Song.m4a` in `Artist/Album/list.m3u` becomes `../Artist/Album/Song.m4a`), so a later "Find missing songs" keeps its folder. Other unmatched entries keep their entry text (for Apple XML, the decoded path).
+
+Name rule (D21, D51): the name comes from the file name or the Apple playlist name. Forbidden characters become `_`, edge spaces and dots go and a reserved name gets ` (imported)` ("Favorites" gives "Favorites (imported)"). When a playlist of that name exists anywhere in the music folder (ignoring case), the source is skipped and nothing is written. A name that an earlier source of the same import took gets ` (2)`, ` (3)` and so on.
+
+The combined report lists each source playlist as imported (the matched count and each missing entry with its reason: not found, more than one match, or no file location), skipped (name exists) or failed (the file cannot be read or is not an Apple export, or the playlist cannot be written). Report labels are playlist names, file names or titles, never paths (D13).
+
+## Find missing songs
+
+Source: `crates/clawdio-core/src/playlist/repair.rs` (R33.3 to R33.5). "Find missing songs" runs on one playlist that has missing entries; "Find missing songs in all playlists" runs on each of them, Favorites and `.m3u8` files anywhere in the music folder included. Both rescan first (see Playlist import).
+
+- Each missing entry goes through the matching stages above with its path text and its `#EXTINF` artist and title. Stage 1 resolves against the playlist file.
+- A unique match replaces the entry at the same position: the path line (relative to the playlist file) and its `#EXTINF` line. A matched entry with no `#EXTINF` line gets one before its path. Every other line stays byte for byte, line ends and comments included.
+- Entries with no match or more than one match stay unchanged.
+- The write is atomic (temp file, then rename). A playlist with no match is not written. A write failure (for example a read-only folder) changes no file and shows in the report.
+- The report lists, per playlist, the number of fixed entries and each entry that is still missing with its reason (not found or more than one match).
+- A bare entry from an import before v1.6 (for example `Song.m4a` with no folder) cannot match by folder. Delete that playlist and import the source again.
 
 ## Lyrics (`.lrc`, `.txt`)
 

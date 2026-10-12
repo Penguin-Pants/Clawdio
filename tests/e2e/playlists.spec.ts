@@ -173,17 +173,101 @@ test("R12: Delete playlist asks first and names the file", async ({ page }) => {
   await expect(tree(page).getByRole("treeitem", { name: /Mix 5/ })).toHaveCount(0);
 });
 
-test("P12.5: Import playlist shows the matched and missing report", async ({ page }) => {
+/**
+ * The arguments of the last call of `command`. No playlist call holds a path: IPC carries ids
+ * and names only (D13, P19-AC7).
+ */
+async function lastArgs(page: Page, command: string): Promise<string> {
+  const calls = JSON.parse((await page.locator("body").getAttribute("data-playlist-calls")) ?? "[]") as [
+    string,
+    unknown,
+  ][];
+  for (const [, args] of calls) expect(JSON.stringify(args)).not.toMatch(/[/\\]/);
+  const last = calls.filter(([name]) => name === command).at(-1);
+  return JSON.stringify(last?.[1] ?? null);
+}
+
+const statusLine = (page: Page) => page.locator("span[role=status]");
+
+const report = (page: Page, name: string) => page.getByRole("dialog", { name });
+
+test("P12.5, P19-AC7: Import playlist shows the combined report", async ({ page }) => {
   await openPlaylists(page);
   await widget(page, "playlists").getByRole("button", { name: "Import playlist" }).click();
-  const dialog = page.getByRole("dialog", { name: "Import report" });
-  await expect(dialog).toContainText("1 matched, 2 missing");
-  await expect(dialog).toContainText("Cloud Band - Streaming Song: no file location");
-  await expect(dialog).toContainText("Lost Song: not found");
+  const dialog = report(page, "Import report");
   await expect(dialog).toContainText("One playlist imported");
-  await expect(dialog.getByRole("region", { name: "Too long" })).toContainText(
+  const imported = dialog.getByRole("region", { name: "Imported" });
+  await expect(imported).toContainText("1 matched, 2 missing");
+  await expect(imported).toContainText("Cloud Band - Streaming Song: no file location");
+  await expect(imported).toContainText("Lost Song: not found");
+  await expect(dialog.getByRole("region", { name: "Skipped" }).getByRole("region", { name: "Mix 1" })).toContainText(
+    "Skipped, name exists",
+  );
+  await expect(dialog.getByRole("region", { name: "Failed" }).getByRole("region", { name: "Too long" })).toContainText(
     "Not imported: The playlist file cannot be written",
   );
+  expect(await lastArgs(page, "playlist_import")).toBe("{}");
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toBeVisible();
+});
+
+test("P19-AC7: Import folder shows a busy state, then the combined report", async ({ page }) => {
+  await openPlaylists(page);
+  const playlists = widget(page, "playlists");
+  await playlists.getByRole("button", { name: "Import folder" }).click();
+  await expect(playlists.getByRole("button", { name: "Import playlist" })).toBeDisabled();
+  await expect(statusLine(page)).toHaveText("Importing playlists");
+  const dialog = report(page, "Import report");
+  await expect(dialog).toContainText("2 playlists imported");
+  await expect(dialog.getByRole("region", { name: "Evening (2)" })).toContainText("1 matched, 0 missing");
+  await expect(dialog.getByRole("region", { name: "notes.xml" })).toContainText(
+    "Not imported: The file is not an Apple",
+  );
+  expect(await lastArgs(page, "playlist_import_folder")).toBe("{}");
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(playlists.getByRole("button", { name: "Import playlist" })).toBeEnabled();
+  await expect(statusLine(page)).toHaveText("Ready");
+  await expect(tree(page).getByRole("treeitem", { name: /Evening \(2\)/ })).toBeVisible();
+});
+
+test("P19-AC7: Find missing songs on one playlist, then on all playlists", async ({ page }) => {
+  await openPlaylists(page);
+  const mix = tree(page).getByRole("treeitem", { name: /Mix 1/ });
+  await mix.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Find missing songs" }).click();
+  let dialog = report(page, "Find missing songs");
+  await expect(dialog).toContainText("One song found.");
+  await expect(dialog.getByRole("region", { name: "Mix 1" })).toContainText("1 fixed, 0 still missing");
+  expect(await lastArgs(page, "playlist_find_missing")).toBe('{"id":0}');
+  await dialog.getByRole("button", { name: "OK" }).click();
+  // Nothing is missing now: the command leaves the menu.
+  await mix.click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Find missing songs" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
+  await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();
+  dialog = report(page, "Find missing songs");
+  await expect(dialog).toContainText("4 songs found.");
+  const repaired = dialog.getByRole("region", { name: "Repaired" });
+  await expect(repaired.getByRole("region")).toHaveCount(4);
+  await expect(repaired.getByRole("region", { name: "Mix 5" })).toContainText("1 fixed, 0 still missing");
+  expect(await lastArgs(page, "playlist_find_missing_all")).toBe("{}");
+});
+
+test("P19-AC7, R33.1: a canceled scan stops import and repair with nothing changed", async ({ page }) => {
+  await openPlaylists(page);
+  await page.evaluate(() => (document.body.dataset.cancelScan = "1"));
+  await widget(page, "playlists").getByRole("button", { name: "Import playlist" }).click();
+  let dialog = report(page, "Import report");
+  await expect(dialog).toContainText("Canceled, nothing changed");
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
+  await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();
+  dialog = report(page, "Find missing songs");
+  await expect(dialog).toContainText("Canceled, nothing changed");
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toHaveCount(0);
+  await expect(tree(page).getByRole("treeitem", { name: /Mix 1/ })).toContainText("6");
 });

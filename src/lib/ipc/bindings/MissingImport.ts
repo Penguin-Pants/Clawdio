@@ -2,6 +2,6 @@
 import type { MissingReason } from "./MissingReason";
 
 /**
- * A missing entry in an import report. The label is a title or a file name, not a path (D13).
+ * A missing entry in an import or repair report. The label is a title or a file name, not a path (D13).
  */
 export type MissingImport = { label: string, reason: MissingReason, };

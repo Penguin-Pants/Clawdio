@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { VirtualList } from "@/components/virtual-list";
-import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
+import { commands, type ImportBatch, type PlaylistEntry, type PlaylistRow, type RepairBatch } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
-import { errorText, playlistEdit, usePlaylistsStore } from "@/store/playlists";
+import { playlistEdit, playlistTask, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
 import { EmptyHint } from "../hint";
 import { ROW_HEIGHT, Row, SongCells } from "../library/rows";
@@ -51,14 +57,26 @@ async function play(id: number, from = 0) {
   if (queue) await commands.playerPlayList(queue.ids, queue.start);
 }
 
-/** "Import playlist" (P12.6): the picker and the import run in Rust; then the report shows. */
-function importPlaylist() {
-  void commands.playlistImport().then(
-    (reports) => {
-      if (reports) useUiStore.getState().openDialog({ kind: "importReport", reports });
-    },
-    (error: unknown) =>
-      useUiStore.getState().openDialog({ kind: "error", text: errorText(error, "Cannot import the playlist") }),
+/**
+ * "Import playlist" and "Import folder" (P12.6, R32): the picker, the rescan and the import
+ * run in Rust; then the combined report shows. Null means the user canceled the picker.
+ */
+function importPlaylists(run: () => Promise<ImportBatch | null>) {
+  void playlistTask(
+    "Importing playlists",
+    run,
+    (batch) => (batch ? { kind: "importReport", batch } : null),
+    "Cannot import the playlists",
+  );
+}
+
+/** "Find missing songs" (R33.3): the rescan and the repair run in Rust; then the report shows. */
+function findMissing(run: () => Promise<RepairBatch>) {
+  void playlistTask(
+    "Finding missing songs",
+    run,
+    (batch) => ({ kind: "repairReport", batch }),
+    "Cannot find missing songs",
   );
 }
 
@@ -78,6 +96,7 @@ export function PlaylistsWidget() {
   const playlistsVersion = usePlaylistsStore((state) => state.version);
   const libraryVersion = useLibraryStore((state) => state.version);
   const openDialog = useUiStore((state) => state.openDialog);
+  const busy = usePlaylistsStore((state) => state.busy);
   const [open, setOpen] = useState(() => new Set<number>());
   const [entries, setEntries] = useState(() => new Map<number, PlaylistEntry[]>());
   const [selection, setSelection] = useState<Selection>(null);
@@ -128,6 +147,14 @@ export function PlaylistsWidget() {
     line.kind === "playlist"
       ? [
           { label: "Play", run: () => playLine(line) },
+          ...(line.playlist.missingCount > 0
+            ? [
+                {
+                  label: "Find missing songs",
+                  run: busy ? undefined : () => findMissing(() => commands.playlistFindMissing(line.playlist.id)),
+                },
+              ]
+            : []),
           {
             label: "Delete playlist",
             run: () => openDialog({ kind: "deletePlaylist", id: line.playlist.id, fileName: line.playlist.fileName }),
@@ -182,9 +209,24 @@ export function PlaylistsWidget() {
       <Button variant="ghost" size="xs" onClick={() => openDialog({ kind: "newPlaylist" })}>
         New playlist
       </Button>
-      <Button variant="ghost" size="xs" onClick={importPlaylist}>
+      <Button variant="ghost" size="xs" disabled={busy} onClick={() => importPlaylists(commands.playlistImport)}>
         Import playlist
       </Button>
+      <Button variant="ghost" size="xs" disabled={busy} onClick={() => importPlaylists(commands.playlistImportFolder)}>
+        Import folder
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button variant="ghost" size="icon-xs" className="ml-auto" aria-label="Playlist actions" />}
+        >
+          <Icon name="menu" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem disabled={busy} onClick={() => findMissing(commands.playlistFindMissingAll)}>
+            Find missing songs in all playlists
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
   if (rows.length === 0) {

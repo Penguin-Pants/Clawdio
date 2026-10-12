@@ -4,6 +4,7 @@
 
 pub mod m3u;
 pub mod name;
+pub mod repair;
 
 use std::cmp::Ordering;
 use std::path::Path;
@@ -179,8 +180,13 @@ impl PlaylistSet {
         sorted
     }
 
-    /// Playlist rows in natural name order (P11.5).
-    pub fn rows(&self) -> Vec<PlaylistRow> {
+    /// The files of the known playlists, relative to the music folder.
+    pub fn paths(&self) -> impl Iterator<Item = &str> {
+        self.playlists.iter().map(|p| p.rel_path.as_str())
+    }
+
+    /// Playlist rows in natural name order (P11.5), with the missing count (R33.3).
+    pub fn rows(&self, index: &LibraryIndex) -> Vec<PlaylistRow> {
         self.sorted()
             .into_iter()
             .map(|p| PlaylistRow {
@@ -194,6 +200,7 @@ impl PlaylistSet {
                     .to_owned(),
                 entry_count: p.entries.len() as u32,
                 is_favorites: p.rel_path.eq_ignore_ascii_case(&favorites_path()),
+                missing_count: p.tracks(index).iter().filter(|t| t.is_none()).count() as u32,
             })
             .collect()
     }
@@ -266,6 +273,16 @@ impl PlaylistSet {
             return Err(NameError::Taken);
         }
         Ok(())
+    }
+
+    /// Whether a playlist of this name exists, ignoring case (D51): a known one anywhere in
+    /// the music folder, or a file in `Playlists/` that the set has not read.
+    pub fn name_known(&self, root: &Path, name: &str) -> bool {
+        let wanted = name.to_lowercase();
+        self.playlists
+            .iter()
+            .any(|p| p.name.to_lowercase() == wanted)
+            || on_disk(root, name).is_some()
     }
 
     /// Creates `Playlists/<name>.m3u8` (R12, R13). It never replaces a file on disk.
@@ -500,7 +517,7 @@ mod tests {
         );
         set.delete(dir.path(), id).unwrap();
         assert!(!dir.path().join("Playlists/Road trip.m3u8").exists());
-        assert!(set.rows().is_empty());
+        assert!(set.rows(&LibraryIndex::default()).is_empty());
     }
 
     /// P11-AC4: missing entries show by path and stay in the file after edits.
@@ -516,7 +533,7 @@ mod tests {
         .unwrap();
         let mut set = PlaylistSet::default();
         set.load(dir.path(), &["Playlists/Old.m3u8".into()]);
-        let id = set.rows()[0].id;
+        let id = set.rows(&LibraryIndex::default())[0].id;
         let entries = set.entries(id, &index).unwrap();
         assert_eq!(
             entries[0],
@@ -570,9 +587,9 @@ mod tests {
         assert!(set.toggle_favorite(dir.path(), 1, &index).unwrap());
         assert_eq!(set.favorite_tracks(&index), [1]);
         assert!(read(dir.path(), "Playlists/Favorites.m3u8").contains("Sinnerman.ogg"));
-        assert_eq!(set.rows()[0].name, "Favorites");
+        assert_eq!(set.rows(&LibraryIndex::default())[0].name, "Favorites");
         // A copy added by hand: the heart removes every copy.
-        let favorites = set.rows()[0].id;
+        let favorites = set.rows(&LibraryIndex::default())[0].id;
         set.add(dir.path(), favorites, &[1], &index).unwrap();
         assert!(!set.toggle_favorite(dir.path(), 1, &index).unwrap());
         assert!(set.favorite_tracks(&index).is_empty());
@@ -603,10 +620,10 @@ mod tests {
         let mut set = PlaylistSet::default();
         let paths: Vec<String> = vec!["a.m3u8".into(), "bad.m3u8".into(), "gone.m3u8".into()];
         set.load(dir.path(), &paths);
-        let rows = set.rows();
+        let rows = set.rows(&LibraryIndex::default());
         assert_eq!(rows.len(), 1);
         set.load(dir.path(), &paths);
-        assert_eq!(set.rows()[0].id, rows[0].id);
+        assert_eq!(set.rows(&LibraryIndex::default())[0].id, rows[0].id);
     }
 
     #[test]
@@ -616,7 +633,11 @@ mod tests {
         for name in ["Mix 10", "mix 2", "Favorite songs"] {
             set.create(dir.path(), name).unwrap();
         }
-        let names: Vec<String> = set.rows().into_iter().map(|row| row.name).collect();
+        let names: Vec<String> = set
+            .rows(&LibraryIndex::default())
+            .into_iter()
+            .map(|row| row.name)
+            .collect();
         assert_eq!(names, ["Favorite songs", "mix 2", "Mix 10"]);
     }
 
@@ -673,10 +694,13 @@ mod tests {
         let mut set = PlaylistSet::default();
         let id = set.create(dir.path(), "New").unwrap();
         set.load(dir.path(), &[]);
-        assert_eq!(set.rows()[0].id, id);
+        assert_eq!(set.rows(&LibraryIndex::default())[0].id, id);
         std::fs::remove_file(dir.path().join("Playlists/New.m3u8")).unwrap();
         set.load(dir.path(), &[]);
-        assert!(set.rows().is_empty(), "a deleted file goes");
+        assert!(
+            set.rows(&LibraryIndex::default()).is_empty(),
+            "a deleted file goes"
+        );
     }
 
     #[test]
@@ -686,7 +710,7 @@ mod tests {
         let mut set = PlaylistSet::default();
         set.toggle_favorite(dir.path(), 0, &index).unwrap();
         set.create(dir.path(), "Mix").unwrap();
-        let rows = set.rows();
+        let rows = set.rows(&LibraryIndex::default());
         assert_eq!(
             (rows[0].name.as_str(), rows[0].is_favorites),
             ("Favorites", true)

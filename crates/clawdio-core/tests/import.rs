@@ -2,8 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use clawdio_core::api::{ImportReport, MissingImport, MissingReason};
-use clawdio_core::import::import_file;
+use clawdio_core::api::{ImportReport, ImportStatus, MissingImport, MissingReason};
+use clawdio_core::import::import_files;
 use clawdio_core::library::{FileStamp, LibraryIndex, NewTrack};
 use clawdio_core::playlist::PlaylistSet;
 
@@ -58,7 +58,13 @@ fn import(name: &str) -> (Vec<ImportReport>, Vec<String>) {
     let source = fixture(name);
     let before = std::fs::read(&source).unwrap();
     let mut set = PlaylistSet::default();
-    let reports = import_file(&mut set, root.path(), &index(), &source).unwrap();
+    let reports = import_files(
+        &mut set,
+        root.path(),
+        &index(),
+        std::slice::from_ref(&source),
+        |_| {},
+    );
     // P12-AC3: the source file is only read.
     assert_eq!(std::fs::read(&source).unwrap(), before, "{name} changed");
     let texts = reports
@@ -80,6 +86,7 @@ fn apple_xml_imports_the_user_playlist() {
         reports,
         [ImportReport {
             playlist: "Road Trip_ 2026".into(),
+            status: ImportStatus::Imported,
             matched: 1,
             missing: vec![
                 missing("Cloud Band - Streaming Song", MissingReason::NoLocation),
@@ -106,6 +113,7 @@ fn a_musicbee_m3u8_imports_with_absolute_paths() {
         reports,
         [ImportReport {
             playlist: "musicbee".into(),
+            status: ImportStatus::Imported,
             matched: 1,
             missing: vec![
                 missing("Somebody - Unknown", MissingReason::NotFound),
@@ -138,14 +146,19 @@ fn a_legacy_m3u_decodes_windows_1252() {
     );
 }
 
+/// D51: a second import of the same file is skipped; it never makes "legacy (2)".
 #[test]
-fn a_second_import_gets_a_numbered_name() {
+fn a_second_import_is_skipped() {
     let root = tempfile::tempdir().unwrap();
     let mut set = PlaylistSet::default();
-    let first = import_file(&mut set, root.path(), &index(), &fixture("legacy.m3u")).unwrap();
-    let second = import_file(&mut set, root.path(), &index(), &fixture("legacy.m3u")).unwrap();
+    let files = [fixture("legacy.m3u")];
+    let first = import_files(&mut set, root.path(), &index(), &files, |_| {});
+    let second = import_files(&mut set, root.path(), &index(), &files, |_| {});
     assert_eq!(first[0].playlist, "legacy");
-    assert_eq!(second[0].playlist, "legacy (2)");
+    assert_eq!(first[0].status, ImportStatus::Imported);
+    assert_eq!(second[0].playlist, "legacy");
+    assert_eq!(second[0].status, ImportStatus::Skipped);
+    assert!(!root.path().join("Playlists/legacy (2).m3u8").exists());
 }
 
 /// A playlist that cannot be written gets a report with its error; the next one still imports.
@@ -172,7 +185,13 @@ fn a_failed_playlist_does_not_stop_the_others() {
     )
     .unwrap();
     let mut set = PlaylistSet::default();
-    let reports = import_file(&mut set, root.path(), &index(), &source).unwrap();
+    let reports = import_files(
+        &mut set,
+        root.path(),
+        &index(),
+        std::slice::from_ref(&source),
+        |_| {},
+    );
     assert_eq!(reports.len(), 2);
     assert!(reports[0].error.is_some(), "{reports:?}");
     assert_eq!(reports[1].playlist, "Road Trip_ 2026");

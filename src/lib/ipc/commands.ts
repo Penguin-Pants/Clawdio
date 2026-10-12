@@ -11,7 +11,10 @@ import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
 import type { QueueSnapshot } from "./bindings/QueueSnapshot";
+import type { ImportBatch } from "./bindings/ImportBatch";
 import type { ImportReport } from "./bindings/ImportReport";
+import type { RepairBatch } from "./bindings/RepairBatch";
+import type { RepairReport } from "./bindings/RepairReport";
 import type { RepeatMode } from "./bindings/RepeatMode";
 import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
@@ -20,7 +23,7 @@ import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
-export type { MetadataPreview };
+export type { ImportBatch, MetadataPreview, RepairBatch, RepairReport };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -56,8 +59,14 @@ export const commands = {
   /** The heart (R26): true when the track is a favorite now. */
   favoriteToggle: (track: number) => invoke<boolean>("favorite_toggle", { track }),
   favorites: () => invoke<number[]>("favorites"),
-  /** "Import playlist" (P12.6): Rust opens the picker. Null when the user cancels. */
-  playlistImport: () => invoke<ImportReport[] | null>("playlist_import"),
+  /** "Import playlist" (P12.6, R32): Rust opens a multi-file picker. Null when the user cancels. */
+  playlistImport: () => invoke<ImportBatch | null>("playlist_import"),
+  /** "Import folder" (R32): Rust opens a folder picker. Null when the user cancels. */
+  playlistImportFolder: () => invoke<ImportBatch | null>("playlist_import_folder"),
+  /** "Find missing songs" on one playlist (R33.3). */
+  playlistFindMissing: (id: number) => invoke<RepairBatch>("playlist_find_missing", { id }),
+  /** "Find missing songs in all playlists" (R33.3). */
+  playlistFindMissingAll: () => invoke<RepairBatch>("playlist_find_missing_all"),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
   /** "Fetch lyrics" (P15): true when lyrics were saved; they arrive by `lyrics-changed`. */
   lyricsFetch: (track: number) => invoke<boolean>("lyrics_fetch", { track }),
