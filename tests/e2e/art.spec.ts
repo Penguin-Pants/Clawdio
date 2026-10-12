@@ -52,8 +52,10 @@ test("P10-AC7: album art is requested only for the visible rows plus overscan", 
   // 61 albums; the list shows about 10 rows plus an overscan of 8.
   expect(first.size).toBeGreaterThan(0);
   expect(first.size).toBeLessThan(30);
-  await albums(page).hover();
-  await page.mouse.wheel(0, 100_000);
+  // A jump to the end: a wheel scroll can pass every row on the way in some engines.
+  await albums(page).evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
   await expect(albums(page).getByRole("option", { name: /Lemonade/ })).toBeVisible();
   const after = new Set(await artRequests(page));
   expect(after.has(60), "the last album, now visible").toBe(true);
