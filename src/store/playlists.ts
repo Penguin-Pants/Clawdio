@@ -4,8 +4,8 @@ import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
   rows: PlaylistRow[];
-  /** An import or a repair runs (R32 busy state). */
-  busy: boolean;
+  /** The text of the running import or repair, or null (R32 busy state). */
+  busy: string | null;
   /** Tracks in Favorites, for the hearts (R26). */
   favorites: Set<number>;
   /** Goes up on each `playlists-changed`, so open playlists load their entries again. */
@@ -15,7 +15,7 @@ interface PlaylistsState {
 
 export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   rows: [],
-  busy: false,
+  busy: null,
   favorites: new Set(),
   version: 0,
   load: async () => {
@@ -60,12 +60,10 @@ export function addToPlaylist(id: number, tracks: number[]): void {
   });
 }
 
-/** The status line job of an import or a repair. It has no Cancel: the scan's Cancel stops it (R32). */
-export const PLAYLIST_TASK_JOB = "playlistTask";
-
 /**
- * Runs an import or a repair (R32, R33): one at a time, with a busy state and a status line
- * job. The result opens its report; an error opens the error dialog.
+ * Runs an import or a repair (R32, R33): one at a time, with a busy state in the Playlists
+ * widget. The status line keeps the scan's job and its Cancel, the only cancel (R32). The
+ * result opens its report; an error opens the error dialog.
  */
 export async function playlistTask<T>(
   text: string,
@@ -75,16 +73,13 @@ export async function playlistTask<T>(
 ): Promise<void> {
   const store = usePlaylistsStore;
   if (store.getState().busy) return;
-  store.setState({ busy: true });
-  const ui = useUiStore.getState();
-  ui.startJob({ id: PLAYLIST_TASK_JOB, text });
+  store.setState({ busy: text });
   try {
     const dialog = report(await run());
     if (dialog) useUiStore.getState().openDialog(dialog);
   } catch (error) {
     useUiStore.getState().openDialog({ kind: "error", text: errorText(error, fallback) });
   } finally {
-    useUiStore.getState().endJob(PLAYLIST_TASK_JOB);
-    store.setState({ busy: false });
+    store.setState({ busy: null });
   }
 }

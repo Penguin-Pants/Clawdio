@@ -204,8 +204,8 @@ pub enum ImportStatus {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ImportReport {
-    /// The name of the new playlist; for a skipped one the existing name; for a failed one
-    /// the playlist name or the file name. Never a path (D13).
+    /// The name of the new playlist; for a skipped or failed playlist the cleaned source name;
+    /// for a file that cannot be read the file name. Never a path (D13).
     pub playlist: String,
     pub status: ImportStatus,
     pub matched: u32,

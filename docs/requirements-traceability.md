@@ -48,7 +48,7 @@
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
 | S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
-| S1-8 | Imports many playlists at once; finds songs also in another format | §1 | P19.1, P19.3 | P19-AC1, P19-AC3 | UT, IT | Planned |
+| S1-8 | Imports many playlists at once; finds songs also in another format | §1 | P19.1, P19.3 | P19-AC1, P19-AC3 | UT, IT | Done (P19) |
 | S1-9 | Lowers or pauses music while another app uses the microphone (Windows) | §1 | P20.2, P20.3 | P20-AC1, P20-AC4 | UT, MAN-W | Planned |
 
 ### 1.2 Section 2: library (R1 to R4)
@@ -223,19 +223,19 @@
 | R14-10 | M3U8 is UTF-8; legacy `.m3u` UTF-8, then Windows-1252 | §2 R14 | P12.1 | P12-AC4 | UT | Done (P12) |
 | R14-11 | Entry point is a file picker; matching searches the library only | §2 R14 | P12.6 | P12-AC2 | E2E | Done (P12) |
 | R14-12 | Verify that MusicBee exports M3U8 | §2 R14 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
-| R14-13 | Multi-file picker and folder import (v1.6) | §2 R14 | P19.3 | P19-AC7 | E2E | Planned |
-| R32-1 | Import picker accepts more than one file; "Import folder" takes one folder; dialogs in Rust | §2 R32 | P19.3, P19.6 | P19-AC7 | E2E | Planned |
-| R32-2 | Folder import reads `.m3u`, `.m3u8`, `.xml` in the folder and all subfolders | §2 R32 | P19.3 | P19-AC3 | IT | Planned |
-| R32-3 | Existing name (ignoring case) is skipped and reported, for every import | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
-| R32-4 | Names that repeat inside one import get " (2)", " (3)" | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
-| R32-5 | One combined report: imported, skipped, failed; no paths | §2 R32 | P19.3, P19.6 | P19-AC3, P19-AC7 | IT, E2E | Planned |
-| R32-6 | Busy state; only the scan cancel stops it; each playlist written when ready | §2 R32 | P19.3, P19.4 | P19-AC5, P19-AC7 | IT, E2E | Planned |
-| R32-7 | Unmatched relative entries inside the music folder are written relative to the new file | §2 R32 | P19.3 | P19-AC9 | IT | Planned |
-| R33-1 | Import and repair run the incremental scan first; a canceled or failed scan stops them with no write | §2 R33.1 | P19.4 | P19-AC5 | IT | Planned |
-| R33-2 | Stages 1 and 2 match another extension with the last extension removed; stage 2 keeps longest-suffix ranking; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Planned |
-| R33-3 | "Find missing songs" on one playlist and on all playlists | §2 R33.3 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
-| R33-4 | Unique matches replace entries in place; others unchanged; atomic; no write without change | §2 R33.4 | P19.5 | P19-AC4 | IT | Planned |
-| R33-5 | Repair report: fixed count and remaining missing entries with reasons; no paths | §2 R33.5 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
+| R14-13 | Multi-file picker and folder import (v1.6) | §2 R14 | P19.3 | P19-AC7 | E2E | Done (P19) |
+| R32-1 | Import picker accepts more than one file; "Import folder" takes one folder; dialogs in Rust | §2 R32 | P19.3, P19.6 | P19-AC7 | E2E | Done (P19) |
+| R32-2 | Folder import reads `.m3u`, `.m3u8`, `.xml` in the folder and all subfolders | §2 R32 | P19.3 | P19-AC3 | IT | Done (P19) |
+| R32-3 | Existing name (ignoring case) is skipped and reported, for every import | §2 R32 | P19.2 | P19-AC2 | UT | Done (P19) |
+| R32-4 | Names that repeat inside one import get " (2)", " (3)" | §2 R32 | P19.2 | P19-AC2 | UT | Done (P19) |
+| R32-5 | One combined report: imported, skipped, failed; no paths | §2 R32 | P19.3, P19.6 | P19-AC3, P19-AC7 | IT, E2E | Done (P19) |
+| R32-6 | Busy state; only the scan cancel stops it; each playlist written when ready | §2 R32 | P19.3, P19.4 | P19-AC5, P19-AC7 | IT, E2E | Done (P19) |
+| R32-7 | Unmatched relative entries inside the music folder are written relative to the new file | §2 R32 | P19.3 | P19-AC9 | IT | Done (P19) |
+| R33-1 | Import and repair run the incremental scan first; a canceled or failed scan stops them with no write | §2 R33.1 | P19.4 | P19-AC5 | IT | Done (P19) |
+| R33-2 | Stages 1 and 2 match another extension with the last extension removed; stage 2 keeps longest-suffix ranking; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Done (P19) |
+| R33-3 | "Find missing songs" on one playlist and on all playlists | §2 R33.3 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Done (P19) |
+| R33-4 | Unique matches replace entries in place; others unchanged; atomic; no write without change | §2 R33.4 | P19.5 | P19-AC4 | IT | Done (P19) |
+| R33-5 | Repair report: fixed count and remaining missing entries with reasons; no paths | §2 R33.5 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Done (P19) |
 | R26-1 | Heart on Now playing and on song rows toggles the song in `Playlists/Favorites.m3u8` | §2 R26 | P11.7 | P11-AC5 | IT, E2E | Done (P11, D23) |
 | R26-2 | Favorites file created on first use; a normal playlist in the widget | §2 R26 | P11.7 | P11-AC5 | IT | Done (P11) |
 
@@ -344,10 +344,10 @@
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
 | E-27 | Closing the window quits; media keys only while running | §5 | P8.5 | P8-AC5 | MAN-L, MAN-W | Planned |
 | E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3, P13.3 | P5-AC15, P13-AC6 | IT | Done (P13) |
-| E-29 | Folder import: non-Apple `.xml` or unreadable file shows as failed; others import | §5 | P19.3 | P19-AC3 | IT | Planned |
-| E-30 | Two other-format hits: narrowing, then "more than one match" | §5 | P19.1 | P19-AC1 | UT | Planned |
-| E-31 | Find missing songs on a read-only folder: error, no write | §5 | P19.5 | P19-AC6 | IT | Planned |
-| E-36 | Bare entries from imports before v1.6: delete and import again | §5 | P19.3 | P19-AC9 | IT | Planned |
+| E-29 | Folder import: non-Apple `.xml` or unreadable file shows as failed; others import | §5 | P19.3 | P19-AC3 | IT | Done (P19) |
+| E-30 | Two other-format hits: narrowing, then "more than one match" | §5 | P19.1 | P19-AC1 | UT | Done (P19) |
+| E-31 | Find missing songs on a read-only folder: error, no write | §5 | P19.5 | P19-AC6 | IT | Done (P19, CI only: root here) |
+| E-36 | Bare entries from imports before v1.6: delete and import again | §5 | P19.3 | P19-AC9 | IT | Done (P19) |
 | E-32 | A tool that keeps the microphone open holds the duck; help text names it | §5 | P20.4 | P20-AC3 | E2E | Planned |
 | E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Planned |
@@ -424,18 +424,18 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11) |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
 | DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
-| DEC-17 | Bulk import: several files or one folder with subfolders | §8.17 | P19.3 | P19-AC3 | IT | Planned |
-| DEC-18 | Existing name skipped for every import; repeats in one import numbered | §8.18 | P19.2 | P19-AC2 | UT | Planned |
-| DEC-19 | Another extension matches by folder and file name without extension | §8.19 | P19.1 | P19-AC1 | UT | Planned |
-| DEC-20 | Repair is a user command, not automatic on Rescan | §8.20 | P19.5 | P19-AC4 | IT | Planned |
-| DEC-21 | Repair writes unique matches, then reports; no preview | §8.21 | P19.5 | P19-AC4 | IT | Planned |
-| DEC-22 | Import and repair rescan first | §8.22 | P19.4 | P19-AC5 | IT | Planned |
+| DEC-17 | Bulk import: several files or one folder with subfolders | §8.17 | P19.3 | P19-AC3 | IT | Done (P19) |
+| DEC-18 | Existing name skipped for every import; repeats in one import numbered | §8.18 | P19.2 | P19-AC2 | UT | Done (P19) |
+| DEC-19 | Another extension matches by folder and file name without extension | §8.19 | P19.1 | P19-AC1 | UT | Done (P19) |
+| DEC-20 | Repair is a user command, not automatic on Rescan | §8.20 | P19.5 | P19-AC4 | IT | Done (P19) |
+| DEC-21 | Repair writes unique matches, then reports; no preview | §8.21 | P19.5 | P19-AC4 | IT | Done (P19) |
+| DEC-22 | Import and repair rescan first | §8.22 | P19.4 | P19-AC5 | IT | Done (P19) |
 | DEC-23 | Ducking trigger: another app records from a microphone | §8.23 | P20.0, P20.2 | P20-AC4 | MAN-W | Planned |
 | DEC-24 | Ducking on Windows first; Linux deferred | §8.24 | P20.4 | P20-AC3 | E2E | Planned |
 | DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Planned |
 | DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Planned |
 | DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Planned |
-| DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Planned |
+| DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Done (P19) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |

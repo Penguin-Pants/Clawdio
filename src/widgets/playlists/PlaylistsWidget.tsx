@@ -96,7 +96,8 @@ export function PlaylistsWidget() {
   const playlistsVersion = usePlaylistsStore((state) => state.version);
   const libraryVersion = useLibraryStore((state) => state.version);
   const openDialog = useUiStore((state) => state.openDialog);
-  const busy = usePlaylistsStore((state) => state.busy);
+  const busy = usePlaylistsStore((state) => state.busy !== null);
+  const busyText = usePlaylistsStore((state) => state.busy);
   const [open, setOpen] = useState(() => new Set<number>());
   const [entries, setEntries] = useState(() => new Map<number, PlaylistEntry[]>());
   const [selection, setSelection] = useState<Selection>(null);
@@ -215,6 +216,9 @@ export function PlaylistsWidget() {
       <Button variant="ghost" size="xs" disabled={busy} onClick={() => importPlaylists(commands.playlistImportFolder)}>
         Import folder
       </Button>
+      <span aria-live="polite" className="truncate text-xs text-text-secondary">
+        {busyText}
+      </span>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon-xs" className="ml-auto" aria-label="Playlist actions" />}

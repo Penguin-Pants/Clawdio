@@ -243,7 +243,7 @@ pub fn import_files(
                 continue;
             };
             let report = import_source(set, root, index, &matcher, source, Some(file), &name)
-                .unwrap_or_else(|error| failed(source.name.clone(), error));
+                .unwrap_or_else(|error| failed(cleaned.clone(), error));
             if report.status == ImportStatus::Imported {
                 names.used.push(name.to_lowercase());
             }

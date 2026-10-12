@@ -7,8 +7,8 @@ import type { MissingImport } from "./MissingImport";
  */
 export type ImportReport = { 
 /**
- * The name of the new playlist; for a skipped one the existing name; for a failed one
- * the playlist name or the file name. Never a path (D13).
+ * The name of the new playlist; for a skipped or failed playlist the cleaned source name;
+ * for a file that cannot be read the file name. Never a path (D13).
  */
 playlist: string, status: ImportStatus, matched: number, missing: Array<MissingImport>, 
 /**

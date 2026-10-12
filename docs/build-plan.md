@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.13, October 12, 2026 (requirements v1.6: phases P19 and P20, section 13).
+**Version:** 1.14, October 12, 2026 (owner waiver: P19 starts while P18 waits on B3 and B5, section 13).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -83,7 +83,7 @@ A phase is Done when all of these are true:
 | P16 | Metadata fill | P15 | Done |
 | P17 | UI quality audit | P16 | Done with exceptions |
 | P18 | Release readiness | P17, gate B3 closed | In progress |
-| P19 | Bulk import and missing-song repair | P18 | Not started |
+| P19 | Bulk import and missing-song repair | P18 (waived, section 13 v1.14) | Done with exceptions |
 | P20 | Microphone ducking (Windows) | P19 | Not started |
 | P21 | Release readiness after v1.6 | P20 | Not started |
 
@@ -1126,6 +1126,57 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - Deviations from the reference: `docs/design.md` implementation notes (P17-AC7).
 
 **Follow-ups:** F-20 (new); F-13 to F-18 open. F-19 was done in D50.
+
+#### P19. Bulk import and missing-song repair (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Start:** P18 is In progress (B3, B5). The owner waived the P18 dependency for P19 on October 12, 2026 ("tested and run on Windows; waive the blocker", section 13 v1.14).
+- **Commits:** branch `clawd/practical-galileo-6jmhwb`, from `c1589fa`. Messages start with `P19:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P19-AC1 | Pass | `import/matching.rs` tests: other extension in stage 1 and stage 2, longest suffix, same extension wins (also over a longer other-extension suffix), other album folder, stage 3 same extension only, two other-format hits ambiguous. Three tests fail with the extension pass removed. |
+| P19-AC2 | Pass | `tests/bulk_import.rs` `the_name_rule_skips_existing_names_and_numbers_repeats`; `tests/import.rs` `a_second_import_is_skipped`. |
+| P19-AC3 | Pass (Linux) | `a_folder_import_gives_the_golden_combined_report` (subfolders, `.M3U8`, `notes.XML`, a broken link as the unreadable file (Unix only), Apple XML with two playlists, sources byte-identical); `a_write_failure_keeps_the_playlists_written_before_it`. |
+| P19-AC4 | Pass | `repair_replaces_matches_in_place_and_writes_nothing_without_a_match` (modified time unchanged), `repair_of_all_playlists_gives_the_golden_combined_report` (Favorites, nested `.m3u8`); `playlist/repair.rs` unit tests for CRLF, BOM and comment lines. |
+| P19-AC5 | Pass | `import_and_repair_rescan_first_and_stop_on_a_canceled_scan` (real scan, canceled and failed scan, audio hash guard); `jobs.rs` `a_waiter_gets_the_outcome_of_the_next_scan_end`. |
+| P19-AC6 | Not run here (E1) | `repair_on_a_read_only_folder_reports_the_error_and_changes_nothing` skips for root; the container runs as root. CI runs it as a normal user. |
+| P19-AC7 | Pass (Chromium); WebKit in CI (E2) | `tests/e2e/playlists.spec.ts`: multi-file import, folder import with the busy state, both "Find missing songs" commands, the canceled report; every playlist call is checked for `/` and `\`. Full Chromium suite: 100 passed. |
+| P19-AC8 | Not run (E3) | Manual Windows check with the owner's playlists. |
+| P19-AC9 | Pass | `an_unmatched_relative_entry_keeps_its_folder_for_a_later_repair`. |
+
+**Notes**
+
+- N1: a matched missing entry with no `#EXTINF` line gets one before its path, with the path line's line end (R33.4 says "replaces"; the file had no line to replace). `docs/file-formats.md` states it.
+- N2: the busy state is a text in the Playlists widget header, and the import buttons are disabled. The status line keeps the scan job, so its Cancel stays the one cancel (R32).
+- N3: the "Playlist actions" button opens the widget menu. The name avoids the word "Menu", which the app menu button uses.
+- N4: `docs/file-formats.md` said Import reads `.pls`; it never did. Fixed in the same section.
+
+**Exceptions**
+
+- E1: P19-AC6 skips as root in this container. It runs in CI (normal user).
+- E2: WebKit e2e runs in CI only (no WebKit here). Local Chromium is build 1194 through `PW_CHROMIUM_PATH`.
+- E3: P19-AC8 needs the owner's Windows machine and real playlists (B5).
+
+**Blockers:** none for P19. P18 stays In progress (B3, B5).
+
+**TWO-PASS REVIEW:** F1 1, F2 5, F3 0, F4 4. Source: own audit, then a reviewer agent.
+
+- F1: the "Playlists menu" label matched the app's "Menu" button and broke nine e2e tests (strict locator). Renamed to "Playlist actions".
+- F2:
+  - A status line job for the import hid the running scan's Cancel, the only cancel (R32). The busy state moved to the widget.
+  - The folder walk ran while the playlist and library locks were held. It now runs first.
+  - A failed source used the raw name, a skipped one the cleaned name. Both use the cleaned name; the `ImportReport` doc says so.
+  - An inserted `#EXTINF` line took the file's line end instead of its path line's.
+  - The "same extension wins" test survived a no-preference matcher. A case with a longer other-extension suffix was added.
+- F4:
+  - The Tauri `after_rescan` has no own test: its order comes from the core `after_scan` (tested), whose signature runs `work` only after a true scan result; `wait_for_end` is tested.
+  - Lost wakeup in `wait_for_end`: `ACTIVE` goes down inside the `ENDS` lock, then `notify_all`.
+  - Lock order: every nested site takes Playlists, then Library; the scan never nests them.
+  - An unreadable `.m3u8` outside `Playlists/` is not a known name (D51): the set skips it, so it is not a playlist.
+
+**Follow-ups:** none new.
 
 ---
 
@@ -2744,6 +2795,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.14 (October 12, 2026):** owner decision: P19 may start while P18 waits on B3 and B5 (the owner tested the app on Windows). P18 stays In progress; P21 repeats the release checks. P19 done with exceptions.
 - **1.13 (October 12, 2026):** requirements v1.6 (R32 to R34, AC-22 to AC-24). Added phases P19, P20 and P21 (release checks again after P20), D51, D52, K21 and K22. D21 points to D51 for import names. The header now gives the current version. Owner request: `ci.yml` skips changes that touch only `**/*.md` and `docs/**` (section 6.17).
 - **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10), then accept the Linux value of 294 MB after D50. F-19 left section 11 (done in D50).
 - **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.

@@ -191,15 +191,17 @@ async fn blocking<T: Send + 'static>(
         })?
 }
 
-/// One import action (R32, R33.1): rescan first, then every source of `files()` in path
-/// order. Canceled when the scan was.
+/// One import action (R32, R33.1): `files()` lists the sources, then the rescan, then every
+/// source in path order. Canceled when the scan was.
 async fn import(
     app: AppHandle,
     files: impl FnOnce() -> Vec<PathBuf> + Send + 'static,
 ) -> CommandResult<ImportBatch> {
     blocking(move || {
+        // The folder walk runs before the locks are taken.
+        let files = files();
         let reports = after_rescan(&app, |set, root, index| {
-            Ok(import_files(set, root, index, &files(), |_| {}))
+            Ok(import_files(set, root, index, &files, |_| {}))
         })?;
         Ok(match reports {
             Some(reports) => ImportBatch {

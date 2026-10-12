@@ -216,7 +216,8 @@ test("P19-AC7: Import folder shows a busy state, then the combined report", asyn
   const playlists = widget(page, "playlists");
   await playlists.getByRole("button", { name: "Import folder" }).click();
   await expect(playlists.getByRole("button", { name: "Import playlist" })).toBeDisabled();
-  await expect(statusLine(page)).toHaveText("Importing playlists");
+  await expect(playlists).toContainText("Importing playlists");
+  await expect(statusLine(page)).not.toHaveText("Importing playlists");
   const dialog = report(page, "Import report");
   await expect(dialog).toContainText("2 playlists imported");
   await expect(dialog.getByRole("region", { name: "Evening (2)" })).toContainText("1 matched, 0 missing");
@@ -226,7 +227,7 @@ test("P19-AC7: Import folder shows a busy state, then the combined report", asyn
   expect(await lastArgs(page, "playlist_import_folder")).toBe("{}");
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(playlists.getByRole("button", { name: "Import playlist" })).toBeEnabled();
-  await expect(statusLine(page)).toHaveText("Ready");
+  await expect(playlists).not.toContainText("Importing playlists");
   await expect(tree(page).getByRole("treeitem", { name: /Evening \(2\)/ })).toBeVisible();
 });
 

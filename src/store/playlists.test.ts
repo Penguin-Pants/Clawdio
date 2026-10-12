@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { PLAYLIST_TASK_JOB, playlistTask, usePlaylistsStore } from "./playlists";
+import { playlistTask, usePlaylistsStore } from "./playlists";
 import { useUiStore } from "./ui";
 
 beforeEach(() => {
-  usePlaylistsStore.setState({ busy: false });
+  usePlaylistsStore.setState({ busy: null });
   useUiStore.setState({ jobs: [], job: null, dialog: null });
 });
 
 describe("playlistTask (R32 busy state)", () => {
-  it("shows the job while it runs, then the report", async () => {
+  it("shows the busy text while it runs, then the report", async () => {
     let finish: (value: boolean) => void = () => {};
     const run = playlistTask(
       "Importing playlists",
@@ -16,17 +16,16 @@ describe("playlistTask (R32 busy state)", () => {
       () => ({ kind: "importReport", batch: { canceled: true, reports: [] } }),
       "Cannot import",
     );
-    expect(usePlaylistsStore.getState().busy).toBe(true);
-    expect(useUiStore.getState().job).toEqual({ id: PLAYLIST_TASK_JOB, text: "Importing playlists" });
+    expect(usePlaylistsStore.getState().busy).toBe("Importing playlists");
+    expect(useUiStore.getState().job).toBeNull();
     finish(true);
     await run;
-    expect(usePlaylistsStore.getState().busy).toBe(false);
-    expect(useUiStore.getState().job).toBeNull();
+    expect(usePlaylistsStore.getState().busy).toBeNull();
     expect(useUiStore.getState().dialog).toEqual({ kind: "importReport", batch: { canceled: true, reports: [] } });
   });
 
   it("runs one task at a time", async () => {
-    usePlaylistsStore.setState({ busy: true });
+    usePlaylistsStore.setState({ busy: "x" });
     let ran = false;
     await playlistTask(
       "x",
@@ -55,6 +54,6 @@ describe("playlistTask (R32 busy state)", () => {
       "Cannot import",
     );
     expect(useUiStore.getState().dialog).toEqual({ kind: "error", text: "Choose a music folder first" });
-    expect(usePlaylistsStore.getState().busy).toBe(false);
+    expect(usePlaylistsStore.getState().busy).toBeNull();
   });
 });
