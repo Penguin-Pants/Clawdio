@@ -4,11 +4,11 @@
 pub mod art;
 pub mod layout;
 pub mod library;
+pub mod lyrics;
 pub mod measure;
 pub mod player;
 pub mod playlists;
 pub mod settings;
-pub mod widgets;
 
 use clawdio_core::api::IpcError;
 

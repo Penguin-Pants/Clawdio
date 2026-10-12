@@ -18,6 +18,8 @@ pub const SETTINGS_CHANGED: &str = "settings-changed";
 pub const ART_READY: &str = "art-ready";
 /// The playlists or an entry changed (P11.4).
 pub const PLAYLISTS_CHANGED: &str = "playlists-changed";
+/// The playing song or its lyrics source changed (P13.3).
+pub const LYRICS_CHANGED: &str = "lyrics-changed";
 
 /// Emits an event and logs a failure instead of failing the caller.
 pub fn emit<R: tauri::Runtime, S: serde::Serialize + Clone>(
@@ -70,6 +72,11 @@ impl PlayerEvents for AppEvents {
         }) {
             media_controls::apply(&self.app, update);
         }
+        // The lyrics state knows the song before the widget asks for its lyrics.
+        let song = queue
+            .current
+            .and_then(|index| queue.entries.get(index as usize).copied());
+        crate::commands::lyrics::song_changed(&self.app, song);
         emit(&self.app, QUEUE_CHANGED, queue.clone());
     }
 

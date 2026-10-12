@@ -26,10 +26,11 @@ pub struct AppState {
     pub scan_cancel: Mutex<Option<Arc<AtomicBool>>>,
 }
 
-/// Widget data that a later phase owns: lyrics (P13). Empty until then.
+/// The lyrics the widget read last, for the scan check, and the playing song (P13.3).
 #[derive(Default)]
-pub struct Widgets {
-    pub lyrics: Option<Lyrics>,
+pub struct LyricsState {
+    pub served: Mutex<Option<(u32, Option<Lyrics>)>>,
+    pub song: Mutex<Option<u32>>,
 }
 
 /// The playlists of the music folder (P11). Lock order: this, then the library index.

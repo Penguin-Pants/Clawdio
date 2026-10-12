@@ -8,6 +8,8 @@ interface EventPayloads {
   "art-ready": number;
   /** The playlists or an entry changed (P11.4). */
   "playlists-changed": null;
+  /** The playing song or its lyrics source changed (P13.3). */
+  "lyrics-changed": null;
   "job-progress": JobProgress;
   "status-message": string;
   "player-state": PlayerSnapshot;

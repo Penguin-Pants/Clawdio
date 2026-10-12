@@ -45,6 +45,14 @@ const playlists = createPlaylists(withLibrary ? structuredClone(library.playlist
 const PENDING_ART = 16;
 let pendingArtMade = false;
 
+/** The lyrics every song has: the test text, or null for "no source" (P13-AC5). */
+let lyrics: typeof library.lyrics | null = library.lyrics;
+/** Changes the lyrics of every song and sends `lyrics-changed`, like a Rescan (P13.3). */
+export function setLyrics(value: typeof library.lyrics | null): Promise<void> {
+  lyrics = value;
+  return emit("lyrics-changed");
+}
+
 /** The saved layout persists over reloads like `layout.json` (P9). */
 const LAYOUT_KEY = "e2e-layout";
 
@@ -146,7 +154,7 @@ function libraryCommand(command: string, args: Args): unknown {
       if (args.album === 2) throw { code: "set_cover", message: "The album folder is read-only" };
       return true;
     case "lyrics_get":
-      return library.lyrics;
+      return lyrics;
   }
   throw new Error(`e2e: no mock for command ${command}`);
 }

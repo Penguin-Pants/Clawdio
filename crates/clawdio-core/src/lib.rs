@@ -11,6 +11,7 @@ pub mod fold;
 pub mod import;
 pub mod layout;
 pub mod library;
+pub mod lyrics;
 pub mod paths;
 pub mod playlist;
 pub mod queue;

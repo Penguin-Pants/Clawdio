@@ -219,6 +219,7 @@ fn run_scan(
     if report.canceled || report.failed {
         return;
     }
+    crate::commands::lyrics::after_scan(app);
     let counts = counts(&report);
     if let Err(error) =
         crate::commands::settings::update(app, |settings| settings.last_scan = Some(counts))

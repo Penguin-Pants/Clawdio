@@ -97,8 +97,6 @@ pub fn run() -> tauri::Result<()> {
             let library = Library::default();
             let music_root = MusicRoot(Arc::new(std::sync::RwLock::new(root.clone())));
 
-            let widgets = state::Widgets::default();
-
             let resolve: Resolve = {
                 let index = library.0.clone();
                 let root = music_root.0.clone();
@@ -128,7 +126,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(ArtService::new(thumbs));
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
-            app.manage(widgets);
+            app.manage(state::LyricsState::default());
             app.manage(state::Playlists::default());
             app.manage(player);
             let window = window::create_main(app.handle())?;
@@ -188,7 +186,7 @@ pub fn run() -> tauri::Result<()> {
             commands::playlists::favorite_toggle,
             commands::playlists::favorites,
             commands::playlists::playlist_import,
-            commands::widgets::lyrics_get,
+            commands::lyrics::lyrics_get,
             commands::measure::measure_mode,
             commands::measure::measure_ready,
             commands::measure::scan_running,

@@ -1,5 +1,5 @@
 // E2E page entry (P2.15). The mocks install before the app starts.
-import "./install-mocks";
+import { setLyrics } from "./install-mocks";
 import { emit } from "@tauri-apps/api/event";
 import "../../src/main";
 import { addWidget, getDock, replaceArrangement } from "../../src/shell/layouts";
@@ -35,6 +35,7 @@ const hooks = {
   closeRequest(): Promise<void> {
     return emit("tauri://close-requested");
   },
+  setLyrics,
   /** Adds a widget as a tab in the group of another widget. */
   addAsTab(id: WidgetId, reference: WidgetId): void {
     addWidget(dock(), id, { referencePanel: reference, direction: "within" });

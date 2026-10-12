@@ -178,3 +178,13 @@ A stage with one hit matches. A stage with more than one hit passes only those t
 Output: matched entries are written like an app playlist. Unmatched entries keep their entry text (for Apple XML, the decoded path) and `#EXTINF` text, and show as missing. The new name comes from the file name or the Apple playlist name by D21: forbidden characters become `_`, edge spaces and dots go, a reserved name gets ` (imported)`, a taken name gets ` (2)`, ` (3)` and so on.
 
 The report lists, per new playlist, the matched count and each missing entry with its reason: not found, more than one match, or no file location. Report labels are titles or file names, not paths (D13).
+
+## Lyrics (`.lrc`, `.txt`)
+
+Source: `crates/clawdio-core/src/lyrics.rs` (P13, R9). The app reads the first source that exists, next to the song and with the song's base name (`01 Song.mp3` uses `01 Song.lrc`):
+
+1. `<base name>.lrc`
+2. `<base name>.txt`
+3. Embedded lyrics: ID3v2 `USLT`, or the Vorbis comment `LYRICS` or `UNSYNCEDLYRICS`. Empty embedded text counts as no lyrics.
+
+Files are read as UTF-8 (a BOM is removed), else as Windows-1252 (D26). For a `.lrc` file the widget hides each leading time stamp (`[mm:ss]`, with 1 to 3 minute digits and an optional fraction of 1 to 3 digits after `.` or `:`) and the tag lines `[ar:]`, `[ti:]`, `[al:]`, `[au:]`, `[by:]`, `[length:]`, `[offset:]`, `[re:]` and `[ve:]`. Line order and blank lines stay. A `.txt` file and embedded text show as they are. Changes to these files show after Rescan.

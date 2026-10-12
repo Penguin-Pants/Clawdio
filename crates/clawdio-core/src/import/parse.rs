@@ -33,6 +33,7 @@ pub struct Source {
 }
 
 /// Text of a legacy `.m3u`: UTF-8 when valid, else Windows-1252 (R14). A BOM is removed.
+/// Lyrics files use the same rule (D26).
 pub fn decode_m3u(bytes: &[u8]) -> String {
     let bytes = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes);
     match std::str::from_utf8(bytes) {

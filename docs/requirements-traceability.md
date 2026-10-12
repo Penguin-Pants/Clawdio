@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 146 | 86 | 16 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 39 | 18 | 8 | 10 | 0 | 1 | 0 |
+| Requirements | 301 | 150 | 83 | 15 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 40 | 17 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -86,7 +86,7 @@
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Done (P11) |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Done (P11) |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
-| R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Planned |
+| R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Done (P13) |
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
@@ -175,7 +175,7 @@
 | R9-1 | Per-song action; source LRCLIB; save `.lrc` when synced, else `.txt` | §2 R9 | P15.1, P15.2 | P15-AC3, P15-AC4 | IT | Planned |
 | R9-2 | Lookup with folder artist, cleaned title, folder album, decoded duration; fallback search; accept within 2 s | §2 R9 | P15.1, P15.4 | P15-AC1, P15-AC2 | IT | Planned |
 | R9-3 | Lyrics widget shows the playing song's lyrics; LRC timestamps hidden | §2 R9 | P13.2, P13.4, P13.3 | P13-AC2, P15-AC7 | UT, E2E | Planned |
-| R9-4 | Source order: `.lrc`, `.txt`, embedded (USLT, LYRICS, UNSYNCEDLYRICS) | §2 R9 | P13.1 | P13-AC1, P13-AC3, P13-AC4 | IT | Planned (D26) |
+| R9-4 | Source order: `.lrc`, `.txt`, embedded (USLT, LYRICS, UNSYNCEDLYRICS) | §2 R9 | P13.1 | P13-AC1, P13-AC3, P13-AC4 | IT | Done (P13, D26) |
 | R9-5 | "Fetch lyrics" only when no lyrics exist; disabled when lookups are off | §2 R9 | P13.4, P15.3 | P13-AC5, P15-AC6 | E2E | Planned |
 | R9-6 | Synced line highlighting | §2 R9 | none | none | REV | Deferred |
 | R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Planned |
@@ -313,7 +313,7 @@
 | E-25 | Output stream error: stop with a message; next Play opens the default device | §5 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
 | E-27 | Closing the window quits; media keys only while running | §5 | P8.5 | P8-AC5 | MAN-L, MAN-W | Planned |
-| E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3, P13.3 | P5-AC15, P13-AC6 | IT | Planned |
+| E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3, P13.3 | P5-AC15, P13-AC6 | IT | Done (P13) |
 
 ### 1.11 Section 6: constraints
 
@@ -408,7 +408,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-18 | Two-disc album plays disc 1 then disc 2 in track order | §9.18 | P5.7, P7.1 | P5-AC11, P7-AC6 | IT, MAN-L | Done (P7) |
 | AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Done (P7) |
 | AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9, P4.11, P4.12 | P4-AC3, P7-AC10 | MAN-L | Planned |
-| AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Planned |
+| AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Done (P13) |
 
 ---
 
@@ -417,7 +417,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | DES-0 | Dark-only theme (front matter) | front matter | P0.7 | P0-AC2 | MAN-L | Done (P0) |
-| DES-1.1 | Local-first player for MP3, WAV, OGG with metadata, art, lyrics and standard controls; not streaming, radio or podcasts | §1 | P4.5, P7.2, P10.1, P13.1 | P4-AC3, P13-AC1 | IT | Planned |
+| DES-1.1 | Local-first player for MP3, WAV, OGG with metadata, art, lyrics and standard controls; not streaming, radio or podcasts | §1 | P4.5, P7.2, P10.1, P13.1 | P4-AC3, P13-AC1 | IT | Done (P13) |
 | DES-1.2 | Primary rule: practical minimalist player; style never makes playback harder | §1 | P17.1, P17.8 | P17-AC1, P17-AC8 | E2E, REV | Planned (D10) |
 | DES-1.3 | Cat silhouette, narrow red eyes, pointed ears, minimal whiskers | §1 | P1.2 | P1-AC3 | MAN-L | Done (P1) |
 | DES-1.4 | Wordmark: angled red "Claw", metallic "dio", bars in the final "o" | §1 | P1.1 | P1-AC4 | REV | Done (P1) |

@@ -77,7 +77,7 @@ A phase is Done when all of these are true:
 | P10 | Local artwork and thumbnails | P9 | Done with exceptions |
 | P11 | Playlists and Favorites | P10 | Done with exceptions |
 | P12 | Playlist import | P11 | Done with exceptions |
-| P13 | Local lyrics | P12 | Not started |
+| P13 | Local lyrics | P12 | Done |
 | P14 | Online lookups and artwork fetch | P13 | Not started |
 | P15 | Lyrics fetch | P14 | Not started |
 | P16 | Metadata fill | P15 | Not started |
@@ -789,6 +789,49 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Report labels and errors carry no paths (D13).
   - The source file is only read: each golden test hashes it.
   - Matching never leaves the library: the candidates are index tracks.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P13. Local lyrics (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `be917f2`. Messages start with `P13:`.
+- **Packages:** none new. The core reads tags with lofty 0.25.4.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P13-AC1 | Pass | `lyrics.rs` `lrc_beats_txt_beats_embedded`: an MP3 with USLT, then a `.txt`, then a `.lrc`; removing the `.lrc` gives the `.txt` again. |
+| P13-AC2 | Pass | `lyrics.rs`: stamps `[mm:ss]`, `.x`, `.xx`, `.xxx`, `:xx`, 3 minute digits and repeated stamps; the nine tag lines; blank lines and order stay; text that only looks like a stamp stays. |
+| P13-AC3 | Pass | Unit test with a USLT frame (checked in the saved tag). Manual Linux: a release build played an MP3 with a hand-written ID3v2.3 USLT frame and no lyrics file; the widget showed both lines. |
+| P13-AC4 | Pass | `ogg_lyrics_and_unsyncedlyrics_show`: Vorbis copies with `LYRICS` and with `UNSYNCEDLYRICS`. |
+| P13-AC5 | Pass | Playwright `P13-AC5`: lyrics text with no button; no source gives the hint and a disabled "Fetch lyrics"; an empty queue gives the hint with no button. |
+| P13-AC6 | Pass | `commands/lyrics.rs` test: add, edit and remove the `.lrc`, then the scan check sends `lyrics-changed` each time and not when nothing changed. Manual Linux: adding and removing the playing song's `.lrc`, then Rescan, changed the widget with no song change. |
+
+**Notes**
+
+- N1: `lyrics_get` returns null when no source has lyrics; the widget shows "Fetch lyrics" only then. A source with only blank text (an empty file, a `.lrc` of tag lines, empty embedded text) is skipped, so the next source shows, the same rule for files and tags.
+- N2: the file names are `<base name>.lrc` and `<base name>.txt` in lower case, as R9 states. On Linux a `.LRC` file is not read.
+- N3: `.txt` and embedded text show as they are; only `.lrc` loses its stamps (R9).
+- N4: the app keeps the last lyrics it sent and checks them after each complete scan (P13.3). A queue event with a new current song sends `lyrics-changed`.
+- N5: manual playback used a null ALSA device, which does not pace the audio, so a song ends at once. A one-song queue kept the song current for the check.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 6, F3 0, F4 3. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The lyrics read took the music folder lock, then the index lock: the reverse of the player's resolver. It now takes one at a time.
+  - An empty `.lrc` or `.txt` hid the next source (N1).
+  - A late answer for the song before could replace the playing song's lyrics in the scan check, so an edit went unannounced. Only the playing song's answer counts now, and the song is known before the queue event goes out.
+  - The hint flashed on each song change while the lyrics loaded. The widget now shows nothing until they arrive.
+  - The embedded lyrics read also decoded the cover art. It now skips pictures.
+  - Weak tests: Windows-1252 used only a byte that Latin-1 decodes the same; it now uses `\x93`, `\x94` and `\x80`. Added tests for blank sources, upper-case tag keys, multi-byte text after a stamp and the late-answer case.
+- F4:
+  - No size limit on lyrics files: a lyrics file of many megabytes next to a song is not a real case, and the read is async.
+  - A song change reads the lyrics twice (the track input and `lyrics-changed`); the second answer replaces the first, and the read is small.
+  - No test that the scan calls the lyrics check: the call is one line after the complete-scan return, and the manual Rescan check covers it.
 
 **Follow-ups:** F-13 to F-18 (open).
 

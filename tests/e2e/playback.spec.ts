@@ -160,3 +160,22 @@ test("P7-AC12: in the Play queue Up and Down move and Delete removes the entry",
   await expect(widget(page, "queue")).toContainText("The queue is empty.");
   await expect(button(page, "Play")).toBeDisabled();
 });
+
+test("P13-AC5: Fetch lyrics shows only with no source; the hint shows with no lyrics or no song", async ({ page }) => {
+  await page.goto("/?data=library&measure=columns");
+  const lyrics = widget(page, "lyrics");
+  const fetch = lyrics.getByRole("button", { name: "Fetch lyrics" });
+  await expect(lyrics).toContainText("Lyric line 60");
+  await expect(fetch).toHaveCount(0);
+  await page.evaluate(() => window.e2e.setLyrics(null));
+  await expect(lyrics).toContainText("No lyrics for this song.");
+  await expect(fetch).toBeDisabled();
+  await page.evaluate(() => window.e2e.setLyrics({ text: "Line one\n\nLine two" }));
+  await expect(lyrics.getByRole("region", { name: "Lyrics text" })).toHaveText(/Line one\s+Line two/);
+  await expect(fetch).toHaveCount(0);
+  await page.evaluate(() => window.e2e.setLyrics(null));
+  await expect(fetch).toBeDisabled();
+  await widget(page, "queue").getByRole("button", { name: "Clear queue" }).click();
+  await expect(lyrics).toContainText("No lyrics for this song.");
+  await expect(fetch).toHaveCount(0);
+});
