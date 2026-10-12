@@ -206,6 +206,9 @@ pub fn run() -> tauri::Result<()> {
         .run(|app, event| {
             // Stop the audio thread before the process ends.
             if let tauri::RunEvent::Exit = event {
+                // Queue and volume commands sent just before the close reach the state first.
+                app.state::<PlayerHandle>()
+                    .sync(std::time::Duration::from_secs(1));
                 app.state::<persist::StateStore>().flush(app);
                 media_controls::detach();
                 app.state::<ArtService>().stop();

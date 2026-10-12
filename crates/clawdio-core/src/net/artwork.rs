@@ -9,7 +9,7 @@ use lofty::file::TaggedFileExt;
 use serde::Deserialize;
 
 use super::normalize::normalize;
-use super::{CancellationToken, NetError, OnlineGate, Service};
+use super::{CancellationToken, CommitLock, NetError, OnlineGate, Service};
 use crate::artwork::{self, album_folder, COVER_FILE, COVER_QUALITY};
 use crate::atomic::write_new;
 use crate::library::{AlbumId, CoverState, FileStamp, LibraryIndex, UNKNOWN_ALBUM, UNKNOWN_ARTIST};
@@ -164,7 +164,16 @@ pub fn check(root: &Path, target: &AlbumTarget) -> Result<(), Skip> {
 struct Search {
     #[serde(rename = "release-groups", default)]
     groups: Vec<Group>,
+    /// All hits of the query; the page holds at most [`PAGE_SIZE`] of them.
+    #[serde(default)]
+    count: usize,
 }
+
+/// Results per MusicBrainz search page: the API maximum (its default is 25).
+const PAGE_SIZE: usize = 100;
+/// Most search pages read for one album. With more hits than that, a unique match cannot be
+/// shown, so the album counts as no match (R8).
+const MAX_PAGES: usize = 5;
 
 #[derive(Deserialize)]
 struct Group {
@@ -208,25 +217,42 @@ async fn matching_groups(
 ) -> Result<Vec<String>, LookupError> {
     let album = normalize(&target.name);
     let artist = normalize(&target.artist);
-    let mut url = gate
-        .config()
-        .musicbrainz
-        .join("ws/2/release-group/")
-        .map_err(|_| LookupError::BadAnswer)?;
-    url.query_pairs_mut()
-        .append_pair(
-            "query",
-            &format!(
-                "releasegroup:\"{}\" AND artist:\"{}\"",
-                lucene(&album),
-                lucene(&artist)
-            ),
-        )
-        .append_pair("fmt", "json");
-    let body = gate.get(Service::MusicBrainz, url, cancel).await?;
-    let search: Search = serde_json::from_slice(&body.bytes).map_err(|_| LookupError::BadAnswer)?;
-    Ok(search
-        .groups
+    let query = format!(
+        "releasegroup:\"{}\" AND artist:\"{}\"",
+        lucene(&album),
+        lucene(&artist)
+    );
+    let mut groups = Vec::new();
+    for page in 0..MAX_PAGES {
+        let mut url = gate
+            .config()
+            .musicbrainz
+            .join("ws/2/release-group/")
+            .map_err(|_| LookupError::BadAnswer)?;
+        url.query_pairs_mut()
+            .append_pair("query", &query)
+            .append_pair("limit", &PAGE_SIZE.to_string())
+            .append_pair("offset", &(page * PAGE_SIZE).to_string())
+            .append_pair("fmt", "json");
+        let body = gate.get(Service::MusicBrainz, url, cancel).await?;
+        let search: Search =
+            serde_json::from_slice(&body.bytes).map_err(|_| LookupError::BadAnswer)?;
+        let last = search.groups.len() < PAGE_SIZE || (page + 1) * PAGE_SIZE >= search.count;
+        groups.extend(search.groups);
+        if last {
+            return Ok(exact(groups, &album, &artist));
+        }
+    }
+    log::info!(
+        "art: more than {} search hits; no unique match",
+        MAX_PAGES * PAGE_SIZE
+    );
+    Ok(Vec::new())
+}
+
+/// The ids of the groups whose normalized title and artist credit equal the folder names.
+fn exact(groups: Vec<Group>, album: &str, artist: &str) -> Vec<String> {
+    groups
         .into_iter()
         .filter(|group| is_mbid(&group.id) && normalize(&group.title) == album)
         .filter(|group| {
@@ -238,7 +264,7 @@ async fn matching_groups(
             normalize(&credit) == artist
         })
         .map(|group| group.id)
-        .collect())
+        .collect()
 }
 
 /// Checks a downloaded cover (P14.5 step 3): JPEG or PNG by content type and magic bytes,
@@ -270,12 +296,14 @@ pub fn cover_bytes(content_type: Option<&str>, bytes: Vec<u8>) -> Result<Vec<u8>
 fn mark(
     folder: &Path,
     marker: ArtworkMarker,
+    commits: &CommitLock,
     cancel: &CancellationToken,
 ) -> Result<(), LookupError> {
-    if cancel.is_cancelled() {
-        return Err(NetError::Canceled.into());
-    }
-    sidecar::write_marker(folder, marker, SystemTime::now()).map_err(|_| LookupError::Write)
+    commits
+        .run(cancel, || {
+            sidecar::write_marker(folder, marker, SystemTime::now())
+        })?
+        .map_err(|_| LookupError::Write)
 }
 
 /// Runs file work (folder checks, image decoding, the write) off the async threads, so a
@@ -304,12 +332,13 @@ pub async fn lookup(
     cancel: &CancellationToken,
 ) -> Result<Lookup, LookupError> {
     let folder = root.join(&target.folder);
+    let commits = gate.commit_lock();
     if let Err(skip) = checked(root, target).await? {
         return Ok(Lookup::Skipped(skip));
     }
     let groups = matching_groups(gate, target, cancel).await?;
     let [id] = groups.as_slice() else {
-        mark(&folder, ArtworkMarker::NoMatch, cancel)?;
+        mark(&folder, ArtworkMarker::NoMatch, &commits, cancel)?;
         return Ok(Lookup::NoMatch);
     };
     if let Err(skip) = checked(root, target).await? {
@@ -322,30 +351,30 @@ pub async fn lookup(
         .map_err(|_| LookupError::BadAnswer)?;
     let body = match gate.get(Service::CoverArt, url, cancel).await {
         Err(NetError::Status(404)) => {
-            mark(&folder, ArtworkMarker::NoArt, cancel)?;
+            mark(&folder, ArtworkMarker::NoArt, &commits, cancel)?;
             return Ok(Lookup::NoArt);
         }
         result => result?,
     };
     let jpeg = blocking(move || cover_bytes(body.content_type.as_deref(), body.bytes)).await??;
-    if cancel.is_cancelled() {
-        return Err(NetError::Canceled.into());
+    let cancel = cancel.clone();
+    blocking(move || commits.run(&cancel, || save_cover(&folder, &jpeg))).await??
+}
+
+/// Writes `cover.jpg` unless a cover file appeared meanwhile (create-new, D30).
+fn save_cover(folder: &Path, jpeg: &[u8]) -> Result<Lookup, LookupError> {
+    if !artwork::existing_covers(folder).is_empty() {
+        return Ok(Lookup::Skipped(Skip::CoverJpg));
     }
-    blocking(move || {
-        if !artwork::existing_covers(&folder).is_empty() {
-            return Ok(Lookup::Skipped(Skip::CoverJpg));
+    match write_new(&folder.join(COVER_FILE), jpeg) {
+        Ok(true) => Ok(Lookup::Saved),
+        Ok(false) => Ok(Lookup::Skipped(Skip::CoverJpg)),
+        Err(error) => {
+            log::warn!(
+                "art: cannot write the cover in {}: {error}",
+                folder.display()
+            );
+            Err(LookupError::Write)
         }
-        match write_new(&folder.join(COVER_FILE), &jpeg) {
-            Ok(true) => Ok(Lookup::Saved),
-            Ok(false) => Ok(Lookup::Skipped(Skip::CoverJpg)),
-            Err(error) => {
-                log::warn!(
-                    "art: cannot write the cover in {}: {error}",
-                    folder.display()
-                );
-                Err(LookupError::Write)
-            }
-        }
-    })
-    .await?
+    }
 }

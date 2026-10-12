@@ -161,6 +161,15 @@ test("P7-AC12: in the Play queue Up and Down move and Delete removes the entry",
   await expect(button(page, "Play")).toBeDisabled();
 });
 
+test("R4: a rescan that changes the playing song's tags updates Now playing and the total time", async ({ page }) => {
+  await openLibrary(page);
+  const total = widget(page, "transport").getByText("2:04", { exact: true });
+  await expect(total).toBeVisible();
+  await page.evaluate(() => window.e2e.retagSong("Song 4 of Album A0", { title: "Retagged", durationMs: 300_000 }));
+  await expect(widget(page, "nowPlaying")).toContainText("Retagged");
+  await expect(widget(page, "transport").getByText("5:00", { exact: true })).toBeVisible();
+});
+
 test("P13-AC5: Fetch lyrics shows only with no source; the hint shows with no lyrics or no song", async ({ page }) => {
   await page.goto("/?data=library&measure=columns");
   const lyrics = widget(page, "lyrics");

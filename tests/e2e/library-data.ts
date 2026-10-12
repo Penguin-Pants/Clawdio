@@ -89,6 +89,12 @@ export const library = {
       )
       .map((s) => s.id),
   rows: (ids: number[]) => ids.map((id) => songs[id]),
+  /** A rescan that keeps the id but changes the tags (R4): returns false for an unknown title. */
+  retag: (title: string, change: Partial<SongRow>) => {
+    const song = songs.find((candidate) => candidate.title === title);
+    if (song) Object.assign(song, change);
+    return song !== undefined;
+  },
   tree: (query: string): TreeArtist[] =>
     artists
       .map((artist) => ({

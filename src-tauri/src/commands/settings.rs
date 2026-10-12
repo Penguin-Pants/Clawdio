@@ -125,6 +125,9 @@ pub async fn choose_music_folder(app: AppHandle) -> CommandResult<SettingsView> 
     };
     let stored = store_music_path(&folder, &base, portable);
     let view = update(&app, |settings| settings.music_folder = Some(stored))?;
+    // Lookups for the old folder stop before the root changes: Cancel returns only after a
+    // running write ended, so no old job writes into either folder after this (P14.6).
+    crate::online::cancel(&app);
     // Playback of the old folder stops before the root changes, so no old id plays from the
     // new folder (P5.9).
     app.state::<crate::player::PlayerHandle>().clear();

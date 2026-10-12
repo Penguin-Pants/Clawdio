@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,13 +38,20 @@ function NewPlaylistDialog({ addTracks }: { addTracks?: number[] }) {
   }, [name]);
   // The empty-name message waits for typing; the button stays off meanwhile.
   const shown = name === "" ? null : problem;
-  const ready = checked === name && problem === null;
+  // One create at a time: a second Enter or click while the first runs would fail as "Taken".
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+  const ready = checked === name && problem === null && !pending;
   const create = async () => {
-    if (!ready) return;
+    if (!ready || pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
     let id = -1;
     const done = await playlistEdit(async () => {
       id = await commands.playlistCreate(name);
     }, "Cannot create the playlist");
+    pendingRef.current = false;
+    setPending(false);
     if (!done) return;
     close();
     if (addTracks) addToPlaylist(id, addTracks);

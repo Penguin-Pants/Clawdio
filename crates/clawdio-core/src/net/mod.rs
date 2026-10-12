@@ -127,6 +127,31 @@ pub struct OnlineGate {
     /// LRCLIB gets one request at a time (section 6.11).
     lrclib_turn: tokio::sync::Mutex<()>,
     requests: AtomicU64,
+    /// Held by each final file write of a job; Cancel and switch-off wait for it (R7).
+    commits: Arc<Mutex<()>>,
+}
+
+/// The final write of a job runs under this lock after one more token check, so no file is
+/// written once Cancel or switch-off has returned (P14.6).
+#[derive(Clone)]
+pub struct CommitLock(Arc<Mutex<()>>);
+
+impl CommitLock {
+    /// Runs `write` unless `cancel` fired. Cancel waits for a running `write` to end.
+    pub fn run<T>(
+        &self,
+        cancel: &CancellationToken,
+        write: impl FnOnce() -> T,
+    ) -> Result<T, NetError> {
+        let _commit = self
+            .0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if cancel.is_cancelled() {
+            return Err(NetError::Canceled);
+        }
+        Ok(write())
+    }
 }
 
 impl OnlineGate {
@@ -171,6 +196,7 @@ impl OnlineGate {
             musicbrainz_last: tokio::sync::Mutex::new(None),
             lrclib_turn: tokio::sync::Mutex::new(()),
             requests: AtomicU64::new(0),
+            commits: Arc::new(Mutex::new(())),
         })
     }
 
@@ -191,7 +217,19 @@ impl OnlineGate {
                 token.cancel();
                 *token = CancellationToken::new();
             }
+            self.wait_commits();
         }
+    }
+
+    /// The lock for the final file writes of jobs.
+    pub fn commit_lock(&self) -> CommitLock {
+        CommitLock(self.commits.clone())
+    }
+
+    /// Waits until no final write runs. Call it after a job token was canceled: from then on
+    /// the job writes no file.
+    pub fn wait_commits(&self) {
+        drop(self.commits.lock());
     }
 
     /// A token for one job. Cancel stops the job; turning the switch off stops all jobs.

@@ -196,7 +196,7 @@ export function ArtistList() {
               frame={frame}
               selected={selected === id}
               onSelect={() => select(id)}
-              onMenu={rowMenu ? (anchor) => menu.open(anchor, rowMenu) : undefined}
+              onMenu={rowMenu ? (anchor) => menu.open(anchor, items(id) ?? rowMenu) : undefined}
             >
               <span className="truncate">{id === null ? "All" : (row(id)?.name ?? "…")}</span>
             </Row>
@@ -262,7 +262,7 @@ export function AlbumList() {
               selected={selected === id}
               onSelect={() => select(id)}
               onActivate={playRow ?? undefined}
-              onMenu={rowMenu ? (anchor) => menu.open(anchor, rowMenu) : undefined}
+              onMenu={rowMenu ? (anchor) => menu.open(anchor, items(id) ?? rowMenu) : undefined}
             >
               {id === null ? <span className="pl-12">All</span> : album ? <AlbumCells album={album} /> : <span>…</span>}
             </Row>
@@ -517,7 +517,7 @@ export function TreeList() {
           const line = lines[index];
           const playLine = play(line);
           const lineMenu = items(line);
-          const onMenu = lineMenu ? (anchor: HTMLElement) => menu.open(anchor, lineMenu) : undefined;
+          const onMenu = lineMenu ? (anchor: HTMLElement) => menu.open(anchor, items(line) ?? lineMenu) : undefined;
           if (line.kind === "song") {
             return (
               <Row

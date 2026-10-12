@@ -86,10 +86,15 @@ pub fn same_volume(a: &Path, b: &Path) -> bool {
 pub fn relative_to(target: &Path, base: &Path) -> Option<PathBuf> {
     let target: Vec<Component> = target.components().collect();
     let base: Vec<Component> = base.components().collect();
-    if target.first() != base.first() {
-        return None;
+    match (target.first(), base.first()) {
+        (Some(a), Some(b)) if same_component(a, b) => {}
+        _ => return None,
     }
-    let common = target.iter().zip(&base).take_while(|(a, b)| a == b).count();
+    let common = target
+        .iter()
+        .zip(&base)
+        .take_while(|(a, b)| same_component(a, b))
+        .count();
     let mut relative = PathBuf::new();
     for _ in common..base.len() {
         relative.push("..");
@@ -102,6 +107,15 @@ pub fn relative_to(target: &Path, base: &Path) -> Option<PathBuf> {
     } else {
         relative
     })
+}
+
+/// Windows paths ignore letter case (`c:` and `C:` are one drive); Linux paths do not.
+fn same_component(a: &Component, b: &Component) -> bool {
+    if cfg!(windows) {
+        a.as_os_str().eq_ignore_ascii_case(b.as_os_str())
+    } else {
+        a == b
+    }
 }
 
 /// How the music folder is stored in `settings.json`. In portable mode a folder on the same
@@ -182,6 +196,21 @@ mod tests {
         assert_eq!(rel("/a/b/music", "/a/b"), path(&["music"]));
         assert_eq!(rel("/a/music", "/a/b/app"), path(&["..", "..", "music"]));
         assert_eq!(rel("/a/b", "/a/b"), path(&["."]));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_roots_and_folders_match_without_letter_case() {
+        let rel = |a: &str, b: &str| relative_to(Path::new(a), Path::new(b));
+        assert_eq!(
+            rel(r"c:\Media\Music", r"C:\media\App"),
+            Some(PathBuf::from(r"..\Music"))
+        );
+        assert_eq!(
+            rel(r"\\nas\Share\Music", r"\\NAS\share\App"),
+            Some(PathBuf::from(r"..\Music"))
+        );
+        assert_eq!(rel(r"D:\Music", r"C:\App"), None);
     }
 
     #[test]

@@ -70,6 +70,36 @@ test("P11.5: New playlist checks the name inline and creates the playlist", asyn
   await expect(tree(page).getByRole("treeitem", { name: /Road trip/ })).toBeVisible();
 });
 
+test("P11.5: a second submit while the playlist is made creates nothing and shows no error", async ({ page }) => {
+  await openPlaylists(page);
+  await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
+  const dialog = page.getByRole("dialog", { name: "New playlist" });
+  await dialog.getByRole("textbox", { name: "Name" }).fill("Slow");
+  await expect(dialog.getByRole("button", { name: "Create" })).toBeEnabled();
+  await dialog.getByRole("textbox", { name: "Name" }).press("Enter");
+  await dialog.getByRole("textbox", { name: "Name" }).press("Enter");
+  await expect(dialog).toBeHidden();
+  await expect(tree(page).getByRole("treeitem", { name: /Slow/ })).toHaveCount(1);
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(page.locator("footer").getByRole("status")).not.toHaveText(/Cannot create/);
+});
+
+test("P11.6: a playlist made after the Library rows rendered shows in their Add to playlist menu", async ({ page }) => {
+  await openPlaylists(page);
+  const album = widget(page, "library")
+    .getByRole("listbox", { name: "Albums" })
+    .getByRole("option", { name: /Album A0/ });
+  await expect(album).toBeVisible();
+  await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
+  const dialog = page.getByRole("dialog", { name: "New playlist" });
+  await dialog.getByRole("textbox", { name: "Name" }).fill("Later");
+  await dialog.getByRole("button", { name: "Create" }).click();
+  await expect(tree(page).getByRole("treeitem", { name: /Later/ })).toBeVisible();
+  await album.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Add to playlist" }).click();
+  await expect(page.getByRole("menu").last().getByRole("menuitem", { name: "Later" })).toBeVisible();
+});
+
 test("P11.6: Add to playlist lists playlists but Favorites, and New playlist adds the song", async ({ page }) => {
   await openPlaylists(page);
   await widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" }).click();

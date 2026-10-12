@@ -891,4 +891,20 @@ mod tests {
         handle.send(Command::Shutdown);
         thread.join().unwrap();
     }
+
+    /// The exit flush: after `sync`, the events of every earlier command have run.
+    #[test]
+    fn sync_returns_after_earlier_commands_sent_their_events() {
+        let recorder = Recorder::default();
+        let (handle, thread) =
+            super::super::PlayerHandle::spawn(TestOutput::default, recorder.clone(), resolve());
+        handle.send(Command::PlayList {
+            ids: vec![0, 1],
+            start: 1,
+        });
+        handle.sync(Duration::from_secs(5));
+        assert!(recorder.has("queue Some(1)"));
+        handle.send(Command::Shutdown);
+        thread.join().unwrap();
+    }
 }

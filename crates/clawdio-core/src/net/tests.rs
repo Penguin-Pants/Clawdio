@@ -164,6 +164,35 @@ async fn zero_or_two_matches_write_the_marker() {
     }
 }
 
+/// R8: a second exact match on a later search page makes two matches, so no match.
+#[tokio::test]
+async fn a_second_match_on_the_next_page_is_no_match() {
+    let server = MockServer::start_async().await;
+    let mut first: Vec<_> = (0..99).map(|_| ("cccc", "Other", "Artist")).collect();
+    first.push((GROUP_ID, "Album", "Artist"));
+    let page = |groups: &[(&str, &str, &str)]| {
+        let mut body: serde_json::Value = serde_json::from_str(&search(groups)).unwrap();
+        body["count"] = 101.into();
+        body.to_string()
+    };
+    let (first_body, second_body) = (page(&first), page(&[("dddd", "Album", "Artist")]));
+    let pages = [("0", first_body), ("100", second_body)];
+    for (offset, body) in &pages {
+        server
+            .mock_async(|when, then| {
+                when.path("/ws/2/release-group/")
+                    .query_param("limit", "100")
+                    .query_param("offset", *offset);
+                then.status(200).body(body);
+            })
+            .await;
+    }
+    let (root, target) = library("Album");
+    let gate = gate(&server);
+    let result = artwork::lookup(&gate, root.path(), &target, &gate.job_token()).await;
+    assert_eq!(result, Ok(Lookup::NoMatch));
+}
+
 /// A match on the title alone is not a match: the artist credit must match too.
 #[tokio::test]
 async fn the_artist_credit_must_match() {
@@ -385,6 +414,40 @@ async fn switching_off_cancels_tokens_and_on_gives_new_ones() {
     assert!(old.is_cancelled());
     gate.set_on(true);
     assert!(!gate.job_token().is_cancelled());
+}
+
+/// P14.6: a final write that passed its token check ends before Cancel returns, and a write
+/// after Cancel does not run.
+#[tokio::test]
+async fn cancel_waits_for_a_running_write_and_blocks_later_ones() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let server = MockServer::start_async().await;
+    let gate = gate(&server);
+    let token = gate.job_token();
+    let written = Arc::new(AtomicBool::new(false));
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let writer = {
+        let (commits, token, written) = (gate.commit_lock(), token.clone(), written.clone());
+        std::thread::spawn(move || {
+            commits.run(&token, || {
+                started_tx.send(()).unwrap();
+                std::thread::sleep(Duration::from_millis(200));
+                written.store(true, Ordering::SeqCst);
+            })
+        })
+    };
+    started_rx.recv().unwrap();
+    token.cancel();
+    gate.wait_commits();
+    assert!(
+        written.load(Ordering::SeqCst),
+        "Cancel returned during the write"
+    );
+    assert!(writer.join().unwrap().is_ok());
+    let later = gate
+        .commit_lock()
+        .run(&token, || panic!("wrote after Cancel"));
+    assert_eq!(later, Err(NetError::Canceled));
 }
 
 /// P14-AC6: MusicBrainz requests start at least 1 s apart, also from two callers, and carry

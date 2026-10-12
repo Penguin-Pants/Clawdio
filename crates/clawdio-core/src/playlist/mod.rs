@@ -31,6 +31,9 @@ pub enum PlaylistError {
     Unknown,
     #[error("The playlist file cannot be read")]
     Unreadable,
+    /// A track id that is not in the library (removed by a rescan, or never valid) (D46).
+    #[error("unknown track id {0}")]
+    UnknownTrack(TrackId),
 }
 
 fn favorites_path() -> String {
@@ -306,7 +309,7 @@ impl PlaylistSet {
         })
     }
 
-    /// Appends tracks (R12: duplicates are allowed). Unknown ids are left out.
+    /// Appends tracks (R12: duplicates are allowed). An unknown id fails the whole edit.
     pub fn add(
         &mut self,
         root: &Path,
@@ -316,9 +319,9 @@ impl PlaylistSet {
     ) -> Result<(), PlaylistError> {
         let mut changed = self.get(id).ok_or(PlaylistError::Unknown)?.clone();
         for track in tracks {
-            if let Some(entry) = Self::entry_for(&changed, *track, index) {
-                changed.entries.push(entry);
-            }
+            let entry = Self::entry_for(&changed, *track, index)
+                .ok_or(PlaylistError::UnknownTrack(*track))?;
+            changed.entries.push(entry);
         }
         self.commit(root, changed)
     }
@@ -449,6 +452,22 @@ mod tests {
 
     fn read(root: &Path, rel: &str) -> String {
         std::fs::read_to_string(root.join(rel)).unwrap()
+    }
+
+    /// D46: an unknown or removed track id fails the edit; the file and the set keep their
+    /// entries.
+    #[test]
+    fn an_unknown_track_id_fails_the_add_and_changes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let index = index();
+        let mut set = PlaylistSet::default();
+        let id = set.create(dir.path(), "Mix").unwrap();
+        assert_eq!(
+            set.add(dir.path(), id, &[0, 999], &index),
+            Err(PlaylistError::UnknownTrack(999))
+        );
+        assert_eq!(set.get(id).unwrap().entries.len(), 0);
+        assert_eq!(read(dir.path(), "Playlists/Mix.m3u8"), "#EXTM3U\n");
     }
 
     /// P11-AC2: create, add with a duplicate, remove and delete, against golden text.

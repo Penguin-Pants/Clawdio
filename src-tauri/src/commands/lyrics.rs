@@ -2,6 +2,7 @@
 
 use clawdio_core::api::{IpcError, JobProgress, Lyrics};
 use clawdio_core::net::lyrics::{self as online_lyrics, LyricsQuery};
+use clawdio_core::net::{CancellationToken, NetError, OnlineGate};
 use tauri::{AppHandle, Manager, Runtime};
 
 use super::CommandResult;
@@ -10,7 +11,7 @@ use crate::online::Online;
 use crate::state::{Library, LyricsState, MusicRoot};
 
 /// The status line job id of "Fetch lyrics".
-const LYRICS_JOB: &str = "lyrics";
+pub const LYRICS_JOB: &str = "lyrics";
 
 /// The lyrics of a track, or None when it has no source or is not in the library.
 fn read<R: Runtime>(app: &AppHandle<R>, track: u32) -> Option<Lyrics> {
@@ -65,7 +66,7 @@ fn progress<R: Runtime>(app: &AppHandle<R>, text: Option<&str>) {
         JobProgress {
             id: LYRICS_JOB.into(),
             text: text.map(str::to_owned),
-            cancelable: false,
+            cancelable: true,
         },
     );
 }
@@ -108,21 +109,67 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
         .await
         .map_err(|_| fetch_error("The song's folder cannot be checked"))?
         .map_err(|error| fetch_error(error.to_string()))?;
+    let token = fetch_token(app, &gate);
     progress(app, Some("Fetching lyrics"));
-    let found = online_lyrics::fetch(&gate, &query, &gate.job_token()).await;
+    let found = online_lyrics::fetch(&gate, &query, &token).await;
     progress(app, None);
-    let found = found.map_err(|error| fetch_error(format!("Cannot fetch lyrics: {error}")))?;
+    let found = match found {
+        Err(NetError::Canceled) => {
+            emit(app, STATUS_MESSAGE, "Lyrics fetch canceled");
+            return Ok(false);
+        }
+        found => found.map_err(|error| fetch_error(format!("Cannot fetch lyrics: {error}")))?,
+    };
     let Some(found) = found else {
         emit(app, STATUS_MESSAGE, "No lyrics found");
         return Ok(false);
     };
-    tauri::async_runtime::spawn_blocking(move || online_lyrics::save(&song, &found))
-        .await
-        .map_err(|_| fetch_error("The lyrics file cannot be written"))?
-        .map_err(|error| fetch_error(error.to_string()))?;
+    // The write runs under the commit lock, so no file appears after Cancel returns.
+    let commits = gate.commit_lock();
+    let saved = tauri::async_runtime::spawn_blocking(move || {
+        commits.run(&token, || online_lyrics::save(&song, &found))
+    })
+    .await
+    .map_err(|_| fetch_error("The lyrics file cannot be written"))?;
+    let Ok(saved) = saved else {
+        emit(app, STATUS_MESSAGE, "Lyrics fetch canceled");
+        return Ok(false);
+    };
+    saved.map_err(|error| fetch_error(error.to_string()))?;
     emit(app, STATUS_MESSAGE, "Lyrics saved");
     emit(app, LYRICS_CHANGED, ());
     Ok(true)
+}
+
+/// A token for one fetch: a child of the shared fetch token, which is a child of the gate's
+/// job token, so Cancel and the Online switch both stop it.
+fn fetch_token<R: Runtime>(app: &AppHandle<R>, gate: &OnlineGate) -> CancellationToken {
+    let state = app.state::<LyricsState>();
+    let Ok(mut parent) = state.fetches.lock() else {
+        return gate.job_token();
+    };
+    let live = parent
+        .as_ref()
+        .filter(|token| !token.is_cancelled())
+        .cloned();
+    let parent = live.unwrap_or_else(|| parent.insert(gate.job_token()).clone());
+    parent.child_token()
+}
+
+/// Cancel on the status line (R5): stops every running fetch; no file is written after it.
+pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
+    let token = app
+        .state::<LyricsState>()
+        .fetches
+        .lock()
+        .ok()
+        .and_then(|mut parent| parent.take());
+    if let Some(token) = token {
+        token.cancel();
+    }
+    if let Some(online) = app.try_state::<Online>() {
+        online.gate.wait_commits();
+    }
 }
 
 /// After a complete scan: when the shown song's lyrics source changed, tell the widget
@@ -298,6 +345,31 @@ mod tests {
             get(app.handle(), 0).map(|lyrics| lyrics.text).as_deref(),
             Some("hi")
         );
+    }
+
+    /// R5: Cancel on the status line stops a slow fetch at once, and no file is written.
+    #[test]
+    fn cancel_stops_a_slow_fetch_and_writes_nothing() {
+        let music = tempfile::tempdir().unwrap();
+        let (app, events) = app(music.path());
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.path("/api/get");
+            then.status(200)
+                .delay(std::time::Duration::from_secs(10))
+                .body(r#"{"duration":1.0,"syncedLyrics":"[00:00.50]hi","plainLyrics":"hi"}"#);
+        });
+        online(&app, &server, true);
+        let handle = app.handle().clone();
+        let started = std::time::Instant::now();
+        let fetching =
+            std::thread::spawn(move || tauri::async_runtime::block_on(fetch(&handle, 0)));
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        cancel(app.handle());
+        assert_eq!(fetching.join().unwrap(), Ok(false));
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+        assert!(!music.path().join("A/B/01 Song.lrc").exists());
+        assert_eq!(events.load(Ordering::SeqCst), 0);
     }
 
     /// P15-AC4, P15-AC6: no result writes nothing; with the switch off no request is made.

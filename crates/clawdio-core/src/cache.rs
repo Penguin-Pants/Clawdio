@@ -333,6 +333,18 @@ impl Cache {
         rows.collect()
     }
 
+    /// Deletes the cache files, for a new music folder whose cache cannot be cleared. Close
+    /// every connection first (Windows). Missing files are fine.
+    pub fn delete_files(cache_dir: &Path) -> std::io::Result<()> {
+        for suffix in ["", "-wal", "-shm"] {
+            match std::fs::remove_file(cache_dir.join(format!("{CACHE_FILE}{suffix}"))) {
+                Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
     /// Removes every row, for a new music folder.
     pub fn clear(&mut self) -> rusqlite::Result<()> {
         self.connection.execute_batch(
@@ -367,6 +379,18 @@ mod tests {
             has_picture: true,
             ..NewTrack::default()
         }
+    }
+
+    /// A new folder whose cache cannot be cleared deletes the files; a missing file is fine.
+    #[test]
+    fn delete_files_removes_the_cache_and_its_journal() {
+        let dir = tempfile::tempdir().unwrap();
+        drop(Cache::open(dir.path()).unwrap());
+        std::fs::write(dir.path().join(format!("{CACHE_FILE}-wal")), b"").unwrap();
+        Cache::delete_files(dir.path()).unwrap();
+        assert!(!dir.path().join(CACHE_FILE).exists());
+        assert!(!dir.path().join(format!("{CACHE_FILE}-wal")).exists());
+        Cache::delete_files(dir.path()).unwrap();
     }
 
     #[test]

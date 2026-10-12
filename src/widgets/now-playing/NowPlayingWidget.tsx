@@ -4,6 +4,7 @@ import { thumbUrl } from "@/lib/thumbs";
 import { IconButton } from "@/components/icon-button";
 import { commands, type SongRow } from "@/lib/ipc/commands";
 import { useCommand } from "@/lib/ipc/hooks";
+import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 
@@ -24,10 +25,12 @@ function Heart({ track }: { track: number }) {
 /** Now playing widget (R5): art, title, artist, album and the heart (P11 wires it). */
 export function NowPlayingWidget() {
   const track = usePlayerStore((state) => currentTrack(state.queue));
+  // A rescan keeps the id but can change the tags or the duration (R4).
+  const libraryVersion = useLibraryStore((state) => state.version);
   const song = useCommand<SongRow | null>(
     () => (track === null ? Promise.resolve(null) : commands.libraryRows([track]).then((rows) => rows[0] ?? null)),
     null,
-    [track],
+    [track, libraryVersion],
   );
   // The 512 px display art (P10.3); the placeholder while it is made or when there is none.
   const art = useAlbumArt(song?.albumId ?? null, 512);

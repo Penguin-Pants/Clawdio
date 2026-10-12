@@ -46,10 +46,14 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
     playlist_create: ({ name }) => {
       const problem = nameProblem(name as string);
       if (problem) throw { code: "playlist", message: problem };
-      lists.push({ id: nextId, name: name as string, entries: [] });
-      nextId += 1;
-      changed();
-      return nextId - 1;
+      const add = () => {
+        lists.push({ id: nextId, name: name as string, entries: [] });
+        nextId += 1;
+        changed();
+        return nextId - 1;
+      };
+      // "Slow" holds the answer, so a test can submit again while the first create runs.
+      return name === "Slow" ? new Promise((resolve) => setTimeout(() => resolve(add()), 300)) : add();
     },
     playlist_add: ({ id, tracks }) => {
       const list = find(id);

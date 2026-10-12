@@ -109,6 +109,8 @@ pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
             token.cancel();
         }
     };
+    // A write that passed its token check ends first; then the job writes nothing more.
+    online.gate.wait_commits();
 }
 
 /// Clears the running slot if the job task ends by a panic, so a later start works.
@@ -334,6 +336,11 @@ pub fn retry<R: Runtime>(app: &AppHandle<R>, album: AlbumId) -> Result<(), Strin
     }
     if let Ok(mut job) = online.job.lock() {
         job.first = Some(album);
+        // A running pass took its first album already: it stops at once, and the job runs
+        // again with this album first, so the status line shows the retry's own result.
+        if let Some(token) = &job.running {
+            token.cancel();
+        }
     };
     start(app, true);
     Ok(())
@@ -460,6 +467,24 @@ mod tests {
         std::thread::sleep(Duration::from_millis(200));
         assert_eq!(app.state::<Online>().gate.request_count(), 0);
         assert!(!music.path().join("Artist/Album/cover.jpg").exists());
+    }
+
+    /// P14-AC7: a retry during a running pass gets its own result on the status line.
+    #[test]
+    fn retry_during_a_pass_restarts_the_job_with_the_album_first() {
+        let (music, thumbs) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let server = server();
+        let app = app(music.path(), thumbs.path(), &server, true);
+        let online = app.state::<Online>();
+        let pass = online.gate.job_token();
+        if let Ok(mut job) = online.job.lock() {
+            job.running = Some(pass.clone());
+        }
+        assert_eq!(retry(app.handle(), 0), Ok(()));
+        assert!(pass.is_cancelled(), "the running pass stops");
+        let job = online.job.lock().unwrap();
+        assert_eq!(job.first, Some(0));
+        assert!(job.again, "the job runs again with the album first");
     }
 
     /// P14-AC7: "Retry lookup" clears the marker and looks the album up again.

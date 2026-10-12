@@ -53,6 +53,12 @@ export function setLyrics(value: typeof library.lyrics | null): Promise<void> {
   return emit("lyrics-changed");
 }
 
+/** Changes the tags of one song and sends `library-changed`, like a Rescan (R4). */
+export function retagSong(title: string, change: { title?: string; durationMs?: number }): Promise<void> {
+  if (!library.retag(title, change)) throw new Error(`no song ${title}`);
+  return emit("library-changed");
+}
+
 /** The saved layout persists over reloads like `layout.json` (P9). */
 const LAYOUT_KEY = "e2e-layout";
 

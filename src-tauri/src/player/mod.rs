@@ -96,6 +96,14 @@ impl PlayerHandle {
         answer.recv().unwrap_or_default()
     }
 
+    /// Waits until the player thread has handled every command sent before, at most
+    /// `limit`. Its events have then updated the saved state (exit flush).
+    pub fn sync(&self, limit: std::time::Duration) {
+        let (reply, answer) = mpsc::channel();
+        self.send(Command::GetState(reply));
+        let _ = answer.recv_timeout(limit);
+    }
+
     /// Stops playback and empties the queue, and waits until the player thread is done.
     pub fn clear(&self) {
         let (reply, answer) = mpsc::channel();

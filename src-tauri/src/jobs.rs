@@ -2,7 +2,7 @@
 //! (R5). One scan runs at a time.
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -25,6 +25,14 @@ const LIBRARY_EVENT_GAP: Duration = Duration::from_millis(500);
 pub(crate) static SCAN_GATE: Mutex<()> = Mutex::new(());
 /// Scans started and not yet ended. Rescan does nothing while one runs (R2).
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
+/// Goes up on each folder change. A folder job whose number is not the latest was replaced by
+/// a newer one, which clears the old folder itself.
+static FOLDER_GENERATION: AtomicU64 = AtomicU64::new(0);
+
+/// True when a newer folder change replaced the job of `generation`.
+fn superseded(generation: u64) -> bool {
+    generation != FOLDER_GENERATION.load(Ordering::SeqCst)
+}
 
 /// Why a scan starts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -128,6 +136,13 @@ fn spawn_scan(app: &AppHandle, root: PathBuf, kind: ScanKind, active: ActiveGuar
             }
         }
     }
+    // The number is taken in request order, so a job that waits longer for the gate still
+    // knows that it was replaced.
+    let generation = if kind == ScanKind::NewFolder {
+        FOLDER_GENERATION.fetch_add(1, Ordering::SeqCst) + 1
+    } else {
+        FOLDER_GENERATION.load(Ordering::SeqCst)
+    };
     let cache_dir = state.dirs.cache.clone();
     let library = app.state::<Library>().0.clone();
     let app = app.clone();
@@ -138,7 +153,7 @@ fn spawn_scan(app: &AppHandle, root: PathBuf, kind: ScanKind, active: ActiveGuar
             let _gate = SCAN_GATE
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            run_scan(&app, &root, kind, &library, &cache_dir, &cancel);
+            run_scan(&app, &root, kind, generation, &library, &cache_dir, &cancel);
         });
     // On failure the closure, and with it the guard, is dropped.
     if let Err(error) = spawned {
@@ -150,6 +165,7 @@ fn run_scan(
     app: &AppHandle,
     root: &std::path::Path,
     kind: ScanKind,
+    generation: u64,
     library: &std::sync::RwLock<clawdio_core::library::LibraryIndex>,
     cache_dir: &std::path::Path,
     cancel: &AtomicBool,
@@ -170,6 +186,11 @@ fn run_scan(
             // Every saved entry may be in the cache already (P9.1).
             app.state::<StateStore>().try_restore(app, false);
         }
+        ScanKind::NewFolder if superseded(generation) => {
+            // A newer folder change clears and scans; this job must not clear its results.
+            log::info!("scan: a newer folder change replaced this one");
+            return;
+        }
         ScanKind::NewFolder => {
             // Lookups for the old folder stop (P14.6).
             crate::online::cancel(app);
@@ -182,8 +203,25 @@ fn run_scan(
                 playlists.clear();
             }
             emit(app, PLAYLISTS_CHANGED, ());
-            if let Some(Err(error)) = cache.as_mut().map(Cache::clear) {
-                log::warn!("cache: cannot clear: {error}");
+            // A cache that cannot be cleared is deleted, so its old-folder rows never load
+            // against the new folder.
+            let cleared = match cache.as_mut().map(Cache::clear) {
+                Some(Ok(())) => true,
+                Some(Err(error)) => {
+                    log::warn!("cache: cannot clear: {error}");
+                    false
+                }
+                None => false,
+            };
+            if !cleared {
+                // The connection closes before the files go (Windows).
+                drop(cache.take());
+                if let Err(error) = Cache::delete_files(cache_dir) {
+                    log::warn!("cache: cannot delete: {error}");
+                }
+                cache = Cache::open(cache_dir)
+                    .inspect_err(|error| log::warn!("cache: cannot open: {error}"))
+                    .ok();
             }
             if let Ok(mut index) = library.write() {
                 index.clear_tracks();
@@ -259,6 +297,10 @@ pub fn cancel(app: &AppHandle, id: &str) {
         crate::online::cancel(app);
         return;
     }
+    if id == crate::commands::lyrics::LYRICS_JOB {
+        crate::commands::lyrics::cancel(app);
+        return;
+    }
     if id != SCAN_JOB {
         return;
     }
@@ -272,6 +314,15 @@ pub fn cancel(app: &AppHandle, id: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_the_latest_folder_change_is_current() {
+        let older = FOLDER_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+        assert!(!superseded(older));
+        let newer = FOLDER_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+        assert!(superseded(older), "the older job must not clear (L)");
+        assert!(!superseded(newer));
+    }
 
     #[test]
     fn a_rescan_claims_only_an_idle_scanner() {

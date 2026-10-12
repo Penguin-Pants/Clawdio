@@ -14,9 +14,14 @@ use crate::events::{emit, PLAYLISTS_CHANGED};
 use crate::state::{Library, MusicRoot, Playlists};
 
 fn playlist_error(error: PlaylistError) -> IpcError {
-    IpcError {
-        code: "playlist".into(),
-        message: error.to_string(),
+    match error {
+        PlaylistError::UnknownTrack(id) => {
+            clawdio_core::error::CoreError::UnknownId { kind: "track", id }.into()
+        }
+        error => IpcError {
+            code: "playlist".into(),
+            message: error.to_string(),
+        },
     }
 }
 

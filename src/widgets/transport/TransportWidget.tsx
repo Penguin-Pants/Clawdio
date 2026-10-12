@@ -6,6 +6,7 @@ import { commands, type RepeatMode, type SongRow } from "@/lib/ipc/commands";
 import { useCommand } from "@/lib/ipc/hooks";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { useSettingsStore } from "@/store/settings";
 
@@ -36,10 +37,12 @@ export function TransportWidget() {
   const queue = usePlayerStore((state) => state.queue);
   const setPosition = usePlayerStore((state) => state.setPosition);
   const track = currentTrack(queue);
+  // A rescan keeps the id but can change the tags or the duration (R4).
+  const libraryVersion = useLibraryStore((state) => state.version);
   const song = useCommand<SongRow | null>(
     () => (track === null ? Promise.resolve(null) : commands.libraryRows([track]).then((rows) => rows[0] ?? null)),
     null,
-    [track],
+    [track, libraryVersion],
   );
   const ready = useSettingsStore((state) => state.view.folderState !== "none");
   const enabled = ready && queue.entries.length > 0;
