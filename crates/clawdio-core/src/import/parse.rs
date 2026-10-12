@@ -96,10 +96,10 @@ fn percent_decode(text: &str) -> String {
     let mut out = Vec::with_capacity(bytes.len());
     let mut index = 0;
     while index < bytes.len() {
-        if bytes[index] == b'%' && index + 2 < bytes.len() {
-            let hex = std::str::from_utf8(&bytes[index + 1..index + 3]).ok();
-            if let Some(byte) = hex.and_then(|hex| u8::from_str_radix(hex, 16).ok()) {
-                out.push(byte);
+        let digit = |at: usize| bytes.get(at).and_then(|&byte| (byte as char).to_digit(16));
+        if bytes[index] == b'%' {
+            if let (Some(high), Some(low)) = (digit(index + 1), digit(index + 2)) {
+                out.push((high * 16 + low) as u8);
                 index += 3;
                 continue;
             }
@@ -110,12 +110,18 @@ fn percent_decode(text: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-/// A `file://` URL to a path (R14): the host ("localhost") goes, the rest is percent-decoded,
-/// and a Windows drive keeps its letter ("file://localhost/C:/a%20b.mp3" gives "C:/a b.mp3").
+/// A `file://` URL to a path (R14): an empty host or "localhost" goes, another host becomes a
+/// UNC prefix ("file://nas/share/a.mp3" gives "//nas/share/a.mp3"), the rest is
+/// percent-decoded, and a Windows drive keeps its letter ("file://localhost/C:/a%20b.mp3"
+/// gives "C:/a b.mp3").
 pub fn file_url_to_path(url: &str) -> Option<String> {
     let rest = url.strip_prefix("file://")?;
-    let rest = &rest[rest.find('/')?..];
-    let path = percent_decode(rest);
+    let slash = rest.find('/')?;
+    let host = &rest[..slash];
+    let path = percent_decode(&rest[slash..]);
+    if !host.is_empty() && !host.eq_ignore_ascii_case("localhost") {
+        return Some(format!("//{}{path}", percent_decode(host)));
+    }
     let bytes = path.as_bytes();
     let drive =
         bytes.len() >= 3 && bytes[0] == b'/' && bytes[1].is_ascii_alphabetic() && bytes[2] == b':';
@@ -231,7 +237,18 @@ mod tests {
             file_url_to_path("file:///Users/me/Music/x%2Fy.mp3").as_deref(),
             Some("/Users/me/Music/x/y.mp3")
         );
+        assert_eq!(
+            file_url_to_path("file://nas/share/Music/a%20b.mp3").as_deref(),
+            Some("//nas/share/Music/a b.mp3"),
+            "a host other than localhost is a network share"
+        );
         assert_eq!(file_url_to_path("https://example.com/a.mp3"), None);
+    }
+
+    #[test]
+    fn only_two_hex_digits_after_a_percent_decode() {
+        assert_eq!(percent_decode("a%+1b%2"), "a%+1b%2");
+        assert_eq!(percent_decode("%zz%41"), "%zzA");
     }
 
     #[test]

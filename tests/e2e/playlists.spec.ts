@@ -150,6 +150,10 @@ test("P12.5: Import playlist shows the matched and missing report", async ({ pag
   await expect(dialog).toContainText("1 matched, 2 missing");
   await expect(dialog).toContainText("Cloud Band - Streaming Song: no file location");
   await expect(dialog).toContainText("Lost Song: not found");
+  await expect(dialog).toContainText("One playlist imported");
+  await expect(dialog.getByRole("region", { name: "Too long" })).toContainText(
+    "Not imported: The playlist file cannot be written",
+  );
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toBeVisible();
 });

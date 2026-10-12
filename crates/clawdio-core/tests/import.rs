@@ -85,6 +85,7 @@ fn apple_xml_imports_the_user_playlist() {
                 missing("Cloud Band - Streaming Song", MissingReason::NoLocation),
                 missing("Lost Song", MissingReason::NotFound),
             ],
+            error: None,
         }]
     );
     assert_eq!(
@@ -110,6 +111,7 @@ fn a_musicbee_m3u8_imports_with_absolute_paths() {
                 missing("Somebody - Unknown", MissingReason::NotFound),
                 missing("Intro", MissingReason::Ambiguous),
             ],
+            error: None,
         }]
     );
     assert_eq!(
@@ -144,4 +146,33 @@ fn a_second_import_gets_a_numbered_name() {
     let second = import_file(&mut set, root.path(), &index(), &fixture("legacy.m3u")).unwrap();
     assert_eq!(first[0].playlist, "legacy");
     assert_eq!(second[0].playlist, "legacy (2)");
+}
+
+/// A playlist that cannot be written gets a report with its error; the next one still imports.
+#[test]
+fn a_failed_playlist_does_not_stop_the_others() {
+    let root = tempfile::tempdir().unwrap();
+    let text = std::fs::read_to_string(fixture("apple.xml")).unwrap();
+    let road_trip = "<dict>\n\t\t\t<key>Name</key><string>Road Trip: 2026</string>";
+    // A file name over 255 bytes cannot be written on Linux, macOS or Windows.
+    let long = format!(
+        "<dict>\n\t\t\t<key>Name</key><string>{}</string>",
+        "a".repeat(300)
+    );
+    let start = text.find(road_trip).unwrap();
+    let end = start + text[start..].find("</dict>\n\t</array>").unwrap() + "</dict>".len();
+    let copy = text[start..end].replacen(road_trip, &long, 1);
+    let source = root.path().join("two.xml");
+    std::fs::write(
+        &source,
+        text.replacen(road_trip, &format!("{copy}\n\t\t{road_trip}"), 1),
+    )
+    .unwrap();
+    let mut set = PlaylistSet::default();
+    let reports = import_file(&mut set, root.path(), &index(), &source).unwrap();
+    assert_eq!(reports.len(), 2);
+    assert!(reports[0].error.is_some(), "{reports:?}");
+    assert_eq!(reports[1].playlist, "Road Trip_ 2026");
+    assert_eq!(reports[1].error, None);
+    assert_eq!(reports[1].matched, 1);
 }

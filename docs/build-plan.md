@@ -765,6 +765,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N2: import names follow D21; "..." becomes "_" (".." first, then the edge dots).
 - N3: report labels are "artist - title", the title or the file name, never a path (D13).
 - N4: "Import playlist" opens the Rust picker; the browser e2e mock returns a fixed report.
+- N5: a reserved device name with an extension gets " (imported)" on the device part ("CON.mix" becomes "CON (imported).mix"), because "CON.mix (imported)" is still reserved. This is the D21 rule applied so the result is a valid name.
+- N6: a playlist in the file that cannot be written gets its own report line ("Not imported" with the reason); the other playlists still import. `ImportReport.error` carries the reason.
 
 **Exceptions**
 
@@ -772,10 +774,18 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none for the code. B4 waits for the owner's files.
 
-**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+**TWO-PASS REVIEW:** F1 1, F2 8, F3 0, F4 4. Source: own audit, then a reviewer agent on `87941ac`.
 
-- F2: clippy found a complex closure type (now a `Stage` alias) and a `match` that is a `?`. The D21 test expected "Imported playlist" for "..." (the rule gives "_").
+- F1: an imported "CON.mix" became "CON.mix (imported)", still reserved, so the import failed (N5).
+- F2:
+  - Clippy found a complex closure type (now a `Stage` alias) and a `match` that is a `?`. The D21 test expected "Imported playlist" for "..." (the rule gives "_").
+  - Stage 2 compared every entry with every track and allocated per track. The matcher now groups tracks by file name and by title, and each stage reads only its group.
+  - The first write error stopped the import and dropped the reports of playlists already written (N6).
+  - `file://nas/share/a.mp3` lost its host. A host other than `localhost` now gives `//nas/share/a.mp3` (P12.4).
+  - Percent-decoding took `%+1` as a byte. It now needs two hex digits.
+  - The stage 1 test also passed without stage 1, and the narrowing test also passed without narrowing. Both libraries now have a second candidate that only the tested stage removes.
 - F4:
+  - The matcher holds the playlist and library locks during an import. With the grouped stages the work is small, so a snapshot copy of the library is not worth its code.
   - Report labels and errors carry no paths (D13).
   - The source file is only read: each golden test hashes it.
   - Matching never leaves the library: the candidates are index tracks.

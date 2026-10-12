@@ -125,10 +125,12 @@ pub fn import_source(
         playlist: name,
         matched,
         missing,
+        error: None,
     })
 }
 
-/// Imports every playlist in `file` (one for M3U, each user playlist for Apple XML, D22).
+/// Imports every playlist in `file` (one for M3U, each user playlist for Apple XML, D22). A
+/// playlist that cannot be written gets a report with its error; the others still import.
 pub fn import_file(
     set: &mut PlaylistSet,
     root: &Path,
@@ -137,8 +139,17 @@ pub fn import_file(
 ) -> Result<Vec<ImportReport>, ImportError> {
     let sources = read_sources(file)?;
     let matcher = Matcher::new(index);
-    sources
+    Ok(sources
         .iter()
-        .map(|source| import_source(set, root, index, &matcher, source, Some(file)))
-        .collect()
+        .map(|source| {
+            import_source(set, root, index, &matcher, source, Some(file)).unwrap_or_else(|error| {
+                ImportReport {
+                    playlist: source.name.clone(),
+                    matched: 0,
+                    missing: Vec::new(),
+                    error: Some(error.to_string()),
+                }
+            })
+        })
+        .collect())
 }

@@ -68,7 +68,9 @@ pub fn check<'a>(name: &str, existing: impl IntoIterator<Item = &'a str>) -> Res
 
 /// The name of an imported playlist (D21): each forbidden character becomes "_", leading and
 /// trailing spaces and dots go, a reserved name gets " (imported)" and a taken name gets
-/// " (2)", " (3)" and so on. `taken` says whether a valid name is in use.
+/// " (2)", " (3)" and so on. `taken` says whether a valid name is in use. A reserved device
+/// name with an extension gets the suffix on the device part ("CON (imported).mix"), because
+/// "CON.mix (imported)" is still reserved.
 pub fn import_name(raw: &str, taken: impl Fn(&str) -> bool) -> String {
     let mut name: String = raw
         .chars()
@@ -87,11 +89,13 @@ pub fn import_name(raw: &str, taken: impl Fn(&str) -> bool) -> String {
     if name.is_empty() {
         name = "Imported playlist".to_owned();
     }
-    if matches!(
-        check(&name, []),
-        Err(NameError::Reserved(_) | NameError::Favorites)
-    ) {
-        name.push_str(" (imported)");
+    match check(&name, []) {
+        Err(NameError::Reserved(_)) => {
+            let device = name.find('.').unwrap_or(name.len());
+            name.insert_str(device, " (imported)");
+        }
+        Err(NameError::Favorites) => name.push_str(" (imported)"),
+        _ => {}
     }
     let base = name.clone();
     let mut number = 2;
@@ -164,12 +168,22 @@ mod tests {
         assert_eq!(import_name("a/b\\c", free), "a_b_c");
         assert_eq!(import_name("x..y", free), "x_y");
         assert_eq!(import_name("CON", free), "CON (imported)");
+        assert_eq!(import_name("CON.mix", free), "CON (imported).mix");
+        assert_eq!(import_name("nul.x.y", free), "nul (imported).x.y");
         assert_eq!(import_name("favorites", free), "favorites (imported)");
         assert_eq!(import_name("...", free), "_");
         assert_eq!(import_name(" . ", free), "Imported playlist");
         let taken = |name: &str| name == "Mix" || name == "Mix (2)";
         assert_eq!(import_name("Mix", taken), "Mix (3)");
-        for raw in ["Road: trip?", "CON", "a/b", "x..y", " . "] {
+        for raw in [
+            "Road: trip?",
+            "CON",
+            "CON.mix",
+            "nul.x",
+            "a/b",
+            "x..y",
+            " . ",
+        ] {
             assert_eq!(check(&import_name(raw, free), []), Ok(()), "{raw}");
         }
     }

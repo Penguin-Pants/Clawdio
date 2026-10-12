@@ -140,10 +140,12 @@ const REASONS: Record<MissingReason, string> = {
 
 /**
  * The import report (P12.5): per new playlist, the matched count, then each missing entry and
- * why. Entries with no file location are in the report only.
+ * why. Entries with no file location are in the report only. A playlist that could not be
+ * written shows its error.
  */
 function ImportReportDialog({ reports }: { reports: ImportReport[] }) {
   const close = useUiStore((state) => state.closeDialog);
+  const imported = reports.filter((report) => report.error === null).length;
   return (
     <>
       <DialogHeader>
@@ -151,15 +153,17 @@ function ImportReportDialog({ reports }: { reports: ImportReport[] }) {
         <DialogDescription>
           {reports.length === 0
             ? "The file holds no playlist to import."
-            : `${reports.length === 1 ? "One playlist" : `${reports.length} playlists`} imported. Missing songs stay in the file and show as missing.`}
+            : `${imported === 1 ? "One playlist" : `${imported} playlists`} imported. Missing songs stay in the file and show as missing.`}
         </DialogDescription>
       </DialogHeader>
       <div className="flex max-h-80 flex-col gap-3 overflow-auto text-sm">
-        {reports.map((report) => (
-          <section key={report.playlist} aria-label={report.playlist}>
+        {reports.map((report, index) => (
+          <section key={index} aria-label={report.playlist}>
             <h3 className="font-medium">{report.playlist}</h3>
             <p className="text-text-secondary">
-              {report.matched} matched, {report.missing.length} missing
+              {report.error === null
+                ? `${report.matched} matched, ${report.missing.length} missing`
+                : `Not imported: ${report.error}`}
             </p>
             {report.missing.length > 0 && (
               <ul className="mt-1 list-disc pl-5 text-text-secondary">

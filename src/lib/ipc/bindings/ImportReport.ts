@@ -8,4 +8,9 @@ export type ImportReport = {
 /**
  * The name of the new playlist.
  */
-playlist: string, matched: number, missing: Array<MissingImport>, };
+playlist: string, matched: number, missing: Array<MissingImport>, 
+/**
+ * Why this playlist was not imported (no file was written), or null. The others in the
+ * same file are still imported.
+ */
+error: string | null, };

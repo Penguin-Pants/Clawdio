@@ -194,6 +194,9 @@ pub struct ImportReport {
     pub playlist: String,
     pub matched: u32,
     pub missing: Vec<MissingImport>,
+    /// Why this playlist was not imported (no file was written), or null. The others in the
+    /// same file are still imported.
+    pub error: Option<String>,
 }
 
 /// A playlist entry: a library track, or a missing file shown by its label (R13).

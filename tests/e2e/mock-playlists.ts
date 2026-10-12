@@ -105,6 +105,13 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
             { label: "Cloud Band - Streaming Song", reason: "noLocation" },
             { label: "Lost Song", reason: "notFound" },
           ],
+          error: null,
+        },
+        {
+          playlist: "Too long",
+          matched: 0,
+          missing: [],
+          error: "The playlist file cannot be written. The folder may be read-only",
         },
       ];
     },
