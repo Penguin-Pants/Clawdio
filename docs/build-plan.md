@@ -1608,7 +1608,7 @@ Uppercase spaced text is not used in the app UI (design.md §4).
 | UI | Playwright (Chromium, WebKit) with mocked IPC | Shell, widgets, keyboard, reduced motion, axe |
 | OS level | Manual checklist (`docs/release-checklist.md`) | Media keys, device unplug, portable copy, memory, packages |
 
-**CI** (`ci.yml`, on push and pull request):
+**CI** (`ci.yml`, on push and pull request; a change that touches only `**/*.md` and `docs/**` skips CI):
 - `frontend`: ubuntu-22.04, Node 24: `npm ci`, `npm run check`, `npx playwright install --with-deps chromium webkit`, `npm run test:e2e` (from P2).
 - `rust`: ubuntu-22.04 and windows-latest: fmt, clippy, test, bindings diff.
 - `tauri-build`: ubuntu-22.04 and windows-latest: Linux packages, `npm ci`, debug build, no bundle.
@@ -2719,7 +2719,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
-- **1.13 (October 12, 2026):** requirements v1.6 (R32 to R34, AC-22 to AC-24). Added phases P19 and P20, D51, D52, K21 and K22. D21 points to D51 for import names. The header now gives the current version.
+- **1.13 (October 12, 2026):** requirements v1.6 (R32 to R34, AC-22 to AC-24). Added phases P19 and P20, D51, D52, K21 and K22. D21 points to D51 for import names. The header now gives the current version. Owner request: `ci.yml` skips changes that touch only `**/*.md` and `docs/**` (section 6.17).
 - **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10), then accept the Linux value of 294 MB after D50. F-19 left section 11 (done in D50).
 - **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
