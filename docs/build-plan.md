@@ -1255,7 +1255,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 **TWO-PASS REVIEW:** F1 0, F2 1, F3 1, F4 2. Source: own audit.
 
 - F2: the first footprint row mixed kB-based and MiB-based numbers. It now uses the script's MB values like the other rows.
-- F3: F-21 (CI VM measurement on the P20 head).
+- F3: F-21 (CI VM measurement; run 38297586103 on the P21 head `5625ff9`, which has the same app code as the P20 head `907a0e4`).
 - F4:
   - "P19 and P20 change the package contents": the `.deb` and AppImage hold the same license files; only the app grew (`.deb` 9.26 to 9.36 MiB).
   - "Linux memory regression must block": D49 sets the Linux gate at 468 MB; 315 MB passes it, and R20 asks only that the owner is told.
