@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 206 | 36 | 6 | 5 | 6 | 42 | 0 |
+| Requirements | 301 | 208 | 34 | 6 | 5 | 6 | 42 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -236,8 +236,8 @@
 | R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Done (P5) |
 | R19-3 | No lookup markers in the cache; a rebuild causes no new lookups | §2 R19 | P14.3 | P14-AC8 | IT | Done (P14) |
 | R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Done (P10) |
-| R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
-| R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
+| R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Done (P18) |
+| R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Done (P18) |
 | R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Planned (D28) |
 | R20-4 | AppImage exempt from the size target | §2 R20 | P18.3 | P18-AC2 | CI | Planned |
 | R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Done (P3, B2) |

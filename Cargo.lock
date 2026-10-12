@@ -556,6 +556,7 @@ dependencies = [
  "clawdio-core",
  "dbus",
  "httpmock",
+ "libc",
  "log",
  "rodio",
  "serde",

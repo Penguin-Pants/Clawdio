@@ -1056,24 +1056,24 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 #### P18. Release readiness (October 12, 2026)
 
-- **Status:** In progress. Blocked by B3, B5, B9 and B10 (owner input). The code and docs work of P18.1 to P18.6, P18.8 and P18.9 is done.
+- **Status:** In progress. Blocked by B3 and B5 (owner input); B9 and B10 closed October 12, 2026. The code and docs work of P18.1 to P18.6, P18.8 and P18.9 is done.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `5ab34c2`. Messages start with `P18:`.
 - **Packages:** none in the app. CI tools: `cargo-deny` 0.20.2 and `cargo-about` 0.9.2 (prebuilt, SHA-256 checked).
 
 | Criterion | Result | Evidence |
 |---|---|---|
 | P18-AC1 | Not verified | `.github/workflows/release.yml` (tags `v*`): NSIS and portable zip on windows-latest, `.deb` and AppImage in `ubuntu:22.04`, size check, SHA-256 sums, draft release. No tag was pushed in this session. |
-| P18-AC2 | Pass on Linux (E1) | Local release build: `.deb` 9.26 MiB, AppImage 83.65 MiB (recorded). NSIS: not run (no Windows machine; `release.yml` fails at 30 MB or more). |
+| P18-AC2 | Pass | `measure.yml` run 38204302435: NSIS installer 5.12 MiB, `.deb` 9.25 MiB. Local AppImage 83.65 MiB (recorded). `release.yml` fails at 30 MB or more. |
 | P18-AC3 | Not run (E1) | `tauri.conf.json`: NSIS `installMode` `currentUser`, `webviewInstallMode` `downloadBootstrapper`. |
 | P18-AC4 | Not run (E1) | D38 holds: Tauri shows "Could not find the WebView2 Runtime" with the download link (`tauri-runtime-wry` 2.12.1 `src/lib.rs:4680`), then `main` exits with code 1. |
 | P18-AC5 | Not verified (E2) | No Ubuntu 22.04 desktop and no Debian 12 machine (B5 owner answer). |
-| P18-AC6 | Fail on Linux (B9); Windows not run (B10) | `docs/release-checklist.md` "Footprint": 519 MB worst mode against the raised 468 MB target. |
+| P18-AC6 | Windows pass; Linux under the raised target | `docs/release-checklist.md` "Footprint": Windows 146 MB (CI VM, target 200 MB). Linux 298 MB after D50 (container; raised target 468 MB, the owner asked for the reduction and is told the number). |
 | P18-AC7 | Pass on Linux (E3) | The `.deb` holds `LICENSE`, `NOTICE` and both third-party files; the AppImage holds them and the LGPL and GPL texts. `NOTICE`: 3 assets, the Rust crates of both shipped targets and 27 npm packages; CI job `licenses` checks all generated files. |
 | P18-AC8 | Pass | `cargo deny check` (licenses, advisories, bans, sources). |
 | P18-AC9 | Pass (Linux) | Brand swap demo: only the two inputs and `src-tauri/icons/` changed; reverted. |
 | P18-AC10 | Not run (E1) | Drive letters are Windows only. |
 | P18-AC11 | Pass in part (E1, E2) | Linux: window title and `.deb` desktop entry show the name. GNOME app grid and every Windows item not run. |
-| P18-AC12 | Not met | `docs/release-checklist.md` records all 21 checks and the platform matrix. AC-1 fails on Linux (B9); AC-3 on Windows waits for B3; Windows rows wait for B5. |
+| P18-AC12 | Not met | `docs/release-checklist.md` records all 21 checks and the platform matrix. AC-3 on Windows waits for B3; the manual Windows rows wait for B5. |
 | P18-AC13 | Pass | `docs/theming-and-brand.md` (token map, dock chrome, brand inputs, Magic UI: none) and `docs/file-formats.md` (settings, state, arrangement, playlists, lyrics, sidecar). |
 
 **Notes**
@@ -1083,6 +1083,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N3: the committed `NOTICE` has no AppImage table. `release.yml` makes it from the AppImage with `scripts/appimage-libs.sh` (package, version, the License fields of the Debian copyright file, source package) and builds the AppImage again with it. A library that no package owns fails the job.
 - N4: the local packages came from an Ubuntu 24.04 container. `release.yml` builds in Ubuntu 22.04 (glibc 2.35).
 - N5: the README gains Features, Install (WebView2, FUSE and SmartScreen notes), Portable mode, Keyboard shortcuts and Data locations.
+- N6: B9 reduction (D50). Each lever was measured alone in one Columns run: compositing off 513 to 326 MB, two arenas and a trim 513 to 491 MB, DMABUF renderer off a further 12 MB. The WebKit cache model (document viewer) and `GDK_GL=disable` saved nothing and were not kept. The README tells Linux users how to turn compositing back on.
 
 **Exceptions**
 
@@ -1091,7 +1092,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - E3: the zip and NSIS contents and the AppImage library table are made by `release.yml`, which did not run.
 - E4: the earlier "Done with exceptions" items stay open for the same reasons; `docs/release-checklist.md` lists them per AC.
 
-**Blockers:** B3 (Windows interop), B5 (Windows machine), B9 (Linux memory verdict), B10 (Windows measurement branch). P18 cannot be Done until B3 closes.
+**Blockers:** B3 (Windows interop) and B5 (Windows machine). B9 and B10 closed. P18 cannot be Done until B3 closes.
 
 **TWO-PASS REVIEW:** F1 0, F2 5, F3 1, F4 8. Source: own audit, then a reviewer agent.
 
@@ -1121,7 +1122,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - Limitations and unverified platform checks: `docs/release-checklist.md` (Windows: every manual check; Linux desktop: GNOME, real audio, device unplug).
 - Deviations from the reference: `docs/design.md` implementation notes (P17-AC7).
 
-**Follow-ups:** F-19 and F-20 (new); F-13 to F-18 open.
+**Follow-ups:** F-20 (new); F-13 to F-18 open. F-19 was done in D50.
 
 ---
 
@@ -1252,6 +1253,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D47 | On Linux, portable mode applies to the AppImage. "Next to the executable" means next to the AppImage file (the `APPIMAGE` environment variable), for both the marker and the R18.1 path rule. | Inside an AppImage the executable runs from a temporary mount. |
 | D48 | Tauri's CSP nonce injection stays on. If a release build reports a `style-src` violation, add `dangerousDisableAssetCspModification: ["style-src"]` and record it. The e2e suite serves the section 6.13 CSP and fails on any violation. | A nonce makes browsers ignore `'unsafe-inline'`. Inline styles from libraries must not break silently. |
 | D49 | Milestone 0 over 300 MB on an OS: that OS's worst value becomes its memory target, and the build continues. No stop. An OS at or under 300 MB keeps the 200 MB target. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
+| D50 | Linux only: the app sets `WEBKIT_DISABLE_COMPOSITING_MODE=1` and `WEBKIT_DISABLE_DMABUF_RENDERER=1` before GTK starts (a value the user set wins), limits glibc to two malloc arenas and trims the heap after each scan (`src-tauri/src/linux_memory.rs`). | Owner asked for a Linux memory reduction (B9, October 12, 2026). Measured: 519 MB to 298 MB worst mode; input latency did not get worse (max 24 ms against 64 ms). |
 
 ### 5.3 Owner confirmations
 
@@ -1280,8 +1282,8 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 | B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 could not be Done. | Closed October 11, 2026: the owner chose F-09 option (b). P1-AC4 checks bar separation at the 72 px README height. The assets did not change. |
 | B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 could not close; P4 waited for the Windows verdict (B2). | Closed October 11, 2026: the owner allowed pushes to `measure/p3`. Run 38171140952 measured Windows. |
-| B9 | P18.5 Linux idle memory is 519 MB, over the raised Linux target of 468 MB (D49). R20 calls the targets adjustable; P18.5 and P18-AC6 give the decision to the owner. | P18-AC6 and AC-1 fail on Linux until the owner accepts the value or asks for a reduction (F-19 gives back about 23 MB). | Owner decision. |
-| B10 | The P18.5 Windows numbers need `measure.yml` on windows-latest, which runs on a push to a `measure/**` branch (as B8). The agent may push only to its task branch. | P18-AC6 on Windows and the NSIS size stay "not run". | Owner allows a push to `measure/p18`, or runs `measure.yml` from the default branch. |
+| B9 | P18.5 Linux idle memory was 519 MB, over the raised Linux target of 468 MB (D49). | P18-AC6 on Linux. | Closed October 12, 2026: the owner asked for a reduction. D50 gives 298 MB (under 468 MB; between 200 and 300 MB, so the owner is told the number, R20). |
+| B10 | The P18.5 Windows numbers need `measure.yml` on windows-latest, which runs on a push to a `measure/**` branch (as B8). | P18-AC6 on Windows and the NSIS size. | Closed October 12, 2026: the owner allowed a push to `measure/p18`. Run 38204302435: Windows 146 MB, NSIS 5.12 MiB. |
 
 ---
 
@@ -2513,7 +2515,6 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
-| F-19 | On Linux, call glibc `malloc_trim(0)` once after a scan and after a large queue load. | The idle app process keeps freed scan memory: `malloc_trim(0)` on the idle 50,000-track app gave back 23 MB of 157 MB (P18.5). It does not close B9 alone. | P18 |
 | F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
@@ -2646,6 +2647,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10). F-19 left section 11 (done in D50).
 - **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
 - **1.9 (October 11, 2026):** owner signed off the brand after P1 (Q6 closed). Owner chose F-09 option (b) for B7: P1-AC4 checks wordmark bar separation at the 72 px README height, and the 20 px rule keeps only the bar width. F-09 left section 11.

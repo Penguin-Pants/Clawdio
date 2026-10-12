@@ -30,6 +30,8 @@ Each package holds `LICENSE`, `NOTICE` and the third-party license files.
 
 The Windows files are not code-signed. Windows SmartScreen can show "Windows protected your PC": select **More info**, then **Run anyway**.
 
+On Linux the app turns off WebKit's accelerated compositing and DMABUF renderer to use about 200 MB less memory. To turn them on again, start the app with `WEBKIT_DISABLE_COMPOSITING_MODE=0 WEBKIT_DISABLE_DMABUF_RENDERER=0`.
+
 ## Portable mode
 
 A file named `portable` next to the executable (next to the `.AppImage` file on Linux) turns on portable mode. Settings, the widget arrangement, the playback state, the cache, the logs and the WebView data then live in `data/` next to the executable. A music folder on the same drive is stored as a relative path, so a copy of the app folder and the music folder to another drive letter keeps working. The portable zip already holds the `portable` file.

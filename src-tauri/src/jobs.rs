@@ -244,6 +244,8 @@ fn run_scan(
     });
     emit(app, LIBRARY_CHANGED, ());
     progress(app, None);
+    #[cfg(target_os = "linux")]
+    crate::linux_memory::trim();
     let text = summary(&report);
     log::info!(
         "scan: {text} ({} read, {} covers decoded)",

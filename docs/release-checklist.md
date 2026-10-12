@@ -67,7 +67,7 @@ P7-AC12, P11-AC8).
 |---|---|---|
 | `.deb` builds, under 30 MB | Pass: 9.26 MiB (local release build, Ubuntu 24.04 container; `release.yml` builds in Ubuntu 22.04) | Not applicable |
 | AppImage builds, size recorded | Pass: 83.65 MiB (local, Ubuntu 24.04 libraries; it holds the LGPL and GPL texts) | Not applicable |
-| NSIS installer and portable zip, under 30 MB | Not applicable | Not run: no Windows machine. `release.yml` builds and checks them on a tag. |
+| NSIS installer and portable zip, under 30 MB | Not applicable | Pass for NSIS: 5.12 MiB (`measure.yml` run 38204302435). Portable zip: `release.yml` builds it on a tag. |
 | One tag builds all four packages (P18-AC1) | Not run: no tag was pushed in this session. | Not run |
 | Desktop entry: name, icon, `AudioVideo;Audio;Player;` | Pass: `.deb` desktop file read with `dpkg-deb` | Not applicable |
 | Each package holds `LICENSE`, `NOTICE` and the third-party files | Pass: `.deb` (`/usr/lib/Clawdio`) and AppImage | Not run (zip layout is in `release.yml`) |
@@ -79,17 +79,33 @@ P7-AC12, P11-AC8).
 ## Footprint (P18.5, AC-1, October 12, 2026)
 
 Release build without fixtures, portable folder, a library made by `gen_test_library` with
-50,000 tracks and `--covers 2000`, `scripts/measure-memory.sh` with 3 runs per mode, 60 s idle.
-Value: sum of PSS over the app process tree, worst mode median (D28).
+50,000 tracks and `--covers 2000`, `scripts/measure-memory.sh` or `.ps1` with 3 runs per mode
+and 60 s idle. Value: sum of PSS (Linux) or private working set (Windows) over the app process
+tree, worst mode median (D28).
 
-| OS | Tree | Columns | Top/bottom | Gate value | Target | Result |
+| OS and build | Tree | Columns | Top/bottom | Gate value | Target | Result |
 |---|---|---|---|---|---|---|
-| Linux (Ubuntu 24.04 container, Xvfb, software rendering) | 496 MB | 519 MB | 517 MB | 519 MB | 468 MB (raised at P3, D49) | Over the target. Owner decision (R20 targets are adjustable). |
-| Windows | Not run | Not run | Not run | Not run | 200 MB | `measure.yml` runs only on a `measure/**` branch push (owner approval) |
+| Linux container, `ddc97bd` (before D50) | 496 MB | 519 MB | 517 MB | 519 MB | 468 MB (raised at P3, D49) | Over the target. The owner asked for a reduction (B9). |
+| Linux CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 440 MB | 450 MB | 445 MB | 450 MB | 468 MB | Under the raised target |
+| Linux container, D50 build | 294 MB | 298 MB | 297 MB | 298 MB | 468 MB; R20 200 MB | Under the raised target. 200 to 300 MB: the owner is told the number (R20). |
+| Windows CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 133 MB | 146 MB | 140 MB | 146 MB | 200 MB | Pass |
 
-Process split in a Columns run: `WebKitWebProcess` 338 MB, `clawdio` 157 MB, `WebKitNetworkProcess` 22 MB.
-At P3 (fixture data) the same container gave 468 MB, with `WebKitWebProcess` at 338 MB.
-`malloc_trim(0)` on the idle app process gave back 23 MB (follow-up F-19).
+D50 (the B9 reduction) turns off WebKitGTK's accelerated compositing and DMABUF renderer and
+limits glibc to two malloc arenas, with a trim after each scan. Columns run, Linux container:
+
+| Process | Before | After |
+|---|---|---|
+| `WebKitWebProcess` | 338 MB | 150 MB |
+| `clawdio` | 157 MB | 127 MB |
+| `WebKitNetworkProcess` | 22 MB | 21 MB |
+
+Input latency with `CLAWDIO_PERF=1` (select a song, then 30 Down keys): max 24 ms with D50 and
+64 ms with compositing on; no event over 100 ms in either case. The UI renders the same (theme,
+thumbnails, focus ring). `WEBKIT_DISABLE_COMPOSITING_MODE=0 WEBKIT_DISABLE_DMABUF_RENDERER=0`
+turns both back on (the web process then uses 333 MB).
+
+Package sizes (`measure.yml` run 38204302435): NSIS installer 5.12 MiB (5,365,658 bytes) and
+`.deb` 9.25 MiB (9,696,204 bytes), both under 30 MB.
 
 ## Licenses (P18.4)
 
@@ -110,7 +126,7 @@ Pass on Linux. A test `theme/tokens.json` and a test `clawdio-icon-full.svg` cha
 
 | Check | Linux | Windows |
 |---|---|---|
-| AC-1 Footprint | Over the target: 519 MB against 468 MB (see "Footprint"). Owner decision. | Not run (P3 value 112 MB from CI) |
+| AC-1 Footprint | 298 MB after D50 (see "Footprint"); under the raised 468 MB target, over the R20 200 MB target | Pass: 146 MB (CI VM) |
 | AC-2 Responsive first scan | Exception: 2 of 3 runs under 100 ms (container, software rendering) | Not run |
 | AC-3 Playlist interop | Pass (VLC, see above) | Not run: no Windows machine. B3 stays open. |
 | AC-4 Import of real exports | Not run: the owner did not supply exports (Q5, B4) | Not run (Q5) |

@@ -3,6 +3,8 @@
 mod commands;
 mod events;
 mod jobs;
+#[cfg(target_os = "linux")]
+mod linux_memory;
 mod media_controls;
 mod online;
 mod persist;
@@ -73,6 +75,8 @@ fn log_builder(folder: &Path, max_bytes: u128) -> tauri_plugin_log::Builder {
 
 /// Builds and runs the app until it quits.
 pub fn run() -> tauri::Result<()> {
+    #[cfg(target_os = "linux")]
+    linux_memory::configure();
     tauri::Builder::default()
         // First plugin (P9.5): a second launch focuses the first window and exits.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
