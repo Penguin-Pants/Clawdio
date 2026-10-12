@@ -190,7 +190,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - An unmatched relative entry (M3U family) is written relative to the new playlist file when it points inside the music folder, so a later "Find missing songs" keeps its folder. Example: `Song.m4a` in `Artist/Album/list.m3u` is written as `../Artist/Album/Song.m4a`. Other unmatched entries keep their entry text (R14).
 - **R33 (v1.6).** Matching repair and "Find missing songs".
   - **R33.1 Rescan first.** Import (R14, R32) and "Find missing songs" first run the normal incremental scan, then match. If a scan is running, they wait for it to end. If the user cancels that scan, or it fails, the import or repair stops before matching, writes nothing and shows "Canceled, nothing changed".
-  - **R33.2 Other extension.** Stage 1 (relative to the playlist file) and stage 2 (longest path suffix) can match a library song whose extension differs from the entry. The folder part and the file name without extension must match. Example: `Artist/Album/Song.m4a` matches `Artist/Album/Song.mp3`. Within a stage, a hit with the same extension wins over hits with another extension. Stage 3 (file name only) still needs the same extension. The other R14 rules stay, including the narrowing and the "more than one match" rule.
+  - **R33.2 Other extension.** Stage 1 (relative to the playlist file) and stage 2 (longest path suffix) can match a library song whose extension differs from the entry. The comparison removes the extension of the last part only: stage 1 needs the same relative path, and stage 2 ranks by the longest shared path end, which must still hold at least the album folder and the file name. Example: `Artist/Album/Song.m4a` and `OldRoot/Artist/Album/Song.m4a` both match `Artist/Album/Song.mp3`. Within a stage, a hit with the same extension wins over hits with another extension. Stage 3 (file name only) still needs the same extension. The other R14 rules stay, including the narrowing and the "more than one match" rule.
   - **R33.3 Command.** "Find missing songs" runs on one playlist that has missing entries, including Favorites and `.m3u8` files found anywhere in the music folder. `[D]` A second command, "Find missing songs in all playlists", runs it on each playlist that has missing entries.
   - **R33.4 Write rule.** Each missing entry goes through the R14 stages with its path text and its `#EXTINF` artist and title. A unique match replaces the entry at the same position: the path (relative to the playlist file) and the `#EXTINF` line. Entries with no match or more than one match stay unchanged. The write is atomic (R13). A playlist with no change is not written.
   - **R33.5 Report.** The report lists, per playlist, the number of fixed entries and each entry that is still missing, with its reason (not found or more than one match). Labels are titles or file names, never paths.
@@ -313,6 +313,7 @@ These are out under the owner's "few features" rule.
 - **Track change, seek or queue edit during a duck `(v1.6)`:** the duck stays.
 - **Setting changed to Off during a duck `(v1.6)` `[D]`:** the volume fades back at once (Lower volume), or a track that the duck paused resumes (Pause).
 - **Stop during a Pause duck `(v1.6)`:** playback stays stopped when the microphone is free.
+- **Mode changed during a duck `(v1.6)` `[D]`:** the new mode applies at once. Lower volume to Pause: playback pauses (a duck pause) and the gain returns to the user volume. Pause to Lower volume: a duck-paused track resumes at the ducked volume.
 
 ---
 
@@ -456,7 +457,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 ## Change log
 
 - **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 28 (section 8).
-  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, ten edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
+  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, eleven edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
   - **Changed:** R13 (only import and "Find missing songs" write matches), R14 (multi-file picker, folder import, other extension).
 - **1.5 (October 11, 2026):** section G of the requirements review applied, with owner decisions 9 to 16 (section 8).
   - **Added:** R1.1 first run, R18.1 portable mode, WAV encodings (R1), scan rules (R2), sort order and multi-disc order (R3, R4), playback semantics and queue edits (R6), OS command set (R24), Delete key (R25), relative paths (R19, R27), artwork match and writability rules (R8), lyrics source order with embedded lyrics (R9), sidecar name (R10), playlist name rule and duplicates (R12), import normalization and unique-match rule (R14), Linux baseline and WebView2 prerequisite (R22), portable zip (R21), five edge cases, acceptance checks 17 to 21.

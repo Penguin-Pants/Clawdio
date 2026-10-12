@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 363 | 210 | 81 | 8 | 5 | 5 | 54 | 0 |
+| Requirements | 364 | 210 | 82 | 8 | 5 | 5 | 54 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -232,7 +232,7 @@
 | R32-6 | Busy state; only the scan cancel stops it; each playlist written when ready | §2 R32 | P19.3, P19.4 | P19-AC5, P19-AC7 | IT, E2E | Planned |
 | R32-7 | Unmatched relative entries inside the music folder are written relative to the new file | §2 R32 | P19.3 | P19-AC9 | IT | Planned |
 | R33-1 | Import and repair run the incremental scan first; a canceled or failed scan stops them with no write | §2 R33.1 | P19.4 | P19-AC5 | IT | Planned |
-| R33-2 | Stages 1 and 2 match another extension by folder and file name without extension; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Planned |
+| R33-2 | Stages 1 and 2 match another extension with the last extension removed; stage 2 keeps longest-suffix ranking; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Planned |
 | R33-3 | "Find missing songs" on one playlist and on all playlists | §2 R33.3 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
 | R33-4 | Unique matches replace entries in place; others unchanged; atomic; no write without change | §2 R33.4 | P19.5 | P19-AC4 | IT | Planned |
 | R33-5 | Repair report: fixed count and remaining missing entries with reasons; no paths | §2 R33.5 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
@@ -354,6 +354,7 @@
 | E-35 | Track change, seek or queue edit during a duck: the duck stays | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Planned |
 
 ### 1.11 Section 6: constraints
 
