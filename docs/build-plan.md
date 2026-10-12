@@ -1197,8 +1197,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P20-AC2 | Pass | `settings.rs` tests: a pre-P20 file keeps its values, percentages outside 5 to 90 or off the step are refused; engine test: the snapshot volume (saved by R27) stays the user volume during a duck. |
 | P20-AC7 | Pass | `mic.rs` tests: overlapping users, an active user at start, Off resets. |
 | P20-AC3 | Pass (Chromium) | `tests/e2e/ducking.spec.ts`: modes, slider only for Lower volume, the saved choice, no control with `?linux=1` (D53). Full Chromium suite: 102 passed. WebKit in CI. |
-| P20-AC4 | Not run (E1) | Manual Windows with Handy and a call app in the app itself. The P20.0 probe ran the same signal code with both apps. |
-| P20-AC5 | Not run (E1) | Manual Windows privacy page. |
+| P20-AC4 | Not verified (E1) | Not run in the app. Partial evidence: the owner's second probe run showed two overlapping recorders (count 1, 2, 1 at 11.7 s, 26.6 s, 29.2 s), so the signal stays busy while one of two users stops. |
+| P20-AC5 | Not verified (E1) | Owner decision, October 12, 2026: left unverified for now. |
 | P20-AC6 | Pass in part (E2) | `mic` is compiled only for Windows and tests; `ducking_logs_only_busy_and_free` captures the log. The detector logs busy, free and a Windows error text only. The Windows code passed clippy for `x86_64-pc-windows-msvc` in a scratch crate; the full app check for that target runs in CI (`ring` needs the MSVC compiler). |
 
 **Notes**
@@ -1209,7 +1209,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Exceptions**
 
-- E1: no Windows machine here; P20-AC4 and P20-AC5 wait for the owner's manual check of the app.
+- E1: P20-AC4 and P20-AC5 are not verified in the app (owner decision to continue). P21 repeats the manual Windows checks (AC-23, AC-24).
 - E2: the full Windows clippy and tests run in CI only.
 
 **Blockers:** none. K21 closed (D54).
