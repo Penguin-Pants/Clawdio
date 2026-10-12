@@ -16,6 +16,7 @@ Minimalist local music player
 - Album art from cover files or embedded pictures, lyrics from `.lrc` and `.txt` files or tags.
 - Optional online lookups for album art, lyrics and missing titles (see below).
 - OS media keys and the system media panel. Portable mode.
+- Windows: the music gets quieter or pauses while another app uses a microphone, for example a dictation tool or a call (Settings, "When the microphone is in use"). The app never opens the microphone.
 
 ## Install
 
