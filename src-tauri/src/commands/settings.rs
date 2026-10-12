@@ -2,9 +2,9 @@
 
 use std::path::Path;
 
-use clawdio_core::api::{FolderState, IpcError, SettingsView};
+use clawdio_core::api::{FolderState, IpcError, MicDucking, SettingsView};
 use clawdio_core::paths::{resolve_music_path, store_music_path};
-use clawdio_core::settings::{save, Settings};
+use clawdio_core::settings::{check_duck_percent, save, Settings};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -12,6 +12,7 @@ use tauri_plugin_opener::OpenerExt;
 use super::CommandResult;
 use crate::events::{emit, SETTINGS_CHANGED};
 use crate::jobs;
+use crate::player::{Command, PlayerHandle};
 use crate::state::{AppState, MusicRoot};
 
 fn io_error(error: impl std::fmt::Display) -> IpcError {
@@ -55,6 +56,23 @@ pub fn view(state: &AppState, settings: &Settings) -> SettingsView {
         notice_pending: !settings.online_notice_done,
         portable: state.dirs.portable,
         last_scan: settings.last_scan,
+        mic_ducking: settings.mic_ducking,
+        mic_duck_percent: settings.mic_duck_percent,
+        mic_ducking_supported: cfg!(windows),
+    }
+}
+
+/// Gives the ducking settings to the player and turns the detector on or off (P20).
+pub(crate) fn apply_ducking(app: &AppHandle, settings: &Settings) {
+    if let Some(player) = app.try_state::<PlayerHandle>() {
+        player.send(Command::SetDuck {
+            mode: settings.mic_ducking,
+            percent: settings.mic_duck_percent,
+        });
+    }
+    #[cfg(windows)]
+    if let Some(mic) = app.try_state::<crate::mic::MicControl>() {
+        mic.set_enabled(settings.mic_ducking != MicDucking::Off);
     }
 }
 
@@ -70,11 +88,16 @@ pub(crate) fn update(
     save(&state.dirs.config, &changed).map_err(io_error)?;
     let online =
         (changed.online_lookups != settings.online_lookups).then_some(changed.online_lookups);
+    let ducking = changed.mic_ducking != settings.mic_ducking
+        || changed.mic_duck_percent != settings.mic_duck_percent;
     *settings = changed;
     let view = view(&state, &settings);
     // Under the settings lock, so two quick changes reach the gate in the saved order.
     if let Some(on) = online {
         crate::online::switch(app, on);
+    }
+    if ducking {
+        apply_ducking(app, &settings);
     }
     drop(settings);
     emit(app, SETTINGS_CHANGED, view.clone());
@@ -90,6 +113,22 @@ pub fn settings_get(state: State<'_, AppState>) -> CommandResult<SettingsView> {
 #[tauri::command]
 pub fn set_online_lookups(app: AppHandle, on: bool) -> CommandResult<SettingsView> {
     update(&app, |settings| settings.online_lookups = on)
+}
+
+/// "When the microphone is in use" (R34.1).
+#[tauri::command]
+pub fn set_mic_ducking(app: AppHandle, mode: MicDucking) -> CommandResult<SettingsView> {
+    update(&app, |settings| settings.mic_ducking = mode)
+}
+
+/// The ducked volume percentage (R34.3): 5 to 90 in steps of 5.
+#[tauri::command]
+pub fn set_mic_duck_percent(app: AppHandle, percent: u8) -> CommandResult<SettingsView> {
+    let percent = check_duck_percent(percent).map_err(|error| IpcError {
+        code: "invalid_argument".into(),
+        message: error.to_string(),
+    })?;
+    update(&app, |settings| settings.mic_duck_percent = percent)
 }
 
 #[tauri::command]

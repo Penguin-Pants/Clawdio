@@ -7,6 +7,7 @@ import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
 import type { Lyrics } from "./bindings/Lyrics";
 import type { MetadataPreview } from "./bindings/MetadataPreview";
+import type { MicDucking } from "./bindings/MicDucking";
 import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
@@ -23,7 +24,7 @@ import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
-export type { ImportBatch, MetadataPreview, RepairBatch, RepairReport };
+export type { ImportBatch, MetadataPreview, MicDucking, RepairBatch, RepairReport };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -84,6 +85,10 @@ export const commands = {
   queueClear: () => invoke<void>("queue_clear"),
   settingsGet: () => invoke<SettingsView>("settings_get"),
   setOnlineLookups: (on: boolean) => invoke<SettingsView>("set_online_lookups", { on }),
+  /** "When the microphone is in use" (R34.1). */
+  setMicDucking: (mode: MicDucking) => invoke<SettingsView>("set_mic_ducking", { mode }),
+  /** The ducked volume, 5 to 90 in steps of 5 (R34.3). */
+  setMicDuckPercent: (percent: number) => invoke<SettingsView>("set_mic_duck_percent", { percent }),
   firstRunNoticeDone: () => invoke<SettingsView>("first_run_notice_done"),
   chooseMusicFolder: () => invoke<SettingsView>("choose_music_folder"),
   rescan: () => invoke<void>("rescan"),

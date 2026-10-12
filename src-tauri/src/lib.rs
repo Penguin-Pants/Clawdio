@@ -6,6 +6,9 @@ mod jobs;
 #[cfg(target_os = "linux")]
 mod linux_memory;
 mod media_controls;
+/// Microphone ducking detector (P20.2): Windows only; the tests run everywhere.
+#[cfg(any(windows, test))]
+mod mic;
 mod online;
 mod persist;
 mod player;
@@ -116,6 +119,16 @@ pub fn run() -> tauri::Result<()> {
                 AppEvents::new(app.handle().clone()),
                 resolve,
             );
+            // Microphone ducking (P20): the stored setting, and the detector on Windows.
+            player.send(player::Command::SetDuck {
+                mode: settings.mic_ducking,
+                percent: settings.mic_duck_percent,
+            });
+            #[cfg(windows)]
+            app.manage(mic::spawn(
+                player.clone(),
+                settings.mic_ducking != clawdio_core::api::MicDucking::Off,
+            ));
 
             // The saved queue waits for the library; the saver starts now (P9.1).
             app.manage(persist::StateStore::load(dirs.config.clone()));
@@ -183,6 +196,8 @@ pub fn run() -> tauri::Result<()> {
             commands::player::player_state,
             commands::settings::settings_get,
             commands::settings::set_online_lookups,
+            commands::settings::set_mic_ducking,
+            commands::settings::set_mic_duck_percent,
             commands::settings::first_run_notice_done,
             commands::settings::choose_music_folder,
             commands::settings::rescan,

@@ -5,11 +5,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use rodio::source::EmptyCallback;
-use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
+use rodio::source::{EmptyCallback, SeekError};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player, Source};
 
+use super::duck::Ramp;
 use super::source::TrackSource;
 
 /// Why a file cannot play, or why playback stopped.
@@ -30,8 +31,10 @@ pub trait AudioOutput {
     fn stop(&mut self);
     /// Moves to `to` in the current file. False when the file cannot seek.
     fn seek(&mut self, to: Duration) -> bool;
-    /// Volume from 0 to 1.
+    /// Volume from 0 to 1: the user volume (R34.6).
     fn set_volume(&mut self, volume: f32);
+    /// The duck factor (D52), applied on top of the volume, also to files loaded later.
+    fn set_gain(&mut self, ramp: Ramp);
     /// Position in the current file.
     fn position(&self) -> Duration;
     /// True once the current file played to its end.
@@ -50,6 +53,55 @@ pub trait AudioOutput {
     }
 }
 
+/// Samples between two reads of the duck ramp: about 3 ms at 48 kHz stereo.
+const GAIN_BLOCK: usize = 256;
+
+/// A track with the duck factor on it. The ramp is read once per [`GAIN_BLOCK`] samples, so a
+/// fade follows its own deadlines, not the player tick (P20.3).
+struct Ducked {
+    inner: TrackSource,
+    gain: Arc<Mutex<Ramp>>,
+    factor: f32,
+    left: usize,
+}
+
+impl Iterator for Ducked {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<f32> {
+        if self.left == 0 {
+            if let Ok(ramp) = self.gain.lock() {
+                self.factor = ramp.at(Instant::now());
+            }
+            self.left = GAIN_BLOCK;
+        }
+        self.left -= 1;
+        self.inner.next().map(|sample| sample * self.factor)
+    }
+}
+
+impl Source for Ducked {
+    fn current_span_len(&self) -> Option<usize> {
+        self.inner.current_span_len()
+    }
+
+    fn channels(&self) -> rodio::ChannelCount {
+        self.inner.channels()
+    }
+
+    fn sample_rate(&self) -> rodio::SampleRate {
+        self.inner.sample_rate()
+    }
+
+    fn total_duration(&self) -> Option<Duration> {
+        self.inner.total_duration()
+    }
+
+    fn try_seek(&mut self, to: Duration) -> Result<(), SeekError> {
+        self.inner.try_seek(to)
+    }
+}
+
 /// The device output (section 6.10). The device sink opens on the first `load`, and again on
 /// the next `load` after the device failed (P7.4).
 pub struct RodioOutput {
@@ -59,6 +111,7 @@ pub struct RodioOutput {
     decode_errors: Option<Receiver<String>>,
     device_error: Arc<Mutex<Option<String>>>,
     volume: f32,
+    gain: Arc<Mutex<Ramp>>,
 }
 
 impl Default for RodioOutput {
@@ -70,6 +123,7 @@ impl Default for RodioOutput {
             decode_errors: None,
             device_error: Arc::default(),
             volume: 1.0,
+            gain: Arc::new(Mutex::new(Ramp::flat(1.0, Instant::now()))),
         }
     }
 }
@@ -139,7 +193,12 @@ impl AudioOutput for RodioOutput {
             .player
             .as_ref()
             .ok_or_else(|| OutputError::Device("no player".into()))?;
-        player.append(source);
+        player.append(Ducked {
+            inner: source,
+            gain: self.gain.clone(),
+            factor: 1.0,
+            left: 0,
+        });
         // The callback source runs when the track before it has ended (section 6.10).
         player.append(EmptyCallback::new(Box::new(move || {
             ended.store(true, Ordering::Relaxed)
@@ -176,6 +235,12 @@ impl AudioOutput for RodioOutput {
         self.volume = volume.clamp(0.0, 1.0);
         if let Some(player) = &self.player {
             player.set_volume(self.volume);
+        }
+    }
+
+    fn set_gain(&mut self, ramp: Ramp) {
+        if let Ok(mut gain) = self.gain.lock() {
+            *gain = ramp;
         }
     }
 
@@ -221,6 +286,8 @@ pub struct TestOutput {
     clock: Duration,
     paused: bool,
     pub volume: f32,
+    /// The last duck ramp (D52).
+    pub gain: Option<Ramp>,
     /// Set by a test: the device fails at the next `take_error`.
     pub lose_device: bool,
 }
@@ -278,6 +345,10 @@ impl AudioOutput for TestOutput {
 
     fn set_volume(&mut self, volume: f32) {
         self.volume = volume;
+    }
+
+    fn set_gain(&mut self, ramp: Ramp) {
+        self.gain = Some(ramp);
     }
 
     fn position(&self) -> Duration {

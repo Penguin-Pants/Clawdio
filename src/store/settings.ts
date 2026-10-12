@@ -9,6 +9,9 @@ export const UNKNOWN_SETTINGS: SettingsView = {
   onlineLookups: false,
   noticePending: false,
   portable: false,
+  micDucking: "off",
+  micDuckPercent: 20,
+  micDuckingSupported: false,
 };
 
 interface SettingsState {

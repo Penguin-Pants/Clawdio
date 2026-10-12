@@ -1,15 +1,35 @@
-//! `settings.json` (R18): music folder, Online lookups switch, first-run notice and window
-//! size. Schema in `docs/file-formats.md`.
+//! `settings.json` (R18): music folder, Online lookups switch, first-run notice, window size
+//! and microphone ducking (R34). Schema in `docs/file-formats.md`.
 
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::api::ScanCounts;
+use crate::api::{MicDucking, ScanCounts};
 use crate::atomic::write_atomic;
 
 pub const SETTINGS_FILE: &str = "settings.json";
 pub const SETTINGS_VERSION: u32 = 1;
+/// The default ducked volume: 20% of the user volume (R34.3).
+pub const DEFAULT_DUCK_PERCENT: u8 = 20;
+
+fn default_duck_percent() -> u8 {
+    DEFAULT_DUCK_PERCENT
+}
+
+/// Why a duck percentage is refused (R34.3).
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("The percentage must be 5 to 90 in steps of 5")]
+pub struct BadPercent;
+
+/// A duck percentage: 5 to 90 in steps of 5 (R34.3).
+pub fn check_duck_percent(percent: u8) -> Result<u8, BadPercent> {
+    if (5..=90).contains(&percent) && percent.is_multiple_of(5) {
+        Ok(percent)
+    } else {
+        Err(BadPercent)
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct WindowSize {
@@ -31,6 +51,12 @@ pub struct Settings {
     /// Counts of the last scan (R2). Older files have no value.
     #[serde(default)]
     pub last_scan: Option<ScanCounts>,
+    /// Off by default (R34.1). Files written before v1.6 have no value.
+    #[serde(default)]
+    pub mic_ducking: MicDucking,
+    /// 5 to 90 in steps of 5 (R34.3). A file value outside that range loads as the default.
+    #[serde(default = "default_duck_percent")]
+    pub mic_duck_percent: u8,
 }
 
 impl Default for Settings {
@@ -42,6 +68,8 @@ impl Default for Settings {
             online_notice_done: false,
             window: None,
             last_scan: None,
+            mic_ducking: MicDucking::Off,
+            mic_duck_percent: DEFAULT_DUCK_PERCENT,
         }
     }
 }
@@ -66,7 +94,16 @@ pub fn load(config_dir: &Path) -> Loaded {
         Err(error) => return Loaded::Invalid(format!("cannot read {}: {error}", path.display())),
     };
     match serde_json::from_str::<Settings>(&text) {
-        Ok(settings) if settings.version == SETTINGS_VERSION => Loaded::Read(settings),
+        Ok(mut settings) if settings.version == SETTINGS_VERSION => {
+            if check_duck_percent(settings.mic_duck_percent).is_err() {
+                log::warn!(
+                    "settings: duck percentage {} is not 5 to 90 in steps of 5; using {DEFAULT_DUCK_PERCENT}",
+                    settings.mic_duck_percent
+                );
+                settings.mic_duck_percent = DEFAULT_DUCK_PERCENT;
+            }
+            Loaded::Read(settings)
+        }
         Ok(settings) => Loaded::Invalid(format!("unknown settings version {}", settings.version)),
         Err(error) => Loaded::Invalid(format!("corrupt settings file: {error}")),
     }
@@ -161,6 +198,57 @@ mod tests {
         let text = r#"{"version":1,"musicFolder":null,"onlineLookups":false,"onlineNoticeDone":true,"window":null}"#;
         std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
         assert!(matches!(load(dir.path()), Loaded::Read(s) if s.last_scan.is_none()));
+    }
+
+    /// P20-AC2: a file from before P20 keeps its values and gets the ducking defaults.
+    #[test]
+    fn a_file_without_ducking_fields_keeps_its_values() {
+        let dir = tempfile::tempdir().unwrap();
+        let text = r#"{"version":1,"musicFolder":"Music","onlineLookups":true,"onlineNoticeDone":true,"window":{"width":900.0,"height":600.0},"lastScan":{"added":1,"removed":0,"skipped":2}}"#;
+        std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
+        let Loaded::Read(settings) = load(dir.path()) else {
+            panic!("the file reads");
+        };
+        assert_eq!(
+            settings,
+            Settings {
+                music_folder: Some("Music".into()),
+                online_lookups: true,
+                online_notice_done: true,
+                window: Some(WindowSize {
+                    width: 900.0,
+                    height: 600.0
+                }),
+                last_scan: Some(ScanCounts {
+                    added: 1,
+                    removed: 0,
+                    skipped: 2
+                }),
+                ..Settings::default()
+            }
+        );
+        assert_eq!(settings.mic_ducking, MicDucking::Off);
+        assert_eq!(settings.mic_duck_percent, 20);
+    }
+
+    /// P20-AC2: 5 to 90 in steps of 5.
+    #[test]
+    fn a_duck_percent_outside_the_range_or_the_step_is_refused() {
+        for bad in [0, 4, 7, 91, 95, 100, 255] {
+            assert_eq!(check_duck_percent(bad), Err(BadPercent), "{bad}");
+        }
+        for good in [5, 20, 45, 90] {
+            assert_eq!(check_duck_percent(good), Ok(good));
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let text = r#"{"version":1,"musicFolder":"M","onlineLookups":false,"onlineNoticeDone":true,"window":null,"micDucking":"pause","micDuckPercent":33}"#;
+        std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
+        let Loaded::Read(settings) = load(dir.path()) else {
+            panic!("the file reads");
+        };
+        assert_eq!(settings.mic_duck_percent, 20, "a bad file value");
+        assert_eq!(settings.mic_ducking, MicDucking::Pause, "the rest stays");
+        assert_eq!(settings.music_folder.as_deref(), Some("M"));
     }
 
     #[test]

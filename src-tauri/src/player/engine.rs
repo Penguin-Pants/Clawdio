@@ -3,11 +3,12 @@
 
 use std::path::PathBuf;
 use std::sync::mpsc::Sender;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use clawdio_core::api::{PlayerSnapshot, PlayerStatus, QueueSnapshot, RepeatMode};
+use clawdio_core::api::{MicDucking, PlayerSnapshot, PlayerStatus, QueueSnapshot, RepeatMode};
 use clawdio_core::queue::{Queue, Removed, Step};
 
+use super::duck::{Action, Duck, Ramp};
 use super::output::{AudioOutput, OutputError};
 use super::{PlayerEvents, Resolve, DEVICE_MESSAGE, MAX_FAILURES};
 
@@ -44,6 +45,17 @@ pub enum Command {
         position_ms: u32,
         volume: u8,
     },
+    /// Another app records from a microphone (R34.2). The Windows detector sends it (P20.2).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    MicBusy,
+    /// No other app records from a microphone.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    MicFree,
+    /// The ducking settings (R34.1, R34.3).
+    SetDuck {
+        mode: MicDucking,
+        percent: u8,
+    },
     Shutdown,
 }
 
@@ -61,6 +73,12 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     /// Set after a restore: Paused with no file loaded. Play loads the current entry and
     /// seeks here (P9.1).
     resume_at: Option<u32>,
+    /// Microphone ducking (P20.3). `volume` stays the user volume (R34.6).
+    duck: Duck,
+    /// The duck factor the output applies (D52).
+    gain: Ramp,
+    /// The time source: the real clock, or a fake one in tests.
+    clock: Box<dyn Fn() -> Instant>,
 }
 
 impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
@@ -82,7 +100,70 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             volume: 100,
             failures: 0,
             resume_at: None,
+            duck: Duck::default(),
+            gain: Ramp::flat(1.0, Instant::now()),
+            clock: Box::new(Instant::now),
         }
+    }
+
+    #[cfg(test)]
+    pub fn set_clock(&mut self, clock: impl Fn() -> Instant + 'static) {
+        self.clock = Box::new(clock);
+    }
+
+    /// The next duck timer, so the player thread wakes for it (D52).
+    pub fn next_deadline(&self) -> Option<Instant> {
+        self.duck.next_deadline()
+    }
+
+    fn playing(&self) -> bool {
+        self.status == PlayerStatus::Playing
+    }
+
+    /// Does what the duck decided.
+    fn apply_duck(&mut self, actions: Vec<Action>) {
+        for action in actions {
+            match action {
+                Action::Fade { from, to, over } => {
+                    let now = (self.clock)();
+                    let from = from.unwrap_or_else(|| self.gain.at(now));
+                    self.gain = Ramp::new(from, to, now, over);
+                    self.output.set_gain(self.gain);
+                }
+                Action::Pause => {
+                    if self.playing() {
+                        self.output.pause();
+                        self.status = PlayerStatus::Paused;
+                        self.announce();
+                    }
+                }
+                Action::Resume => {
+                    if self.status == PlayerStatus::Paused && self.resume_at.is_none() {
+                        self.output.resume();
+                        self.status = PlayerStatus::Playing;
+                        self.announce();
+                    }
+                }
+            }
+        }
+    }
+
+    fn mic(&mut self, busy: bool) {
+        let now = (self.clock)();
+        let actions = if busy {
+            log::info!("ducking: microphone busy");
+            self.duck.busy(now, self.playing())
+        } else {
+            log::info!("ducking: microphone free");
+            self.duck.free(now)
+        };
+        self.apply_duck(actions);
+    }
+
+    fn set_duck(&mut self, mode: MicDucking, percent: u8) {
+        let now = (self.clock)();
+        let actions = self.duck.set(mode, percent, now, self.playing());
+        self.apply_duck(actions);
     }
 
     #[cfg(test)]
@@ -144,6 +225,11 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             match result {
                 Ok(()) => {
                     self.status = PlayerStatus::Playing;
+                    if self.duck.holds_pause() {
+                        // A track change during a Pause duck: the duck stays (E-35).
+                        self.output.pause();
+                        self.status = PlayerStatus::Paused;
+                    }
                     self.position_ms = 0;
                     self.announce_queue();
                     self.announce();
@@ -233,12 +319,18 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     /// Replaces the queue with `ids` and plays from `start` (R6 queue rule).
     pub fn play_list(&mut self, ids: Vec<u32>, start: usize) {
         if let Some(start) = self.queue.replace(ids, start) {
+            let actions = self.duck.user_play();
+            self.apply_duck(actions);
             self.failures = 0;
             self.play_index(start);
         }
     }
 
     pub fn play(&mut self) {
+        if !self.playing() {
+            let actions = self.duck.user_play();
+            self.apply_duck(actions);
+        }
         match self.status {
             PlayerStatus::Playing => {}
             PlayerStatus::Paused => {
@@ -270,6 +362,8 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     }
 
     pub fn pause(&mut self) {
+        let actions = self.duck.user_halt();
+        self.apply_duck(actions);
         if self.status == PlayerStatus::Playing {
             self.output.pause();
             self.status = PlayerStatus::Paused;
@@ -286,6 +380,8 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     }
 
     pub fn stop(&mut self) {
+        let actions = self.duck.user_halt();
+        self.apply_duck(actions);
         if self.status != PlayerStatus::Stopped {
             self.halt();
         }
@@ -371,6 +467,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     /// One tick while playing: an error stops or skips, the end of a file moves on, else the
     /// position goes out.
     pub fn tick(&mut self) {
+        let now = (self.clock)();
+        let actions = self.duck.poll(now, self.playing());
+        self.apply_duck(actions);
         if self.status != PlayerStatus::Playing {
             return;
         }
@@ -452,6 +551,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
                 position_ms,
                 volume,
             } => self.restore(ids, current, position_ms, volume),
+            Command::MicBusy => self.mic(true),
+            Command::MicFree => self.mic(false),
+            Command::SetDuck { mode, percent } => self.set_duck(mode, percent),
             Command::Shutdown => return false,
         }
         true
@@ -906,5 +1008,169 @@ mod tests {
         assert!(recorder.has("queue Some(1)"));
         handle.send(Command::Shutdown);
         thread.join().unwrap();
+    }
+
+    /// An engine on a fake clock (P20-AC1). The returned cell moves the time.
+    fn ducking_engine() -> (
+        Engine<TestOutput, Recorder>,
+        std::rc::Rc<std::cell::Cell<Instant>>,
+    ) {
+        let (mut engine, _) = engine();
+        let now = std::rc::Rc::new(std::cell::Cell::new(Instant::now()));
+        let clock = now.clone();
+        engine.set_clock(move || clock.get());
+        (engine, now)
+    }
+
+    fn later(now: &std::cell::Cell<Instant>, ms: u64) {
+        now.set(now.get() + Duration::from_millis(ms));
+    }
+
+    fn gain_at(engine: &mut Engine<TestOutput, Recorder>, at: Instant) -> f32 {
+        engine.output_mut().gain.expect("a duck ramp").at(at)
+    }
+
+    /// P20-AC1, E-35: Pause mode fades down, pauses, keeps the pause across a track change and
+    /// resumes with a fade in after the 1 s wait. The volume stays the user volume (R34.6).
+    #[test]
+    fn a_pause_duck_survives_a_track_change_and_resumes_after_the_wait() {
+        let (mut engine, now) = ducking_engine();
+        engine.set_volume(80);
+        engine.handle(Command::SetDuck {
+            mode: MicDucking::Pause,
+            percent: 20,
+        });
+        engine.play_list(vec![0, 1], 0);
+        engine.handle(Command::MicBusy);
+        let start = now.get();
+        assert_eq!(
+            engine.next_deadline(),
+            Some(start + Duration::from_millis(150))
+        );
+        assert_eq!(gain_at(&mut engine, start), 1.0);
+        assert!((gain_at(&mut engine, start + Duration::from_millis(75)) - 0.5).abs() < 1e-4);
+        assert_eq!(
+            gain_at(&mut engine, start + Duration::from_millis(150)),
+            0.0
+        );
+        later(&now, 149);
+        engine.tick();
+        assert_eq!(engine.state().status, PlayerStatus::Playing);
+        later(&now, 1);
+        engine.tick();
+        assert_eq!(engine.state().status, PlayerStatus::Paused);
+        assert_eq!(
+            engine.state().volume,
+            80,
+            "the saved volume is the user volume"
+        );
+        engine.handle(Command::Next);
+        assert_eq!(engine.queue().current, Some(1));
+        assert_eq!(
+            engine.state().status,
+            PlayerStatus::Paused,
+            "the duck stays"
+        );
+        engine.handle(Command::MicFree);
+        later(&now, 999);
+        engine.tick();
+        assert_eq!(engine.state().status, PlayerStatus::Paused);
+        later(&now, 1);
+        engine.tick();
+        assert_eq!(engine.state().status, PlayerStatus::Playing);
+        let resumed = now.get();
+        assert_eq!(gain_at(&mut engine, resumed), 0.0, "a fade in");
+        assert_eq!(
+            gain_at(&mut engine, resumed + Duration::from_millis(500)),
+            1.0
+        );
+    }
+
+    /// P20-AC1, R34.6: a volume change during a Lower duck sets the user volume; the duck
+    /// factor stays on top of it.
+    #[test]
+    fn a_volume_change_during_a_lower_duck_keeps_the_duck() {
+        let (mut engine, now) = ducking_engine();
+        engine.set_volume(60);
+        engine.handle(Command::SetDuck {
+            mode: MicDucking::Lower,
+            percent: 20,
+        });
+        engine.play_list(vec![0], 0);
+        engine.handle(Command::MicBusy);
+        later(&now, 150);
+        engine.handle(Command::SetVolume(40));
+        assert_eq!(engine.state().volume, 40);
+        assert_eq!(engine.output_mut().volume, 0.4);
+        assert_eq!(gain_at(&mut engine, now.get()), 0.2, "40 plays at 8");
+    }
+
+    /// E-38: Stop during a Pause duck: Play later plays normally and "free" resumes nothing.
+    #[test]
+    fn stop_during_a_pause_duck_gives_no_resume() {
+        let (mut engine, now) = ducking_engine();
+        engine.handle(Command::SetDuck {
+            mode: MicDucking::Pause,
+            percent: 20,
+        });
+        engine.play_list(vec![0], 0);
+        engine.handle(Command::MicBusy);
+        later(&now, 150);
+        engine.tick();
+        engine.handle(Command::Stop);
+        engine.handle(Command::MicFree);
+        later(&now, 1000);
+        engine.tick();
+        assert_eq!(engine.state().status, PlayerStatus::Stopped);
+    }
+
+    static LOG_LINES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+    struct Capture;
+
+    impl log::Log for Capture {
+        fn enabled(&self, _: &log::Metadata<'_>) -> bool {
+            true
+        }
+        fn log(&self, record: &log::Record<'_>) {
+            if let Ok(mut lines) = LOG_LINES.lock() {
+                lines.push(record.args().to_string());
+            }
+        }
+        fn flush(&self) {}
+    }
+
+    /// P20-AC6: the duck logs the two state changes only, never an app name, path or id.
+    #[test]
+    fn ducking_logs_only_busy_and_free() {
+        static INSTALL: std::sync::Once = std::sync::Once::new();
+        INSTALL.call_once(|| {
+            let _ = log::set_logger(&Capture);
+            log::set_max_level(log::LevelFilter::Info);
+        });
+        let (mut engine, now) = ducking_engine();
+        engine.handle(Command::SetDuck {
+            mode: MicDucking::Lower,
+            percent: 20,
+        });
+        engine.play_list(vec![0], 0);
+        engine.handle(Command::MicBusy);
+        engine.handle(Command::MicFree);
+        later(&now, 1000);
+        engine.tick();
+        let lines: Vec<String> = LOG_LINES
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|line| line.starts_with("ducking"))
+            .cloned()
+            .collect();
+        assert!(!lines.is_empty());
+        for line in lines {
+            assert!(
+                line == "ducking: microphone busy" || line == "ducking: microphone free",
+                "{line}"
+            );
+        }
     }
 }

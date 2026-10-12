@@ -16,6 +16,8 @@ The app writes the file atomically: a temp file in the same folder, then a renam
 | `onlineNoticeDone` | boolean | `false` | `true` after the user answers the first-run notice. |
 | `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers). |
 | `lastScan` | object or `null` | `null` | Counts of the last scan (R2): `added`, `removed` and `skipped`. Settings shows them. A file without the key reads as `null`. |
+| `micDucking` | `"off"`, `"lower"` or `"pause"` | `"off"` | "When the microphone is in use" (R34.1). Windows only; other platforms keep the value and do not use it (D53). A file without the key reads as `"off"`. |
+| `micDuckPercent` | integer | `20` | The ducked volume for `"lower"`, as a percentage of the user volume (R34.3): 5 to 90 in steps of 5. A file without the key, or with another value, reads as `20`. |
 
 Example:
 
@@ -33,7 +35,9 @@ Example:
     "added": 50000,
     "removed": 0,
     "skipped": 12
-  }
+  },
+  "micDucking": "lower",
+  "micDuckPercent": 20
 }
 ```
 
@@ -41,6 +45,7 @@ Rules:
 
 - No file: first run. The app uses the defaults and shows the first-run notice.
 - A corrupt file or an unknown `version`: the app writes a warning to `app.log` and uses the defaults. The next change to a setting replaces the file.
+- The ducking keys came in v1.6 without a new `version`: an older file loads with all its values and the ducking defaults.
 
 ## `state.json`
 
