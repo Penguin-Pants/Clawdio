@@ -22,7 +22,7 @@ pub const SCAN_JOB: &str = "scan";
 const LIBRARY_EVENT_GAP: Duration = Duration::from_millis(500);
 /// One scan at a time: a new scan waits until the canceled one has stopped, so the old one
 /// cannot write after the new one clears the index.
-static SCAN_GATE: Mutex<()> = Mutex::new(());
+pub(crate) static SCAN_GATE: Mutex<()> = Mutex::new(());
 /// Scans started and not yet ended. Rescan does nothing while one runs (R2).
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
 

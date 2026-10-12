@@ -1073,3 +1073,375 @@ mod lyrics_fetch {
         );
     }
 }
+
+mod metadata_fill {
+    use super::*;
+    use crate::net::metadata::{propose, read_song, SongInfo};
+    use crate::sidecar::TrackEntry;
+
+    const RELEASE_A: &str = "aaaaaaaa-0000-4000-8000-000000000001";
+    const RELEASE_B: &str = "bbbbbbbb-0000-4000-8000-000000000002";
+    const GROUP: &str = "cccccccc-0000-4000-8000-000000000003";
+
+    fn song(key: &str) -> SongInfo {
+        SongInfo {
+            key: key.into(),
+            ..SongInfo::default()
+        }
+    }
+
+    fn summary(
+        id: &str,
+        title: &str,
+        artist: &str,
+        group: &str,
+        date: &str,
+        count: u32,
+    ) -> serde_json::Value {
+        serde_json::json!({
+            "id": id, "title": title, "date": date, "track-count": count,
+            "artist-credit": [{ "name": artist }], "release-group": { "id": group },
+        })
+    }
+
+    fn release(id: &str, date: &str, media: &[&[&str]]) -> String {
+        let media: Vec<_> = media
+            .iter()
+            .enumerate()
+            .map(|(index, titles)| {
+                let tracks: Vec<_> = titles
+                    .iter()
+                    .enumerate()
+                    .map(|(n, title)| serde_json::json!({ "position": n + 1, "number": (n + 1).to_string(), "title": title }))
+                    .collect();
+                serde_json::json!({ "position": index + 1, "tracks": tracks })
+            })
+            .collect();
+        serde_json::json!({ "id": id, "title": "Album", "date": date, "media": media }).to_string()
+    }
+
+    async fn search_mock<'a>(
+        server: &'a MockServer,
+        album: &str,
+        releases: Vec<serde_json::Value>,
+    ) -> httpmock::Mock<'a> {
+        let query = format!("release:\"{album}\"");
+        server
+            .mock_async(|when, then| {
+                when.path("/ws/2/release/")
+                    .query_param_includes("query", query);
+                then.status(200)
+                    .body(serde_json::json!({ "releases": releases }).to_string());
+            })
+            .await
+    }
+
+    async fn release_mock<'a>(
+        server: &'a MockServer,
+        id: &str,
+        body: String,
+    ) -> httpmock::Mock<'a> {
+        server
+            .mock_async(|when, then| {
+                when.path(format!("/ws/2/release/{id}"))
+                    .query_param("inc", "recordings");
+                then.status(200).body(body);
+            })
+            .await
+    }
+
+    /// P16-AC1: only fields the tags lack are proposed; songs map by track number, else by
+    /// title.
+    #[tokio::test]
+    async fn only_missing_fields_are_proposed() {
+        let server = MockServer::start_async().await;
+        search_mock(
+            &server,
+            "album",
+            vec![summary(
+                RELEASE_A,
+                "Album",
+                "Artist",
+                GROUP,
+                "1973-05-01",
+                3,
+            )],
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_A,
+            release(RELEASE_A, "1973-05-01", &[&["One", "Two", "Three"]]),
+        )
+        .await;
+        let songs = [
+            song("01 One.mp3"),
+            SongInfo {
+                key: "x.mp3".into(),
+                tag_title: Some("Two".into()),
+                tag_year: Some(2001),
+                ..SongInfo::default()
+            },
+            SongInfo {
+                key: "Bonus/three.mp3".into(),
+                tag_track: Some(3),
+                tag_title: Some("Three".into()),
+                tag_year: Some(1973),
+                ..SongInfo::default()
+            },
+        ];
+        let gate = gate(&server);
+        let found = propose(&gate, "Artist", "Album", &songs, &gate.job_token())
+            .await
+            .unwrap();
+        assert_eq!(
+            found,
+            [
+                (
+                    "01 One.mp3".to_owned(),
+                    TrackEntry {
+                        title: Some("One".into()),
+                        track: Some(1),
+                        year: Some(1973),
+                    }
+                ),
+                (
+                    "x.mp3".to_owned(),
+                    TrackEntry {
+                        title: None,
+                        track: Some(2),
+                        year: None,
+                    }
+                ),
+            ]
+        );
+    }
+
+    /// P16-AC9: a folder name that finds no release, with an album tag that does, gives a
+    /// proposal.
+    #[tokio::test]
+    async fn the_album_tag_finds_what_the_folder_name_does_not() {
+        let server = MockServer::start_async().await;
+        search_mock(&server, "folder name", vec![]).await;
+        search_mock(
+            &server,
+            "real album",
+            vec![summary(
+                RELEASE_A,
+                "Real Album",
+                "Real Artist",
+                GROUP,
+                "1990",
+                2,
+            )],
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_A,
+            release(RELEASE_A, "1990", &[&["One", "Two"]]),
+        )
+        .await;
+        let tagged = |key: &str| SongInfo {
+            key: key.into(),
+            tag_album: Some("Real Album".into()),
+            tag_artist: Some("Real Artist".into()),
+            ..SongInfo::default()
+        };
+        let songs = [tagged("01 One.mp3"), tagged("02 Two.mp3")];
+        let gate = gate(&server);
+        let found = propose(
+            &gate,
+            "Folder Artist",
+            "Folder Name",
+            &songs,
+            &gate.job_token(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(found.len(), 2);
+        assert_eq!(found[0].1.year, Some(1990));
+    }
+
+    /// P16-AC9: two releases with the same best score give no proposal; fewer than half the
+    /// songs matched gives none.
+    #[tokio::test]
+    async fn a_tie_or_a_weak_match_gives_no_proposal() {
+        let server = MockServer::start_async().await;
+        search_mock(
+            &server,
+            "album",
+            vec![
+                summary(RELEASE_A, "Album", "Artist", GROUP, "1973", 2),
+                summary(RELEASE_B, "Album", "Artist", GROUP, "1974", 2),
+            ],
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_A,
+            release(RELEASE_A, "1973", &[&["One", "Two"]]),
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_B,
+            release(RELEASE_B, "1974", &[&["One", "Two"]]),
+        )
+        .await;
+        let gate = gate(&server);
+        let songs = [song("01 One.mp3"), song("02 Two.mp3")];
+        assert_eq!(
+            propose(&gate, "Artist", "Album", &songs, &gate.job_token()).await,
+            Ok(Vec::new())
+        );
+
+        let server = MockServer::start_async().await;
+        search_mock(
+            &server,
+            "album",
+            vec![summary(RELEASE_A, "Album", "Artist", GROUP, "1973", 3)],
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_A,
+            release(RELEASE_A, "1973", &[&["One", "Other", "Else"]]),
+        )
+        .await;
+        let gate = super::gate(&server);
+        let songs = [song("01 One.mp3"), song("02 Two.mp3"), song("03 Three.mp3")];
+        assert_eq!(
+            propose(&gate, "Artist", "Album", &songs, &gate.job_token()).await,
+            Ok(Vec::new())
+        );
+    }
+
+    /// Two release groups from the folder names give no candidate (D42 step 1).
+    #[tokio::test]
+    async fn two_release_groups_give_no_proposal() {
+        let server = MockServer::start_async().await;
+        search_mock(
+            &server,
+            "album",
+            vec![
+                summary(RELEASE_A, "Album", "Artist", GROUP, "1973", 1),
+                summary(
+                    RELEASE_B,
+                    "Album",
+                    "Artist",
+                    "dddddddd-0000-4000-8000-000000000004",
+                    "1980",
+                    1,
+                ),
+            ],
+        )
+        .await;
+        let scored =
+            release_mock(&server, RELEASE_A, release(RELEASE_A, "1973", &[&["One"]])).await;
+        let gate = gate(&server);
+        let found = propose(
+            &gate,
+            "Artist",
+            "Album",
+            &[song("01 One.mp3")],
+            &gate.job_token(),
+        )
+        .await;
+        assert_eq!(found, Ok(Vec::new()));
+        assert_eq!(scored.calls_async().await, 0);
+    }
+
+    /// P16.3: disc and track number map a song on a two-disc release; with no disc tag the
+    /// title maps it.
+    #[tokio::test]
+    async fn songs_map_by_disc_and_track_then_by_title() {
+        let server = MockServer::start_async().await;
+        search_mock(
+            &server,
+            "album",
+            vec![summary(RELEASE_A, "Album", "Artist", GROUP, "2000", 4)],
+        )
+        .await;
+        release_mock(
+            &server,
+            RELEASE_A,
+            release(RELEASE_A, "2000", &[&["One", "Two"], &["Three", "Four"]]),
+        )
+        .await;
+        let songs = [
+            SongInfo {
+                key: "CD2/01 a.mp3".into(),
+                tag_disc: Some(2),
+                tag_title: Some("Three".into()),
+                ..SongInfo::default()
+            },
+            SongInfo {
+                key: "CD2/02 Four.mp3".into(),
+                ..SongInfo::default()
+            },
+        ];
+        let gate = gate(&server);
+        let found = propose(&gate, "Artist", "Album", &songs, &gate.job_token())
+            .await
+            .unwrap();
+        assert_eq!(found[0].1.track, Some(1), "disc 2, track 1");
+        assert_eq!(found[0].1.title, None, "the tag title stays");
+        assert_eq!(found[1].1.title.as_deref(), Some("Four"));
+        assert_eq!(
+            found[1].1.track,
+            Some(2),
+            "by title: Four is track 2 on disc 2"
+        );
+    }
+
+    /// With the switch off no request is made.
+    #[tokio::test]
+    async fn the_switch_off_makes_no_fill_request() {
+        let server = MockServer::start_async().await;
+        let any = search_mock(&server, "album", vec![]).await;
+        let gate = OnlineGate::new(config(&server), false).unwrap();
+        let found = propose(
+            &gate,
+            "Artist",
+            "Album",
+            &[song("01 One.mp3")],
+            &gate.job_token(),
+        )
+        .await;
+        assert_eq!(found, Err(LookupError::Net(NetError::Off)));
+        assert_eq!(any.calls_async().await, 0);
+    }
+
+    /// Tags are read for the missing check: title, track, disc, year, album and artist.
+    #[test]
+    fn song_tags_are_read() {
+        use lofty::config::WriteOptions;
+        use lofty::prelude::*;
+        use lofty::tag::{Tag, TagType};
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join("01 x.mp3");
+        std::fs::copy(seed(), &path).unwrap();
+        assert_eq!(read_song(&path, "01 x.mp3".into()).tag_title, None);
+        let mut tag = Tag::new(TagType::Id3v2);
+        tag.set_title("T".into());
+        tag.set_track(4);
+        tag.set_disk(2);
+        tag.set_album("Al".into());
+        tag.set_artist("Ar".into());
+        tag.insert_text(lofty::tag::ItemKey::RecordingDate, "1999-02-03".into());
+        tag.save_to_path(&path, WriteOptions::default()).unwrap();
+        assert_eq!(
+            read_song(&path, "01 x.mp3".into()),
+            SongInfo {
+                key: "01 x.mp3".into(),
+                tag_title: Some("T".into()),
+                tag_track: Some(4),
+                tag_disc: Some(2),
+                tag_year: Some(1999),
+                tag_album: Some("Al".into()),
+                tag_artist: Some("Ar".into()),
+            }
+        );
+    }
+}

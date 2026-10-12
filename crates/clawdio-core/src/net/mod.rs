@@ -4,6 +4,7 @@
 
 pub mod artwork;
 pub mod lyrics;
+pub mod metadata;
 pub mod normalize;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};

@@ -563,3 +563,87 @@ fn a_sidecar_is_not_a_track() {
         text
     );
 }
+
+/// Title and track number of each song in the index.
+fn titles(index: &RwLock<LibraryIndex>) -> Vec<(String, String, Option<u32>)> {
+    let index = index.read().unwrap();
+    let mut rows: Vec<_> = index
+        .paths()
+        .filter_map(|path| index.track_at(path))
+        .map(|track| {
+            (
+                track.rel_path().to_owned(),
+                track.title().to_owned(),
+                track.data.track_no,
+            )
+        })
+        .collect();
+    rows.sort();
+    rows
+}
+
+/// P16.6, P16-AC3, P5.3: untagged songs take the sidecar title and track number; tagged
+/// songs keep their tags; a changed or removed sidecar updates the album's rows at the next
+/// scan, also from the cache after a restart.
+#[test]
+fn the_sidecar_fills_untagged_songs_and_follows_its_changes() {
+    let root = tempfile::tempdir().unwrap();
+    put(root.path(), "A/B/01 One.mp3", "tone.mp3", Tags::default());
+    put(root.path(), "A/B/CD2/x.mp3", "tone.mp3", Tags::default());
+    put(
+        root.path(),
+        "A/B/03 Tagged.mp3",
+        "tone.mp3",
+        Tags {
+            title: Some("Tag Title"),
+            track: Some(9),
+            ..Tags::default()
+        },
+    );
+    let sidecar = root.path().join("A/B/sidecar.json");
+    std::fs::write(
+        &sidecar,
+        r#"{"version":1,"tracks":{"01 One.mp3":{"title":"Real One","track":4},"CD2/x.mp3":{"title":"Disc Two"},"03 Tagged.mp3":{"title":"Not Used","track":1},"gone.mp3":{"title":"Orphan"}}}"#,
+    )
+    .unwrap();
+    let cache_dir = tempfile::tempdir().unwrap();
+    let mut cache = Cache::open(cache_dir.path()).unwrap();
+    let index = RwLock::new(LibraryIndex::new());
+    run(root.path(), &index, Some(&mut cache));
+    let expected = |one: &str, track: Option<u32>| {
+        vec![
+            ("A/B/01 One.mp3".to_owned(), one.to_owned(), track),
+            (
+                "A/B/03 Tagged.mp3".to_owned(),
+                "Tag Title".to_owned(),
+                Some(9),
+            ),
+            ("A/B/CD2/x.mp3".to_owned(), "Disc Two".to_owned(), None),
+        ]
+    };
+    assert_eq!(titles(&index), expected("Real One", Some(4)));
+
+    // A restart: the cache gives the same rows, and an unchanged folder reads no tags.
+    let index = RwLock::new(LibraryIndex::new());
+    load(&index, &cache).unwrap();
+    assert_eq!(titles(&index), expected("Real One", Some(4)));
+    let report = run(root.path(), &index, Some(&mut cache));
+    assert_eq!(report.read, 0);
+
+    // A changed sidecar updates the album with no audio file change.
+    std::fs::write(&sidecar, r#"{"tracks":{"01 One.mp3":{"title":"Changed"}}}"#).unwrap();
+    run(root.path(), &index, Some(&mut cache));
+    let mut changed = expected("Changed", Some(1));
+    changed[2].1 = "x".into();
+    assert_eq!(titles(&index), changed);
+
+    // A removed sidecar gives the file names back.
+    std::fs::remove_file(&sidecar).unwrap();
+    run(root.path(), &index, Some(&mut cache));
+    let mut plain = expected("One", Some(1));
+    plain[2].1 = "x".into();
+    assert_eq!(titles(&index), plain);
+    let reloaded = RwLock::new(LibraryIndex::new());
+    load(&reloaded, &cache).unwrap();
+    assert_eq!(titles(&reloaded), plain);
+}

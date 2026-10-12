@@ -6,6 +6,7 @@ import type { FolderState } from "./bindings/FolderState";
 import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
 import type { Lyrics } from "./bindings/Lyrics";
+import type { MetadataPreview } from "./bindings/MetadataPreview";
 import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
@@ -19,6 +20,7 @@ import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
+export type { MetadataPreview };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -32,6 +34,10 @@ export const commands = {
   albumArt: (album: number, size: 96 | 512) => invoke<string | null>("album_art", { album, size }),
   /** "Set cover" (P10.4): false when the user cancels. */
   setCover: (album: number) => invoke<boolean>("set_cover", { album }),
+  /** "Fill missing metadata" (P16): the preview, or null when nothing was found. Writes nothing. */
+  metadataPreview: (album: number) => invoke<MetadataPreview | null>("metadata_preview", { album }),
+  /** Confirm of the metadata preview (P16.5): writes the album's sidecar. */
+  metadataApply: (album: number) => invoke<null>("metadata_apply", { album }),
   /** "Retry lookup" (P14.7): clears the marker and looks the album up; the result is a status message. */
   albumRetryLookup: (album: number) => invoke<null>("album_retry_lookup", { album }),
   queueGet: () => invoke<QueueSnapshot>("queue_get"),

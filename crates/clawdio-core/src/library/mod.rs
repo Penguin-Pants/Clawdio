@@ -100,6 +100,8 @@ pub struct Album {
     pub key: String,
     pub tracks: Vec<TrackId>,
     pub cover: CoverInfo,
+    /// The stamp of the album folder's `sidecar.json` the songs were read with (P5.3).
+    pub sidecar: Option<FileStamp>,
 }
 
 #[derive(Debug, Default)]
@@ -242,6 +244,46 @@ impl LibraryIndex {
         self.albums[album as usize].cover = cover;
     }
 
+    /// Sets the stamp of an album folder's `sidecar.json`, or None when it has none. An
+    /// unknown album is left alone.
+    pub fn set_sidecar(&mut self, artist: &str, album: &str, stamp: Option<FileStamp>) {
+        let Some(artist) = self.artist_ids.get(artist) else {
+            return;
+        };
+        if let Some(id) = self.album_ids.get(&(*artist, album.to_owned())) {
+            self.albums[*id as usize].sidecar = stamp;
+        }
+    }
+
+    /// Albums with tracks: artist name, album name and the sidecar stamp.
+    pub fn album_sidecars(&self) -> impl Iterator<Item = (&str, &str, Option<FileStamp>)> {
+        self.albums
+            .iter()
+            .filter(|album| !album.tracks.is_empty())
+            .map(|album| {
+                (
+                    self.artists[album.artist as usize].name.as_str(),
+                    album.name.as_str(),
+                    album.sidecar,
+                )
+            })
+    }
+
+    /// The tracks of the album folder `artist`/`album`, as relative paths.
+    pub fn album_paths(&self, artist: &str, album: &str) -> Vec<String> {
+        let Some(artist) = self.artist_ids.get(artist) else {
+            return Vec::new();
+        };
+        let Some(id) = self.album_ids.get(&(*artist, album.to_owned())) else {
+            return Vec::new();
+        };
+        self.albums[*id as usize]
+            .tracks
+            .iter()
+            .filter_map(|track| self.rel_path(*track).map(str::to_owned))
+            .collect()
+    }
+
     /// Albums with tracks: artist name, album name and cover information.
     pub fn album_covers(&self) -> impl Iterator<Item = (&str, &str, &CoverInfo)> {
         self.albums
@@ -308,6 +350,7 @@ impl LibraryIndex {
             key: fold(name),
             tracks: Vec::new(),
             cover: CoverInfo::default(),
+            sidecar: None,
         });
         self.artists[artist as usize].albums.push(id);
         self.album_ids.insert((artist, name.to_owned()), id);

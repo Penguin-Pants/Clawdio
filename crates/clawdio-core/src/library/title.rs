@@ -1,4 +1,6 @@
-//! Titles and song order (R4). The sidecar step comes in P16.
+//! Titles and song order (R4): the tag, then the album sidecar (P16), then the file name.
+
+use crate::sidecar::TrackEntry;
 
 /// The file name without a leading track-number prefix (R4), and the number from the prefix.
 /// A prefix is one to three digits, an optional "-" or "." with one to three more digits, then
@@ -46,17 +48,22 @@ pub fn strip_number_prefix(stem: &str) -> (&str, Option<u32>) {
     (rest, number(0, first))
 }
 
-/// Title and track number: the tag, else the file name without its prefix and the number from
-/// the prefix (R4).
+/// Title and track number (R4): the tag, else the sidecar value, else the file name without
+/// its prefix and the number from the prefix.
 pub fn title_and_track(
     tag_title: Option<String>,
     tag_track: Option<u32>,
+    sidecar: Option<&TrackEntry>,
     stem: &str,
 ) -> (String, Option<u32>) {
     let (name, number) = strip_number_prefix(stem);
+    let sidecar_title = sidecar.and_then(|entry| entry.title.clone());
+    let sidecar_track = sidecar.and_then(|entry| entry.track);
     (
-        tag_title.unwrap_or_else(|| name.to_owned()),
-        tag_track.or(number),
+        tag_title
+            .or(sidecar_title)
+            .unwrap_or_else(|| name.to_owned()),
+        tag_track.or(sidecar_track).or(number),
     )
 }
 
@@ -96,12 +103,42 @@ mod tests {
     #[test]
     fn the_tag_wins() {
         assert_eq!(
-            title_and_track(Some("Tag".into()), Some(9), "03 - File"),
+            title_and_track(Some("Tag".into()), Some(9), None, "03 - File"),
             ("Tag".to_string(), Some(9))
         );
         assert_eq!(
-            title_and_track(None, None, "03 - File"),
+            title_and_track(None, None, None, "03 - File"),
             ("File".to_string(), Some(3))
+        );
+    }
+
+    /// P16.6: tag, then sidecar, then file name, for title and track number each.
+    #[test]
+    fn the_sidecar_comes_between_the_tag_and_the_file_name() {
+        let entry = TrackEntry {
+            title: Some("Sidecar".into()),
+            track: Some(7),
+            year: None,
+        };
+        assert_eq!(
+            title_and_track(None, None, Some(&entry), "03 - File"),
+            ("Sidecar".to_string(), Some(7))
+        );
+        assert_eq!(
+            title_and_track(Some("Tag".into()), None, Some(&entry), "03 - File"),
+            ("Tag".to_string(), Some(7))
+        );
+        assert_eq!(
+            title_and_track(None, Some(9), Some(&entry), "03 - File"),
+            ("Sidecar".to_string(), Some(9))
+        );
+        let title_only = TrackEntry {
+            title: Some("Sidecar".into()),
+            ..TrackEntry::default()
+        };
+        assert_eq!(
+            title_and_track(None, None, Some(&title_only), "03 - File"),
+            ("Sidecar".to_string(), Some(3))
         );
     }
 }

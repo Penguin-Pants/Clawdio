@@ -6,6 +6,7 @@ pub mod layout;
 pub mod library;
 pub mod lyrics;
 pub mod measure;
+pub mod metadata;
 pub mod player;
 pub mod playlists;
 pub mod settings;

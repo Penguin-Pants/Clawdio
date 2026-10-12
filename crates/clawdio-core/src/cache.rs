@@ -9,7 +9,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use crate::library::{CoverInfo, CoverState, FileStamp, NewTrack};
 
 pub const CACHE_FILE: &str = "library.sqlite";
-pub const SCHEMA_VERSION: i32 = 3;
+pub const SCHEMA_VERSION: i32 = 4;
 
 const SCHEMA: &str = "
 CREATE TABLE tracks (
@@ -35,6 +35,13 @@ CREATE TABLE albums (
     cover_modified_ms INTEGER,
     PRIMARY KEY (artist, album)
 );
+CREATE TABLE sidecars (
+    artist TEXT NOT NULL,
+    album TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    modified_ms INTEGER NOT NULL,
+    PRIMARY KEY (artist, album)
+);
 CREATE TABLE skipped (
     rel_path TEXT PRIMARY KEY,
     size INTEGER NOT NULL,
@@ -44,6 +51,9 @@ CREATE TABLE skipped (
 
 /// A skipped file: relative path, stamp and reason.
 pub type SkippedEntry = (String, FileStamp, String);
+
+/// A stored sidecar stamp: artist and album folder names and the file stamp.
+pub type SidecarEntry = (String, String, FileStamp);
 
 /// An album row: artist and album folder names and the cover information.
 pub type AlbumEntry = (String, String, CoverInfo);
@@ -198,6 +208,39 @@ impl Cache {
         transaction.commit()
     }
 
+    /// Replaces the stored `sidecar.json` stamps, one per album folder (P5.3, P16.5).
+    pub fn put_sidecars(&mut self, sidecars: &[SidecarEntry]) -> rusqlite::Result<()> {
+        let transaction = self.connection.transaction()?;
+        {
+            transaction.execute("DELETE FROM sidecars", [])?;
+            let mut statement = transaction.prepare_cached(
+                "INSERT INTO sidecars (artist, album, size, modified_ms) VALUES (?1, ?2, ?3, ?4)",
+            )?;
+            for (artist, album, stamp) in sidecars {
+                statement.execute(params![artist, album, stamp.size as i64, stamp.modified_ms])?;
+            }
+        }
+        transaction.commit()
+    }
+
+    /// Every stored `sidecar.json` stamp.
+    pub fn sidecars(&self) -> rusqlite::Result<Vec<SidecarEntry>> {
+        let mut statement = self
+            .connection
+            .prepare("SELECT artist, album, size, modified_ms FROM sidecars")?;
+        let rows = statement.query_map([], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                FileStamp {
+                    size: row.get::<_, i64>(2)?.max(0) as u64,
+                    modified_ms: row.get(3)?,
+                },
+            ))
+        })?;
+        rows.collect()
+    }
+
     /// Replaces the skipped files.
     pub fn put_skipped(&mut self, entries: &[SkippedEntry]) -> rusqlite::Result<()> {
         let transaction = self.connection.transaction()?;
@@ -292,8 +335,9 @@ impl Cache {
 
     /// Removes every row, for a new music folder.
     pub fn clear(&mut self) -> rusqlite::Result<()> {
-        self.connection
-            .execute_batch("DELETE FROM tracks; DELETE FROM albums; DELETE FROM skipped;")
+        self.connection.execute_batch(
+            "DELETE FROM tracks; DELETE FROM albums; DELETE FROM sidecars; DELETE FROM skipped;",
+        )
     }
 
     pub fn count(&self) -> rusqlite::Result<i64> {

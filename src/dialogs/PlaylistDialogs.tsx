@@ -9,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { commands, type ImportReport } from "@/lib/ipc/commands";
+import { commands, type ImportReport, type MetadataPreview } from "@/lib/ipc/commands";
+import type { MetadataField } from "@/lib/ipc/bindings/MetadataField";
 import type { MissingReason } from "@/lib/ipc/bindings/MissingReason";
 import { addToPlaylist, playlistEdit } from "@/store/playlists";
 import { type AppDialog, useUiStore } from "@/store/ui";
@@ -184,6 +185,77 @@ function ImportReportDialog({ reports }: { reports: ImportReport[] }) {
   );
 }
 
+const FIELDS: Record<MetadataField, string> = { title: "Title", track: "Track number", year: "Year" };
+
+/**
+ * The metadata preview (P16.4): song, field and proposed value, for missing fields only.
+ * Confirm writes the album's sidecar; Cancel writes nothing.
+ */
+function MetadataDialog({ album, preview }: { album: number; preview: MetadataPreview }) {
+  const close = useUiStore((state) => state.closeDialog);
+  const confirm = () => {
+    close();
+    void commands.metadataApply(album).catch((error: unknown) => {
+      const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+      useUiStore.getState().showMessage(message || "Cannot save the metadata");
+    });
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Fill missing metadata</DialogTitle>
+        <DialogDescription>
+          Proposed values for {preview.album}. The app writes them to the album&apos;s sidecar.json after you confirm.
+          Embedded tags stay as they are.
+        </DialogDescription>
+      </DialogHeader>
+      {preview.corruptSidecar && (
+        <p role="alert" className="text-sm text-text-primary">
+          The album&apos;s sidecar.json cannot be read. Confirm replaces it.
+        </p>
+      )}
+      <div
+        role="region"
+        aria-label="Proposed values"
+        tabIndex={0}
+        className="max-h-80 overflow-auto text-sm focus-visible:-outline-offset-2"
+      >
+        <table className="w-full border-collapse text-left">
+          <caption className="sr-only">Proposed values for {preview.album}</caption>
+          <thead className="text-text-secondary">
+            <tr>
+              <th scope="col" className="py-1 pr-3 font-medium">
+                Song
+              </th>
+              <th scope="col" className="py-1 pr-3 font-medium">
+                Field
+              </th>
+              <th scope="col" className="py-1 font-medium">
+                Value
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {preview.rows.map((row, index) => (
+              <tr key={index}>
+                <td className="py-1 pr-3 break-all">{row.song}</td>
+                <td className="py-1 pr-3 text-text-secondary">{FIELDS[row.field]}</td>
+                <td className="py-1">{row.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={close}>
+          Cancel
+        </Button>
+        <Button onClick={confirm}>Confirm</Button>
+      </DialogFooter>
+    </>
+  );
+}
+
 function Body({ dialog }: { dialog: AppDialog }) {
   switch (dialog.kind) {
     case "newPlaylist":
@@ -194,6 +266,8 @@ function Body({ dialog }: { dialog: AppDialog }) {
       return <ErrorDialog text={dialog.text} />;
     case "importReport":
       return <ImportReportDialog reports={dialog.reports} />;
+    case "metadataPreview":
+      return <MetadataDialog album={dialog.album} preview={dialog.preview} />;
   }
 }
 

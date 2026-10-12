@@ -107,8 +107,35 @@ function retryLookup(album: number) {
   });
 }
 
-/** The album row menu: the Library items, "Set cover" and "Retry lookup" (off without Online lookups). */
-function albumItems(album: number, play: (() => void) | null, add: () => void): RowMenuItem[] | null {
+/**
+ * "Fill missing metadata" (P16): Rust looks the album up and returns a preview; the dialog
+ * writes nothing until Confirm.
+ */
+function fillMetadata(album: number) {
+  void commands
+    .metadataPreview(album)
+    .then((preview) => {
+      if (preview) useUiStore.getState().openDialog({ kind: "metadataPreview", album, preview });
+    })
+    .catch((error: unknown) => {
+      const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+      useUiStore.getState().showMessage(message || "Cannot look up the album");
+    });
+}
+
+/** The group of songs outside an album folder (R3); it has no album to look up. */
+const UNKNOWN_ALBUM = "Unknown Album";
+
+/**
+ * The album row menu: the Library items, "Set cover", and "Retry lookup" and "Fill missing
+ * metadata" (off without Online lookups; the fill is also off for the Unknown group).
+ */
+function albumItems(
+  album: number,
+  name: string | undefined,
+  play: (() => void) | null,
+  add: () => void,
+): RowMenuItem[] | null {
   const items = rowItems(play, add, scopeSongs({ artist: null, album }));
   const online = useSettingsStore.getState().view.onlineLookups;
   return (
@@ -116,6 +143,10 @@ function albumItems(album: number, play: (() => void) | null, add: () => void): 
       ...items,
       { label: "Set cover", run: () => setCover(album) },
       { label: "Retry lookup", run: online ? () => retryLookup(album) : undefined },
+      {
+        label: "Fill missing metadata",
+        run: online && name !== undefined && name !== UNKNOWN_ALBUM ? () => fillMetadata(album) : undefined,
+      },
     ]
   );
 }
@@ -197,7 +228,7 @@ export function AlbumList() {
   // An album row plays the album from its first song (P6.5).
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
   const items = (id: number | null) =>
-    id === null ? null : albumItems(id, play(id), () => addScope({ artist: null, album: id }));
+    id === null ? null : albumItems(id, row(id)?.name, play(id), () => addScope({ artist: null, album: id }));
   // A search or an artist change that hides the selected album selects "All".
   useEffect(() => {
     if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
@@ -395,7 +426,7 @@ export function TreeList() {
   };
   const items = (line: TreeLine | undefined) => {
     if (line?.kind === "album") {
-      return albumItems(line.id, play(line), () => addScope({ artist: null, album: line.id }));
+      return albumItems(line.id, line.name, play(line), () => addScope({ artist: null, album: line.id }));
     }
     return rowItems(
       play(line),

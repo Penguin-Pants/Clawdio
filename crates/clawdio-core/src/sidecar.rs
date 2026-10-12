@@ -30,6 +30,42 @@ impl ArtworkMarker {
     }
 }
 
+/// Metadata for one song (P16.5), keyed in `tracks` by the song path relative to the album
+/// folder. Embedded tags win over these values (R10).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TrackEntry {
+    pub title: Option<String>,
+    pub track: Option<u32>,
+    pub year: Option<i32>,
+}
+
+impl TrackEntry {
+    pub fn is_empty(&self) -> bool {
+        self.title.is_none() && self.track.is_none() && self.year.is_none()
+    }
+
+    /// Reads one `tracks` value leniently: a field of the wrong type is no value.
+    fn from_value(value: &Value) -> Self {
+        TrackEntry {
+            title: value
+                .get("title")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|title| !title.is_empty())
+                .map(str::to_owned),
+            track: value
+                .get("track")
+                .and_then(Value::as_u64)
+                .filter(|track| (1..=u64::from(u32::MAX)).contains(track))
+                .map(|track| track as u32),
+            year: value
+                .get("year")
+                .and_then(Value::as_i64)
+                .and_then(|year| i32::try_from(year).ok()),
+        }
+    }
+}
+
 /// An album folder's sidecar.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Sidecar {
@@ -82,6 +118,17 @@ impl Sidecar {
     }
 }
 
+impl Sidecar {
+    /// The metadata of one song, by its path relative to the album folder.
+    pub fn track(&self, key: &str) -> Option<TrackEntry> {
+        let Sidecar::Valid(map) = self else {
+            return None;
+        };
+        let entry = TrackEntry::from_value(map.get("tracks")?.get(key)?);
+        (!entry.is_empty()).then_some(entry)
+    }
+}
+
 /// Writes `map` back with the schema fields set.
 fn write(folder: &Path, mut map: Map<String, Value>) -> Result<(), SidecarError> {
     map.insert("version".into(), SIDECAR_VERSION.into());
@@ -115,6 +162,45 @@ pub fn write_marker(
     artwork.insert("status".into(), marker.text().into());
     artwork.insert("checked".into(), rfc3339(checked).into());
     map.insert("artwork".into(), Value::Object(artwork));
+    write(folder, map)
+}
+
+/// "Fill missing metadata" (P16.5): merges the values into `tracks` and keeps every other
+/// field, the artwork marker and entries of songs that no longer exist (R11). A corrupt
+/// sidecar is replaced only when `replace_corrupt` is set (after the user confirmed, P16.4).
+pub fn write_tracks(
+    folder: &Path,
+    entries: &[(String, TrackEntry)],
+    replace_corrupt: bool,
+) -> Result<(), SidecarError> {
+    let mut map = match current(folder) {
+        Err(SidecarError::Corrupt) if replace_corrupt => Map::new(),
+        other => other?,
+    };
+    let tracks = map
+        .entry("tracks")
+        .or_insert_with(|| Value::Object(Map::new()));
+    // A `tracks` that is not an object is the user's data in an unknown form: it stays.
+    let Value::Object(tracks) = tracks else {
+        return Err(SidecarError::Corrupt);
+    };
+    for (key, entry) in entries {
+        let slot = tracks
+            .entry(key.clone())
+            .or_insert_with(|| Value::Object(Map::new()));
+        let Value::Object(fields) = slot else {
+            return Err(SidecarError::Corrupt);
+        };
+        if let Some(title) = &entry.title {
+            fields.insert("title".into(), title.clone().into());
+        }
+        if let Some(track) = entry.track {
+            fields.insert("track".into(), track.into());
+        }
+        if let Some(year) = entry.year {
+            fields.insert("year".into(), year.into());
+        }
+    }
     write(folder, map)
 }
 
@@ -212,6 +298,111 @@ mod tests {
         assert_eq!(value["version"], 1);
         assert_eq!(value["tracks"], Value::Object(Map::new()));
         assert_eq!(value["artwork"]["status"], "no-match");
+    }
+
+    /// P16.5, P16-AC6: values merge into `tracks`; the marker and entries of missing songs stay.
+    #[test]
+    fn track_values_merge_and_other_entries_stay() {
+        let folder = tempfile::tempdir().unwrap();
+        std::fs::write(
+            folder.path().join(SIDECAR_FILE),
+            r#"{"version":1,"artwork":{"status":"no-match"},"tracks":{"gone.mp3":{"title":"Old"},"a.mp3":{"year":1999}}}"#,
+        )
+        .unwrap();
+        let entry = TrackEntry {
+            title: Some("Song A".into()),
+            track: Some(3),
+            year: None,
+        };
+        write_tracks(folder.path(), &[("a.mp3".into(), entry)], false).unwrap();
+        let sidecar = read(folder.path());
+        assert_eq!(sidecar.marker(), Some(ArtworkMarker::NoMatch));
+        assert_eq!(
+            sidecar.track("a.mp3"),
+            Some(TrackEntry {
+                title: Some("Song A".into()),
+                track: Some(3),
+                year: Some(1999),
+            })
+        );
+        assert_eq!(
+            sidecar.track("gone.mp3").unwrap().title.as_deref(),
+            Some("Old")
+        );
+        assert_eq!(sidecar.track("other.mp3"), None);
+    }
+
+    #[test]
+    fn track_values_are_read_leniently() {
+        let folder = tempfile::tempdir().unwrap();
+        std::fs::write(
+            folder.path().join(SIDECAR_FILE),
+            r#"{"tracks":{"a.mp3":{"title":"  ","track":"3","year":1973},"b.mp3":5}}"#,
+        )
+        .unwrap();
+        let sidecar = read(folder.path());
+        assert_eq!(
+            sidecar.track("a.mp3"),
+            Some(TrackEntry {
+                title: None,
+                track: None,
+                year: Some(1973),
+            })
+        );
+        assert_eq!(sidecar.track("b.mp3"), None);
+    }
+
+    /// P16-AC5: a corrupt sidecar is replaced only with the confirmation flag.
+    #[test]
+    fn a_corrupt_sidecar_is_replaced_only_when_confirmed() {
+        let folder = tempfile::tempdir().unwrap();
+        std::fs::write(folder.path().join(SIDECAR_FILE), "{broken").unwrap();
+        let entry = || {
+            vec![(
+                "a.mp3".to_owned(),
+                TrackEntry {
+                    title: Some("A".into()),
+                    ..TrackEntry::default()
+                },
+            )]
+        };
+        assert_eq!(
+            write_tracks(folder.path(), &entry(), false),
+            Err(SidecarError::Corrupt)
+        );
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),
+            "{broken"
+        );
+        write_tracks(folder.path(), &entry(), true).unwrap();
+        assert_eq!(
+            read(folder.path()).track("a.mp3").unwrap().title.as_deref(),
+            Some("A")
+        );
+    }
+
+    /// R11: a `tracks` value of an unknown form is kept, not reset.
+    #[test]
+    fn tracks_of_an_unknown_form_stay() {
+        let folder = tempfile::tempdir().unwrap();
+        let entry = vec![(
+            "a.mp3".to_owned(),
+            TrackEntry {
+                title: Some("A".into()),
+                ..TrackEntry::default()
+            },
+        )];
+        for text in [r#"{"tracks":[1]}"#, r#"{"tracks":{"a.mp3":"note"}}"#] {
+            std::fs::write(folder.path().join(SIDECAR_FILE), text).unwrap();
+            assert_eq!(
+                write_tracks(folder.path(), &entry, true),
+                Err(SidecarError::Corrupt)
+            );
+            assert_eq!(
+                std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),
+                text
+            );
+        }
     }
 
     /// P14-AC10.

@@ -105,3 +105,46 @@ test("P14.7: Retry lookup is on the album menu and off without Online lookups", 
   await page.getByRole("menuitem", { name: "Retry lookup" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-retry-lookup", "1");
 });
+
+test("P16.4, P16.7: Fill missing metadata previews the values and writes only on Confirm", async ({ page }) => {
+  await openLibrary(page);
+  await albums(page)
+    .getByRole("option", { name: /Album B0/ })
+    .click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Fill missing metadata" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+
+  await page.evaluate(() =>
+    sessionStorage.setItem(
+      "e2e-settings",
+      JSON.stringify({
+        folderName: "music",
+        folderState: "ready",
+        onlineLookups: true,
+        noticePending: false,
+        portable: false,
+        lastScan: null,
+      }),
+    ),
+  );
+  await openLibrary(page);
+  const open = async () => {
+    await albums(page)
+      .getByRole("option", { name: /Album B0/ })
+      .click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Fill missing metadata" }).click();
+    return page.getByRole("dialog", { name: "Fill missing metadata" });
+  };
+  let dialog = await open();
+  await expect(dialog.getByRole("row")).toHaveCount(3);
+  await expect(dialog.getByRole("row").nth(1)).toContainText("01 Song.mp3");
+  await expect(dialog.getByRole("row").nth(1)).toContainText("Title");
+  await expect(dialog.getByRole("row").nth(1)).toContainText("Real Title");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator("body")).not.toHaveAttribute("data-metadata-apply");
+
+  dialog = await open();
+  await dialog.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.locator("body")).toHaveAttribute("data-metadata-apply", "1");
+  await expect(page.locator("footer").getByRole("status")).toHaveText("Metadata saved");
+});

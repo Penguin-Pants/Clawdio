@@ -6,7 +6,7 @@ pub mod probe;
 pub mod walk;
 
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::RwLock;
 use std::time::UNIX_EPOCH;
@@ -15,6 +15,7 @@ use crate::cache::Cache;
 use crate::library::{
     group, title_and_track, CoverInfo, CoverState, FileStamp, LibraryIndex, NewTrack,
 };
+use crate::sidecar::{self, Sidecar, TrackEntry, SIDECAR_FILE};
 use probe::{Kind, Skip};
 use walk::{walk, WalkedFile};
 
@@ -84,15 +85,54 @@ pub(crate) fn cover_rank(file_name: &str) -> Option<usize> {
     Some(name * COVER_EXTENSIONS.len() + ext)
 }
 
-/// Reads one audio file into a track (R3, R4, D44), or the reason to skip it.
-pub fn read_track(file: &WalkedFile, kind: Kind) -> Result<NewTrack, Skip> {
+/// The album folder ("Artist/Album") of a song and the song's key in its sidecar (its path
+/// inside the album folder), or None for a song that is not in an album folder.
+pub fn sidecar_key(rel_path: &str) -> Option<(String, String)> {
+    let mut parts = rel_path.splitn(3, '/');
+    let (artist, album, rest) = (parts.next()?, parts.next()?, parts.next()?);
+    Some((format!("{artist}/{album}"), rest.to_owned()))
+}
+
+/// The album sidecars a scan reads, each once (R4, P16.6).
+pub struct Sidecars {
+    root: PathBuf,
+    read: HashMap<String, Sidecar>,
+}
+
+impl Sidecars {
+    pub fn new(root: &Path) -> Self {
+        Sidecars {
+            root: root.to_owned(),
+            read: HashMap::new(),
+        }
+    }
+
+    /// The sidecar values of a song, if its album folder has a readable sidecar with an
+    /// entry for it.
+    pub fn entry(&mut self, rel_path: &str) -> Option<TrackEntry> {
+        let (folder, key) = sidecar_key(rel_path)?;
+        let root = &self.root;
+        self.read
+            .entry(folder)
+            .or_insert_with_key(|folder| sidecar::read(&root.join(folder)))
+            .track(&key)
+    }
+}
+
+/// Reads one audio file into a track (R3, R4, D44), or the reason to skip it. `sidecar` holds
+/// the song's values from its album sidecar, used where the tag has none.
+pub fn read_track(
+    file: &WalkedFile,
+    kind: Kind,
+    sidecar: Option<&TrackEntry>,
+) -> Result<NewTrack, Skip> {
     let info = probe::probe(&file.path, kind)?;
     let grouping = group(Path::new(&file.rel_path));
     let file_name = file.rel_path.rsplit('/').next().unwrap_or_default();
     let stem = file_name
         .rsplit_once('.')
         .map_or(file_name, |(stem, _)| stem);
-    let (title, track_no) = title_and_track(info.title, info.track, stem);
+    let (title, track_no) = title_and_track(info.title, info.track, sidecar, stem);
     Ok(NewTrack {
         rel_path: file.rel_path.clone(),
         artist: grouping.artist,
@@ -112,6 +152,7 @@ pub fn read_track(file: &WalkedFile, kind: Kind) -> Result<NewTrack, Skip> {
 pub fn load(index: &RwLock<LibraryIndex>, cache: &Cache) -> rusqlite::Result<usize> {
     let tracks = cache.tracks()?;
     let albums = cache.albums()?;
+    let sidecars = cache.sidecars()?;
     let skipped = cache.skipped()?;
     let count = tracks.len();
     if let Ok(mut index) = index.write() {
@@ -125,6 +166,9 @@ pub fn load(index: &RwLock<LibraryIndex>, cache: &Cache) -> rusqlite::Result<usi
             if index.cover(&artist, &album).is_some() {
                 index.set_cover(&artist, &album, cover);
             }
+        }
+        for (artist, album, stamp) in sidecars {
+            index.set_sidecar(&artist, &album, Some(stamp));
         }
     }
     Ok(count)
@@ -175,6 +219,10 @@ pub fn scan(
     let mut staged: Vec<String> = Vec::new();
     let mut batch: Vec<NewTrack> = Vec::with_capacity(BATCH);
     let mut covers: HashMap<(String, String), CoverFile> = HashMap::new();
+    // `sidecar.json` stamps found, and the sidecar values used for the songs read.
+    let mut found_sidecars: HashMap<(String, String), FileStamp> = HashMap::new();
+    let mut sidecars = Sidecars::new(root);
+    let mut read_paths: HashSet<String> = HashSet::new();
 
     let flush = |batch: &mut Vec<NewTrack>, cache: &mut Option<&mut Cache>| {
         if batch.is_empty() {
@@ -193,6 +241,7 @@ pub fn scan(
     let wanted = |path: &Path| {
         is_audio(path)
             || is_playlist(path)
+            || path.file_name().is_some_and(|name| name == SIDECAR_FILE)
             || path
                 .file_name()
                 .and_then(|name| name.to_str())
@@ -205,6 +254,13 @@ pub fn scan(
             return;
         }
         let parts: Vec<&str> = file.rel_path.split('/').collect();
+        if let [artist, album, SIDECAR_FILE] = parts.as_slice() {
+            found_sidecars.insert(
+                ((*artist).to_owned(), (*album).to_owned()),
+                stamp_of(&file.metadata),
+            );
+            return;
+        }
         let Some(kind) = Kind::of(&file.path) else {
             // A cover candidate directly in an album folder.
             if let ([artist, album, name], Some(rank)) =
@@ -244,7 +300,9 @@ pub fn scan(
             log::warn!("scan: cannot open {}: {error}", file.rel_path);
         } else {
             report.read += 1;
-            match read_track(&file, kind) {
+            read_paths.insert(file.rel_path.clone());
+            let entry = sidecars.entry(&file.rel_path);
+            match read_track(&file, kind, entry.as_ref()) {
                 Ok(track) => {
                     if !known.contains_key(&track.rel_path) {
                         report.added += 1;
@@ -294,6 +352,15 @@ pub fn scan(
             log::warn!("cache: cannot remove {} rows: {error}", removals.len());
         }
         update_covers(index, cache.as_deref_mut(), covers, &mut report);
+        let changed = changed_sidecars(index, &found_sidecars);
+        for (artist, album, stamp) in changed {
+            let tracks = reread_album(root, index, &artist, &album, &read_paths, &mut sidecars);
+            flush_tracks(index, cache.as_deref_mut(), tracks);
+            if let Ok(mut index) = index.write() {
+                index.set_sidecar(&artist, &album, stamp);
+            }
+        }
+        put_sidecars(index, cache.as_deref_mut());
     } else if !end.canceled {
         report.failed = true;
         log::warn!(
@@ -332,6 +399,95 @@ pub fn scan(
     }
     on_progress(&report);
     report
+}
+
+/// Albums whose `sidecar.json` is new, changed or gone since their songs were read (P5.3).
+fn changed_sidecars(
+    index: &RwLock<LibraryIndex>,
+    found: &HashMap<(String, String), FileStamp>,
+) -> Vec<(String, String, Option<FileStamp>)> {
+    let Ok(index) = index.read() else {
+        return Vec::new();
+    };
+    index
+        .album_sidecars()
+        .filter_map(|(artist, album, old)| {
+            let new = found.get(&(artist.to_owned(), album.to_owned())).copied();
+            (new != old).then(|| (artist.to_owned(), album.to_owned(), new))
+        })
+        .collect()
+}
+
+/// Reads the songs of one album again with its current sidecar, except those this scan read
+/// already. A song that cannot be read now keeps its row.
+pub fn reread_album(
+    root: &Path,
+    index: &RwLock<LibraryIndex>,
+    artist: &str,
+    album: &str,
+    already: &HashSet<String>,
+    sidecars: &mut Sidecars,
+) -> Vec<NewTrack> {
+    let paths = match index.read() {
+        Ok(index) => index.album_paths(artist, album),
+        Err(_) => return Vec::new(),
+    };
+    let mut tracks = Vec::new();
+    for rel_path in paths.into_iter().filter(|path| !already.contains(path)) {
+        let path = root.join(&rel_path);
+        let (Some(kind), Ok(metadata)) = (Kind::of(&path), std::fs::metadata(&path)) else {
+            continue;
+        };
+        let file = WalkedFile {
+            path,
+            rel_path,
+            metadata,
+        };
+        let entry = sidecars.entry(&file.rel_path);
+        match read_track(&file, kind, entry.as_ref()) {
+            Ok(track) => tracks.push(track),
+            Err(skip) => log::warn!("scan: cannot read again ({skip}): {}", file.rel_path),
+        }
+    }
+    tracks
+}
+
+/// Writes tracks to the cache, then to the index.
+pub fn flush_tracks(
+    index: &RwLock<LibraryIndex>,
+    cache: Option<&mut Cache>,
+    tracks: Vec<NewTrack>,
+) {
+    if tracks.is_empty() {
+        return;
+    }
+    if let Some(Err(error)) = cache.map(|cache| cache.put_batch(&tracks)) {
+        log::warn!("cache: cannot write {} rows: {error}", tracks.len());
+    }
+    if let Ok(mut index) = index.write() {
+        for track in tracks {
+            index.insert(track);
+        }
+    }
+}
+
+/// Stores the sidecar stamps of the index in the cache.
+pub fn put_sidecars(index: &RwLock<LibraryIndex>, cache: Option<&mut Cache>) {
+    let Some(cache) = cache else {
+        return;
+    };
+    let entries: Vec<_> = match index.read() {
+        Ok(index) => index
+            .album_sidecars()
+            .filter_map(|(artist, album, stamp)| {
+                Some((artist.to_owned(), album.to_owned(), stamp?))
+            })
+            .collect(),
+        Err(_) => return,
+    };
+    if let Err(error) = cache.put_sidecars(&entries) {
+        log::warn!("cache: cannot write the sidecar stamps: {error}");
+    }
 }
 
 /// Updates the cover state of each album folder (D44). A cover file is decoded only when its

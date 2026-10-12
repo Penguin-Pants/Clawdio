@@ -161,6 +161,20 @@ function libraryCommand(command: string, args: Args): unknown {
       void setLyrics({ text: "Fetched line one\nFetched line two" });
       void emit("status-message", "Lyrics saved");
       return true;
+    case "metadata_preview":
+      if (!settings.onlineLookups) throw { code: "metadata", message: "Online lookups are off" };
+      return {
+        album: "Album B0",
+        corruptSidecar: args.album === 2,
+        rows: [
+          { song: "01 Song.mp3", field: "title", value: "Real Title" },
+          { song: "01 Song.mp3", field: "year", value: "1973" },
+        ],
+      };
+    case "metadata_apply":
+      document.body.dataset.metadataApply = String(args.album);
+      void emit("status-message", "Metadata saved");
+      return null;
     case "album_retry_lookup":
       document.body.dataset.retryLookup = String(args.album);
       return null;

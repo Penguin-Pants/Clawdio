@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 177 | 60 | 11 | 5 | 6 | 42 | 0 |
+| Requirements | 301 | 192 | 46 | 10 | 5 | 6 | 42 | 0 |
 | design.md | 76 | 43 | 14 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
@@ -44,7 +44,7 @@
 | S1-1 | Small open source player for Windows and Linux | §1 | P0.4, P18.1 | P0-AC1, P18-AC5 | CI, MAN-L, MAN-W | Planned |
 | S1-2 | One music folder; shows artist, album and song; plays mp3, ogg and wav | §1 | P4.5, P5.2, P5.6, P6.3, P7.2 | P4-AC3, P5-AC1, P5-AC2 | IT, MAN-L | Done (P7) |
 | S1-3 | Widget UI: dock, resize, hide, show; three built-in layouts | §1 | P2.1, P2.4, P2.6 | P2-AC2, P2-AC4 | E2E | Done (P2) |
-| S1-4 | Adds artwork, lyrics and missing metadata | §1 | P14.5, P15.1, P16.2 | P14-AC4, P15-AC1, P16-AC3 | IT | Planned |
+| S1-4 | Adds artwork, lyrics and missing metadata | §1 | P14.5, P15.1, P16.2 | P14-AC4, P15-AC1, P16-AC3 | IT | Done (P16) |
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
 | S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
@@ -71,9 +71,9 @@
 | R3-3 | File directly under an artist folder goes to "Unknown Album" | §2 R3 | P5.6 | P5-AC1 | UT | Done (P5) |
 | R3-4 | File at the root goes to "Unknown Album" under "Unknown Artist" | §2 R3 | P5.6 | P5-AC1 | UT | Done (P5) |
 | R3-5 | Display names unchanged; sort ignores case and accents, natural numbers, byte-order ties; Unknown groups last | §2 R3 | P5.5, P5.6 | P5-AC1 | UT | Done (P5, D4) |
-| R4-1 | Title: tag, then sidecar, then file name without the prefix | §2 R4 | P5.7, P16.6 | P5-AC10, P16-AC3 | UT, IT | Planned |
+| R4-1 | Title: tag, then sidecar, then file name without the prefix | §2 R4 | P5.7, P16.6 | P5-AC10, P16-AC3 | UT, IT | Done (P16) |
 | R4-2 | Track-number prefix definition and examples | §2 R4 | P5.7 | P5-AC10 | UT | Done (P5) |
-| R4-3 | Track number: tag, then sidecar, then prefix | §2 R4 | P5.7, P16.6 | P5-AC1, P16-AC3 | UT | Planned |
+| R4-3 | Track number: tag, then sidecar, then prefix | §2 R4 | P5.7, P16.6 | P5-AC1, P16-AC3 | UT | Done (P16) |
 | R4-4 | Song order: disc order, track number, file name; disc order rule; case ignored | §2 R4 | P5.7 | P5-AC11 | UT, IT | Done (P5) |
 
 ### 1.3 Section 2: widgets and layout (R5, R28 to R31)
@@ -178,14 +178,14 @@
 | R9-4 | Source order: `.lrc`, `.txt`, embedded (USLT, LYRICS, UNSYNCEDLYRICS) | §2 R9 | P13.1 | P13-AC1, P13-AC3, P13-AC4 | IT | Done (P13, D26) |
 | R9-5 | "Fetch lyrics" only when no lyrics exist; disabled when lookups are off | §2 R9 | P13.4, P15.3 | P13-AC5, P15-AC6 | E2E | Done (P15) |
 | R9-6 | Synced line highlighting | §2 R9 | none | none | REV | Deferred |
-| R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Planned |
-| R10-2 | Fill blanks only: title, track number, year | §2 R10 | P16.1, P16.4 | P16-AC1 | UT | Planned |
-| R10-3 | "Missing" means the embedded tag is absent or empty; file-name fallbacks do not count | §2 R10 | P16.1 | P16-AC1 | UT | Planned |
-| R10-4 | Lookup by folder names, tags and file name; no fingerprinting | §2 R10 | P16.2, P16.3 | P16-AC3, P16-AC7, P16-AC9 | IT, REV | Planned (D42) |
-| R10-5 | One `sidecar.json` per album folder; it also holds lookup markers | §2 R10 | P14.3, P16.5 | P16-AC3, P14-AC4 | IT | Planned |
-| R10-6 | Embedded tags win over sidecar values | §2 R10 | P16.6 | P16-AC3 | IT | Planned |
-| R11-1 | The app never modifies audio files | §2 R11 | P5.14 | P16-AC4 | IT | Planned |
-| R11-2 | Sidecars are not tracks; orphan sidecars are ignored and never deleted | §2 R11 | P14.3 | P14-AC10, P16-AC6 | IT | Planned |
+| R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Done (P16) |
+| R10-2 | Fill blanks only: title, track number, year | §2 R10 | P16.1, P16.4 | P16-AC1 | UT | Done (P16) |
+| R10-3 | "Missing" means the embedded tag is absent or empty; file-name fallbacks do not count | §2 R10 | P16.1 | P16-AC1 | UT | Done (P16) |
+| R10-4 | Lookup by folder names, tags and file name; no fingerprinting | §2 R10 | P16.2, P16.3 | P16-AC3, P16-AC7, P16-AC9 | IT, REV | Done (P16, D42) |
+| R10-5 | One `sidecar.json` per album folder; it also holds lookup markers | §2 R10 | P14.3, P16.5 | P16-AC3, P14-AC4 | IT | Done (P16) |
+| R10-6 | Embedded tags win over sidecar values | §2 R10 | P16.6 | P16-AC3 | IT | Done (P16) |
+| R11-1 | The app never modifies audio files | §2 R11 | P5.14 | P16-AC4 | IT | Done (P16) |
+| R11-2 | Sidecars are not tracks; orphan sidecars are ignored and never deleted | §2 R11 | P14.3 | P14-AC10, P16-AC6 | IT | Done (P16) |
 
 ### 1.6 Section 2: playlists (R12 to R14, R26)
 
@@ -298,11 +298,11 @@
 | E-10 | Windows paths over 260 characters work | §5 | P5.1, P5.12 | P5-AC14 | IT | Planned |
 | E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Done (P14) |
 | E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Done (P14) |
-| E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Planned |
+| E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Done (P16) |
 | E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Done (P7) |
 | E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Done (P5) |
 | E-16 | Cover file that fails to decode: log, ignore; embedded art and lookup still apply | §5 | P10.1, P14.5 | P10-AC2, P14-AC14 | IT | Resolved (C18) |
-| E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Planned |
+| E-17 | Corrupt sidecar: ignore and log; metadata fill may replace it after preview | §5 | P14.3, P16.4 | P14-AC10, P16-AC5 | IT | Done (P16) |
 | E-18 | Playlist entry with no file: "missing", skipped, never removed | §5 | P11.2, P11.5 | P11-AC4 | IT, E2E | Done (P11) |
 | E-19 | Unreadable playlist file: skip and log | §5 | P11.2 | P11-AC6 | IT | Done (P11) |
 | E-20 | Playlist write failure: show the error; old file intact | §5 | P11.1, P11.8 | P11-AC3 | IT | Done (P11) |
@@ -328,7 +328,7 @@
 | CON-7 | Platforms: Windows and Linux | §6 | P0.16, P18.3 | P0-AC1, P18-AC5 | CI | Planned |
 | CON-8 | Formats: mp3, Ogg Vorbis, wav | §6 | P5.2 | P5-AC2 | IT | Done (P5) |
 | CON-9 | The music folder is the source of truth | §6 | P5.3 | P5-AC4 | IT | Done (P5) |
-| CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Planned |
+| CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Done (P16) |
 | CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Done (P14) |
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
 
@@ -363,7 +363,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 |---|---|---|---|---|---|---|
 | DEC-1 | Docking shell stays; design.md §5 rewrite (done in the repo before planning) | §8.1 | P2.1 | P2-AC1 | E2E | Done (P2) |
 | DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Done (P4) |
-| DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
+| DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Done (P16) |
 | DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Done (P12) |
 | DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DEC-6 | Named layouts deferred; built-ins and auto-save stay | §8.6 | P2.4, P9.3 | P9-AC2 | E2E | Done (P9) |

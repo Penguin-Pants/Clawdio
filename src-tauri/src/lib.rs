@@ -132,6 +132,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
             app.manage(state::LyricsState::default());
+            app.manage(commands::metadata::MetadataFills::default());
             app.manage(state::Playlists::default());
             app.manage(player);
             let window = window::create_main(app.handle())?;
@@ -158,6 +159,8 @@ pub fn run() -> tauri::Result<()> {
             commands::art::album_art,
             commands::art::set_cover,
             commands::art::album_retry_lookup,
+            commands::metadata::metadata_preview,
+            commands::metadata::metadata_apply,
             commands::player::player_play_list,
             commands::player::player_play,
             commands::player::player_pause,

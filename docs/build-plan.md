@@ -80,7 +80,7 @@ A phase is Done when all of these are true:
 | P13 | Local lyrics | P12 | Done |
 | P14 | Online lookups and artwork fetch | P13 | Done |
 | P15 | Lyrics fetch | P14 | Done |
-| P16 | Metadata fill | P15 | Not started |
+| P16 | Metadata fill | P15 | Done |
 | P17 | UI quality audit | P16 | Not started |
 | P18 | Release readiness | P17, gate B3 closed | Not started |
 
@@ -935,6 +935,62 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - The writable check makes and removes a temp file, as Set cover (P10) and the artwork job (P14) do; one rule for all three.
   - No command test for a read-only folder: root writes into read-only folders here, and the check runs before the request in the code and in the unit test.
   - The e2e mock always succeeds: the error message path is the same `showMessage` call that P10-AC5 tests.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P16. Metadata fill (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `c97d252`. Messages start with `P16:`.
+- **Packages:** none new. The cache schema is version 4 (a `sidecars` table); an older cache is rebuilt.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P16-AC1 | Pass | `net/tests.rs` `only_missing_fields_are_proposed` (a tagged title, track or year is never proposed); app test `the_preview_writes_nothing_and_confirm_applies_it` checks the preview rows. |
+| P16-AC2 | Pass | The app test compares the album folder (entries, bytes and the folder's modified time) before and after the preview: unchanged. |
+| P16-AC3 | Pass | `tests/scan.rs` `the_sidecar_fills_untagged_songs_and_follows_its_changes`: sidecar titles and track numbers for untagged songs, tags win, the same rows after a reload from the cache (a restart); the app test shows the new title in the index right after Confirm. |
+| P16-AC4 | Pass | `tests/hash_guard.rs`: MP3, Ogg and WAV files are byte-identical after Set cover, a fetched cover, markers, playlists, the heart, an import, lyrics files, the metadata sidecar and scans. |
+| P16-AC5 | Pass | `sidecar.rs` `a_corrupt_sidecar_is_replaced_only_when_confirmed`; app test: the preview names the corrupt file and leaves it, Confirm replaces it. |
+| P16-AC6 | Pass | `track_values_merge_and_other_entries_stay` (an entry for a missing song stays); the scan test keeps an orphan entry. |
+| P16-AC7 | Pass | Review: no fingerprinting crate in `Cargo.lock` (no chromaprint or AcoustID); the code matches by names and titles only. |
+| P16-AC8 | Pass | App test with a 0555 folder: the error shows, 0 requests, the folder is unchanged (skips the write part as root; the permission check itself runs). |
+| P16-AC9 | Pass | `the_album_tag_finds_what_the_folder_name_does_not`; `a_tie_or_a_weak_match_gives_no_proposal`; `two_release_groups_give_no_proposal`. |
+
+**Notes**
+
+- N1: the sidecar step of R4 and P5.3 is in the scan now: a changed, new or removed `sidecar.json` makes the scan read that album's songs again. Its stamp lives in the index and the cache.
+- N2: P16-AC8 asks for a file-system watch. The test compares the folder's entries, their bytes and the folder's modified time; making and removing a probe file changes that time, so the check catches any file made in the folder.
+- N3: D42 says to prefer a track count equal to the song count, then the earliest date, and also that a tie gives no proposal. The preference orders the at most 5 releases that are scored; equal best scores give no proposal (P16-AC9).
+- N4: a song with no disc tag maps by track number on a single-medium release (disc 1); otherwise by folded title.
+- N5: the preview names each song by its path inside the album folder (the sidecar key), never a full path (D13).
+- N6: Confirm while a scan runs shows "A scan is running. Confirm again when it ends", because both write the album's rows.
+- N7: the read-only check reads the folder permissions only (P16.1). On Windows the read-only flag of a folder does not block writes (Explorer sets it on customized folders), so Windows skips the check and a failed write shows the same error on Confirm. On Unix a folder that has write bits but belongs to another user also shows the error on Confirm.
+- N8: a proposal stays until Confirm succeeds, so a Confirm during a scan can be tried again. A proposal made for another music folder, or a sidecar that turned corrupt after the preview, asks for a new lookup.
+- N9 (owner check, not blocking): N3 reads D42 so that P16-AC9 holds. If the owner wants the track count and date preference to break ties between editions with the same track list, D42 and P16-AC9 change together.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 10, F3 0, F4 5. Source: own audit, then a reviewer agent.
+
+- F2:
+  - Confirm removed the proposal before the write, so a Confirm during a scan or after a failed write could not be tried again (N8).
+  - Confirm always replaced a corrupt sidecar, also one that turned corrupt after a preview that did not name it. It now replaces only what the preview named.
+  - Windows folders with the read-only flag were blocked though writable (N7).
+  - A proposal from before a music folder change could be applied to the old folder. It is now refused.
+  - The preview table scrolled with no keyboard access and had no name. It is now a focusable named region with a caption.
+  - A track tag of 0 counted as missing in the fill but as a value in the scan, so the proposal never showed. Both treat it as a value now.
+  - Marker writes changed the sidecar stamp without telling the index, so the next scan read the album's songs again. The job and "Retry lookup" now store the new stamp.
+  - `write_tracks` reset a `tracks` value of an unknown form. It now leaves the file and reports it as corrupt.
+  - Weak tests: added Confirm with the cache (restart and a scan that reads nothing), Confirm during a scan, a sidecar corrupted after the preview, disc mapping on two discs, and `tracks` of an unknown form.
+  - A doc comment in `commands.ts` sat above the wrong command.
+- F4:
+  - A marker write and a Confirm on the same album at the same moment could lose one update: both are atomic writes of a small file, and the user would need to confirm while that album's lookup writes.
+  - No test of the candidate order: it only picks which 5 releases are scored, and P16-AC9 covers ties.
+  - No test that a canceled scan keeps the stamps: the sidecar step runs only in the complete-scan branch, which the existing canceled-scan tests cover.
+  - `hash_guard` does not call the fill commands: the app test compares the audio bytes before and after Confirm.
+  - A Unix folder of another user passes the permission check: P16.1 allows the error on Confirm.
 
 **Follow-ups:** F-13 to F-18 (open).
 

@@ -197,7 +197,10 @@ Source: `crates/clawdio-core/src/sidecar.rs` (P14, R10, R11). One file per album
 {
   "version": 1,
   "artwork": { "status": "no-match", "checked": "2026-10-12T07:45:09Z" },
-  "tracks": {}
+  "tracks": {
+    "01 Human Behaviour.mp3": { "title": "Human Behaviour", "track": 1, "year": 1993 },
+    "CD2/01 Intro.mp3": { "title": "Intro" }
+  }
 }
 ```
 
@@ -207,5 +210,7 @@ Source: `crates/clawdio-core/src/sidecar.rs` (P14, R10, R11). One file per album
 | `artwork.status` | `no-match`: MusicBrainz gave no single release group after name normalization (D43). `no-art`: one release group matched, but Cover Art Archive has no front image. An album with either marker is not looked up again until "Retry lookup" removes `artwork`. |
 | `artwork.checked` | UTC time of the lookup, RFC 3339. |
 | `tracks` | Track metadata from "Fill metadata" (P16). Entries for songs that no longer exist are ignored and kept. |
+
+Song order and titles use the sidecar between the tag and the file name (R4): the title is the tag, then `title`, then the file name without its number prefix; the track number is the tag, then `track`, then the prefix. "Fill missing metadata" proposes only fields that the song's tags lack, shows a preview and writes nothing before Confirm. The scan stores the sidecar's size and modified time and reads the album's songs again when they change.
 
 The app reads the file leniently: unknown fields stay when it writes the file again, and writes are atomic. A file that is not a JSON object is corrupt: the app logs it, ignores it, never rewrites it on its own and does not look up the album (D44). The scan never treats `sidecar.json` as a song. The library cache holds no marker (R19).

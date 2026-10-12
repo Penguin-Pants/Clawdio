@@ -262,3 +262,35 @@ pub struct JobProgress {
     pub text: Option<String>,
     pub cancelable: bool,
 }
+
+/// A field that "Fill missing metadata" can propose (P16.4, R10).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MetadataField {
+    Title,
+    Track,
+    Year,
+}
+
+/// One proposed value: the song (its name inside the album folder), the field and the value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MetadataRow {
+    pub song: String,
+    pub field: MetadataField,
+    pub value: String,
+}
+
+/// The preview of "Fill missing metadata" (P16.4). Nothing is written before Confirm.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MetadataPreview {
+    /// The album folder name, for the dialog title.
+    pub album: String,
+    pub rows: Vec<MetadataRow>,
+    /// The album's `sidecar.json` is corrupt and Confirm replaces it.
+    pub corrupt_sidecar: bool,
+}

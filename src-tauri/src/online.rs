@@ -228,6 +228,7 @@ async fn run<R: Runtime>(app: &AppHandle<R>, token: &CancellationToken) {
                 saved += 1;
                 cover_saved(app, &root, target, old_key.as_deref());
             }
+            Ok(Lookup::NoMatch | Lookup::NoArt) => sidecar_written(app, &root, target),
             Ok(_) => {}
             Err(LookupError::Net(NetError::Off | NetError::Canceled)) => break,
             Err(LookupError::Net(
@@ -248,6 +249,19 @@ async fn run<R: Runtime>(app: &AppHandle<R>, token: &CancellationToken) {
             format!("Fetched {saved} album covers")
         };
         emit(app, STATUS_MESSAGE, text);
+    }
+}
+
+/// A marker changed `sidecar.json` but no song value: the index keeps the new stamp, so the
+/// next scan does not read the album's songs again.
+fn sidecar_written<R: Runtime>(app: &AppHandle<R>, root: &std::path::Path, target: &AlbumTarget) {
+    let stamp = clawdio_core::artwork::stamp(
+        &root
+            .join(&target.folder)
+            .join(clawdio_core::sidecar::SIDECAR_FILE),
+    );
+    if let Ok(mut index) = app.state::<Library>().0.write() {
+        index.set_sidecar(&target.artist, &target.name, stamp);
     }
 }
 
@@ -313,8 +327,11 @@ pub fn retry<R: Runtime>(app: &AppHandle<R>, album: AlbumId) -> Result<(), Strin
         .map(|index| artwork::candidates(&index))
         .and_then(|targets| targets.into_iter().find(|target| target.album == album))
         .ok_or("This album has art or no album folder")?;
-    clawdio_core::sidecar::clear_marker(&root.join(&target.folder))
-        .map_err(|error| error.to_string())?;
+    if clawdio_core::sidecar::clear_marker(&root.join(&target.folder))
+        .map_err(|error| error.to_string())?
+    {
+        sidecar_written(app, &root, &target);
+    }
     if let Ok(mut job) = online.job.lock() {
         job.first = Some(album);
     };
