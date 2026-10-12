@@ -59,6 +59,13 @@ jobs:
       - name: Generated IPC types are committed
         shell: bash
         run: test -z "$(git status --porcelain -- src/lib/ipc/bindings)"
+      # P20.0 (K21): the microphone probe for the owner's Windows test. `cargo test` built it.
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: mic-probe
+          path: target/debug/examples/mic_probe.exe
+          retention-days: 30
 
   tauri-build:
     strategy:

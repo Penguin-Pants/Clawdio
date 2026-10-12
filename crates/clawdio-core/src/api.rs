@@ -290,6 +290,25 @@ pub struct SettingsView {
     pub portable: bool,
     /// Counts of the last scan (R2), shown in Settings.
     pub last_scan: Option<ScanCounts>,
+    /// "When the microphone is in use" (R34.1).
+    pub mic_ducking: MicDucking,
+    /// The ducked volume as a percentage of the user volume (R34.3).
+    pub mic_duck_percent: u8,
+    /// Ducking works on this platform (Windows only, R34). Settings hides it otherwise (D53).
+    pub mic_ducking_supported: bool,
+}
+
+/// What the music does while another app uses a microphone (R34.1).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MicDucking {
+    #[default]
+    Off,
+    /// Lower the volume to a percentage of the user volume (R34.3).
+    Lower,
+    /// Pause, and resume when the duck caused the pause (R34.4).
+    Pause,
 }
 
 /// The counts of a finished scan (R2): the status line and Settings show them.

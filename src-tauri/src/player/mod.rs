@@ -1,6 +1,7 @@
 //! The player (P4.9, P7, section 6.10). One audio thread owns the queue and the output (D46);
 //! commands reach it through a channel.
 
+pub mod duck;
 pub mod engine;
 pub mod output;
 pub mod source;
@@ -9,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use clawdio_core::api::{PlayerSnapshot, QueueSnapshot};
 
@@ -41,7 +42,11 @@ pub type Resolve = Arc<dyn Fn(u32) -> Option<PathBuf> + Send + Sync>;
 /// Runs the engine until Shutdown or until every sender is gone.
 fn run<O: AudioOutput, E: PlayerEvents>(mut engine: Engine<O, E>, commands: Receiver<Command>) {
     loop {
-        match commands.recv_timeout(TICK) {
+        // A duck timer (D52) wakes the thread before the next tick.
+        let wait = engine.next_deadline().map_or(TICK, |at| {
+            at.saturating_duration_since(Instant::now()).min(TICK)
+        });
+        match commands.recv_timeout(wait) {
             Ok(command) => {
                 if !engine.handle(command) {
                     break;

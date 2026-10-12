@@ -27,6 +27,9 @@ const settings = JSON.parse(
             noticePending: true,
             portable: false,
             lastScan: null,
+            micDucking: "off",
+            micDuckPercent: 20,
+            micDuckingSupported: params.get("linux") !== "1",
           }
         : {
             folderName: "music",
@@ -35,6 +38,9 @@ const settings = JSON.parse(
             noticePending: false,
             portable: false,
             lastScan: LAST_SCAN,
+            micDucking: "off",
+            micDuckPercent: 20,
+            micDuckingSupported: params.get("linux") !== "1",
           },
     ),
 );
@@ -75,6 +81,10 @@ function settingsCommand(command: string, args: Args): unknown {
       return { ...settings };
     case "set_online_lookups":
       return saveSettings({ onlineLookups: args.on });
+    case "set_mic_ducking":
+      return saveSettings({ micDucking: args.mode });
+    case "set_mic_duck_percent":
+      return saveSettings({ micDuckPercent: args.percent });
     case "first_run_notice_done":
       return saveSettings({ noticePending: false });
     case "choose_music_folder":

@@ -154,13 +154,13 @@
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
-| R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Planned |
+| R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Planned |
-| R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Planned |
-| R34-4 | Pause: resume only when the duck caused the pause | §2 R34.4 | P20.3 | P20-AC1 | UT | Planned |
-| R34-5 | Timing: fade down, fixed wait of about 1 s, fade up; no wait setting | §2 R34.5 | P20.3 | P20-AC1 | UT | Planned (D52) |
-| R34-6 | Volume control and saved volume show the user's own volume | §2 R34.6 | P20.3 | P20-AC1, P20-AC2 | UT | Planned |
-| R34-7 | Linux: setting unavailable with "Windows only" | §2 R34.7 | P20.4 | P20-AC3 | E2E | Planned |
+| R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
+| R34-4 | Pause: resume only when the duck caused the pause | §2 R34.4 | P20.3 | P20-AC1 | UT | Done (P20) |
+| R34-5 | Timing: fade down, fixed wait of about 1 s, fade up; no wait setting | §2 R34.5 | P20.3 | P20-AC1 | UT | Done (P20, D52) |
+| R34-6 | Volume control and saved volume show the user's own volume | §2 R34.6 | P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
+| R34-7 | Linux: setting unavailable (D53: not shown) | §2 R34.7 | P20.4 | P20-AC3 | E2E | Changed (D53): no control off Windows |
 
 ### 1.5 Section 2: online and sidecars (R7 to R11)
 
@@ -348,13 +348,13 @@
 | E-30 | Two other-format hits: narrowing, then "more than one match" | §5 | P19.1 | P19-AC1 | UT | Done (P19) |
 | E-31 | Find missing songs on a read-only folder: error, no write | §5 | P19.5 | P19-AC6 | IT | Done (P19, CI only: root here) |
 | E-36 | Bare entries from imports before v1.6: delete and import again | §5 | P19.3 | P19-AC9 | IT | Done (P19) |
-| E-32 | A tool that keeps the microphone open holds the duck; help text names it | §5 | P20.4 | P20-AC3 | E2E | Planned |
-| E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Planned |
-| E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Planned |
-| E-35 | Track change, seek or queue edit during a duck: the duck stays | §5 | P20.3 | P20-AC1 | UT | Planned |
-| E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Planned |
-| E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Planned |
-| E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-32 | A tool that keeps the microphone open holds the duck; help text names it | §5 | P20.4 | P20-AC3 | E2E | Done (P20) |
+| E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
+| E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
+| E-35 | Track change, seek or queue edit during a duck: the duck stays | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
+| E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
+| E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
+| E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
 
 ### 1.11 Section 6: constraints
 
@@ -399,7 +399,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEF-16 | Accessibility work beyond platform defaults and R25 | Basis for D23 |
 | DEF-17 | Multiple music folders | none |
 | DEF-18 | Light theme variant of the brand tokens | none |
-| DEF-19 | Microphone ducking on Linux | P20.4 shows "Windows only" |
+| DEF-19 | Microphone ducking on Linux | P20.4 shows no control off Windows (D53) |
 | DEF-20 | Exclusion list of apps that do not trigger ducking | none |
 | DEF-21 | Pick the right song by hand for "more than one match" | none |
 | DEF-22 | Adjustable wait before the music comes back | D52 fixes the wait |
@@ -432,9 +432,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-22 | Import and repair rescan first | §8.22 | P19.4 | P19-AC5 | IT | Done (P19) |
 | DEC-23 | Ducking trigger: another app records from a microphone | §8.23 | P20.0, P20.2 | P20-AC4 | MAN-W | Planned |
 | DEC-24 | Ducking on Windows first; Linux deferred | §8.24 | P20.4 | P20-AC3 | E2E | Planned |
-| DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Planned |
-| DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Planned |
-| DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Planned |
+| DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Done (P20) |
+| DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Done (P20) |
+| DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Done (P20) |
 | DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Done (P19) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |

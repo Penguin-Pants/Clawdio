@@ -3,9 +3,11 @@ import { getVersion } from "@tauri-apps/api/app";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAppName } from "@/lib/app-name";
-import { commands } from "@/lib/ipc/commands";
+import { commands, type MicDucking } from "@/lib/ipc/commands";
 import { error } from "@/lib/log";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
@@ -42,7 +44,73 @@ function useVersion(): string {
   return version;
 }
 
-/** Settings (P4.10): music folder, Online lookups, the log folder and About (D12). */
+const DUCKING: { value: MicDucking; label: string }[] = [
+  { value: "off", label: "Off" },
+  { value: "lower", label: "Lower volume" },
+  { value: "pause", label: "Pause" },
+];
+
+const isDucking = (value: unknown): value is MicDucking => DUCKING.some((item) => item.value === value);
+
+/**
+ * "When the microphone is in use" (P20.4, R34): Off, Lower volume or Pause, and the ducked
+ * volume for Lower volume. Windows only; other platforms do not show it (D53).
+ */
+function MicrophoneSection() {
+  const view = useSettingsStore((state) => state.view);
+  const [drag, setDrag] = useState<number | null>(null);
+  if (!view.micDuckingSupported) return null;
+  const percent = drag ?? view.micDuckPercent;
+  return (
+    <Section title="Microphone">
+      <span id="mic-ducking-label" className="text-sm">
+        When the microphone is in use
+      </span>
+      <ToggleGroup
+        aria-labelledby="mic-ducking-label"
+        size="sm"
+        spacing={1}
+        value={[view.micDucking]}
+        onValueChange={(values) => {
+          const next = values[0];
+          if (isDucking(next)) void change(() => commands.setMicDucking(next), "changing microphone ducking");
+        }}
+      >
+        {DUCKING.map((item) => (
+          <ToggleGroupItem key={item.value} value={item.value}>
+            {item.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      {view.micDucking === "lower" && (
+        <div className="flex items-center gap-3 text-sm">
+          <span className="shrink-0">Volume {percent}%</span>
+          <Slider
+            label="Ducked volume"
+            className="flex-1"
+            min={5}
+            max={90}
+            step={5}
+            largeStep={10}
+            value={percent}
+            valueText={(value) => `${value} percent of your volume`}
+            onValueChange={(value) => setDrag(value)}
+            onValueCommitted={(value) => {
+              setDrag(null);
+              void change(() => commands.setMicDuckPercent(value), "changing the ducked volume");
+            }}
+          />
+        </div>
+      )}
+      <p className="text-sm text-text-secondary">
+        The music changes while another app records, for example a dictation tool or a call. A tool that keeps the
+        microphone open, such as Handy with Always-On Microphone, keeps the music down while it runs.
+      </p>
+    </Section>
+  );
+}
+
+/** Settings (P4.10): music folder, Online lookups, microphone ducking, the log folder and About (D12). */
 export function SettingsDialog() {
   const open = useUiStore((state) => state.settingsOpen);
   const setOpen = useUiStore((state) => state.setSettingsOpen);
@@ -80,6 +148,7 @@ export function SettingsDialog() {
             />
           </label>
         </Section>
+        <MicrophoneSection />
         <Section title="Log">
           <div>
             <Button variant="outline" size="sm" onClick={() => void commands.openLogFolder().catch(() => {})}>
