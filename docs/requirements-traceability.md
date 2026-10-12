@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 208 | 34 | 6 | 5 | 6 | 42 | 0 |
+| Requirements | 301 | 210 | 34 | 5 | 5 | 5 | 42 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -238,7 +238,7 @@
 | R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Done (P10) |
 | R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Done (P18) |
 | R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Done (P18) |
-| R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Planned (D28) |
+| R20-3 | Idle memory under 200 MB with 50,000 tracks across all processes | §2 R20 | P3.5, P18.5, P10.3 | P3-AC2, P18-AC6, P10-AC7 | MEAS | Done (P18, D50) |
 | R20-4 | AppImage exempt from the size target | §2 R20 | P18.3 | P18-AC2 | CI | Planned |
 | R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Done (P3, B2) |
 | R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Done (P3, D49) |
@@ -388,7 +388,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 
 | ID | Check | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| AC-1 | Footprint spike passes R20 or triggers the owner decision | §9.1 | P3.5, P3.8, P18.5 | P3-AC2, P3-AC4, P18-AC6 | MEAS | Gate (B2) |
+| AC-1 | Footprint spike passes R20 or triggers the owner decision | §9.1 | P3.5, P3.8, P18.5 | P3-AC2, P3-AC4, P18-AC6 | MEAS | Done (P18, D50) |
 | AC-2 | During the first 50,000-track scan, select and play a scanned song; redraw within 100 ms | §9.2 | P6.8 | P6-AC6 | MEAS | Planned |
 | AC-3 | App playlist opens in MusicBee or VLC with paths intact | §9.3 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | AC-4 | Real Apple XML, MusicBee M3U8 and legacy `.m3u` import with a correct report | §9.4 | P12.7 | P12-AC6 | MAN-W | Planned (Q5) |

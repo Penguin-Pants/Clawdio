@@ -88,7 +88,7 @@ tree, worst mode median (D28).
 | Linux container, `ddc97bd` (before D50) | 496 MB | 519 MB | 517 MB | 519 MB | 468 MB (raised at P3, D49) | Over the target. The owner asked for a reduction (B9). |
 | Linux CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 440 MB | 450 MB | 445 MB | 450 MB | 468 MB | Under the raised target |
 | Linux container, D50 build | 294 MB | 298 MB | 297 MB | 298 MB | 468 MB; R20 200 MB | Under the raised target. 200 to 300 MB: the owner is told the number (R20). |
-| Linux CI VM, `c0a0a40` with D50 (`measure.yml` run 38208222253) | 290 MB | 294 MB | 292 MB | 294 MB | 468 MB; R20 200 MB | Under the raised target. 200 to 300 MB: the owner is told the number (R20). |
+| Linux CI VM, `c0a0a40` with D50 (`measure.yml` run 38208222253) | 290 MB | 294 MB | 292 MB | 294 MB | 468 MB; R20 200 MB | Accepted by the owner (October 12, 2026) |
 | Windows CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 133 MB | 146 MB | 140 MB | 146 MB | 200 MB | Pass |
 | Windows CI VM, `c0a0a40` (`measure.yml` run 38208222253) | 134 MB | 143 MB | 139 MB | 143 MB | 200 MB | Pass (D50 is Linux only) |
 
@@ -128,7 +128,7 @@ Pass on Linux. A test `theme/tokens.json` and a test `clawdio-icon-full.svg` cha
 
 | Check | Linux | Windows |
 |---|---|---|
-| AC-1 Footprint | 294 MB (CI VM) and 298 MB (container) after D50 (see "Footprint"); under the raised 468 MB target, over the R20 200 MB target | Pass: 143 MB (CI VM) |
+| AC-1 Footprint | Accepted: 294 MB (CI VM) and 298 MB (container) after D50; the owner accepted the value on October 12, 2026 (see "Footprint") | Pass: 143 MB (CI VM) |
 | AC-2 Responsive first scan | Exception: 2 of 3 runs under 100 ms (container, software rendering) | Not run |
 | AC-3 Playlist interop | Pass (VLC, see above) | Not run: no Windows machine. B3 stays open. |
 | AC-4 Import of real exports | Not run: the owner did not supply exports (Q5, B4) | Not run (Q5) |

@@ -1067,7 +1067,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P18-AC3 | Not run (E1) | `tauri.conf.json`: NSIS `installMode` `currentUser`, `webviewInstallMode` `downloadBootstrapper`. |
 | P18-AC4 | Not run (E1) | D38 holds: Tauri shows "Could not find the WebView2 Runtime" with the download link (`tauri-runtime-wry` 2.12.1 `src/lib.rs:4680`), then `main` exits with code 1. |
 | P18-AC5 | Not verified (E2) | No Ubuntu 22.04 desktop and no Debian 12 machine (B5 owner answer). |
-| P18-AC6 | Windows pass; Linux under the raised target | `docs/release-checklist.md` "Footprint": Windows 143 MB (CI VM, run 38208222253; target 200 MB). Linux after D50: 294 MB on the CI VM (run 38208222253) and 298 MB in the container (raised target 468 MB; the owner asked for the reduction and is told the number). |
+| P18-AC6 | Pass | `docs/release-checklist.md` "Footprint": Windows 143 MB (CI VM, run 38208222253; target 200 MB). Linux after D50: 294 MB on the CI VM (run 38208222253) and 298 MB in the container; the owner accepted the Linux value on October 12, 2026 (R20 targets are adjustable). |
 | P18-AC7 | Pass on Linux (E3) | The `.deb` holds `LICENSE`, `NOTICE` and both third-party files; the AppImage holds them and the LGPL and GPL texts. `NOTICE`: 3 assets, the Rust crates of both shipped targets and 27 npm packages; CI job `licenses` checks all generated files. |
 | P18-AC8 | Pass | `cargo deny check` (licenses, advisories, bans, sources). |
 | P18-AC9 | Pass (Linux) | Brand swap demo: only the two inputs and `src-tauri/icons/` changed; reverted. |
@@ -1282,7 +1282,7 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | B6 | The environment egress policy denied `ui.shadcn.com` (HTTP 403). `shadcn init` and `shadcn add` download from it. | P0.10 stopped. P2.14 needs the same host. | Closed October 11, 2026: the owner allowed the host in the environment network settings. A new environment needs the same setting. |
 | B7 | P1-AC4 asks for separate wordmark bars at the 20 px header height. With the P1.1 geometry (five bars of at least 18 units and gaps of at least 8 units inside a 128-unit inner ring) each gap is 0.5 px at 20 px. Five 1 px bars with 1 px gaps need 9 px; the inner ring is 8 px. | P1 could not be Done. | Closed October 11, 2026: the owner chose F-09 option (b). P1-AC4 checks bar separation at the 72 px README height. The assets did not change. |
 | B8 | The Windows Milestone 0 numbers (P3-AC2 to P3-AC5) need `measure.yml` on windows-latest. GitHub runs it only on a push to a `measure/**` branch or by dispatch from the default branch. The agent may push only to its task branch. | P3 could not close; P4 waited for the Windows verdict (B2). | Closed October 11, 2026: the owner allowed pushes to `measure/p3`. Run 38171140952 measured Windows. |
-| B9 | P18.5 Linux idle memory was 519 MB, over the raised Linux target of 468 MB (D49). | P18-AC6 on Linux. | Closed October 12, 2026: the owner asked for a reduction. D50 gives 298 MB in the container and 294 MB on the CI VM (under 468 MB; between 200 and 300 MB, so the owner is told the number, R20). |
+| B9 | P18.5 Linux idle memory was 519 MB, over the raised Linux target of 468 MB (D49). | P18-AC6 on Linux. | Closed October 12, 2026: the owner asked for a reduction. D50 gives 298 MB in the container and 294 MB on the CI VM (under 468 MB; between 200 and 300 MB, so the owner is told the number, R20). The owner accepted 294 MB (CI VM) as the Linux value on October 12, 2026. |
 | B10 | The P18.5 Windows numbers need `measure.yml` on windows-latest, which runs on a push to a `measure/**` branch (as B8). | P18-AC6 on Windows and the NSIS size. | Closed October 12, 2026: the owner allowed a push to `measure/p18`. Run 38204302435: Windows 146 MB, NSIS 5.12 MiB. |
 
 ---
@@ -2647,7 +2647,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
-- **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10). F-19 left section 11 (done in D50).
+- **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10), then accept the Linux value of 294 MB after D50. F-19 left section 11 (done in D50).
 - **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
 - **1.9 (October 11, 2026):** owner signed off the brand after P1 (Q6 closed). Owner chose F-09 option (b) for B7: P1-AC4 checks wordmark bar separation at the 72 px README height, and the 20 px rule keeps only the bar width. F-09 left section 11.
