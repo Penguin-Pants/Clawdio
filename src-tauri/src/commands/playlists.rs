@@ -149,31 +149,33 @@ pub fn favorites(
 }
 
 /// Rescan first (R33.1), then `work` with the playlists, the music folder and the index; then
-/// tells the UI. None when the scan was canceled or failed, or the music folder changed
-/// meanwhile: nothing was matched or written. Blocks the calling thread.
+/// tells the UI. None when the scan was canceled or failed, or the music folder changed before
+/// the work took the playlist lock: nothing was matched or written. A folder change clears the
+/// playlists under that lock, so it waits for work that started first. Blocks the calling
+/// thread.
 fn after_rescan<T>(
     app: &AppHandle,
     work: impl FnOnce(&mut PlaylistSet, &std::path::Path, &LibraryIndex) -> CommandResult<T>,
 ) -> CommandResult<Option<T>> {
     let root = root(app)?;
     let ran = after_scan(
-        || {
-            crate::jobs::scan_and_wait(app, root.clone())
-                && self::root(app).ok() == Some(root.clone())
-        },
+        || crate::jobs::scan_and_wait(app, root.clone()),
         || {
             let playlists = app.state::<Playlists>();
             let mut set = playlists.0.lock().map_err(|_| lock_error())?;
+            if self::root(app).ok() != Some(root.clone()) {
+                return Ok(None);
+            }
             let library = app.state::<Library>();
             let index = library.0.read().map_err(|_| lock_error())?;
             let result = work(&mut set, &root, &index);
             drop(index);
             drop(set);
             emit(app, PLAYLISTS_CHANGED, ());
-            result
+            result.map(Some)
         },
     );
-    ran.transpose()
+    Ok(ran.transpose()?.flatten())
 }
 
 /// Runs a blocking import or repair off the async runtime.

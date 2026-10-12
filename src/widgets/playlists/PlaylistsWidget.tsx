@@ -206,7 +206,7 @@ export function PlaylistsWidget() {
   };
 
   const header = (
-    <div className="flex shrink-0 items-center gap-1 px-2 py-1">
+    <div className="flex shrink-0 flex-wrap items-center gap-1 px-2 py-1">
       <Button variant="ghost" size="xs" onClick={() => openDialog({ kind: "newPlaylist" })}>
         New playlist
       </Button>

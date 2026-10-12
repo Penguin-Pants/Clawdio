@@ -1161,7 +1161,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none for P19. P18 stays In progress (B3, B5).
 
-**TWO-PASS REVIEW:** F1 1, F2 5, F3 0, F4 4. Source: own audit, then a reviewer agent.
+**TWO-PASS REVIEW:** F1 1, F2 7, F3 0, F4 5. Source: own audit, a reviewer agent, then the Codex PR review.
 
 - F1: the "Playlists menu" label matched the app's "Menu" button and broke nine e2e tests (strict locator). Renamed to "Playlist actions".
 - F2:
@@ -1170,11 +1170,14 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - A failed source used the raw name, a skipped one the cleaned name. Both use the cleaned name; the `ImportReport` doc says so.
   - An inserted `#EXTINF` line took the file's line end instead of its path line's.
   - The "same extension wins" test survived a no-preference matcher. A case with a longer other-extension suffix was added.
+  - Codex: the folder check ran before the playlist lock, so a folder change in between let the work write to the old folder. The check now runs under the lock; a folder change clears the playlists under the same lock.
+  - Codex: three text buttons and the menu button did not fit the 200 px minimum width. The header wraps; at 200 px the last control ends at 192 px.
 - F4:
   - The Tauri `after_rescan` has no own test: its order comes from the core `after_scan` (tested), whose signature runs `work` only after a true scan result; `wait_for_end` is tested.
   - Lost wakeup in `wait_for_end`: `ACTIVE` goes down inside the `ENDS` lock, then `notify_all`.
   - Lock order: every nested site takes Playlists, then Library; the scan never nests them.
   - An unreadable `.m3u8` outside `Playlists/` is not a known name (D51): the set skips it, so it is not a playlist.
+  - Codex: quadratic name checks in a bulk import. N sources cost N reads of `Playlists/`; for the expected hundreds of playlists that is well under a second, next to the matching and the writes. A name cache would add a second source of truth.
 
 **Follow-ups:** none new.
 
