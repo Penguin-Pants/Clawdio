@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.16, October 12, 2026 (P20.0 result: D54; K21 closed, section 13).
+**Version:** 1.17, October 12, 2026 (P21 release checks after v1.6, section 13).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -85,7 +85,7 @@ A phase is Done when all of these are true:
 | P18 | Release readiness | P17, gate B3 closed | In progress |
 | P19 | Bulk import and missing-song repair | P18 (waived, section 13 v1.14) | Done with exceptions |
 | P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
-| P21 | Release readiness after v1.6 | P20 | Not started |
+| P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1224,6 +1224,43 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Duplicate busy events: the detector sends changes only, and the duck ignores repeats.
 
 **Follow-ups:** none new.
+
+#### P21. Release readiness after v1.6 (October 12, 2026)
+
+- **Status:** Done with exceptions. P18 stays In progress (B3, B5); P21 repeats its checks with the same exceptions.
+- **Commits:** branch `clawd/practical-galileo-6jmhwb`, from `907a0e4` (the P20 head). Messages start with `P21:`.
+- **Packages:** none new. P20 added no crate: `windows` 0.62.2 was already in `NOTICE`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P21-AC1 (P18-AC1) | Not run (E1) | No release tag was pushed. |
+| P21-AC1 (P18-AC2) | Pass on Linux; NSIS not measured (E2) | `.deb` 9.36 MiB, AppImage 83.73 MiB (local release build of `907a0e4`). |
+| P21-AC1 (P18-AC3, AC4, AC10) | Not run (E3) | Windows only. |
+| P21-AC1 (P18-AC5) | Not verified (E3) | No Ubuntu desktop and no Debian 12 machine (B5). |
+| P21-AC1 (P18-AC6) | Pass against D49 on Linux; Windows not measured again (E2) | Linux container 315 MB (worst mode median, 50,000 tracks), under the raised 468 MB target; 17 MB more than the P18 container value. The owner is told the number (R20). |
+| P21-AC1 (P18-AC7, AC8) | Pass | Package contents checked (`.deb`, AppImage with LGPL texts); CI job `licenses` (cargo deny, `NOTICE` and third-party files) on `907a0e4`, run 38293560366. |
+| P21-AC1 (P18-AC9) | Pass (Linux) | Brand swap demo again: only `theme/tokens.json`, the icon SVG and `src-tauri/icons/` changed; reverted. |
+| P21-AC1 (P18-AC11) | Pass in part (E3) | As P18: Linux window title and desktop entry; Windows items not run. |
+| P21-AC1 (P18-AC12), P21-AC2 | Pass under the P18-AC12 rule, with exceptions | `docs/release-checklist.md` records all 24 checks. Every "not run" names a missing platform; AC-23 and AC-24 are "not verified" by the owner's P20 decision. No check failed. AC-3 on Windows still waits for B3. |
+| P21-AC1 (P18-AC13) | Pass | README lists ducking; `docs/file-formats.md` has the P19 and P20 sections. |
+
+**Exceptions**
+
+- E1: no release tag: a tag publishes a draft release, which the owner starts.
+- E2: the Windows NSIS size and Windows memory need `measure.yml` on a `measure/**` branch, which needs the owner's permission (B10). F-21.
+- E3: no Windows machine, Ubuntu desktop or Debian 12 machine in this environment (B5).
+
+**Blockers:** none for P21. B3 and B5 keep P18 In progress.
+
+**TWO-PASS REVIEW:** F1 0, F2 1, F3 1, F4 2. Source: own audit.
+
+- F2: the first footprint row mixed kB-based and MiB-based numbers. It now uses the script's MB values like the other rows.
+- F3: F-21 (CI VM measurement on the P20 head).
+- F4:
+  - "P19 and P20 change the package contents": the `.deb` and AppImage hold the same license files; only the app grew (`.deb` 9.26 to 9.36 MiB).
+  - "Linux memory regression must block": D49 sets the Linux gate at 468 MB; 315 MB passes it, and R20 asks only that the owner is told.
+
+**Follow-ups:** F-21 (new).
 
 ## 3. Source documents and precedence
 
@@ -2710,6 +2747,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
+| F-21 | Run `measure.yml` on a `measure/p21` branch for the P20 head: the Windows NSIS size, Windows memory and the Linux CI VM memory. If the CI VM also shows the 17 MB Linux growth seen in the container (315 MB against 298 MB), find its source. | P21 could not run the CI measurement (B10 needs the owner's permission for each push). | P21 review |
 | F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
@@ -2842,6 +2880,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.17 (October 12, 2026):** P21 Done with exceptions: packages, licenses, Linux memory (315 MB), brand swap and the 24 checks recorded on the P20 head. F-21 proposed. P18 stays In progress (B3, B5).
 - **1.16 (October 12, 2026):** P20.0 result from the owner's Windows probe: D54 (audio sessions). K21 closed. P20 Done with exceptions (P20-AC4 and P20-AC5 are manual Windows checks).
 - **1.15 (October 12, 2026):** owner decisions for P20: the P20.0 spike becomes a probe the owner runs on Windows, and the other P20 tasks proceed meanwhile; D53 hides the ducking control off Windows (P20.4 and P20-AC3 changed). P20 In progress, blocked by K21.
 - **1.14 (October 12, 2026):** owner decision: P19 may start while P18 waits on B3 and B5 (the owner tested the app on Windows). P18 stays In progress; P21 repeats the release checks. P19 done with exceptions.

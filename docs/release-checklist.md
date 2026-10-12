@@ -1,6 +1,6 @@
 # Release checklist
 
-Manual and interop checks that the release (P18) repeats or completes. Each phase adds its
+Manual and interop checks that the release (P18, and P21 after v1.6) repeats or completes. Each phase adds its
 rows when it runs a check. A row names the check, the date, the platform and the result.
 
 ## Playlist interop (P11.9, AC-3, B3)
@@ -89,6 +89,7 @@ tree, worst mode median (D28).
 | Linux CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 440 MB | 450 MB | 445 MB | 450 MB | 468 MB | Under the raised target |
 | Linux container, D50 build | 294 MB | 298 MB | 297 MB | 298 MB | 468 MB; R20 200 MB | Under the raised target. 200 to 300 MB: the owner is told the number (R20). |
 | Linux CI VM, `c0a0a40` with D50 (`measure.yml` run 38208222253) | 290 MB | 294 MB | 292 MB | 294 MB | 468 MB; R20 200 MB | Accepted by the owner (October 12, 2026) |
+| Linux container, P20 head `907a0e4` (P21.1) | 309 MB | 315 MB | 313 MB | 315 MB | 468 MB; R20 200 MB | Under the raised target. 17 MB over the P18 container value (Columns run 3: web process 161 MB, was 150; `clawdio` 131 MB, was 127). The owner is told the number (R20). |
 | Windows CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 133 MB | 146 MB | 140 MB | 146 MB | 200 MB | Pass |
 | Windows CI VM, `c0a0a40` (`measure.yml` run 38208222253) | 134 MB | 143 MB | 139 MB | 143 MB | 200 MB | Pass (D50 is Linux only) |
 
@@ -109,6 +110,17 @@ turns both back on (the web process then uses 333 MB).
 Package sizes (`measure.yml` run 38204302435): NSIS installer 5.12 MiB (5,365,658 bytes) and
 `.deb` 9.25 MiB (9,696,204 bytes), both under 30 MB.
 
+## Packages after v1.6 (P21.1, October 12, 2026, P20 head `907a0e4`)
+
+| Check | Linux | Windows |
+|---|---|---|
+| `.deb` builds, under 30 MB | Pass: 9.36 MiB (local release build, Ubuntu 24.04 container) | Not applicable |
+| AppImage builds, size recorded | Pass: 83.73 MiB; holds `LICENSE`, `NOTICE`, both third-party files and the LGPL 2.1 and 3.0 texts | Not applicable |
+| `.deb` holds `LICENSE`, `NOTICE` and the third-party files | Pass (`dpkg-deb -c`, `/usr/lib/Clawdio`) | Not applicable |
+| NSIS installer under 30 MB | Not applicable | Not run: `measure.yml` runs only on a push to a `measure/**` branch, which needs the owner's permission (B10). CI `tauri-build (windows-latest)` builds the app on `907a0e4` (run 38293560366). |
+| One tag builds all four packages (P18-AC1) | Not run: no release tag was pushed | Not run |
+| Licenses (P18.4): `cargo deny`, `NOTICE` and third-party files current | Pass: CI job `licenses` on `907a0e4` (run 38293560366). P20 adds no crate: `windows` 0.62.2 was already in `NOTICE`. | Same CI job |
+
 ## Licenses (P18.4)
 
 | Check | Result |
@@ -122,13 +134,15 @@ Package sizes (`measure.yml` run 38204302435): NSIS installer 5.12 MiB (5,365,65
 
 Pass on Linux. A test `theme/tokens.json` and a test `clawdio-icon-full.svg` changed the CSS colors and the generated icons. Only the two inputs and `src-tauri/icons/` changed. The Q8 fallback is off, so `clawdio-icon-simple.svg` was not used. The swap was reverted.
 
-## Acceptance checks (AC-1 to AC-21)
+## Acceptance checks (AC-1 to AC-24)
+
+P21 (October 12, 2026) ran the checks again on the P20 head `907a0e4`. Rows that P19 and P20 did not touch keep their P18 result; CI run 38293560366 repeats every automated check on Linux and Windows.
 
 "Auto" means the automated tests named in the plan pass on that OS in CI. "Not run" names the reason.
 
 | Check | Linux | Windows |
 |---|---|---|
-| AC-1 Footprint | Accepted: 294 MB (CI VM) and 298 MB (container) after D50; the owner accepted the value on October 12, 2026 (see "Footprint") | Pass: 143 MB (CI VM) |
+| AC-1 Footprint | Pass against the raised target (D49): P21 315 MB in the container (P18: 298 MB container, 294 MB CI VM accepted by the owner); see "Footprint" | Pass at P18: 143 MB (CI VM); not measured again at P21 (B10) |
 | AC-2 Responsive first scan | Exception: 2 of 3 runs under 100 ms (container, software rendering) | Not run |
 | AC-3 Playlist interop | Pass (VLC, see above) | Not run: no Windows machine. B3 stays open. |
 | AC-4 Import of real exports | Not run: the owner did not supply exports (Q5, B4) | Not run (Q5) |
@@ -149,3 +163,6 @@ Pass on Linux. A test `theme/tokens.json` and a test `clawdio-icon-full.svg` cha
 | AC-19 Decode error skip | Pass (auto) | Pass (auto, CI) |
 | AC-20 First song before the scan ends | Pass (P4-AC3, cold cache); P7-AC10 exception (warm scan ends in 2 s) | Not run |
 | AC-21 Embedded lyrics | Pass (auto and manual Linux) | Pass (auto, CI) |
+| AC-22 Bulk import and repair | Pass (auto: P19-AC1 to P19-AC6, P19-AC9; Playwright P19-AC7) | Auto pass (CI); manual with the owner's playlists not run (P19-AC8) |
+| AC-23 Microphone ducking | Not applicable: Windows only (D53) | Not verified (owner decision at P20): the P20.0 probe showed the signal follows Handy and a WhatsApp call, and two overlapping users; the app itself was not run. Unit tests pass (P20-AC1, P20-AC7). |
+| AC-24 No microphone use by the app | Not applicable: Windows only | Not verified (owner decision at P20). The detector reads audio sessions only and opens no capture stream (D54, code review P20-AC6). |
