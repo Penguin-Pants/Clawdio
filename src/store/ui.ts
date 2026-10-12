@@ -1,17 +1,18 @@
 import { create } from "zustand";
-import type { ImportReport, MetadataPreview } from "@/lib/ipc/commands";
+import type { ImportBatch, MetadataPreview, RepairBatch } from "@/lib/ipc/commands";
 import type { WidgetId } from "@/shell/widgets";
 
 /** How long a transient status message shows (D18). */
 export const MESSAGE_MS = 5000;
 
 /** The app's small dialogs: a new playlist name, a delete confirmation, an error (P11), the
- * import report (P12) and the metadata preview (P16). */
+ * import report (P12, R32), the repair report (R33.5) and the metadata preview (P16). */
 export type AppDialog =
   | { kind: "newPlaylist"; addTracks?: number[] }
   | { kind: "deletePlaylist"; id: number; fileName: string }
   | { kind: "error"; text: string }
-  | { kind: "importReport"; reports: ImportReport[] }
+  | { kind: "importReport"; batch: ImportBatch }
+  | { kind: "repairReport"; batch: RepairBatch }
   | { kind: "metadataPreview"; album: number; preview: MetadataPreview };
 
 /** A running job in the status line (R5). `cancel` is absent when the job cannot be canceled. */

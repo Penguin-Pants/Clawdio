@@ -1,6 +1,7 @@
 //! Matching (P12.2, P12.3, R14): normalized paths, then four stages. A stage must yield one
 //! track; more than one narrows the next stage to those; still more than one after the last
-//! stage is "ambiguous".
+//! stage is "ambiguous". Stages 1 and 2 also match another extension (R33.2): with no
+//! same-extension hit they run again with the extension of the last part removed.
 
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
@@ -46,6 +47,16 @@ fn file_of(normalized: &str) -> &str {
     normalized.rsplit('/').next().unwrap_or(normalized)
 }
 
+/// A normalized path without the extension of its last part ("a/b.c/song.m4a" gives
+/// "a/b.c/song"). A name that starts with its only dot keeps it.
+fn without_extension(normalized: &str) -> &str {
+    let file_start = normalized.len() - file_of(normalized).len();
+    match normalized[file_start..].rfind('.') {
+        Some(dot) if dot > 0 => &normalized[..file_start + dot],
+        _ => normalized,
+    }
+}
+
 /// The candidates a stage may return: all tracks (`None`) or the hits of an earlier stage.
 /// Both lists are in ascending order.
 type Set<'s> = Option<&'s [usize]>;
@@ -56,16 +67,20 @@ type Stage<'a> = dyn Fn(Set) -> Vec<usize> + 'a;
 struct Candidate {
     id: TrackId,
     rel: String,
+    /// `rel` without the extension of the file name (R33.2).
+    stem: String,
     title: String,
     artist: String,
     album: String,
 }
 
 /// The library as match candidates. Each stage looks only at the tracks with the same file
-/// name or title, so an import of thousands of entries stays fast on a large library.
+/// name, file name without extension or title, so an import of thousands of entries stays
+/// fast on a large library.
 pub struct Matcher {
     tracks: Vec<Candidate>,
     by_file: HashMap<String, Vec<usize>>,
+    by_stem: HashMap<String, Vec<usize>>,
     by_title: HashMap<String, Vec<usize>>,
 }
 
@@ -82,6 +97,25 @@ fn clean(path: &Path) -> PathBuf {
         }
     }
     out
+}
+
+/// `entry` relative to the music folder when it is a relative entry of the playlist file
+/// `source` that resolves inside `root`, with forward slashes and its own letter case.
+pub fn inside_root(entry: &str, source: &Path, root: &Path) -> Option<String> {
+    let entry_path = entry.replace('\\', "/");
+    let absolute = entry_path.starts_with('/')
+        || entry_path.as_bytes().get(1) == Some(&b':')
+        || entry_path.contains("://");
+    if absolute {
+        return None;
+    }
+    let target = clean(&source.parent()?.join(&entry_path));
+    let rel = target.strip_prefix(clean(root)).ok()?;
+    let parts: Vec<String> = rel
+        .components()
+        .map(|part| part.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    (!parts.is_empty()).then(|| parts.join("/"))
 }
 
 /// The tracks in `bucket` that are also in `set`.
@@ -101,25 +135,34 @@ impl Matcher {
         let tracks: Vec<Candidate> = index
             .paths()
             .filter_map(|path| index.track_at(path))
-            .map(|track| Candidate {
-                id: track.id,
-                rel: normalize(track.rel_path()),
-                title: fold(track.title()),
-                artist: fold(
-                    track
-                        .data
-                        .tag_artist
-                        .as_deref()
-                        .unwrap_or(&track.data.artist),
-                ),
-                album: fold(&track.data.album),
+            .map(|track| {
+                let rel = normalize(track.rel_path());
+                Candidate {
+                    id: track.id,
+                    stem: without_extension(&rel).to_owned(),
+                    rel,
+                    title: fold(track.title()),
+                    artist: fold(
+                        track
+                            .data
+                            .tag_artist
+                            .as_deref()
+                            .unwrap_or(&track.data.artist),
+                    ),
+                    album: fold(&track.data.album),
+                }
             })
             .collect();
         let mut by_file: HashMap<String, Vec<usize>> = HashMap::new();
+        let mut by_stem: HashMap<String, Vec<usize>> = HashMap::new();
         let mut by_title: HashMap<String, Vec<usize>> = HashMap::new();
         for (i, track) in tracks.iter().enumerate() {
             by_file
                 .entry(file_of(&track.rel).to_owned())
+                .or_default()
+                .push(i);
+            by_stem
+                .entry(file_of(&track.stem).to_owned())
                 .or_default()
                 .push(i);
             by_title.entry(track.title.clone()).or_default().push(i);
@@ -127,36 +170,41 @@ impl Matcher {
         Matcher {
             tracks,
             by_file,
+            by_stem,
             by_title,
         }
     }
 
     /// Stage 1 (M3U family): the entry relative to the playlist file, inside the music folder.
-    fn relative(&self, set: Set, entry: &str, root: &Path, source_dir: &Path) -> Vec<usize> {
-        let entry_path = entry.replace('\\', "/");
-        let absolute = entry_path.starts_with('/') || entry_path.as_bytes().get(1) == Some(&b':');
-        if absolute {
-            return Vec::new();
-        }
-        let target = clean(&source_dir.join(&entry_path));
-        let Ok(rel) = target.strip_prefix(clean(root)) else {
+    /// With no hit, the same path with any extension (R33.2).
+    fn relative(&self, set: Set, entry: &str, root: &Path, source: &Path) -> Vec<usize> {
+        let Some(rel) = inside_root(entry, source, root) else {
             return Vec::new();
         };
-        let wanted = normalize(&rel.to_string_lossy());
+        let wanted = normalize(&rel);
         let mut hits = within(self.by_file.get(file_of(&wanted)), set);
         hits.retain(|&i| self.tracks[i].rel == wanted);
+        if !hits.is_empty() {
+            return hits;
+        }
+        let stem = without_extension(&wanted);
+        let mut hits = within(self.by_stem.get(file_of(stem)), set);
+        hits.retain(|&i| self.tracks[i].stem == stem);
         hits
     }
 
-    /// Stage 2: the tracks that share the longest path end with the entry, at least a folder
-    /// and the file name. Such a track always has the same file name.
-    fn suffix(&self, set: Set, normalized: &str) -> Vec<usize> {
-        let candidates = within(self.by_file.get(file_of(normalized)), set);
+    /// The candidates that share the longest path end with `wanted`, at least a folder and
+    /// the file name. `path` gives the candidate path to compare.
+    fn longest(
+        &self,
+        candidates: Vec<usize>,
+        wanted: &str,
+        path: impl Fn(&Candidate) -> &str,
+    ) -> Vec<usize> {
         let shared = |i: usize| {
-            self.tracks[i]
-                .rel
+            path(&self.tracks[i])
                 .rsplit('/')
-                .zip(normalized.rsplit('/'))
+                .zip(wanted.rsplit('/'))
                 .take_while(|(a, b)| a == b)
                 .count()
         };
@@ -170,7 +218,20 @@ impl Matcher {
             .collect()
     }
 
-    /// Stage 3: the same file name.
+    /// Stage 2: the tracks that share the longest path end with the entry. A same-extension
+    /// hit wins; with none, the paths are compared without the extension (R33.2).
+    fn suffix(&self, set: Set, normalized: &str) -> Vec<usize> {
+        let same = within(self.by_file.get(file_of(normalized)), set);
+        let hits = self.longest(same, normalized, |track| &track.rel);
+        if !hits.is_empty() {
+            return hits;
+        }
+        let stem = without_extension(normalized);
+        let other = within(self.by_stem.get(file_of(stem)), set);
+        self.longest(other, stem, |track| &track.stem)
+    }
+
+    /// Stage 3: the same file name, extension included.
     fn file_name(&self, set: Set, normalized: &str) -> Vec<usize> {
         within(self.by_file.get(file_of(normalized)), set)
     }
@@ -200,8 +261,8 @@ impl Matcher {
         let normalized = normalize(&entry.path);
         let mut set: Option<Vec<usize>> = None;
         let stages: [&Stage; 4] = [
-            &|set| match source.and_then(Path::parent) {
-                Some(dir) => self.relative(set, &entry.path, root, dir),
+            &|set| match source {
+                Some(source) => self.relative(set, &entry.path, root, source),
                 None => Vec::new(),
             },
             &|set| self.suffix(set, &normalized),
@@ -367,5 +428,141 @@ mod tests {
             matcher.find(&SourceEntry::default(), None, Path::new(ROOT)),
             Outcome::NoLocation
         );
+    }
+
+    /// Ids: 0 Artist/Album/Song.mp3, 1 Other/Album/Song.mp3, 2 Pair/Album/Tune.mp3,
+    /// 3 Pair/Album/Tune.ogg, 4 Lone/Disc/Solo.flac, 5 Deep/Artist/Album/Tune.ogg.
+    fn formats() -> Matcher {
+        let mut index = LibraryIndex::default();
+        for (path, title) in [
+            ("Artist/Album/Song.mp3", "Song"),
+            ("Other/Album/Song.mp3", "Song"),
+            ("Pair/Album/Tune.mp3", "Tune"),
+            ("Pair/Album/Tune.ogg", "Tune"),
+            ("Lone/Disc/Solo.flac", "Solo"),
+            ("Deep/Artist/Album/Tune.ogg", "Tune"),
+        ] {
+            index.insert(track(path, title));
+        }
+        Matcher::new(&index)
+    }
+
+    fn find(matcher: &Matcher, path: &str, source: Option<&str>) -> Outcome {
+        matcher.find(&entry(path), source.map(Path::new), Path::new(ROOT))
+    }
+
+    /// P19-AC1 (R33.2): stage 1 and stage 2 match another extension in the same folders.
+    #[test]
+    fn another_extension_matches_in_the_same_folder_part() {
+        let matcher = formats();
+        assert_eq!(
+            find(&matcher, "Song.m4a", Some("/m/Other/Album/list.m3u")),
+            Outcome::Matched(1),
+            "stage 1"
+        );
+        assert_eq!(
+            find(&matcher, "Song.m4a", None),
+            Outcome::NotFound,
+            "without stage 1 the bare name has no folder"
+        );
+        assert_eq!(
+            find(&matcher, "E:\\Music\\Other\\Album\\Song.m4a", None),
+            Outcome::Matched(1),
+            "stage 2"
+        );
+    }
+
+    /// P19-AC1: the longest shared path end still ranks the other-extension hits.
+    #[test]
+    fn another_extension_keeps_the_longest_suffix_rule() {
+        assert_eq!(
+            find(&formats(), "C:\\OldRoot\\Artist\\Album\\Song.m4a", None),
+            Outcome::Matched(0),
+            "Artist/Album/Song.mp3 beats Other/Album/Song.mp3"
+        );
+    }
+
+    /// P19-AC1: within a stage, a same-extension hit wins over other-extension hits.
+    #[test]
+    fn a_same_extension_hit_wins() {
+        let matcher = formats();
+        assert_eq!(
+            find(&matcher, "Tune.ogg", Some("/m/Pair/Album/list.m3u")),
+            Outcome::Matched(3),
+            "stage 1"
+        );
+        assert_eq!(
+            find(&matcher, "D:\\Pair\\Album\\Tune.ogg", None),
+            Outcome::Matched(3),
+            "stage 2"
+        );
+        assert_eq!(
+            find(&matcher, "C:\\Deep\\Artist\\Album\\Tune.mp3", None),
+            Outcome::Matched(2),
+            "stage 2: the same extension wins over a longer other-extension suffix"
+        );
+    }
+
+    /// P19-AC1: the album folder must match; stage 3 needs the same extension.
+    #[test]
+    fn another_album_folder_or_a_bare_name_with_another_extension_does_not_match() {
+        let matcher = formats();
+        assert_eq!(
+            find(&matcher, "D:\\Artist\\Live\\Song.m4a", None),
+            Outcome::NotFound
+        );
+        assert_eq!(
+            find(
+                &matcher,
+                "../Live/Song.m4a",
+                Some("/m/Artist/Album/list.m3u")
+            ),
+            Outcome::NotFound
+        );
+        assert_eq!(find(&matcher, "D:\\Solo.mp3", None), Outcome::NotFound);
+        assert_eq!(
+            find(&matcher, "D:\\Solo.flac", None),
+            Outcome::Matched(4),
+            "stage 3 with the same extension"
+        );
+    }
+
+    /// P19-AC1, section 5: two other-format hits narrow, then give "more than one match".
+    #[test]
+    fn two_other_format_hits_are_ambiguous() {
+        let matcher = formats();
+        assert_eq!(
+            find(&matcher, "D:\\Pair\\Album\\Tune.m4a", None),
+            Outcome::Ambiguous
+        );
+        assert_eq!(
+            find(&matcher, "Tune.m4a", Some("/m/Pair/Album/list.m3u")),
+            Outcome::Ambiguous
+        );
+    }
+
+    #[test]
+    fn the_extension_goes_from_the_last_part_only() {
+        assert_eq!(without_extension("a.b/song.m4a"), "a.b/song");
+        assert_eq!(without_extension("a.b/song"), "a.b/song");
+        assert_eq!(without_extension("a/.hidden"), "a/.hidden");
+        assert_eq!(without_extension("x.tar.gz"), "x.tar");
+    }
+
+    #[test]
+    fn inside_root_keeps_the_letter_case_and_refuses_outside_paths() {
+        let source = Path::new("/m/Artist/Album/list.m3u");
+        let root = Path::new(ROOT);
+        assert_eq!(
+            inside_root("Song.m4a", source, root).as_deref(),
+            Some("Artist/Album/Song.m4a")
+        );
+        assert_eq!(
+            inside_root("..\\B\\x.mp3", source, root).as_deref(),
+            Some("Artist/B/x.mp3")
+        );
+        assert_eq!(inside_root("../../../out.mp3", source, root), None);
+        assert_eq!(inside_root("C:\\x.mp3", source, root), None);
+        assert_eq!(inside_root("/m/Artist/x.mp3", source, root), None);
     }
 }

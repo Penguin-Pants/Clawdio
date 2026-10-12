@@ -3,9 +3,10 @@
 
 use std::path::PathBuf;
 
-use clawdio_core::api::{ImportReport, IpcError, PlaylistEntry, PlaylistRow};
-use clawdio_core::import::import_file;
-use clawdio_core::playlist::PlaylistError;
+use clawdio_core::api::{ImportBatch, IpcError, PlaylistEntry, PlaylistRow, RepairBatch};
+use clawdio_core::import::{after_scan, import_files, playlist_files};
+use clawdio_core::library::LibraryIndex;
+use clawdio_core::playlist::{PlaylistError, PlaylistSet};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -68,10 +69,15 @@ fn edit<T>(
     result
 }
 
-/// Playlists in natural name order (P11.5).
+/// Playlists in natural name order (P11.5), with their missing counts (R33.3).
 #[tauri::command]
-pub fn playlists_list(playlists: State<'_, Playlists>) -> CommandResult<Vec<PlaylistRow>> {
-    Ok(playlists.0.lock().map_err(|_| lock_error())?.rows())
+pub fn playlists_list(
+    playlists: State<'_, Playlists>,
+    library: State<'_, Library>,
+) -> CommandResult<Vec<PlaylistRow>> {
+    let set = playlists.0.lock().map_err(|_| lock_error())?;
+    let index = library.0.read().map_err(|_| lock_error())?;
+    Ok(set.rows(&index))
 }
 
 /// A playlist's entries: track ids, or missing files by their path text (R13).
@@ -142,35 +148,145 @@ pub fn favorites(
     Ok(set.favorite_tracks(&index))
 }
 
-/// "Import playlist" (P12.6): a Rust file picker for `.m3u`, `.m3u8` and `.xml`; each playlist
-/// in the file becomes a new `.m3u8` in `Playlists/`. Matching searches the library only.
-/// Returns the reports, or null when the user cancels. The source file is only read.
+/// Rescan first (R33.1), then `work` with the playlists, the music folder and the index; then
+/// tells the UI. None when the scan was canceled or failed, or the music folder changed before
+/// the work took the playlist lock: nothing was matched or written. A folder change clears the
+/// playlists under that lock, so it waits for work that started first. Blocks the calling
+/// thread.
+fn after_rescan<T>(
+    app: &AppHandle,
+    work: impl FnOnce(&mut PlaylistSet, &std::path::Path, &LibraryIndex) -> CommandResult<T>,
+) -> CommandResult<Option<T>> {
+    let root = root(app)?;
+    let ran = after_scan(
+        || crate::jobs::scan_and_wait(app, root.clone()),
+        || {
+            let playlists = app.state::<Playlists>();
+            let mut set = playlists.0.lock().map_err(|_| lock_error())?;
+            if self::root(app).ok() != Some(root.clone()) {
+                return Ok(None);
+            }
+            let library = app.state::<Library>();
+            let index = library.0.read().map_err(|_| lock_error())?;
+            let result = work(&mut set, &root, &index);
+            drop(index);
+            drop(set);
+            emit(app, PLAYLISTS_CHANGED, ());
+            result.map(Some)
+        },
+    );
+    Ok(ran.transpose()?.flatten())
+}
+
+/// Runs a blocking import or repair off the async runtime.
+async fn blocking<T: Send + 'static>(
+    run: impl FnOnce() -> CommandResult<T> + Send + 'static,
+) -> CommandResult<T> {
+    tauri::async_runtime::spawn_blocking(run)
+        .await
+        .map_err(|error| {
+            log::warn!("playlists: a background task failed: {error}");
+            IpcError {
+                code: "playlist".into(),
+                message: "The playlist task stopped".into(),
+            }
+        })?
+}
+
+/// One import action (R32, R33.1): `files()` lists the sources, then the rescan, then every
+/// source in path order. Canceled when the scan was.
+async fn import(
+    app: AppHandle,
+    files: impl FnOnce() -> Vec<PathBuf> + Send + 'static,
+) -> CommandResult<ImportBatch> {
+    blocking(move || {
+        // The folder walk runs before the locks are taken.
+        let files = files();
+        let reports = after_rescan(&app, |set, root, index| {
+            Ok(import_files(set, root, index, &files, |_| {}))
+        })?;
+        Ok(match reports {
+            Some(reports) => ImportBatch {
+                canceled: false,
+                reports,
+            },
+            None => ImportBatch {
+                canceled: true,
+                reports: Vec::new(),
+            },
+        })
+    })
+    .await
+}
+
+/// "Import playlist" (P12.6, R32): a Rust picker for one or more `.m3u`, `.m3u8` and `.xml`
+/// files; each playlist in them becomes a new `.m3u8` in `Playlists/`. Matching searches the
+/// library only. Returns the combined report, or null when the user cancels the picker. The
+/// source files are only read.
 #[tauri::command]
-pub async fn playlist_import(app: AppHandle) -> CommandResult<Option<Vec<ImportReport>>> {
+pub async fn playlist_import(app: AppHandle) -> CommandResult<Option<ImportBatch>> {
     let picked = app
         .dialog()
         .file()
         .add_filter("Playlists", &["m3u", "m3u8", "xml"])
-        .blocking_pick_file();
-    let Some(file) = picked.and_then(|path| path.into_path().ok()) else {
+        .blocking_pick_files();
+    let Some(picked) = picked else {
         return Ok(None);
     };
-    let reports = edit_import(&app, &file)?;
-    Ok(Some(reports))
+    let files: Vec<PathBuf> = picked
+        .into_iter()
+        .filter_map(|path| path.into_path().ok())
+        .collect();
+    import(app, move || files).await.map(Some)
 }
 
-fn edit_import(app: &AppHandle, file: &std::path::Path) -> CommandResult<Vec<ImportReport>> {
-    let root = root(app)?;
-    let playlists = app.state::<Playlists>();
-    let mut set = playlists.0.lock().map_err(|_| lock_error())?;
-    let library = app.state::<Library>();
-    let index = library.0.read().map_err(|_| lock_error())?;
-    let reports = import_file(&mut set, &root, &index, file).map_err(|error| IpcError {
-        code: "import".into(),
-        message: error.to_string(),
-    });
-    drop(index);
-    drop(set);
-    emit(app, PLAYLISTS_CHANGED, ());
-    reports
+/// "Import folder" (R32): a Rust folder picker; every `.m3u`, `.m3u8` and `.xml` file in the
+/// folder and its subfolders imports. Null when the user cancels the picker.
+#[tauri::command]
+pub async fn playlist_import_folder(app: AppHandle) -> CommandResult<Option<ImportBatch>> {
+    let picked = app.dialog().file().blocking_pick_folder();
+    let Some(folder) = picked.and_then(|path| path.into_path().ok()) else {
+        return Ok(None);
+    };
+    import(app, move || playlist_files(&folder)).await.map(Some)
+}
+
+/// "Find missing songs" (R33.3): rescan first, then repair `ids()` of the playlists.
+async fn repair(
+    app: AppHandle,
+    ids: impl FnOnce(&PlaylistSet, &LibraryIndex) -> CommandResult<Vec<u32>> + Send + 'static,
+) -> CommandResult<RepairBatch> {
+    blocking(move || {
+        let reports = after_rescan(&app, |set, root, index| {
+            let ids = ids(set, index)?;
+            Ok(set.repair(root, &ids, index))
+        })?;
+        Ok(match reports {
+            Some(reports) => RepairBatch {
+                canceled: false,
+                reports,
+            },
+            None => RepairBatch {
+                canceled: true,
+                reports: Vec::new(),
+            },
+        })
+    })
+    .await
+}
+
+/// "Find missing songs" on one playlist (R33.3 to R33.5).
+#[tauri::command]
+pub async fn playlist_find_missing(app: AppHandle, id: u32) -> CommandResult<RepairBatch> {
+    repair(app, move |set, _| match set.get(id) {
+        Some(_) => Ok(vec![id]),
+        None => Err(unknown(id)),
+    })
+    .await
+}
+
+/// "Find missing songs in all playlists" (R33.3): each playlist with missing entries.
+#[tauri::command]
+pub async fn playlist_find_missing_all(app: AppHandle) -> CommandResult<RepairBatch> {
+    repair(app, |set, index| Ok(set.with_missing(index))).await
 }

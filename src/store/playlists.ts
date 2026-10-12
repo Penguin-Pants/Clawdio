@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { commands, type PlaylistRow } from "@/lib/ipc/commands";
-import { useUiStore } from "@/store/ui";
+import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
   rows: PlaylistRow[];
+  /** The text of the running import or repair, or null (R32 busy state). */
+  busy: string | null;
   /** Tracks in Favorites, for the hearts (R26). */
   favorites: Set<number>;
   /** Goes up on each `playlists-changed`, so open playlists load their entries again. */
@@ -13,6 +15,7 @@ interface PlaylistsState {
 
 export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   rows: [],
+  busy: null,
   favorites: new Set(),
   version: 0,
   load: async () => {
@@ -55,4 +58,28 @@ export function addToPlaylist(id: number, tracks: number[]): void {
   void playlistEdit(() => commands.playlistAdd(id, tracks), "Cannot add to the playlist").then((done) => {
     if (done) useUiStore.getState().showMessage("Added to playlist");
   });
+}
+
+/**
+ * Runs an import or a repair (R32, R33): one at a time, with a busy state in the Playlists
+ * widget. The status line keeps the scan's job and its Cancel, the only cancel (R32). The
+ * result opens its report; an error opens the error dialog.
+ */
+export async function playlistTask<T>(
+  text: string,
+  run: () => Promise<T>,
+  report: (result: T) => AppDialog | null,
+  fallback: string,
+): Promise<void> {
+  const store = usePlaylistsStore;
+  if (store.getState().busy) return;
+  store.setState({ busy: text });
+  try {
+    const dialog = report(await run());
+    if (dialog) useUiStore.getState().openDialog(dialog);
+  } catch (error) {
+    useUiStore.getState().openDialog({ kind: "error", text: errorText(error, fallback) });
+  } finally {
+    store.setState({ busy: null });
+  }
 }

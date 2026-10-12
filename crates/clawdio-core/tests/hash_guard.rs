@@ -10,7 +10,7 @@ use std::sync::RwLock;
 use std::time::SystemTime;
 
 use clawdio_core::artwork;
-use clawdio_core::import::import_file;
+use clawdio_core::import::import_files;
 use clawdio_core::library::LibraryIndex;
 use clawdio_core::net::lyrics::{self, Fetched};
 use clawdio_core::playlist::PlaylistSet;
@@ -84,7 +84,13 @@ fn audio_files_stay_byte_identical_after_every_write() {
         set.toggle_favorite(root.path(), ids[0], &index).unwrap();
         let source = root.path().join("source.m3u8");
         std::fs::write(&source, "Artist/Album/01 One.mp3\n").unwrap();
-        import_file(&mut set, root.path(), &index, &source).unwrap();
+        import_files(
+            &mut set,
+            root.path(),
+            &index,
+            std::slice::from_ref(&source),
+            |_| {},
+        );
     }
 
     // P13 and P15: lyrics files next to the songs.

@@ -1,9 +1,9 @@
 //! Background jobs: the scan (P4.7, P5.4, P5.9). The status line shows progress with Cancel
-//! (R5). One scan runs at a time.
+//! (R5). One scan runs at a time. Import and repair wait for a scan to end (R33.1).
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use clawdio_core::api::{JobProgress, ScanCounts};
@@ -25,6 +25,18 @@ const LIBRARY_EVENT_GAP: Duration = Duration::from_millis(500);
 pub(crate) static SCAN_GATE: Mutex<()> = Mutex::new(());
 /// Scans started and not yet ended. Rescan does nothing while one runs (R2).
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
+/// The number of scans that ended and whether the last one completed (R33.1).
+struct Ends {
+    count: u64,
+    complete: bool,
+}
+
+static ENDS: Mutex<Ends> = Mutex::new(Ends {
+    count: 0,
+    complete: false,
+});
+/// Wakes the waiters of [`scan_and_wait`] when a scan ends.
+static ENDED: Condvar = Condvar::new();
 /// Goes up on each folder change. A folder job whose number is not the latest was replaced by
 /// a newer one, which clears the old folder itself.
 static FOLDER_GENERATION: AtomicU64 = AtomicU64::new(0);
@@ -91,20 +103,56 @@ fn counts(report: &ScanReport) -> ScanCounts {
     }
 }
 
-/// Counts one scan in [`ACTIVE`] until it is dropped, also when the scan thread panics.
-struct ActiveGuard;
+/// Counts one scan in [`ACTIVE`] until it is dropped, also when the scan thread panics. The
+/// drop records the end in [`ENDS`].
+#[derive(Default)]
+struct ActiveGuard {
+    /// True when the scan traversed the whole folder.
+    complete: bool,
+}
 
 impl Drop for ActiveGuard {
     fn drop(&mut self) {
+        let mut ends = ENDS.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        ends.count += 1;
+        ends.complete = self.complete;
         ACTIVE.fetch_sub(1, Ordering::SeqCst);
+        ENDED.notify_all();
     }
+}
+
+fn ends() -> std::sync::MutexGuard<'static, Ends> {
+    ENDS.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Waits until a scan that ended after `before` ends were counted, and no scan runs or
+/// waits. True when the last one completed.
+fn wait_for_end(before: u64) -> bool {
+    let mut ends = ends();
+    while ends.count == before || ACTIVE.load(Ordering::SeqCst) > 0 {
+        ends = ENDED
+            .wait(ends)
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+    }
+    ends.complete
+}
+
+/// Rescan first (R33.1): starts the incremental scan, or waits for the running one, then
+/// waits for its end. True when it completed; false when it was canceled or failed. Blocks
+/// the calling thread.
+pub fn scan_and_wait(app: &AppHandle, root: PathBuf) -> bool {
+    let before = ends().count;
+    if let Some(active) = claim_idle() {
+        spawn_scan(app, root, ScanKind::Rescan, active);
+    }
+    wait_for_end(before)
 }
 
 /// Starts a scan of `root` on a background thread. A new folder cancels the running scan
 /// first; the other kinds run after it.
 pub fn start_scan(app: &AppHandle, root: PathBuf, kind: ScanKind) {
     ACTIVE.fetch_add(1, Ordering::SeqCst);
-    spawn_scan(app, root, kind, ActiveGuard);
+    spawn_scan(app, root, kind, ActiveGuard::default());
 }
 
 /// Starts a Rescan unless a scan runs or waits (R2, P5-AC5). Returns whether it started.
@@ -123,7 +171,7 @@ fn claim_idle() -> Option<ActiveGuard> {
     ACTIVE
         .compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst)
         .ok()
-        .map(|_| ActiveGuard)
+        .map(|_| ActiveGuard::default())
 }
 
 fn spawn_scan(app: &AppHandle, root: PathBuf, kind: ScanKind, active: ActiveGuard) {
@@ -149,11 +197,12 @@ fn spawn_scan(app: &AppHandle, root: PathBuf, kind: ScanKind, active: ActiveGuar
     let spawned = std::thread::Builder::new()
         .name("scan".into())
         .spawn(move || {
-            let _active = active;
+            let mut active = active;
             let _gate = SCAN_GATE
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            run_scan(&app, &root, kind, generation, &library, &cache_dir, &cancel);
+            active.complete =
+                run_scan(&app, &root, kind, generation, &library, &cache_dir, &cancel);
         });
     // On failure the closure, and with it the guard, is dropped.
     if let Err(error) = spawned {
@@ -161,6 +210,7 @@ fn spawn_scan(app: &AppHandle, root: PathBuf, kind: ScanKind, active: ActiveGuar
     }
 }
 
+/// Runs one scan. True when it traversed the whole folder.
 fn run_scan(
     app: &AppHandle,
     root: &std::path::Path,
@@ -169,7 +219,7 @@ fn run_scan(
     library: &std::sync::RwLock<clawdio_core::library::LibraryIndex>,
     cache_dir: &std::path::Path,
     cancel: &AtomicBool,
-) {
+) -> bool {
     // Without the cache the scan still fills the index (D14).
     let mut cache = Cache::open(cache_dir)
         .inspect_err(|error| log::warn!("cache: cannot open: {error}"))
@@ -189,7 +239,7 @@ fn run_scan(
         ScanKind::NewFolder if superseded(generation) => {
             // A newer folder change clears and scans; this job must not clear its results.
             log::info!("scan: a newer folder change replaced this one");
-            return;
+            return false;
         }
         ScanKind::NewFolder => {
             // Lookups for the old folder stop (P14.6).
@@ -231,7 +281,7 @@ fn run_scan(
         ScanKind::Startup | ScanKind::Rescan => {}
     }
     if cancel.load(Ordering::Relaxed) {
-        return;
+        return false;
     }
     progress(app, Some("Scanning".into()));
     let mut last = Instant::now();
@@ -258,8 +308,8 @@ fn run_scan(
     load_playlists(app, root, &report.playlists, complete);
     app.state::<StateStore>().try_restore(app, complete);
     // Settings keeps the counts of the last complete scan (R2).
-    if report.canceled || report.failed {
-        return;
+    if !complete {
+        return false;
     }
     crate::commands::lyrics::after_scan(app);
     crate::online::scan_done(app);
@@ -269,6 +319,7 @@ fn run_scan(
     {
         log::warn!("settings: cannot save the scan counts: {}", error.message);
     }
+    true
 }
 
 /// Reads the playlists the scan found (P11.2). After an incomplete scan the known ones stay,
@@ -280,11 +331,10 @@ fn load_playlists(app: &AppHandle, root: &std::path::Path, found: &[String], com
     };
     let mut paths = found.to_vec();
     if !complete {
-        for row in set.rows() {
-            if let Some(known) = set.get(row.id) {
-                if !paths.contains(&known.rel_path) {
-                    paths.push(known.rel_path.clone());
-                }
+        let known: Vec<String> = set.paths().map(str::to_owned).collect();
+        for path in known {
+            if !paths.contains(&path) {
+                paths.push(path);
             }
         }
     }
@@ -330,8 +380,14 @@ mod tests {
         assert!(!superseded(newer));
     }
 
+    /// The tests that count scans in [`ACTIVE`] run one at a time.
+    static SERIAL: Mutex<()> = Mutex::new(());
+
     #[test]
     fn a_rescan_claims_only_an_idle_scanner() {
+        let _serial = SERIAL
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let first = claim_idle().expect("idle at the start");
         assert!(
             claim_idle().is_none(),
@@ -339,6 +395,26 @@ mod tests {
         );
         drop(first);
         assert!(claim_idle().is_some(), "the guard releases on drop");
+    }
+
+    /// R33.1: a waiter gets the outcome of the scan that ends after it starts to wait, also
+    /// when that scan was already running.
+    #[test]
+    fn a_waiter_gets_the_outcome_of_the_next_scan_end() {
+        let _serial = SERIAL
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        for complete in [true, false] {
+            let mut running = claim_idle().expect("idle");
+            let before = ends().count;
+            let scan = std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(50));
+                running.complete = complete;
+                drop(running);
+            });
+            assert_eq!(wait_for_end(before), complete);
+            scan.join().unwrap();
+        }
     }
 
     #[test]
