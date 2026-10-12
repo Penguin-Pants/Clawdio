@@ -5,7 +5,7 @@
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
-- `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 27 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
+- `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
 ---
@@ -186,9 +186,10 @@ The closest open source player (Strawberry) has many features the owner does not
   - Name rule for every import, also a single file: when a playlist with the same name exists (ignoring case), the app skips the source and reports it as "skipped, name exists". It does not create "Name (2)" for an existing playlist. A source named "Favorites" still gets " (imported)".
   - Two sources in one import with the same name both import. The second gets " (2)", the third " (3)" and so on.
   - One combined report lists each source playlist as imported (matched count, then each missing entry with its reason), skipped (name exists) or failed (with the reason). Labels are file or playlist names, never paths.
-  - `[D]` While the import runs, the UI shows a busy state. There is no cancel. Each playlist is written when it is ready, so a crash keeps the playlists that were already written.
+  - `[D]` While the import runs, the UI shows a busy state. The import has no Cancel of its own: canceling its scan (R33.1) cancels the whole import. Each playlist is written when it is ready, so a crash keeps the playlists that were already written.
+  - An unmatched relative entry (M3U family) is written relative to the new playlist file when it points inside the music folder, so a later "Find missing songs" keeps its folder. Example: `Song.m4a` in `Artist/Album/list.m3u` is written as `../Artist/Album/Song.m4a`. Other unmatched entries keep their entry text (R14).
 - **R33 (v1.6).** Matching repair and "Find missing songs".
-  - **R33.1 Rescan first.** Import (R14, R32) and "Find missing songs" first run the normal incremental scan, then match. If a scan is running, they wait for it to end.
+  - **R33.1 Rescan first.** Import (R14, R32) and "Find missing songs" first run the normal incremental scan, then match. If a scan is running, they wait for it to end. If the user cancels that scan, or it fails, the import or repair stops before matching, writes nothing and shows "Canceled, nothing changed".
   - **R33.2 Other extension.** Stage 1 (relative to the playlist file) and stage 2 (longest path suffix) can match a library song whose extension differs from the entry. The folder part and the file name without extension must match. Example: `Artist/Album/Song.m4a` matches `Artist/Album/Song.mp3`. Within a stage, a hit with the same extension wins over hits with another extension. Stage 3 (file name only) still needs the same extension. The other R14 rules stay, including the narrowing and the "more than one match" rule.
   - **R33.3 Command.** "Find missing songs" runs on one playlist that has missing entries, including Favorites and `.m3u8` files found anywhere in the music folder. `[D]` A second command, "Find missing songs in all playlists", runs it on each playlist that has missing entries.
   - **R33.4 Write rule.** Each missing entry goes through the R14 stages with its path text and its `#EXTINF` artist and title. A unique match replaces the entry at the same position: the path (relative to the playlist file) and the `#EXTINF` line. Entries with no match or more than one match stay unchanged. The write is atomic (R13). A playlist with no change is not written.
@@ -305,6 +306,7 @@ These are out under the owner's "few features" rule.
 - **Folder import with other files `(v1.6)`:** an `.xml` file that is not an Apple Music playlist export, or an unreadable file, shows as failed in the report. The other files still import.
 - **Same song in two other formats `(v1.6)`:** an entry `Song.m4a` with `Song.mp3` and `Song.ogg` in the same folder gives two hits. The R14 narrowing applies; if the last stage still has more than one, the reason is "more than one match".
 - **Find missing songs on a read-only folder `(v1.6)`:** the app shows the error and writes nothing.
+- **Bare entries from an import before v1.6 `(v1.6)`:** an entry with no folder part (for example `Song.m4a`) lost its source folder, so "Find missing songs" cannot match it by folder. Delete that playlist and import the source again; the new import matches with the source folder (R32).
 - **A tool that keeps the microphone open `(v1.6)`:** the music stays ducked while the tool runs. Example: the Handy setting "Always-On Microphone" (off by default). The Settings help text names this case.
 - **Microphone in use while playback is stopped or paused by the user `(v1.6)`:** nothing happens. A later Play plays at the ducked volume (Lower volume) or plays normally until the next microphone start (Pause).
 - **Play pressed during a Pause duck `(v1.6)`:** playback continues. The app does not pause again until the microphone is free and then starts again.
@@ -396,6 +398,7 @@ Version 1.6 adds bulk import, missing-song repair and microphone ducking, with t
 25. **Duck level (R34.3):** a percentage of the current volume, default 20%.
 26. **Resume (R34.5):** a short fixed wait, then a fade. No setting for the wait.
 27. **Ducking modes (R34.1):** the user picks Lower volume or Pause.
+28. **Bare entries (R32, section 5):** playlists imported before v1.6 with bare entries are fixed by a new import, not by a looser match. New imports write unmatched relative entries relative to the new file.
 
 The owner reported that most missing songs in imports had the reason "not found" and that some sources name `.m4a` or `.flac` files. R33.2 addresses this.
 
@@ -426,7 +429,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 19. **Decode error `(v1.5)`:** a corrupt file in the queue is skipped with a status message. Playback continues.
 20. **First run `(v1.5)`:** first run shows the folder prompt. After choosing a folder, the user can play a song before the scan ends.
 21. **Embedded lyrics `(v1.5)`:** a song with ID3 USLT lyrics and no lyric file shows the embedded lyrics.
-22. **Bulk import and repair `(v1.6)`:** a folder with the owner's playlists imports in one action. Entries that name `.m4a` or `.flac` files match the `.mp3` copies in the same album folders. "Find missing songs" fixes such entries in playlists imported before.
+22. **Bulk import and repair `(v1.6)`:** several playlist files picked in one picker action import together, and a folder with the owner's playlists imports in one action. Entries that name `.m4a` or `.flac` files match the `.mp3` copies in the same album folders. "Find missing songs" fixes such entries in playlists imported before.
 23. **Microphone ducking `(v1.6)`:** on Windows, with Lower volume at 20%, the music drops while Handy records and comes back about 1 s after it stops. With Pause, the music pauses and resumes. The same works during a call in one call app.
 24. **No microphone access `(v1.6)`:** after a ducking test, the Windows microphone privacy settings list no microphone use by the app.
 
@@ -450,8 +453,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
-- **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 27 (section 8).
-  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, seven edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
+- **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 28 (section 8).
+  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, eight edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
   - **Changed:** R13 (only import and "Find missing songs" write matches), R14 (multi-file picker, folder import, other extension).
 - **1.5 (October 11, 2026):** section G of the requirements review applied, with owner decisions 9 to 16 (section 8).
   - **Added:** R1.1 first run, R18.1 portable mode, WAV encodings (R1), scan rules (R2), sort order and multi-disc order (R3, R4), playback semantics and queue edits (R6), OS command set (R24), Delete key (R25), relative paths (R19, R27), artwork match and writability rules (R8), lyrics source order with embedded lyrics (R9), sidecar name (R10), playlist name rule and duplicates (R12), import normalization and unique-match rule (R14), Linux baseline and WebView2 prerequisite (R22), portable zip (R21), five edge cases, acceptance checks 17 to 21.

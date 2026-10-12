@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 358 | 210 | 76 | 8 | 5 | 5 | 54 | 0 |
+| Requirements | 361 | 210 | 79 | 8 | 5 | 5 | 54 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -229,8 +229,9 @@
 | R32-3 | Existing name (ignoring case) is skipped and reported, for every import | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
 | R32-4 | Names that repeat inside one import get " (2)", " (3)" | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
 | R32-5 | One combined report: imported, skipped, failed; no paths | §2 R32 | P19.3, P19.6 | P19-AC3, P19-AC7 | IT, E2E | Planned |
-| R32-6 | Busy state, no cancel; each playlist written when ready | §2 R32 | P19.3 | P19-AC7 | E2E | Planned |
-| R33-1 | Import and repair run the incremental scan first | §2 R33.1 | P19.4 | P19-AC5 | IT | Planned |
+| R32-6 | Busy state; only the scan cancel stops it; each playlist written when ready | §2 R32 | P19.3, P19.4 | P19-AC5, P19-AC7 | IT, E2E | Planned |
+| R32-7 | Unmatched relative entries inside the music folder are written relative to the new file | §2 R32 | P19.3 | P19-AC9 | IT | Planned |
+| R33-1 | Import and repair run the incremental scan first; a canceled or failed scan stops them with no write | §2 R33.1 | P19.4 | P19-AC5 | IT | Planned |
 | R33-2 | Stages 1 and 2 match another extension by folder and file name without extension; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Planned |
 | R33-3 | "Find missing songs" on one playlist and on all playlists | §2 R33.3 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
 | R33-4 | Unique matches replace entries in place; others unchanged; atomic; no write without change | §2 R33.4 | P19.5 | P19-AC4 | IT | Planned |
@@ -346,6 +347,7 @@
 | E-29 | Folder import: non-Apple `.xml` or unreadable file shows as failed; others import | §5 | P19.3 | P19-AC3 | IT | Planned |
 | E-30 | Two other-format hits: narrowing, then "more than one match" | §5 | P19.1 | P19-AC1 | UT | Planned |
 | E-31 | Find missing songs on a read-only folder: error, no write | §5 | P19.5 | P19-AC6 | IT | Planned |
+| E-36 | Bare entries from imports before v1.6: delete and import again | §5 | P19.3 | P19-AC9 | IT | Planned |
 | E-32 | A tool that keeps the microphone open holds the duck; help text names it | §5 | P20.4 | P20-AC3 | E2E | Planned |
 | E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Planned |
@@ -430,6 +432,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Planned |
 | DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Planned |
 | DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Planned |
+| DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Planned |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -463,7 +466,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Done (P7) |
 | AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9, P4.11, P4.12 | P4-AC3, P7-AC10 | MAN-L | Planned |
 | AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Done (P13) |
-| AC-22 | Owner's playlists import from one folder; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5 | P19-AC8 | MAN-W | Planned |
+| AC-22 | Several files in one picker action and the owner's playlist folder import; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5, P21.2 | P19-AC8, P21-AC2 | MAN-W | Planned |
 | AC-23 | Ducking with Handy and one call app, both modes | §9.23 | P20.2, P20.3 | P20-AC4 | MAN-W | Planned |
 | AC-24 | No microphone use by the app in Windows privacy settings | §9.24 | P20.2 | P20-AC5 | MAN-W | Planned |
 
