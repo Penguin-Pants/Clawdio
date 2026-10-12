@@ -302,9 +302,10 @@ test("P17-AC6: in forced colors the focus ring and the toggle, switch and slider
 test("P17-AC9: menus and dialogs accept keys and clicks while they open", async ({ page }) => {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  // Keys as soon as the menu items exist, during the 200 ms open animation.
+  // Keys as soon as the menu has focus, during the 200 ms open animation. WebKit moves focus
+  // into the menu a frame after the items exist.
   await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("menuitem").first().waitFor({ state: "attached" });
+  await page.waitForFunction(() => document.activeElement?.closest('[role="menu"]') !== null);
   await page.keyboard.press("End");
   await page.keyboard.press("Enter");
   await expect(page.locator("body")).toHaveAttribute("data-rescans", "1");
