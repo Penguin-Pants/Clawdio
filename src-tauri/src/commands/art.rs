@@ -86,3 +86,13 @@ pub async fn set_cover(app: AppHandle, album: u32) -> CommandResult<bool> {
         .refresh(&app, album, Some(&old_key));
     Ok(true)
 }
+
+/// "Retry lookup" (P14.7, R8): clears the album's lookup marker and looks it up now. An error
+/// when Online lookups are off: no request is made (P14-AC1).
+#[tauri::command]
+pub fn album_retry_lookup(app: AppHandle, album: u32) -> CommandResult<()> {
+    crate::online::retry(&app, album).map_err(|message| IpcError {
+        code: "retry_lookup".into(),
+        message,
+    })
+}

@@ -29,6 +29,7 @@ tauri = { version = "=2.12.3", features = [] }
 [dev-dependencies]
 tauri = { version = "=2.12.3", features = ["test"] }
 tempfile = "=3.27.0"
+httpmock = { version = "=0.8.3", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "=0.39.1"

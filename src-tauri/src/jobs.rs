@@ -171,6 +171,8 @@ fn run_scan(
             app.state::<StateStore>().try_restore(app, false);
         }
         ScanKind::NewFolder => {
+            // Lookups for the old folder stop (P14.6).
+            crate::online::cancel(app);
             // The old folder's entries leave the player first, then the index and the cache.
             // This runs even when the scan is canceled before it starts (P5-AC13).
             app.state::<StateStore>().new_folder();
@@ -220,6 +222,7 @@ fn run_scan(
         return;
     }
     crate::commands::lyrics::after_scan(app);
+    crate::online::scan_done(app);
     let counts = counts(&report);
     if let Err(error) =
         crate::commands::settings::update(app, |settings| settings.last_scan = Some(counts))
@@ -252,6 +255,10 @@ fn load_playlists(app: &AppHandle, root: &std::path::Path, found: &[String], com
 
 /// Cancels the running job with this id (R5 status line Cancel).
 pub fn cancel(app: &AppHandle, id: &str) {
+    if id == crate::online::ARTWORK_JOB {
+        crate::online::cancel(app);
+        return;
+    }
     if id != SCAN_JOB {
         return;
     }

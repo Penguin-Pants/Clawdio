@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 150 | 83 | 15 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 40 | 17 | 8 | 10 | 0 | 1 | 0 |
+| Requirements | 301 | 171 | 65 | 12 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 42 | 15 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -88,7 +88,7 @@
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Done (P13) |
 | R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
-| R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Planned (D18) |
+| R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Done (P14, D18) |
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
@@ -160,18 +160,18 @@
 | R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Done (P4) |
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Planned (D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
-| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Planned |
-| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Planned (D44) |
-| R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
-| R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Planned |
-| R8-4 | Name normalization; save exact matches only | §2 R8 | P14.4 | P14-AC3 | UT | Planned (D43) |
-| R8-5 | About 500 px image; check it is an image under 10 MB | §2 R8 | P14.5 | P14-AC9 | IT | Planned |
-| R8-6 | Exclusions (Unknown groups, artist-level songs); release group query; unique match; writability check | §2 R8 | P14.5 | P14-AC4, P14-AC5 | IT | Planned |
-| R8-7 | No match: marker in the album sidecar; no automatic retry | §2 R8 | P14.3, P14.5 | P14-AC4, P14-AC8 | IT | Planned |
-| R8-8 | "Retry lookup" per album clears the marker and tries again | §2 R8 | P14.7 | P14-AC7 | IT | Planned |
+| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Done (P14) |
+| R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Done (P14, D44) |
+| R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
+| R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
+| R8-4 | Name normalization; save exact matches only | §2 R8 | P14.4 | P14-AC3 | UT | Done (P14, D43) |
+| R8-5 | About 500 px image; check it is an image under 10 MB | §2 R8 | P14.5 | P14-AC9 | IT | Done (P14) |
+| R8-6 | Exclusions (Unknown groups, artist-level songs); release group query; unique match; writability check | §2 R8 | P14.5 | P14-AC4, P14-AC5 | IT | Done (P14) |
+| R8-7 | No match: marker in the album sidecar; no automatic retry | §2 R8 | P14.3, P14.5 | P14-AC4, P14-AC8 | IT | Done (P14) |
+| R8-8 | "Retry lookup" per album clears the marker and tries again | §2 R8 | P14.7 | P14-AC7 | IT | Done (P14) |
 | R8-9 | "Set cover" per album saves `cover.jpg`, converting if needed | §2 R8 | P10.4 | P10-AC5 | IT, MAN-L | Resolved (C17) |
-| R8-10 | MusicBrainz at most 1 request per second; User-Agent with name, version and contact URL | §2 R8 | P14.1, P14.2 | P14-AC6 | IT | Planned |
-| R8-11 | Status line progress with cancel; UI stays usable | §2 R8 | P14.6 | P14-AC12 | MAN-L | Planned |
+| R8-10 | MusicBrainz at most 1 request per second; User-Agent with name, version and contact URL | §2 R8 | P14.1, P14.2 | P14-AC6 | IT | Done (P14) |
+| R8-11 | Status line progress with cancel; UI stays usable | §2 R8 | P14.6 | P14-AC12 | MAN-L | Done (P14) |
 | R9-1 | Per-song action; source LRCLIB; save `.lrc` when synced, else `.txt` | §2 R9 | P15.1, P15.2 | P15-AC3, P15-AC4 | IT | Planned |
 | R9-2 | Lookup with folder artist, cleaned title, folder album, decoded duration; fallback search; accept within 2 s | §2 R9 | P15.1, P15.4 | P15-AC1, P15-AC2 | IT | Planned |
 | R9-3 | Lyrics widget shows the playing song's lyrics; LRC timestamps hidden | §2 R9 | P13.2, P13.4, P13.3 | P13-AC2, P15-AC7 | UT, E2E | Planned |
@@ -234,7 +234,7 @@
 | R18.1-2 | Music folder path relative to the executable folder on the same volume, else absolute | §2 R18.1 | P4.1 | P9-AC7, P18-AC10 | UT, MAN-W | Planned |
 | R19-1 | SQLite cache is rebuildable; deleting it loses nothing | §2 R19 | P5.8 | P5-AC8 | IT | Done (P5) |
 | R19-2 | Schema change rebuilds, no migrations | §2 R19 | P5.8 | P5-AC9 | IT | Done (P5) |
-| R19-3 | No lookup markers in the cache; a rebuild causes no new lookups | §2 R19 | P14.3 | P14-AC8 | IT | Planned |
+| R19-3 | No lookup markers in the cache; a rebuild causes no new lookups | §2 R19 | P14.3 | P14-AC8 | IT | Done (P14) |
 | R19-4 | Cache paths relative to the music folder; thumbnails in the cache folder | §2 R19 | P5.8, P10.2 | P10-AC3 | IT | Done (P10) |
 | R20-1 | Windows installer under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
 | R20-2 | Linux `.deb` under 30 MB | §2 R20 | P3.6, P18.3 | P3-AC3, P18-AC2 | CI | Planned |
@@ -250,7 +250,7 @@
 | R22-3 | Linux glibc baseline: AppImage glibc 2.35; `.deb` for Debian 12 and Ubuntu 22.04 | §2 R22 | P18.3 | P18-AC5 | MAN-L | Planned |
 | R23-1 | Log file in the OS log folder with size-based rotation | §2 R23 | P4.3 | P4-AC5 | IT | Done (P4, D40) |
 | R23-2 | Settings has "Open log folder" | §2 R23 | P4.3, P5.4 | P5-AC6 | E2E, MAN-L | Done (P5) |
-| R23-3 | Every skip-and-log event goes to the log | §2 R23 | P5.2, P9.4, P11.2, P14.3, P14.5 | P5-AC2, P9-AC4, P11-AC6, P14-AC5, P14-AC10 | IT | Planned |
+| R23-3 | Every skip-and-log event goes to the log | §2 R23 | P5.2, P9.4, P11.2, P14.3, P14.5 | P5-AC2, P9-AC4, P11-AC6, P14-AC5, P14-AC10 | IT | Done (P14) |
 
 ### 1.8 Section 3: preferences and examples
 
@@ -296,8 +296,8 @@
 | E-8 | Folders that differ only by case (Linux) are separate | §5 | P5.12 | P5-AC1 | IT | Done (P5) |
 | E-9 | Non-ASCII names work on both systems | §5 | P5.12 | P5-AC14 | IT | Done (P5) |
 | E-10 | Windows paths over 260 characters work | §5 | P5.1, P5.12 | P5-AC14 | IT | Planned |
-| E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Planned |
-| E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Planned |
+| E-11 | No network or service error: playback and library work; retry at next startup except "no match" | §5 | P14.5 | P14-AC4, P14-AC13 | IT | Done (P14) |
+| E-12 | Existing art blocks the fetch | §5 | P14.5 | P14-AC5 | IT | Done (P14) |
 | E-13 | Read-only music folder: fetches, playlist edits and Favorites show an error; playback works | §5 | P10.4, P11.8, P14.5, P15.2, P16.1 | P10-AC5, P11-AC10, P14-AC5, P15-AC5, P16-AC8 | IT, MAN-L | Planned |
 | E-14 | Decode error during playback: R6 applies | §5 | P7.3 | P7-AC3 | IT | Done (P7) |
 | E-15 | File name that is not valid UTF-8 (Linux): skip and log | §5 | P5.1 | P5-AC14 | IT | Done (P5) |
@@ -329,7 +329,7 @@
 | CON-8 | Formats: mp3, Ogg Vorbis, wav | §6 | P5.2 | P5-AC2 | IT | Done (P5) |
 | CON-9 | The music folder is the source of truth | §6 | P5.3 | P5-AC4 | IT | Done (P5) |
 | CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Planned |
-| CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Planned |
+| CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Done (P14) |
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
 
 ### 1.12 Section 7: deferred ideas
@@ -372,13 +372,13 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-9 | Portable mode and Windows portable zip | §8.9 | P4.1, P18.2 | P4-AC4, P18-AC4 | MAN-W | Planned |
 | DEC-10 | Search in the Library header | §8.10 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | DEC-11 | Scan report: counts in the status line and Settings, reasons in the log | §8.11 | P5.4 | P5-AC6 | E2E | Done (P5) |
-| DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Planned |
+| DEC-12 | Lookup progress: cancel only | §8.12 | P14.6 | P14-AC12 | MAN-L | Done (P14) |
 | DEC-13 | Previous restarts after 3 s | §8.13 | P7.1 | P7-AC1 | UT | Done (P7) |
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11) |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
 | DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
-| DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Planned |
+| DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
 | VER-1 | Verify the R13 path base after the interop test | §8 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | VER-2 | Verify the MusicBee M3U8 export | §8 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
@@ -393,10 +393,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-3 | App playlist opens in MusicBee or VLC with paths intact | §9.3 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | AC-4 | Real Apple XML, MusicBee M3U8 and legacy `.m3u` import with a correct report | §9.4 | P12.7 | P12-AC6 | MAN-W | Planned (Q5) |
 | AC-5 | "01 - Title.mp3" finds lyrics by cleaned title and decoded duration | §9.5 | P15.1 | P15-AC1 | IT | Planned |
-| AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Planned |
+| AC-6 | "1973 - Album (Remastered)" matches; Set cover and Retry lookup work | §9.6 | P14.4, P10.4, P14.7 | P14-AC3, P10-AC5, P14-AC7 | UT, IT | Done (P14) |
 | AC-7 | Changing a token color and rebuilding changes the UI | §9.7 | P0.6 | P0-AC3, P18-AC9 | MAN-L | Planned |
 | AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9) |
-| AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Planned |
+| AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Done (P14) |
 | AC-10 | Unplugging the device stops playback with a message; Play resumes on the default device | §9.10 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
 | AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Done (P9) |
 | AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Done (P9) |
@@ -476,7 +476,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
 | DES-8.4 | No animation on repeated rows, the seek bar or live times | §8 | P0.7, P6.4, P7.7 | P2-AC13 | E2E | Done (P7, C16) |
 | DES-8.5 | No recurring decorative motion during playback | §8 | P17.8 | P17-AC3 | REV | Planned (D6) |
-| DES-9.1 | Works offline with no account | §9 | P14.1 | P14-AC1, P14-AC13 | IT | Planned |
+| DES-9.1 | Works offline with no account | §9 | P14.1 | P14-AC1, P14-AC13 | IT | Done (P14) |
 | DES-9.2 | Respects Windows and Linux controls, text scaling and keyboard access | §9 | P4.2, P17.5 | P17-AC2, P17-AC5 | MAN-W, MAN-L | Planned |
 | DES-9.3 | No macOS window buttons in production | §9 | P4.2 | P0-AC2 | MAN-L | Resolved (C9) |
 | DES-9.4 | Run without install where possible; single file, no installer and portable data are distinct | §9 | P4.1, P18.2, P18.3 | P18-AC4, P18-AC5, P18-AC10 | MAN-W, MAN-L | Planned |
@@ -487,7 +487,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Planned |
 | DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Done (P0, D34) |
 | DES-10.6 | No loss of audio, playlist, library, lyric or metadata behavior | §10 | P0.16 | P0-AC1 | CI | Resolved (C1) |
-| DES-10.7 | Offline startup and operation | §10 | P14.1 | P14-AC1, P14-AC13 | IT | Planned |
+| DES-10.7 | Offline startup and operation | §10 | P14.1 | P14-AC1, P14-AC13 | IT | Done (P14) |
 | DES-10.8 | No unnecessary dependencies or decorative features | §10 | P18.4 | P18-AC8 | CI, REV | Planned (D6) |
 | DES-10.9 | Mockup-only features kept apart from requirements | §10 | none | none | REV | Resolved (C9) |
 | DES-11.1 | Brand work adds no features (online services, accounts, dashboards, analytics, notifications); playlist editing and Favorites only as required | §11 | P0.1 | P0-AC7 | REV | Resolved (C2) |

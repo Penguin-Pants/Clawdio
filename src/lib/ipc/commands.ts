@@ -32,6 +32,8 @@ export const commands = {
   albumArt: (album: number, size: 96 | 512) => invoke<string | null>("album_art", { album, size }),
   /** "Set cover" (P10.4): false when the user cancels. */
   setCover: (album: number) => invoke<boolean>("set_cover", { album }),
+  /** "Retry lookup" (P14.7): clears the marker and looks the album up; the result is a status message. */
+  albumRetryLookup: (album: number) => invoke<null>("album_retry_lookup", { album }),
   queueGet: () => invoke<QueueSnapshot>("queue_get"),
   /** The saved `layout.json` text, or null (P9.2). */
   layoutLoad: () => invoke<string | null>("layout_load"),

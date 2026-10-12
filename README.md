@@ -7,6 +7,24 @@
 
 Minimalist local music player
 
+## Online lookups
+
+The "Online lookups" switch in Settings is off by default. While it is off, the app makes no network request. While it is on, the app looks up missing album art over HTTPS, with no account and no API key:
+
+| Service | Use | Data sent |
+|---|---|---|
+| MusicBrainz | Find the release group of an album with no art | The artist and album folder names, in lower case and without accents, a leading year, edition words such as "Remastered" or a leading "The" |
+| Cover Art Archive | Download the front cover at 500 px | The MusicBrainz release group id |
+
+Each request carries a User-Agent with the app name, its version and the project URL. MusicBrainz requests start at least 1 second apart.
+
+Files the app writes in the music folder:
+
+- `cover.jpg` in an album folder that has no cover file and no embedded art. The app never replaces an existing file.
+- `sidecar.json` in an album folder: a `no-match` marker (no single matching album on MusicBrainz) or a `no-art` marker (no cover on Cover Art Archive), so the album is not looked up again. "Retry lookup" on the album menu removes the marker. See `docs/file-formats.md`.
+
+Turning the switch off cancels the lookups and stops downloads at once.
+
 ## Build from source
 
 ### Prerequisites

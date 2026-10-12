@@ -155,6 +155,9 @@ function libraryCommand(command: string, args: Args): unknown {
       return true;
     case "lyrics_get":
       return lyrics;
+    case "album_retry_lookup":
+      document.body.dataset.retryLookup = String(args.album);
+      return null;
   }
   throw new Error(`e2e: no mock for command ${command}`);
 }

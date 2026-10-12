@@ -39,7 +39,7 @@ pub fn album_folder(rel_path: &str) -> Option<String> {
     (parts.len() >= 3).then(|| format!("{}/{}", parts[0], parts[1]))
 }
 
-fn stamp(path: &Path) -> Option<FileStamp> {
+pub(crate) fn stamp(path: &Path) -> Option<FileStamp> {
     let metadata = std::fs::metadata(path).ok()?;
     let modified_ms = metadata
         .modified()

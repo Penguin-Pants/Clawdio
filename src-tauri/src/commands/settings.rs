@@ -68,8 +68,15 @@ pub(crate) fn update(
     let mut changed = settings.clone();
     change(&mut changed);
     save(&state.dirs.config, &changed).map_err(io_error)?;
+    let online =
+        (changed.online_lookups != settings.online_lookups).then_some(changed.online_lookups);
     *settings = changed;
     let view = view(&state, &settings);
+    // Under the settings lock, so two quick changes reach the gate in the saved order.
+    if let Some(on) = online {
+        crate::online::switch(app, on);
+    }
+    drop(settings);
     emit(app, SETTINGS_CHANGED, view.clone());
     Ok(view)
 }

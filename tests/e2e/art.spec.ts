@@ -76,3 +76,32 @@ test("P10-AC5: Set cover is on the album menu; a read-only folder shows the erro
   await page.getByRole("menuitem", { name: "Set cover" }).click();
   await expect(page.locator("footer").getByRole("status")).toHaveText("The album folder is read-only");
 });
+
+test("P14.7: Retry lookup is on the album menu and off without Online lookups", async ({ page }) => {
+  await openLibrary(page);
+  await albums(page)
+    .getByRole("option", { name: /Album B0/ })
+    .click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Retry lookup" })).toBeDisabled();
+  await page.keyboard.press("Escape");
+
+  await page.evaluate(() =>
+    sessionStorage.setItem(
+      "e2e-settings",
+      JSON.stringify({
+        folderName: "music",
+        folderState: "ready",
+        onlineLookups: true,
+        noticePending: false,
+        portable: false,
+        lastScan: null,
+      }),
+    ),
+  );
+  await openLibrary(page);
+  await albums(page)
+    .getByRole("option", { name: /Album B0/ })
+    .click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Retry lookup" }).click();
+  await expect(page.locator("body")).toHaveAttribute("data-retry-lookup", "1");
+});

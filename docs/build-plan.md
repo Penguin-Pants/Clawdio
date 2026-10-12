@@ -78,7 +78,7 @@ A phase is Done when all of these are true:
 | P11 | Playlists and Favorites | P10 | Done with exceptions |
 | P12 | Playlist import | P11 | Done with exceptions |
 | P13 | Local lyrics | P12 | Done |
-| P14 | Online lookups and artwork fetch | P13 | Not started |
+| P14 | Online lookups and artwork fetch | P13 | Done |
 | P15 | Lyrics fetch | P14 | Not started |
 | P16 | Metadata fill | P15 | Not started |
 | P17 | UI quality audit | P16 | Not started |
@@ -832,6 +832,63 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - No size limit on lyrics files: a lyrics file of many megabytes next to a song is not a real case, and the read is async.
   - A song change reads the lyrics twice (the track input and `lyrics-changed`); the second answer replaces the first, and the read is small.
   - No test that the scan calls the lyrics check: the call is one line after the complete-scan return, and the manual Rescan check covers it.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+#### P14. Online lookups and artwork fetch (October 12, 2026)
+
+- **Status:** Done.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `074034d`. Messages start with `P14:`.
+- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.45 with the `ring` provider, `tokio` 1.53.2, `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P14-AC1 | Pass | `net/tests.rs` `the_switch_off_makes_zero_requests` (gate counter and mock hits 0); `online.rs` `the_switch_off_starts_no_job_and_no_retry` (scan end and "Retry lookup" with the switch off: 0 requests). |
+| P14-AC2 | Pass | `cancel_or_switch_off_aborts_a_slow_download`: a 10 s mock image; Cancel and switch off each end the lookup in under 1 s with no file. The job loop stops at the first canceled lookup. |
+| P14-AC15 | Pass | `the_job_waits_for_the_startup_scan_then_saves_the_cover`: the switch alone starts nothing before the scan ends. `check` lists the cover files again before each request (`the_folder_check_...`: a valid `folder.jpg` skips the album). |
+| P14-AC3 | Pass | `normalize.rs` tests and `one_matching_group_saves_the_cover` with the folder "1973 - Album (Remastered)". |
+| P14-AC4 | Pass | One match saves the exact JPEG; zero or two matches write `no-match`; 503 and 429 write nothing. |
+| P14-AC5 | Pass | `candidates_come_from_the_scan_flags` (embedded art, valid cover, Unknown groups, songs in the artist folder); `check` skips a marker and a read-only folder with a log line. The read-only test skips when it runs as root. |
+| P14-AC6 | Pass | `musicbrainz_requests_start_one_second_apart`: three callers, at least 2 s for three starts, User-Agent matched. `online::user_agent` builds `<productName>/<version> ( <repository> )`. |
+| P14-AC7 | Pass | `retry_clears_the_marker_and_looks_up` (app) and `a_marker_blocks_the_lookup_until_retry_clears_it` (core); Playwright `P14.7` for the menu item and its off state. |
+| P14-AC8 | Pass | Markers live in `sidecar.json` only; a new index plus a marker gives no request (`a_marker_blocks_...`). |
+| P14-AC9 | Pass | `a_bad_or_large_body_saves_nothing`: HTML, a fake JPEG and 10 MB + 1 byte. |
+| P14-AC10 | Pass | `sidecar.rs` `a_corrupt_sidecar_is_ignored_and_left_unchanged`; `check` skips the album with a log line. |
+| P14-AC11 | Pass | `redirects_follow_the_allow_list_and_the_hop_limit`: a redirect to another host is refused; 5 hops pass, 6 fail; HTTPS only and `archive.org` subdomains in the production list. |
+| P14-AC12 | Pass | Manual Linux, release build, real services: "Fetching artwork: 9 of 16 albums" with Cancel; artist browsing worked during the job; Cancel stopped it and no later marker was written. |
+| P14-AC13 | Pass | `a_service_or_network_error_writes_nothing` (no listener, 503, 429): no file, no marker. The job stops on a network error or 429/5xx and runs at the next start. |
+| P14-AC14 | Pass | A broken `folder.jpg` is a candidate; a broken `cover.jpg` (any case) or a corrupt sidecar is skipped and logged, with no request. |
+
+**Notes**
+
+- N1: rustls uses the `ring` provider (D29 names rustls only). The default `aws-lc-rs` provider needs CMake and NASM on Windows; `ring` needs only a C compiler and gives a smaller binary.
+- N2: the search sends the D43-normalized names, so "1973 - Album (Remastered)" searches "album". MusicBrainz search ignores case and accents.
+- N3: `cover.jpg` is written with a no-replace rename, so a file made at the same moment is never overwritten.
+- N4: manual check with the real services: "Björk/Debut" got its cover from Cover Art Archive and the row showed it at once; a made-up album got a `no-match` marker.
+- N5: the job runs after each complete scan while the switch is on; a scan that ends during a job queues one more pass.
+- N6: "Retry lookup" clears the marker and puts the album first in the artwork job (started at once, or the next pass), so the status line Cancel stops it and the result shows in the status line.
+
+**Exceptions:** none.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 9, F3 0, F4 4. Source: own audit, then a reviewer agent.
+
+- F2:
+  - A rerun asked for while a canceled job still unwound (switch off and on, a new folder) was lost. The job now runs again when asked, with a new token; Cancel clears the request.
+  - `cover.jpg` could not be saved on file systems with no no-replace rename and no hard links (exFAT, FAT). `write_new` now falls back to a create-new write, which still never overwrites.
+  - Folder checks, image decoding and the cover write ran on async threads. They now run on blocking threads.
+  - "Retry lookup" panicked when the HTTP client could not be built. It now gives an error.
+  - "Retry lookup" ran beside the job and Cancel did not stop it. It now goes first in the job (N6).
+  - A panic in the job left it marked as running. A guard clears the slot.
+  - Two quick switch changes could reach the gate out of order. The gate now changes under the settings lock.
+  - The README described P15 lyrics as if done and left out the `no-art` marker. It now covers P14 only and says the names are sent normalized.
+  - Weak tests: the 10 MB cap was tested only through Content-Length; a chunked 12 MB body now tests the streaming cap. Added an app test: a 503 stops the queue with no marker.
+- F4:
+  - A test of the built User-Agent would repeat its own formula; P14-AC6 checks the header the client sends.
+  - HTTPS on a redirect hop is checked by the same function as the first request, which has a unit test; an end-to-end HTTPS mock would add a TLS test server for no new path.
+  - A cancel during the body read takes the same `select!` path as during `send`.
+  - The sidecar marker write stays on the async thread: it is one small atomic file.
 
 **Follow-ups:** F-13 to F-18 (open).
 

@@ -544,3 +544,22 @@ fn skipped_files_are_not_read_again_after_a_restart() {
     let fixed = run(root.path(), &restarted, Some(&mut cache));
     assert_eq!((fixed.read, fixed.added, fixed.skipped), (1, 1, 3));
 }
+
+/// R11, P14.3: `sidecar.json` is never a track and never a skipped file, and the scan leaves
+/// it as it is, also an orphan one.
+#[test]
+fn a_sidecar_is_not_a_track() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(root.path().join("A/B")).unwrap();
+    std::fs::copy(seed("tone.mp3"), root.path().join("A/B/01 Song.mp3")).unwrap();
+    let text = r#"{"version":1,"artwork":{"status":"no-match"},"tracks":{"gone.mp3":{}}}"#;
+    std::fs::write(root.path().join("A/B/sidecar.json"), text).unwrap();
+    let index = RwLock::new(LibraryIndex::new());
+    let report = run(root.path(), &index, None);
+    assert_eq!(paths(&index), ["A/B/01 Song.mp3"]);
+    assert_eq!(report.skipped, 0);
+    assert_eq!(
+        std::fs::read_to_string(root.path().join("A/B/sidecar.json")).unwrap(),
+        text
+    );
+}

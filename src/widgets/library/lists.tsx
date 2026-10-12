@@ -5,6 +5,7 @@ import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { addToPlaylist, usePlaylistsStore } from "@/store/playlists";
+import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
@@ -95,10 +96,28 @@ function setCover(album: number) {
   });
 }
 
-/** The album row menu: the Library items and "Set cover". */
+/**
+ * "Retry lookup" (P14.7): Rust clears the album's marker and looks it up; the result shows in
+ * the status line.
+ */
+function retryLookup(album: number) {
+  void commands.albumRetryLookup(album).catch((error: unknown) => {
+    const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+    useUiStore.getState().showMessage(message || "Cannot look up the album");
+  });
+}
+
+/** The album row menu: the Library items, "Set cover" and "Retry lookup" (off without Online lookups). */
 function albumItems(album: number, play: (() => void) | null, add: () => void): RowMenuItem[] | null {
   const items = rowItems(play, add, scopeSongs({ artist: null, album }));
-  return items && [...items, { label: "Set cover", run: () => setCover(album) }];
+  const online = useSettingsStore.getState().view.onlineLookups;
+  return (
+    items && [
+      ...items,
+      { label: "Set cover", run: () => setCover(album) },
+      { label: "Retry lookup", run: online ? () => retryLookup(album) : undefined },
+    ]
+  );
 }
 
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */

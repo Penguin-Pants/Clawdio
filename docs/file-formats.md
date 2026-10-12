@@ -188,3 +188,24 @@ Source: `crates/clawdio-core/src/lyrics.rs` (P13, R9). The app reads the first s
 3. Embedded lyrics: ID3v2 `USLT`, or the Vorbis comment `LYRICS` or `UNSYNCEDLYRICS`. Empty embedded text counts as no lyrics.
 
 Files are read as UTF-8 (a BOM is removed), else as Windows-1252 (D26). For a `.lrc` file the widget hides each leading time stamp (`[mm:ss]`, with 1 to 3 minute digits and an optional fraction of 1 to 3 digits after `.` or `:`) and the tag lines `[ar:]`, `[ti:]`, `[al:]`, `[au:]`, `[by:]`, `[length:]`, `[offset:]`, `[re:]` and `[ve:]`. Line order and blank lines stay. A `.txt` file and embedded text show as they are. Changes to these files show after Rescan.
+
+## Album sidecar (`sidecar.json`)
+
+Source: `crates/clawdio-core/src/sidecar.rs` (P14, R10, R11). One file per album folder, next to the songs. Schema version 1:
+
+```json
+{
+  "version": 1,
+  "artwork": { "status": "no-match", "checked": "2026-10-12T07:45:09Z" },
+  "tracks": {}
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | Schema version. The app writes 1. |
+| `artwork.status` | `no-match`: MusicBrainz gave no single release group after name normalization (D43). `no-art`: one release group matched, but Cover Art Archive has no front image. An album with either marker is not looked up again until "Retry lookup" removes `artwork`. |
+| `artwork.checked` | UTC time of the lookup, RFC 3339. |
+| `tracks` | Track metadata from "Fill metadata" (P16). Entries for songs that no longer exist are ignored and kept. |
+
+The app reads the file leniently: unknown fields stay when it writes the file again, and writes are atomic. A file that is not a JSON object is corrupt: the app logs it, ignores it, never rewrites it on its own and does not look up the album (D44). The scan never treats `sidecar.json` as a song. The library cache holds no marker (R19).

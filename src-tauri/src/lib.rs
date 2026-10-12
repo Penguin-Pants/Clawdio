@@ -4,6 +4,7 @@ mod commands;
 mod events;
 mod jobs;
 mod media_controls;
+mod online;
 mod persist;
 mod player;
 mod state;
@@ -115,6 +116,10 @@ pub fn run() -> tauri::Result<()> {
             // The saved queue waits for the library; the saver starts now (P9.1).
             app.manage(persist::StateStore::load(dirs.config.clone()));
             persist::StateStore::spawn_saver(app.handle().clone());
+            // Online lookups (P14): the gate follows the stored switch.
+            if let Some(gate) = online::gate(app.handle(), settings.online_lookups) {
+                app.manage(online::Online::new(gate));
+            }
             app.manage(AppState {
                 dirs,
                 base,
@@ -152,6 +157,7 @@ pub fn run() -> tauri::Result<()> {
             commands::library::library_tree,
             commands::art::album_art,
             commands::art::set_cover,
+            commands::art::album_retry_lookup,
             commands::player::player_play_list,
             commands::player::player_play,
             commands::player::player_pause,
