@@ -25,6 +25,9 @@ interface UiState {
   /** Widgets that are in the dock now, in registry order. */
   visibleWidgets: WidgetId[];
   settingsOpen: boolean;
+  /** Running jobs, oldest first. */
+  jobs: StatusJob[];
+  /** The job the status line shows: the newest running one (R5). */
   job: StatusJob | null;
   message: string | null;
   dialog: AppDialog | null;
@@ -35,15 +38,20 @@ interface UiState {
   startJob: (job: StatusJob) => void;
   updateJob: (id: string, text: string) => void;
   endJob: (id: string) => void;
+  hasJob: (id: string) => boolean;
   /** Shows a transient message for MESSAGE_MS, then the line returns to the job or "Ready" (D18). */
   showMessage: (text: string) => void;
 }
 
 let messageTimer: ReturnType<typeof setTimeout> | undefined;
 
-export const useUiStore = create<UiState>()((set) => ({
+/** The jobs and the one the status line shows. */
+const withJobs = (jobs: StatusJob[]) => ({ jobs, job: jobs.at(-1) ?? null });
+
+export const useUiStore = create<UiState>()((set, get) => ({
   visibleWidgets: [],
   settingsOpen: false,
+  jobs: [],
   job: null,
   message: null,
   dialog: null,
@@ -51,9 +59,18 @@ export const useUiStore = create<UiState>()((set) => ({
   closeDialog: () => set({ dialog: null }),
   setVisibleWidgets: (visibleWidgets) => set({ visibleWidgets }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
-  startJob: (job) => set({ job }),
-  updateJob: (id, text) => set((state) => (state.job?.id === id ? { job: { ...state.job, text } } : state)),
-  endJob: (id) => set((state) => (state.job?.id === id ? { job: null } : state)),
+  startJob: (job) => set((state) => withJobs([...state.jobs.filter((other) => other.id !== job.id), job])),
+  updateJob: (id, text) =>
+    set((state) =>
+      state.jobs.some((job) => job.id === id)
+        ? withJobs(state.jobs.map((job) => (job.id === id ? { ...job, text } : job)))
+        : state,
+    ),
+  endJob: (id) =>
+    set((state) =>
+      state.jobs.some((job) => job.id === id) ? withJobs(state.jobs.filter((job) => job.id !== id)) : state,
+    ),
+  hasJob: (id) => get().jobs.some((job) => job.id === id),
   showMessage: (text) => {
     clearTimeout(messageTimer);
     set({ message: text });

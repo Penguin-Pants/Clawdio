@@ -28,7 +28,7 @@ export function connectAppEvents(): () => void {
     on("job-progress", ({ id, text, cancelable }) => {
       const ui = useUiStore.getState();
       if (text === null) ui.endJob(id);
-      else if (ui.job?.id === id) ui.updateJob(id, text);
+      else if (ui.hasJob(id)) ui.updateJob(id, text);
       else ui.startJob({ id, text, cancel: cancelable ? () => void commands.cancelJob(id) : undefined });
     }),
   ];

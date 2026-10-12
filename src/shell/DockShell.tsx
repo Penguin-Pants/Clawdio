@@ -93,8 +93,12 @@ function showActiveTabs(root: HTMLElement | null) {
       }
       const tabBox = tab.getBoundingClientRect();
       const stripBox = strip.getBoundingClientRect();
+      const before = strip.scrollLeft;
       if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
       else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
+      // Dockview's scrollbar keeps its own offset from scroll events and writes it back on its
+      // next frame; the browser sends the event only one frame later, so tell it now.
+      if (strip.scrollLeft !== before) strip.dispatchEvent(new Event("scroll"));
     });
   });
 }

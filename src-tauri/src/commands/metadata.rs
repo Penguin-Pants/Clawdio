@@ -10,17 +10,19 @@ use clawdio_core::api::{IpcError, JobProgress, MetadataField, MetadataPreview, M
 use clawdio_core::artwork::album_folder;
 use clawdio_core::cache::Cache;
 use clawdio_core::library::{UNKNOWN_ALBUM, UNKNOWN_ARTIST};
+use clawdio_core::net::artwork::LookupError;
 use clawdio_core::net::metadata::{self, SongInfo};
+use clawdio_core::net::NetError;
 use clawdio_core::scan::{self, sidecar_key, Sidecars};
 use clawdio_core::sidecar::{self, Sidecar, SidecarError, TrackEntry, SIDECAR_FILE};
 use tauri::{AppHandle, Manager, Runtime};
 
 use super::{lock_error, CommandResult};
 use crate::events::{emit, JOB_PROGRESS, LIBRARY_CHANGED, STATUS_MESSAGE};
-use crate::online::Online;
+use crate::online::{CancelSlot, Online};
 use crate::state::{AppState, Library, MusicRoot};
 
-const METADATA_JOB: &str = "metadata";
+pub const METADATA_JOB: &str = "metadata";
 const READ_ONLY: &str = "The album folder is read-only";
 
 /// A proposal waiting for Confirm.
@@ -38,7 +40,16 @@ struct Pending {
 
 /// Proposals by album id, from the preview to Confirm.
 #[derive(Default)]
-pub struct MetadataFills(Mutex<HashMap<u32, Pending>>);
+pub struct MetadataFills(
+    Mutex<HashMap<u32, Pending>>,
+    /// The running lookups; Cancel on the status line stops them (R5).
+    CancelSlot,
+);
+
+/// Cancel on the status line (R5): stops every running metadata lookup.
+pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
+    app.state::<MetadataFills>().1.cancel(None);
+}
 
 fn fill_error(message: impl Into<String>) -> IpcError {
     IpcError {
@@ -54,7 +65,7 @@ fn progress<R: Runtime>(app: &AppHandle<R>, text: Option<&str>) {
         JobProgress {
             id: METADATA_JOB.into(),
             text: text.map(str::to_owned),
-            cancelable: false,
+            cancelable: true,
         },
     );
 }
@@ -168,10 +179,17 @@ async fn preview<R: Runtime>(
         .await
         .map_err(|_| fill_error("The songs cannot be read"))?
     };
+    let token = app.state::<MetadataFills>().1.token(&gate);
     progress(app, Some("Looking up metadata"));
-    let found = metadata::propose(&gate, &artist, &name, &songs, &gate.job_token()).await;
+    let found = metadata::propose(&gate, &artist, &name, &songs, &token).await;
     progress(app, None);
-    let entries = found.map_err(|error| fill_error(format!("Lookup failed: {error}")))?;
+    let entries = match found {
+        Err(LookupError::Net(NetError::Canceled)) => {
+            emit(app, STATUS_MESSAGE, "Metadata lookup canceled");
+            return Ok(None);
+        }
+        found => found.map_err(|error| fill_error(format!("Lookup failed: {error}")))?,
+    };
     if entries.is_empty() {
         emit(app, STATUS_MESSAGE, "No metadata found for this album");
         return Ok(None);
@@ -385,6 +403,30 @@ mod tests {
             );
         });
         app
+    }
+
+    /// R5: Cancel on the status line stops a slow lookup at once, with no preview.
+    #[test]
+    fn cancel_stops_a_slow_lookup() {
+        let music = tempfile::tempdir().unwrap();
+        let server = MockServer::start();
+        // Defined first, so it answers the search before the helper's quick mock.
+        server.mock(|when, then| {
+            when.path("/ws/2/release/");
+            then.status(200)
+                .delay(std::time::Duration::from_secs(10))
+                .body(r#"{"releases":[]}"#);
+        });
+        let app = app(music.path(), &server);
+        let handle = app.handle().clone();
+        let started = std::time::Instant::now();
+        let lookup =
+            std::thread::spawn(move || tauri::async_runtime::block_on(preview(&handle, 0)));
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        cancel(app.handle());
+        assert_eq!(lookup.join().unwrap(), Ok(None));
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+        assert!(app.state::<MetadataFills>().0.lock().unwrap().is_empty());
     }
 
     /// P16-AC1, P16-AC2, P16-AC8, P16-AC3, P16-AC4: the preview lists the missing fields and

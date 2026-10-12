@@ -93,7 +93,7 @@ pub fn run() -> tauri::Result<()> {
             let (dirs, base) = data_dirs(app.handle())?;
             app.handle()
                 .plugin(log_builder(&dirs.logs, LOG_FILE_BYTES).build())?;
-            let (settings, _) = load_or_default(&dirs.config);
+            let settings = load_or_default(&dirs.config);
             let root = settings
                 .music_folder
                 .as_deref()

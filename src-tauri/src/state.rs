@@ -31,8 +31,8 @@ pub struct AppState {
 pub struct LyricsState {
     pub served: Mutex<Option<(u32, Option<Lyrics>)>>,
     pub song: Mutex<Option<u32>>,
-    /// The parent token of the running "Fetch lyrics" requests; Cancel cancels it (R5).
-    pub fetches: Mutex<Option<clawdio_core::net::CancellationToken>>,
+    /// The running "Fetch lyrics" requests; Cancel stops them (R5).
+    pub fetches: crate::online::CancelSlot,
 }
 
 /// The playlists of the music folder (P11). Lock order: this, then the library index.

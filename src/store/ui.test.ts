@@ -3,7 +3,7 @@ import { MESSAGE_MS, useUiStore } from "./ui";
 
 beforeEach(() => {
   vi.useFakeTimers();
-  useUiStore.setState({ job: null, message: null, settingsOpen: false, visibleWidgets: [] });
+  useUiStore.setState({ jobs: [], job: null, message: null, settingsOpen: false, visibleWidgets: [] });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -35,6 +35,25 @@ describe("ui store (P2.7, D18)", () => {
     store.endJob("other");
     expect(useUiStore.getState().job).not.toBeNull();
     store.endJob("scan");
+    expect(useUiStore.getState().job).toBeNull();
+  });
+
+  it("shows the newest of two jobs and returns to the other when it ends (R5)", () => {
+    const store = useUiStore.getState();
+    const cancelArt = () => {};
+    store.startJob({ id: "artwork", text: "Fetching artwork: 1 of 9 albums", cancel: cancelArt });
+    store.startJob({ id: "lyrics", text: "Fetching lyrics" });
+    expect(useUiStore.getState().job?.id).toBe("lyrics");
+    store.updateJob("artwork", "Fetching artwork: 2 of 9 albums");
+    expect(useUiStore.getState().job?.id).toBe("lyrics");
+    store.endJob("lyrics");
+    expect(useUiStore.getState().job).toEqual({
+      id: "artwork",
+      text: "Fetching artwork: 2 of 9 albums",
+      cancel: cancelArt,
+    });
+    expect(useUiStore.getState().hasJob("artwork")).toBe(true);
+    store.endJob("artwork");
     expect(useUiStore.getState().job).toBeNull();
   });
 });

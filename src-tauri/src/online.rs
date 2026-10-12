@@ -113,6 +113,37 @@ pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
     online.gate.wait_commits();
 }
 
+/// The shared token of a user-started lookup kind ("Fetch lyrics", "Fill missing
+/// metadata"): Cancel on the status line stops every running request of that kind (R5).
+#[derive(Default)]
+pub struct CancelSlot(std::sync::Mutex<Option<CancellationToken>>);
+
+impl CancelSlot {
+    /// A token for one request: a child of the slot's token, which is a child of the gate's
+    /// job token, so Cancel and the Online switch both stop it.
+    pub fn token(&self, gate: &OnlineGate) -> CancellationToken {
+        let Ok(mut parent) = self.0.lock() else {
+            return gate.job_token();
+        };
+        let live = parent
+            .as_ref()
+            .filter(|token| !token.is_cancelled())
+            .cloned();
+        let parent = live.unwrap_or_else(|| parent.insert(gate.job_token()).clone());
+        parent.child_token()
+    }
+
+    /// Stops every request of this kind, then waits until no final write runs.
+    pub fn cancel(&self, gate: Option<&OnlineGate>) {
+        if let Some(token) = self.0.lock().ok().and_then(|mut parent| parent.take()) {
+            token.cancel();
+        }
+        if let Some(gate) = gate {
+            gate.wait_commits();
+        }
+    }
+}
+
 /// Clears the running slot if the job task ends by a panic, so a later start works.
 struct RunningGuard<R: Runtime>(AppHandle<R>);
 

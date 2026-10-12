@@ -303,6 +303,10 @@ pub fn cancel(app: &AppHandle, id: &str) {
         crate::commands::lyrics::cancel(app);
         return;
     }
+    if id == crate::commands::metadata::METADATA_JOB {
+        crate::commands::metadata::cancel(app);
+        return;
+    }
     if id != SCAN_JOB {
         return;
     }

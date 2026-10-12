@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUiStore } from "@/store/ui";
 import { StatusLine } from "./StatusLine";
 
-beforeEach(() => useUiStore.setState({ job: null, message: null }));
+beforeEach(() => useUiStore.setState({ jobs: [], job: null, message: null }));
 
 describe("StatusLine (P2.7)", () => {
   it("shows Ready when idle", () => {

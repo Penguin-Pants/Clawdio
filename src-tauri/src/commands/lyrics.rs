@@ -2,7 +2,7 @@
 
 use clawdio_core::api::{IpcError, JobProgress, Lyrics};
 use clawdio_core::net::lyrics::{self as online_lyrics, LyricsQuery};
-use clawdio_core::net::{CancellationToken, NetError, OnlineGate};
+use clawdio_core::net::NetError;
 use tauri::{AppHandle, Manager, Runtime};
 
 use super::CommandResult;
@@ -109,7 +109,7 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
         .await
         .map_err(|_| fetch_error("The song's folder cannot be checked"))?
         .map_err(|error| fetch_error(error.to_string()))?;
-    let token = fetch_token(app, &gate);
+    let token = app.state::<LyricsState>().fetches.token(&gate);
     progress(app, Some("Fetching lyrics"));
     let found = online_lyrics::fetch(&gate, &query, &token).await;
     progress(app, None);
@@ -141,35 +141,10 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
     Ok(true)
 }
 
-/// A token for one fetch: a child of the shared fetch token, which is a child of the gate's
-/// job token, so Cancel and the Online switch both stop it.
-fn fetch_token<R: Runtime>(app: &AppHandle<R>, gate: &OnlineGate) -> CancellationToken {
-    let state = app.state::<LyricsState>();
-    let Ok(mut parent) = state.fetches.lock() else {
-        return gate.job_token();
-    };
-    let live = parent
-        .as_ref()
-        .filter(|token| !token.is_cancelled())
-        .cloned();
-    let parent = live.unwrap_or_else(|| parent.insert(gate.job_token()).clone());
-    parent.child_token()
-}
-
 /// Cancel on the status line (R5): stops every running fetch; no file is written after it.
 pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
-    let token = app
-        .state::<LyricsState>()
-        .fetches
-        .lock()
-        .ok()
-        .and_then(|mut parent| parent.take());
-    if let Some(token) = token {
-        token.cancel();
-    }
-    if let Some(online) = app.try_state::<Online>() {
-        online.gate.wait_commits();
-    }
+    let gate = app.try_state::<Online>().map(|online| online.gate.clone());
+    app.state::<LyricsState>().fetches.cancel(gate.as_deref());
 }
 
 /// After a complete scan: when the shown song's lyrics source changed, tell the widget

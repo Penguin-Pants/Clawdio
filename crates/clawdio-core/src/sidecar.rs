@@ -3,6 +3,7 @@
 //! corrupt file is logged, ignored and never rewritten automatically (D44).
 
 use std::path::Path;
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value};
@@ -143,6 +144,16 @@ fn write(folder: &Path, mut map: Map<String, Value>) -> Result<(), SidecarError>
     })
 }
 
+/// One sidecar edit at a time in the process: the artwork job, "Fill missing metadata" and
+/// "Retry lookup" each read, change and replace the whole file, so two edits at once could
+/// drop one (R11).
+static EDIT: Mutex<()> = Mutex::new(());
+
+fn edit<T>(change: impl FnOnce() -> Result<T, SidecarError>) -> Result<T, SidecarError> {
+    let _edit = EDIT.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    change()
+}
+
 fn current(folder: &Path) -> Result<Map<String, Value>, SidecarError> {
     match read(folder) {
         Sidecar::Missing => Ok(Map::new()),
@@ -157,18 +168,28 @@ pub fn write_marker(
     marker: ArtworkMarker,
     checked: SystemTime,
 ) -> Result<(), SidecarError> {
-    let mut map = current(folder)?;
-    let mut artwork = Map::new();
-    artwork.insert("status".into(), marker.text().into());
-    artwork.insert("checked".into(), rfc3339(checked).into());
-    map.insert("artwork".into(), Value::Object(artwork));
-    write(folder, map)
+    edit(|| {
+        let mut map = current(folder)?;
+        let mut artwork = Map::new();
+        artwork.insert("status".into(), marker.text().into());
+        artwork.insert("checked".into(), rfc3339(checked).into());
+        map.insert("artwork".into(), Value::Object(artwork));
+        write(folder, map)
+    })
 }
 
 /// "Fill missing metadata" (P16.5): merges the values into `tracks` and keeps every other
 /// field, the artwork marker and entries of songs that no longer exist (R11). A corrupt
 /// sidecar is replaced only when `replace_corrupt` is set (after the user confirmed, P16.4).
 pub fn write_tracks(
+    folder: &Path,
+    entries: &[(String, TrackEntry)],
+    replace_corrupt: bool,
+) -> Result<(), SidecarError> {
+    edit(|| write_tracks_now(folder, entries, replace_corrupt))
+}
+
+fn write_tracks_now(
     folder: &Path,
     entries: &[(String, TrackEntry)],
     replace_corrupt: bool,
@@ -206,6 +227,10 @@ pub fn write_tracks(
 
 /// "Retry lookup" (R8): removes the artwork marker. Returns false when there was none.
 pub fn clear_marker(folder: &Path) -> Result<bool, SidecarError> {
+    edit(|| clear_marker_now(folder))
+}
+
+fn clear_marker_now(folder: &Path) -> Result<bool, SidecarError> {
     let sidecar = read(folder);
     if sidecar == Sidecar::Corrupt {
         return Err(SidecarError::Corrupt);
@@ -254,6 +279,42 @@ pub fn rfc3339(time: SystemTime) -> String {
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    /// The artwork job and "Fill missing metadata" edit the same file from two threads; no
+    /// edit may drop the other's field.
+    #[test]
+    fn concurrent_marker_and_track_edits_keep_both() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().to_path_buf();
+        let marker = {
+            let folder = folder.clone();
+            std::thread::spawn(move || {
+                for _ in 0..200 {
+                    write_marker(&folder, ArtworkMarker::NoMatch, SystemTime::now()).unwrap();
+                    clear_marker(&folder).unwrap();
+                }
+                write_marker(&folder, ArtworkMarker::NoMatch, SystemTime::now()).unwrap();
+            })
+        };
+        for number in 0..200u32 {
+            let entry = TrackEntry {
+                title: Some(format!("Song {number}")),
+                track: Some(number),
+                year: None,
+            };
+            write_tracks(&folder, &[(format!("{number:03}.mp3"), entry)], false).unwrap();
+        }
+        marker.join().unwrap();
+        let Sidecar::Valid(map) = read(&folder) else {
+            panic!("the sidecar is not valid");
+        };
+        assert_eq!(
+            map["tracks"].as_object().unwrap().len(),
+            200,
+            "a track edit was lost"
+        );
+        assert_eq!(read(&folder).marker(), Some(ArtworkMarker::NoMatch));
+    }
 
     #[test]
     fn times_are_rfc3339_utc() {

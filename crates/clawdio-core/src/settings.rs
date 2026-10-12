@@ -73,13 +73,18 @@ pub fn load(config_dir: &Path) -> Loaded {
 }
 
 /// Settings to use after loading: the file, or defaults with a warning in the log (P4.4).
-pub fn load_or_default(config_dir: &Path) -> (Settings, bool) {
+/// Only a missing file is the first run: after a file that cannot be read, the Online
+/// lookups notice stays done (R7).
+pub fn load_or_default(config_dir: &Path) -> Settings {
     match load(config_dir) {
-        Loaded::Read(settings) => (settings, false),
-        Loaded::Missing => (Settings::default(), true),
+        Loaded::Read(settings) => settings,
+        Loaded::Missing => Settings::default(),
         Loaded::Invalid(reason) => {
             log::warn!("settings: {reason}; using defaults");
-            (Settings::default(), false)
+            Settings {
+                online_notice_done: true,
+                ..Settings::default()
+            }
         }
     }
 }
@@ -98,8 +103,11 @@ mod tests {
     fn a_missing_file_is_the_first_run() {
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(load(dir.path()), Loaded::Missing);
-        let (settings, first_run) = load_or_default(dir.path());
-        assert!(first_run);
+        let settings = load_or_default(dir.path());
+        assert!(
+            !settings.online_notice_done,
+            "the first run shows the notice"
+        );
         assert!(
             !settings.online_lookups,
             "Online lookups are off by default (R7)"
@@ -129,11 +137,22 @@ mod tests {
     }
 
     #[test]
-    fn a_corrupt_file_gives_defaults_without_the_first_run_flag() {
+    fn a_corrupt_file_gives_defaults_with_the_notice_done() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join(SETTINGS_FILE), "{ not json").unwrap();
         assert!(matches!(load(dir.path()), Loaded::Invalid(reason) if reason.contains("corrupt")));
-        assert_eq!(load_or_default(dir.path()), (Settings::default(), false));
+        let settings = load_or_default(dir.path());
+        assert!(
+            settings.online_notice_done,
+            "not the first run: no notice (R7)"
+        );
+        assert_eq!(
+            settings,
+            Settings {
+                online_notice_done: true,
+                ..Settings::default()
+            }
+        );
     }
 
     #[test]
