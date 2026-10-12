@@ -67,7 +67,7 @@ P7-AC12, P11-AC8).
 |---|---|---|
 | `.deb` builds, under 30 MB | Pass: 9.26 MiB (local release build, Ubuntu 24.04 container; `release.yml` builds in Ubuntu 22.04) | Not applicable |
 | AppImage builds, size recorded | Pass: 83.65 MiB (local, Ubuntu 24.04 libraries; it holds the LGPL and GPL texts) | Not applicable |
-| NSIS installer and portable zip, under 30 MB | Not applicable | Pass for NSIS: 5.12 MiB (`measure.yml` run 38204302435). Portable zip: `release.yml` builds it on a tag. |
+| NSIS installer and portable zip, under 30 MB | Not applicable | Pass for NSIS: 5.12 MiB (`measure.yml` run 38204302435). Portable zip: `release.yml` builds it on a tag (draft release) or on a manual run (run artifact `windows`; Linux packages only when asked; no release). |
 | One tag builds all four packages (P18-AC1) | Not run: no tag was pushed in this session. | Not run |
 | Desktop entry: name, icon, `AudioVideo;Audio;Player;` | Pass: `.deb` desktop file read with `dpkg-deb` | Not applicable |
 | Each package holds `LICENSE`, `NOTICE` and the third-party files | Pass: `.deb` (`/usr/lib/Clawdio`) and AppImage | Not run (zip layout is in `release.yml`) |
@@ -90,8 +90,10 @@ tree, worst mode median (D28).
 | Linux container, D50 build | 294 MB | 298 MB | 297 MB | 298 MB | 468 MB; R20 200 MB | Under the raised target. 200 to 300 MB: the owner is told the number (R20). |
 | Linux CI VM, `c0a0a40` with D50 (`measure.yml` run 38208222253) | 290 MB | 294 MB | 292 MB | 294 MB | 468 MB; R20 200 MB | Accepted by the owner (October 12, 2026) |
 | Linux container, P20 head `907a0e4` (P21.1) | 309 MB | 315 MB | 313 MB | 315 MB | 468 MB; R20 200 MB | Under the raised target. 17 MB over the P18 container value (Columns run 3: web process 161 MB, was 150; `clawdio` 131 MB, was 127). The owner is told the number (R20). |
+| Linux CI VM, P21 head `5625ff9` (`measure.yml` run 38297586103, F-21) | 291 MB | 293 MB | 293 MB | 293 MB | 468 MB; R20 200 MB | Under the raised target. 1 MB under the P18 CI VM value: the 17 MB container growth does not show on the CI VM. |
 | Windows CI VM, `ddc97bd` (`measure.yml` run 38204302435) | 133 MB | 146 MB | 140 MB | 146 MB | 200 MB | Pass |
 | Windows CI VM, `c0a0a40` (`measure.yml` run 38208222253) | 134 MB | 143 MB | 139 MB | 143 MB | 200 MB | Pass (D50 is Linux only) |
+| Windows CI VM, P21 head `5625ff9` (`measure.yml` run 38297586103, F-21) | 136 MB | 144 MB | 140 MB | 144 MB | 200 MB | Pass |
 
 D50 (the B9 reduction) turns off WebKitGTK's accelerated compositing and DMABUF renderer and
 limits glibc to two malloc arenas, with a trim after each scan. Columns run, Linux container:
@@ -117,7 +119,7 @@ Package sizes (`measure.yml` run 38204302435): NSIS installer 5.12 MiB (5,365,65
 | `.deb` builds, under 30 MB | Pass: 9.36 MiB (local release build, Ubuntu 24.04 container) | Not applicable |
 | AppImage builds, size recorded | Pass: 83.73 MiB; holds `LICENSE`, `NOTICE`, both third-party files and the LGPL 2.1 and 3.0 texts | Not applicable |
 | `.deb` holds `LICENSE`, `NOTICE` and the third-party files | Pass (`dpkg-deb -c`, `/usr/lib/Clawdio`) | Not applicable |
-| NSIS installer under 30 MB | Not applicable | Not run: `measure.yml` runs only on a push to a `measure/**` branch, which needs the owner's permission (B10). CI `tauri-build (windows-latest)` builds the app on `907a0e4` (run 38293560366). |
+| NSIS installer under 30 MB | Not applicable | Pass: 5.18 MiB (5,431,422 bytes; `measure.yml` run 38297586103 on `5625ff9`, F-21). The CI `.deb` is 9.34 MiB (9,790,420 bytes). |
 | One tag builds all four packages (P18-AC1) | Not run: no release tag was pushed | Not run |
 | Licenses (P18.4): `cargo deny`, `NOTICE` and third-party files current | Pass: CI job `licenses` on `907a0e4` (run 38293560366). P20 adds no crate: `windows` 0.62.2 was already in `NOTICE`. | Same CI job |
 
@@ -142,7 +144,7 @@ P21 (October 12, 2026) ran the checks again on the P20 head `907a0e4`. Rows that
 
 | Check | Linux | Windows |
 |---|---|---|
-| AC-1 Footprint | Pass against the raised target (D49): P21 315 MB in the container (P18: 298 MB container, 294 MB CI VM accepted by the owner); see "Footprint" | Pass at P18: 143 MB (CI VM); not measured again at P21 (B10) |
+| AC-1 Footprint | Pass against the raised target (D49): P21 293 MB on the CI VM and 315 MB in the container (P18: 294 MB CI VM accepted by the owner); see "Footprint" | Pass: P21 144 MB (CI VM, run 38297586103; P18 143 MB) |
 | AC-2 Responsive first scan | Exception: 2 of 3 runs under 100 ms (container, software rendering) | Not run |
 | AC-3 Playlist interop | Pass (VLC, see above) | Not run: no Windows machine. B3 stays open. |
 | AC-4 Import of real exports | Not run: the owner did not supply exports (Q5, B4) | Not run (Q5) |
