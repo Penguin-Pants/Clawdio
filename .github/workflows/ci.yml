@@ -1,8 +1,15 @@
 name: CI
 
 on:
+  # Docs-only changes skip CI: no job reads Markdown or docs/.
   push:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read

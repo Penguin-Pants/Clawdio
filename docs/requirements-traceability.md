@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.11, October 11, 2026.
-**Plan:** `docs/build-plan.md` v1.11. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.12, October 12, 2026.
+**Plan:** `docs/build-plan.md` v1.13. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 210 | 34 | 5 | 5 | 5 | 42 | 0 |
+| Requirements | 364 | 210 | 82 | 8 | 5 | 5 | 54 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -35,7 +35,7 @@
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.5)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.6)
 
 ### 1.1 Section 1: desired outcome
 
@@ -48,6 +48,8 @@
 | S1-5 | Playlists as portable files | §1 | P11.1 | P11-AC2, P11-AC9 | IT, MAN-L, MAN-W | Planned |
 | S1-6 | Theme from `theme/tokens.json`, compiled at build time | §1 | P0.6 | P0-AC3 | UT, MAN-L | Done (P0) |
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
+| S1-8 | Imports many playlists at once; finds songs also in another format | §1 | P19.1, P19.3 | P19-AC1, P19-AC3 | UT, IT | Planned |
+| S1-9 | Lowers or pauses music while another app uses the microphone (Windows) | §1 | P20.2, P20.3 | P20-AC1, P20-AC4 | UT, MAN-W | Planned |
 
 ### 1.2 Section 2: library (R1 to R4)
 
@@ -152,6 +154,13 @@
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
+| R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Planned |
+| R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Planned |
+| R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Planned |
+| R34-4 | Pause: resume only when the duck caused the pause | §2 R34.4 | P20.3 | P20-AC1 | UT | Planned |
+| R34-5 | Timing: fade down, fixed wait of about 1 s, fade up; no wait setting | §2 R34.5 | P20.3 | P20-AC1 | UT | Planned (D52) |
+| R34-6 | Volume control and saved volume show the user's own volume | §2 R34.6 | P20.3 | P20-AC1, P20-AC2 | UT | Planned |
+| R34-7 | Linux: setting unavailable with "Windows only" | §2 R34.7 | P20.4 | P20-AC3 | E2E | Planned |
 
 ### 1.5 Section 2: online and sidecars (R7 to R11)
 
@@ -214,6 +223,19 @@
 | R14-10 | M3U8 is UTF-8; legacy `.m3u` UTF-8, then Windows-1252 | §2 R14 | P12.1 | P12-AC4 | UT | Done (P12) |
 | R14-11 | Entry point is a file picker; matching searches the library only | §2 R14 | P12.6 | P12-AC2 | E2E | Done (P12) |
 | R14-12 | Verify that MusicBee exports M3U8 | §2 R14 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
+| R14-13 | Multi-file picker and folder import (v1.6) | §2 R14 | P19.3 | P19-AC7 | E2E | Planned |
+| R32-1 | Import picker accepts more than one file; "Import folder" takes one folder; dialogs in Rust | §2 R32 | P19.3, P19.6 | P19-AC7 | E2E | Planned |
+| R32-2 | Folder import reads `.m3u`, `.m3u8`, `.xml` in the folder and all subfolders | §2 R32 | P19.3 | P19-AC3 | IT | Planned |
+| R32-3 | Existing name (ignoring case) is skipped and reported, for every import | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
+| R32-4 | Names that repeat inside one import get " (2)", " (3)" | §2 R32 | P19.2 | P19-AC2 | UT | Planned (D51) |
+| R32-5 | One combined report: imported, skipped, failed; no paths | §2 R32 | P19.3, P19.6 | P19-AC3, P19-AC7 | IT, E2E | Planned |
+| R32-6 | Busy state; only the scan cancel stops it; each playlist written when ready | §2 R32 | P19.3, P19.4 | P19-AC5, P19-AC7 | IT, E2E | Planned |
+| R32-7 | Unmatched relative entries inside the music folder are written relative to the new file | §2 R32 | P19.3 | P19-AC9 | IT | Planned |
+| R33-1 | Import and repair run the incremental scan first; a canceled or failed scan stops them with no write | §2 R33.1 | P19.4 | P19-AC5 | IT | Planned |
+| R33-2 | Stages 1 and 2 match another extension with the last extension removed; stage 2 keeps longest-suffix ranking; same extension wins; stage 3 unchanged | §2 R33.2 | P19.1 | P19-AC1 | UT | Planned |
+| R33-3 | "Find missing songs" on one playlist and on all playlists | §2 R33.3 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
+| R33-4 | Unique matches replace entries in place; others unchanged; atomic; no write without change | §2 R33.4 | P19.5 | P19-AC4 | IT | Planned |
+| R33-5 | Repair report: fixed count and remaining missing entries with reasons; no paths | §2 R33.5 | P19.5, P19.6 | P19-AC4, P19-AC7 | IT, E2E | Planned |
 | R26-1 | Heart on Now playing and on song rows toggles the song in `Playlists/Favorites.m3u8` | §2 R26 | P11.7 | P11-AC5 | IT, E2E | Done (P11, D23) |
 | R26-2 | Favorites file created on first use; a normal playlist in the widget | §2 R26 | P11.7 | P11-AC5 | IT | Done (P11) |
 
@@ -265,6 +287,9 @@
 | S3-7 | MusicBee and Apple Music are example playlist sources | §3 | none | none | REV | Reference |
 | S3-8 | "Any system" means Windows and Linux | §3 | none | none | REV | Reference |
 | S3-9 | "All the basics" means R5, R6, R24, R25, R26 and R27 | §3 | none | none | REV | Reference |
+| S3-10 | "Twenty percent" is the default duck level | §3 | none | none | REV | Reference |
+| S3-11 | Handy, Meet, Slack, WhatsApp, Signal are example microphone users | §3 | none | none | REV | Reference |
+| S3-12 | "Automatically scan the library" means rescan, then match | §3 | none | none | REV | Reference |
 
 ### 1.9 Section 4: non-goals
 
@@ -281,6 +306,11 @@
 | N-9 | Smart playlists, ratings, play counts | §4 | none | none | REV | Non-goal |
 | N-10 | Floating panels and pop-out windows | §4 | P2.1 | P2-AC2 | E2E | Non-goal |
 | N-11 | Per-view layout overrides | §4 | none | none | REV | Non-goal |
+| N-12 | Playback of `.m4a`, `.flac` or other formats | §4 | none | none | REV | Non-goal |
+| N-13 | Fuzzy or typo-tolerant matching | §4 | none | none | REV | Non-goal |
+| N-14 | Opening the microphone or measuring its level | §4 | P20.2 | P20-AC5 | MAN-W | Non-goal |
+| N-15 | Automatic playlist repair on Rescan | §4 | P11.2 | P11-AC7 | IT | Non-goal |
+| N-16 | Replacing an existing playlist on import | §4 | P19.2 | P19-AC2 | UT | Non-goal |
 
 ### 1.10 Section 5: edge cases
 
@@ -314,6 +344,17 @@
 | E-26 | Second launch focuses the running instance | §5 | P9.5 | P9-AC6 | MAN-L, MAN-W | Planned |
 | E-27 | Closing the window quits; media keys only while running | §5 | P8.5 | P8-AC5 | MAN-L, MAN-W | Planned |
 | E-28 | Folder edited while running: changes after Rescan or restart | §5 | P5.3, P13.3 | P5-AC15, P13-AC6 | IT | Done (P13) |
+| E-29 | Folder import: non-Apple `.xml` or unreadable file shows as failed; others import | §5 | P19.3 | P19-AC3 | IT | Planned |
+| E-30 | Two other-format hits: narrowing, then "more than one match" | §5 | P19.1 | P19-AC1 | UT | Planned |
+| E-31 | Find missing songs on a read-only folder: error, no write | §5 | P19.5 | P19-AC6 | IT | Planned |
+| E-36 | Bare entries from imports before v1.6: delete and import again | §5 | P19.3 | P19-AC9 | IT | Planned |
+| E-32 | A tool that keeps the microphone open holds the duck; help text names it | §5 | P20.4 | P20-AC3 | E2E | Planned |
+| E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-35 | Track change, seek or queue edit during a duck: the duck stays | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Planned |
 
 ### 1.11 Section 6: constraints
 
@@ -331,6 +372,8 @@
 | CON-10 | Audio files are never modified | §6 | P5.14 | P16-AC4 | IT | Done (P16) |
 | CON-11 | Network: only the R7 services; no accounts, no API keys | §6 | P14.1, P0.12 | P14-AC1, P14-AC11, P0-AC9 | IT | Done (P14) |
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
+| CON-13 | Microphone ducking is Windows only in this version | §6 | P20.2, P20.4 | P20-AC3, P20-AC6 | E2E, REV | Planned |
+| CON-14 | Microphone privacy: read only the in-use state; never record; never log app names | §6 | P20.2 | P20-AC5, P20-AC6 | MAN-W, REV | Planned |
 
 ### 1.12 Section 7: deferred ideas
 
@@ -356,6 +399,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEF-16 | Accessibility work beyond platform defaults and R25 | Basis for D23 |
 | DEF-17 | Multiple music folders | none |
 | DEF-18 | Light theme variant of the brand tokens | none |
+| DEF-19 | Microphone ducking on Linux | P20.4 shows "Windows only" |
+| DEF-20 | Exclusion list of apps that do not trigger ducking | none |
+| DEF-21 | Pick the right song by hand for "more than one match" | none |
+| DEF-22 | Adjustable wait before the music comes back | D52 fixes the wait |
 
 ### 1.13 Section 8: owner decisions and items to verify
 
@@ -377,12 +424,25 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-14 | Playlist duplicates allowed; Favorites toggles | §8.14 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11) |
 | DEC-15 | Linux baseline Ubuntu 22.04, glibc 2.35 | §8.15 | P18.3 | P18-AC5 | MAN-L | Planned |
 | DEC-16 | Brand UI icon override kept | §8.16 | P2.13 | P2-AC11 | UT | Done (P2) |
+| DEC-17 | Bulk import: several files or one folder with subfolders | §8.17 | P19.3 | P19-AC3 | IT | Planned |
+| DEC-18 | Existing name skipped for every import; repeats in one import numbered | §8.18 | P19.2 | P19-AC2 | UT | Planned |
+| DEC-19 | Another extension matches by folder and file name without extension | §8.19 | P19.1 | P19-AC1 | UT | Planned |
+| DEC-20 | Repair is a user command, not automatic on Rescan | §8.20 | P19.5 | P19-AC4 | IT | Planned |
+| DEC-21 | Repair writes unique matches, then reports; no preview | §8.21 | P19.5 | P19-AC4 | IT | Planned |
+| DEC-22 | Import and repair rescan first | §8.22 | P19.4 | P19-AC5 | IT | Planned |
+| DEC-23 | Ducking trigger: another app records from a microphone | §8.23 | P20.0, P20.2 | P20-AC4 | MAN-W | Planned |
+| DEC-24 | Ducking on Windows first; Linux deferred | §8.24 | P20.4 | P20-AC3 | E2E | Planned |
+| DEC-25 | Duck level: percentage of the current volume, default 20% | §8.25 | P20.3 | P20-AC1 | UT | Planned |
+| DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Planned |
+| DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Planned |
+| DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Planned |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
 | VER-1 | Verify the R13 path base after the interop test | §8 | P11.9 | P11-AC9 | MAN-L, MAN-W | Gate (B3) |
 | VER-2 | Verify the MusicBee M3U8 export | §8 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
 | VER-3 | Verify the Milestone 0 outcome | §8 | P3.8 | P3-AC4 | MEAS | Done (P3, B2) |
+| VER-4 | Verify that Windows reports microphone use by another app without opening the microphone | §8 | P20.0 | P20-AC4, P20-AC5 | MAN-W | Planned |
 
 ### 1.14 Section 9: acceptance checks
 
@@ -409,6 +469,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-19 | Corrupt file in the queue is skipped with a status message | §9.19 | P7.3 | P7-AC3 | IT | Done (P7) |
 | AC-20 | First run shows the folder prompt; a song plays before the scan ends | §9.20 | P4.6, P4.7, P4.8, P4.9, P4.11, P4.12 | P4-AC3, P7-AC10 | MAN-L | Planned |
 | AC-21 | ID3 USLT lyrics with no lyrics file show | §9.21 | P13.1 | P13-AC3 | IT, MAN-L | Done (P13) |
+| AC-22 | Several files in one picker action and the owner's playlist folder import; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5, P21.2 | P19-AC8, P21-AC2 | MAN-W | Planned |
+| AC-23 | Ducking with Handy and one call app, both modes | §9.23 | P20.2, P20.3 | P20-AC4 | MAN-W | Planned |
+| AC-24 | No microphone use by the app in Windows privacy settings | §9.24 | P20.2 | P20-AC5 | MAN-W | Planned |
 
 ---
 
@@ -628,3 +691,5 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B3 Playlist path base | R13-3, AC-3, VER-1 | VLC and MusicBee interop result | Agent runs P11.9; the owner decides if a player fails |
 | B4, Q5 Real exports | R14-12, AC-4, VER-2 | The owner's exports for the formats they have (Apple XML, MusicBee M3U8, legacy `.m3u`). Missing formats stay "not verified". | Owner supplies files at P12 |
 | B5 Test machines | All MAN-W and MAN-L rows | The owner has a Windows 10 or 11 machine only. MAN-L rows stay "not verified" and P18 records them as exceptions. | Owner runs the MAN-W checks by P18 |
+| K21 Microphone API | R34-2, VER-4, AC-23, AC-24 | P20.0 spike result on Windows with Handy and one call app | Agent runs P20.0; the owner decides if no API works |
+| Real playlists | AC-22 | The owner's playlist folder for the P19-AC8 manual check. The files are never committed. | Owner runs P19-AC8 on Windows |
