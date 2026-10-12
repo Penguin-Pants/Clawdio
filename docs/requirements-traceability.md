@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 361 | 210 | 79 | 8 | 5 | 5 | 54 | 0 |
+| Requirements | 363 | 210 | 81 | 8 | 5 | 5 | 54 | 0 |
 | design.md | 76 | 58 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
@@ -352,6 +352,8 @@
 | E-33 | Microphone in use while stopped or paused by the user: nothing happens | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-34 | Play during a Pause duck: no new pause until the next microphone start | §5 | P20.3 | P20-AC1 | UT | Planned |
 | E-35 | Track change, seek or queue edit during a duck: the duck stays | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Planned |
+| E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Planned |
 
 ### 1.11 Section 6: constraints
 

@@ -311,6 +311,8 @@ These are out under the owner's "few features" rule.
 - **Microphone in use while playback is stopped or paused by the user `(v1.6)`:** nothing happens. A later Play plays at the ducked volume (Lower volume) or plays normally until the next microphone start (Pause).
 - **Play pressed during a Pause duck `(v1.6)`:** playback continues. The app does not pause again until the microphone is free and then starts again.
 - **Track change, seek or queue edit during a duck `(v1.6)`:** the duck stays.
+- **Setting changed to Off during a duck `(v1.6)` `[D]`:** the volume fades back at once (Lower volume), or a track that the duck paused resumes (Pause).
+- **Stop during a Pause duck `(v1.6)`:** playback stays stopped when the microphone is free.
 
 ---
 
@@ -454,7 +456,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 ## Change log
 
 - **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 28 (section 8).
-  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, eight edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
+  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, ten edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
   - **Changed:** R13 (only import and "Find missing songs" write matches), R14 (multi-file picker, folder import, other extension).
 - **1.5 (October 11, 2026):** section G of the requirements review applied, with owner decisions 9 to 16 (section 8).
   - **Added:** R1.1 first run, R18.1 portable mode, WAV encodings (R1), scan rules (R2), sort order and multi-disc order (R3, R4), playback semantics and queue edits (R6), OS command set (R24), Delete key (R25), relative paths (R19, R27), artwork match and writability rules (R8), lyrics source order with embedded lyrics (R9), sidecar name (R10), playlist name rule and duplicates (R12), import normalization and unique-match rule (R14), Linux baseline and WebView2 prerequisite (R22), portable zip (R21), five edge cases, acceptance checks 17 to 21.
