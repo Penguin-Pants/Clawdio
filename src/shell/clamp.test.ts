@@ -27,11 +27,11 @@ describe("groupMinimum", () => {
 
 describe("nodeMinimum", () => {
   it("adds heights in a vertical split and widths in a horizontal split", () => {
-    expect(nodeMinimum(DEFAULT, "VERTICAL")).toEqual({ width: 560, height: 328 });
+    expect(nodeMinimum(DEFAULT, "VERTICAL")).toEqual({ width: 560, height: 352 });
   });
 
   it("adds widths at the root of a horizontal grid", () => {
-    expect(nodeMinimum(split(DEFAULT, leaf("q", "queue")), "HORIZONTAL")).toEqual({ width: 760, height: 328 });
+    expect(nodeMinimum(split(DEFAULT, leaf("q", "queue")), "HORIZONTAL")).toEqual({ width: 760, height: 352 });
   });
 });
 
@@ -39,7 +39,7 @@ describe("clampMinimums (D45)", () => {
   it("keeps the D33 minimums when the dock is large enough", () => {
     const result = clampMinimums(DEFAULT, "VERTICAL", { width: 800, height: 504 });
     expect(result.get("g1")).toEqual({ width: 320, height: 240 });
-    expect(result.get("g3")).toEqual({ width: 320, height: 88 });
+    expect(result.get("g3")).toEqual({ width: 320, height: 112 });
   });
 
   it("lowers minimums in proportion so six stacked widgets fit an 800 x 560 window", () => {
@@ -47,7 +47,7 @@ describe("clampMinimums (D45)", () => {
     const result = clampMinimums(STACK, "VERTICAL", dock);
     const total = [...result.values()].reduce((sum, size) => sum + size.height, 0);
     expect(total).toBeLessThanOrEqual(dock.height);
-    expect(result.get("a")?.height).toBe(Math.floor((240 * 504) / 896));
+    expect(result.get("a")?.height).toBe(Math.floor((240 * 504) / 944));
     for (const size of result.values()) expect(size.height).toBeGreaterThanOrEqual(CLAMP_FLOOR);
   });
 

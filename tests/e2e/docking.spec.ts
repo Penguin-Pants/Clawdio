@@ -114,7 +114,8 @@ test("P2-AC17: splitter line on hover and drag, drop overlay with a red border o
   const sash = page.locator(".dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash").first();
   const line = (property: string) =>
     sash.evaluate((element, name) => getComputedStyle(element, "::after").getPropertyValue(name), property);
-  expect(await sash.evaluate((element) => getComputedStyle(element).cursor)).toBe("ns-resize");
+  // "n-resize" when the row below is at its minimum and the splitter can only move up.
+  expect(["ns-resize", "n-resize"]).toContain(await sash.evaluate((element) => getComputedStyle(element).cursor));
   const point = await sashPoint(page);
   await page.mouse.move(point.x, point.y);
   expect(await line("background-color")).toBe(strong);

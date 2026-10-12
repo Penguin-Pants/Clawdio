@@ -75,14 +75,20 @@
 }
 
 /* Splitter line: 1 px border.strong on hover, 2 px while dragging, with a resize cursor. */
-.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash.dv-enabled::after {
+.dockview-theme-app
+  .dv-split-view-container
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum)::after {
   content: "";
   position: absolute;
   pointer-events: none;
   background-color: transparent;
 }
 
-.dockview-theme-app .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash.dv-enabled::after {
+.dockview-theme-app
+  .dv-split-view-container.dv-horizontal
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum)::after {
   top: 0;
   bottom: 0;
   left: 50%;
@@ -90,7 +96,10 @@
   transform: translateX(-50%);
 }
 
-.dockview-theme-app .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash.dv-enabled::after {
+.dockview-theme-app
+  .dv-split-view-container.dv-vertical
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum)::after {
   left: 0;
   right: 0;
   top: 50%;
@@ -98,16 +107,25 @@
   transform: translateY(-50%);
 }
 
-.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash.dv-enabled:hover::after {
+.dockview-theme-app
+  .dv-split-view-container
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum):hover::after {
   background-color: var(--color-border-strong);
 }
 
-.dockview-theme-app .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash.dv-enabled:active::after {
+.dockview-theme-app
+  .dv-split-view-container.dv-horizontal
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum):active::after {
   width: 2px;
   background-color: var(--color-border-strong);
 }
 
-.dockview-theme-app .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash.dv-enabled:active::after {
+.dockview-theme-app
+  .dv-split-view-container.dv-vertical
+  > .dv-sash-container
+  > .dv-sash:is(.dv-enabled, .dv-minimum, .dv-maximum):active::after {
   height: 2px;
   background-color: var(--color-border-strong);
 }

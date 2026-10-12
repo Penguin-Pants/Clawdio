@@ -14,8 +14,8 @@ describe("widget registry (P2.2)", () => {
   it("uses the D33 minimum sizes", () => {
     expect(WIDGET_IDS.map((id) => [id, WIDGETS[id].minWidth, WIDGETS[id].minHeight])).toEqual([
       ["library", 320, 240],
-      ["transport", 320, 88],
-      ["nowPlaying", 240, 88],
+      ["transport", 320, 112],
+      ["nowPlaying", 240, 112],
       ["playlists", 200, 160],
       ["queue", 200, 160],
       ["lyrics", 200, 160],

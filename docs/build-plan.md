@@ -81,7 +81,7 @@ A phase is Done when all of these are true:
 | P14 | Online lookups and artwork fetch | P13 | Done |
 | P15 | Lyrics fetch | P14 | Done |
 | P16 | Metadata fill | P15 | Done |
-| P17 | UI quality audit | P16 | Not started |
+| P17 | UI quality audit | P16 | Done with exceptions |
 | P18 | Release readiness | P17, gate B3 closed | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
@@ -994,6 +994,64 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** F-13 to F-18 (open).
 
+#### P17. UI quality audit (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `e3fec36`. Messages start with `P17:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P17-AC1 | Pass (Chromium); WebKit in CI | `tests/e2e/audit.spec.ts` state sweep: first run, no folder, missing folder, every widget empty, populated, selected, playing, disabled (Transport with no folder, "Fetch lyrics" with lookups off), menus, row menu, every dialog (Settings, New playlist with an error, Import report, Fill missing metadata, Cannot save the change) and a status-line error; axe has no serious or critical violation in any of them. The CI runs the same spec in WebKit. |
+| P17-AC2 | Pass on Linux (E1) | `docs/release-checklist.md` keyboard walkthrough in the release build: every R25 key and Ctrl+Shift+L, Delete in the queue and in a playlist, F6 order. Space in the real app is E2. |
+| P17-AC3 | Pass (automated) (E3) | Reduced motion emulation in every sweep state: no non-zero transition or animation duration. AC-16: no Magic UI component exists (D6), so the CSS rule covers all motion. |
+| P17-AC4 | Pass | `P17-AC4` test at 800 x 560 for Tree, Columns, Top/bottom and a tabbed layout: no control is clipped and none overlaps another; screenshots are attached to the test report. |
+| P17-AC5 | Pass on Linux (E1) | Large text emulated with `GDK_DPI_SCALE` 1.25 and 1.4 in the release build: no overlap after the minimum-height fix (N2). `P17-AC5` test: Transport controls and Now playing fit their content at their minimum height. |
+| P17-AC6 | Pass (emulation) (E1) | `P17-AC6` test in Chromium forced colors: the focus ring, a pressed toggle, the switch on and off and the slider range show with system colors. |
+| P17-AC7 | Pass | `docs/design.md` gains six implementation notes, each with its decision and reason: Geist (D7), the type map (C12), the header strip (D11), album rows (C11), no mute toggle (C3), no Magic UI (D6). |
+| P17-AC8 | Pass | `npm run check` (contrast test, source guards, SVG checks) passes. Brand audit: the wordmark is only in the header strip and About, no cat asset is in the UI, the monogram is only in the art placeholder, red appears only for focus, the play ring, active toggles, the slider, the switch, the active drop target and errors. Type and wording audit: sizes follow the 6.12 map after the hint fix (N3); labels are sentence case; every time uses tabular numerals; no uppercase spaced text. |
+| P17-AC9 | Pass | `P17-AC9` test: one frame after the click, with the open animation running, End and Enter in the menu run Rescan, and typing in the New playlist dialog fills the name. |
+
+**Notes**
+
+- N1: a narrow tabbed group cut off its active tab under the dock's overflow button. The dock now scrolls each group's active tab into view when it changes and when the tab strip changes size.
+- N2: Transport controls and Now playing need 80 px of content under a 32 px header. Their D33 minimum of 88 px clipped them when the bottom row shrank (also under large text, where the saved layout scales down). Both minimums are now 112 px, the default bottom-row height; D33 records the change. When six widgets stack at 800 x 560, the D45 clamp still lowers every minimum in proportion (Transport controls get about 59 px), as it did with 88 px (47 px).
+- N3: the empty hints, "Nothing playing" and the playlist name message were 13 px; the 6.12 map gives hints and captions 12 px.
+- N4: forced colors had no rule for pressed toggles, the switch or the slider. They now use system colors (`Highlight`, `HighlightText`, `CanvasText`, `GrayText`).
+- N5: the e2e settings mock returned one shared object, so the stores missed changes that the real IPC (a new object each time) shows. The mock now returns copies.
+- N6: under WebKitGTK, `GDK_DPI_SCALE` sets the device pixel ratio: the whole page scales, as with a display scale.
+- N7: a splitter that can move only one way (a neighbor at its minimum) lost its hover and drag line, because the theme styled only dockview's `dv-enabled` state. It now also styles `dv-minimum` and `dv-maximum`. The 112 px minimum made this common for the bottom row, which P2-AC17 caught.
+
+**Exceptions**
+
+- E1: no Windows machine. P17-AC2, P17-AC5 (150 percent display scale) and P17-AC6 (Windows high contrast) are not run on Windows; their traceability rows with MAN-W stay Planned until gate B5.
+- E2: the container has no real-time audio sink (null ALSA output), so a song ends at once and Space cannot be observed in the real app. Playwright P7-AC5 covers Space in Chromium and WebKit.
+- E3: GNOME is not in the container, so "Reduce animation" and "Large text" are emulated (Playwright reduced motion; `GDK_DPI_SCALE`).
+
+**Blockers:** none for the code. Windows checks wait for gate B5.
+
+**TWO-PASS REVIEW:** F1 0, F2 11, F3 0, F4 4. Source: own audit, then a reviewer agent.
+
+- F2:
+  - The active tab of a narrow tabbed group was cut off (N1).
+  - Transport controls and Now playing minimums were below their content (N2).
+  - Hints and captions were 13 px (N3).
+  - Forced colors had no rules for toggles, the switch and the slider (N4).
+  - The settings mock returned one shared object (N5).
+  - A one-way splitter lost its line (N7).
+  - The P17-AC9 test asserted running animations one frame later, which a loaded runner can miss. It now sends the keys as soon as the menu items exist and checks the result.
+  - The P17-AC5 test passed when the drag did nothing. It now checks that the row is at its minimum first.
+  - The P17-AC6 focus check passed without forced colors. It now checks that the ring color is not the brand red.
+  - The tab-strip observer kept strips of rebuilt docks. It now stops watching strips that left the page.
+  - N2 did not say that the D45 clamp still lowers the minimums when six widgets stack.
+- F4:
+  - Resizing the dock scrolls a strip back to its active tab only when that tab is cut off; a strip scrolled by hand to an inactive tab keeps its place until then.
+  - The clip check reads overflow clipping only: no control uses absolute or fixed position to leave its widget.
+  - The motion check reads elements, not `::before` and `::after`: the reduced-motion rule sets both to 0 s with the same selector.
+  - The P17-AC9 menu check presses End: the result it checks is Rescan running, so a menu with another last item fails the test rather than passing it.
+
+**Follow-ups:** F-13 to F-18 (open).
+
 ---
 
 ## 3. Source documents and precedence
@@ -1106,7 +1164,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D30 | Music folder missing at startup: the Library body shows the message and "Change folder". The cached library is not shown. The cache is not touched. | Section 5. Playback from a missing folder would fail. |
 | D31 | Tests: Vitest with React Testing Library. Playwright (Chromium and WebKit) against Vite with mocked IPC. axe-core. No `tauri-driver` (its README says pre-alpha). OS-level checks are manual. | Reliable automation now. Chromium is close to WebView2. WebKit is close to WebKitGTK. |
 | D32 | A decode error is any of: (a) a failure to open or probe a file; (b) an error that the engine's own Symphonia source reports while decoding: an I/O error other than end of stream, or more than 3 packet decode errors in a row (a single bad packet is skipped and logged); (c) an end of stream more than 2 s before a duration that the container states (WAV header, Ogg granule position, MP3 Xing, VBRI or LAME header). An estimated duration never triggers rule (c). The engine decodes with this source instead of `rodio::Decoder`, because `rodio::Decoder` hides errors and Symphonia reports a cut-off file as a normal end of stream. | R6 decode rule. Codex review finding X4. |
-| D33 | Window minimum 800 x 560, default 1200 x 800. Widget minimums (width x height): Library 320 x 240, Transport controls 320 x 88, Now playing 240 x 88, Playlists 200 x 160, Play queue 200 x 160, Lyrics 200 x 160. P3 may tune them and records the change. | Section 5 (window smaller than layout). |
+| D33 | Window minimum 800 x 560, default 1200 x 800. Widget minimums (width x height): Library 320 x 240, Transport controls 320 x 112, Now playing 240 x 112 (P17 raised both from 88: their content needs 80 px under the 32 px header), Playlists 200 x 160, Play queue 200 x 160, Lyrics 200 x 160. P3 may tune them and records the change. | Section 5 (window smaller than layout). |
 | D34 | Source guards: no hex color literals in `src/` (except the generated token file). No Tailwind default palette color (a class such as `bg-red-500` or a variable such as `--color-red-500`) in `src/` (F-07). No product name literal in `src/`, `crates/` or `src-tauri/src/`. SVG rules in P1.5. | design.md §10, section 6 branding constraint, AC-15. |
 | D35 | Milestone 0 test data uses a `fixtures` Cargo feature. P6 deletes it. The owner confirmed this on October 11, 2026 (C19). | Spike data without dead code later. |
 | D36 | Test audio: tiny seed files made with ffmpeg and committed (under 100 KB). Test trees and the 50,000-track library are generated at test time. | No copyrighted audio. No large files in git. |

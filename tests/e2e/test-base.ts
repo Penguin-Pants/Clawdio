@@ -1,4 +1,5 @@
 // Shared e2e setup: every test fails on a CSP violation (P2-AC18) or a page error.
+import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect, type Locator, type Page } from "@playwright/test";
 
 declare global {
@@ -90,4 +91,28 @@ export async function tokenRgb(page: Page, variable: string): Promise<string> {
     probe.remove();
     return value;
   }, variable);
+}
+
+/** No element has a non-zero transition or animation duration (reduced motion, P2-AC8, P17-AC3). */
+export async function expectNoMotion(page: Page): Promise<void> {
+  const moving = await page.evaluate(() =>
+    [...document.querySelectorAll("*")]
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        const durations = `${style.transitionDuration},${style.animationDuration}`.split(",");
+        return durations.some((value) => value.trim() !== "0s");
+      })
+      .map((element) => element.outerHTML.slice(0, 80)),
+  );
+  expect(moving).toEqual([]);
+}
+
+/** axe finds no serious or critical violation (P2-AC9, P17-AC1). */
+export async function expectNoSeriousViolations(page: Page): Promise<void> {
+  await settle(page);
+  const results = await new AxeBuilder({ page }).analyze();
+  const serious = results.violations
+    .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
+    .map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
+  expect(serious).toEqual([]);
 }

@@ -1,7 +1,16 @@
 // P2-AC7, P2-AC8, P2-AC9, P2-AC13 to P2-AC16: tokens, motion, axe, focus contrast, grayscale and forced colors.
-import AxeBuilder from "@axe-core/playwright";
-import type { Locator, Page } from "@playwright/test";
-import { expect, openApp, openMenu, settle, tab, test, tokenRgb, widget } from "./test-base";
+import type { Locator } from "@playwright/test";
+import {
+  expect,
+  expectNoMotion,
+  expectNoSeriousViolations,
+  openApp,
+  openMenu,
+  tab,
+  test,
+  tokenRgb,
+  widget,
+} from "./test-base";
 import { grayProfile } from "./gray";
 
 const RED_TOKENS = ["--color-brand-red", "--color-state-red-hover", "--color-state-red-active"];
@@ -57,19 +66,6 @@ test("P2-AC7: dock chrome colors come from tokens and no red shows at rest", asy
   expect(found).toEqual([]);
 });
 
-async function expectNoMotion(page: Page) {
-  const moving = await page.evaluate(() =>
-    [...document.querySelectorAll("*")]
-      .filter((element) => {
-        const style = getComputedStyle(element);
-        const durations = `${style.transitionDuration},${style.animationDuration}`.split(",");
-        return durations.some((value) => value.trim() !== "0s");
-      })
-      .map((element) => element.outerHTML.slice(0, 80)),
-  );
-  expect(moving).toEqual([]);
-}
-
 test("P2-AC8: with reduced motion every duration is 0s", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openApp(page);
@@ -80,15 +76,6 @@ test("P2-AC8: with reduced motion every duration is 0s", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeVisible();
   await expectNoMotion(page);
 });
-
-async function expectNoSeriousViolations(page: Page) {
-  await settle(page);
-  const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations
-    .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
-    .map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
-  expect(serious).toEqual([]);
-}
 
 test("P2-AC9: axe finds no serious or critical violation", async ({ page }) => {
   await openApp(page);

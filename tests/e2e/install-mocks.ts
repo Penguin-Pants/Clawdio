@@ -59,13 +59,14 @@ const LAYOUT_KEY = "e2e-layout";
 function saveSettings(change: Record<string, unknown>) {
   Object.assign(settings, change);
   sessionStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  return settings;
+  // The real IPC gives a new object each time; the stores see a change only then.
+  return { ...settings };
 }
 
 function settingsCommand(command: string, args: Args): unknown {
   switch (command) {
     case "settings_get":
-      return settings;
+      return { ...settings };
     case "set_online_lookups":
       return saveSettings({ onlineLookups: args.on });
     case "first_run_notice_done":

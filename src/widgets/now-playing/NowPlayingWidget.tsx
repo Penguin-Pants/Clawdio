@@ -46,7 +46,7 @@ export function NowPlayingWidget() {
           </p>
         </div>
       ) : (
-        <p className="flex-1 text-[13px] text-text-muted">Nothing playing</p>
+        <p className="flex-1 text-xs text-text-muted">Nothing playing</p>
       )}
       {song && <Heart track={song.id} />}
     </div>

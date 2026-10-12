@@ -78,6 +78,40 @@ async function startArrangement(api: DockviewApi, container: HTMLElement | null)
 const TAB_COMPONENTS = { widget: WidgetTab, library: LibraryTab };
 
 /**
+ * Scrolls each group's active tab into view, so a narrow tabbed group never cuts it off
+ * (P17-AC4). The other tabs stay in the scrolling strip and its overflow list.
+ */
+function showActiveTabs(root: HTMLElement | null) {
+  requestAnimationFrame(() => {
+    root?.querySelectorAll<HTMLElement>(".dv-tab.dv-active-tab").forEach((tab) => {
+      const strip = tab.closest<HTMLElement>(".dv-tabs-container");
+      if (!strip) return;
+      // The overflow button appears after the tabs and narrows the strip: look again then.
+      if (!watchedStrips.has(strip)) {
+        watchedStrips.add(strip);
+        stripObserver.observe(strip);
+      }
+      const tabBox = tab.getBoundingClientRect();
+      const stripBox = strip.getBoundingClientRect();
+      if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
+      else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
+    });
+  });
+}
+
+const watchedStrips = new WeakSet<HTMLElement>();
+const stripObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    // A strip of a rebuilt dock leaves the page: stop watching it.
+    if (!entry.target.isConnected) {
+      stripObserver.unobserve(entry.target);
+      continue;
+    }
+    showActiveTabs(entry.target.closest<HTMLElement>(".dv-groupview"));
+  }
+});
+
+/**
  * The docking shell (P2.1, D8): drag docking, splitters and tabbed groups. Floating groups are
  * off, no pop-out call exists and no tab context menu is configured.
  */
@@ -93,7 +127,9 @@ export function DockShell() {
       const sync = () => {
         setVisibleWidgets(visibleWidgets(api));
         applyClamp(api);
+        showActiveTabs(containerRef.current);
       };
+      api.onDidActivePanelChange(() => showActiveTabs(containerRef.current));
       api.onDidAddPanel(sync);
       api.onDidRemovePanel(sync);
       api.onDidMovePanel(sync);
@@ -114,6 +150,7 @@ export function DockShell() {
     if (!element) return;
     const observer = new ResizeObserver(() => {
       if (apiRef.current) applyClamp(apiRef.current);
+      showActiveTabs(element);
     });
     observer.observe(element);
     return () => {

@@ -5,8 +5,8 @@ import { closeMenu, expect, group, openApp, openMenu, tab, test, widget } from "
 
 const MINIMUMS: Record<string, { width: number; height: number }> = {
   library: { width: 320, height: 240 },
-  transport: { width: 320, height: 88 },
-  nowPlaying: { width: 240, height: 88 },
+  transport: { width: 320, height: 112 },
+  nowPlaying: { width: 240, height: 112 },
   playlists: { width: 200, height: 160 },
   queue: { width: 200, height: 160 },
   lyrics: { width: 200, height: 160 },

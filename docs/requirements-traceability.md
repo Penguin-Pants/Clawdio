@@ -24,9 +24,9 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 192 | 46 | 10 | 5 | 6 | 42 | 0 |
-| design.md | 76 | 43 | 14 | 8 | 10 | 0 | 1 | 0 |
-| Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
+| Requirements | 301 | 194 | 44 | 10 | 5 | 6 | 42 | 0 |
+| design.md | 76 | 57 | 6 | 2 | 10 | 0 | 1 | 0 |
+| Branding prompt | 39 | 21 | 10 | 2 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
@@ -147,8 +147,8 @@
 | R25-3 | Enter plays the selected song or album | §2 R25 | P6.5, P11.5 | P6-AC4, P11-AC8 | E2E | Done (P11, D24) |
 | R25-4 | Ctrl+F focuses search; Esc clears it and returns to the Library | §2 R25 | P6.6, P0.13 | P6-AC5, P0-AC8 | E2E | Planned |
 | R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Done (P2) |
-| R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Planned |
-| R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Planned |
+| R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Done (P17) |
+| R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Done (P17) |
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
@@ -418,11 +418,11 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 |---|---|---|---|---|---|---|
 | DES-0 | Dark-only theme (front matter) | front matter | P0.7 | P0-AC2 | MAN-L | Done (P0) |
 | DES-1.1 | Local-first player for MP3, WAV, OGG with metadata, art, lyrics and standard controls; not streaming, radio or podcasts | §1 | P4.5, P7.2, P10.1, P13.1 | P4-AC3, P13-AC1 | IT | Done (P13) |
-| DES-1.2 | Primary rule: practical minimalist player; style never makes playback harder | §1 | P17.1, P17.8 | P17-AC1, P17-AC8 | E2E, REV | Planned (D10) |
+| DES-1.2 | Primary rule: practical minimalist player; style never makes playback harder | §1 | P17.1, P17.8 | P17-AC1, P17-AC8 | E2E, REV | Done (P17, D10) |
 | DES-1.3 | Cat silhouette, narrow red eyes, pointed ears, minimal whiskers | §1 | P1.2 | P1-AC3 | MAN-L | Done (P1) |
 | DES-1.4 | Wordmark: angled red "Claw", metallic "dio", bars in the final "o" | §1 | P1.1 | P1-AC4 | REV | Done (P1) |
 | DES-1.5 | Secondary angular C with cat eye and audio bars | §1 | P1.3 | P1-AC1 | UT, REV | Done (P1) |
-| DES-1.6 | Deep black shell, sparse red controls, monochrome utility icons | §1 | P0.7, P2.10 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
+| DES-1.6 | Deep black shell, sparse red controls, monochrome utility icons | §1 | P0.7, P2.10 | P2-AC7, P17-AC8 | E2E, REV | Done (P17, D10) |
 | DES-1.7 | Lair imagery is promotional, not a feature | §1 | none | none | REV | Resolved (C9) |
 | DES-1.8 | Rebuild assets as original vectors; no tracing or embedded crops; recognizable at 16 to 32 px; no third-party copies | §1 | P1.1, P1.2, P1.3, P1.5, P1.7 | P1-AC1, P1-AC3, P1-AC7 | UT, MAN-L, REV | Done (P1) |
 | DES-2.1 | Name Clawdio; publisher Dr. Claw Development; positioning; message | §2 | P0.2, P0.4, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
@@ -431,24 +431,24 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-2.4 | Logo 2: app icon with cat, faint arc and bars on a dark square; legible at 16 px | §2 | P1.4, P1.7 | P1-AC3 | MAN-L | Done (P1) |
 | DES-2.5 | Logo 3: secondary symbol for micro sizes | §2 | P1.3, P1.4 | P1-AC1 | REV | Done (P1) |
 | DES-2.6 | Logo 4: monochrome and high-contrast variants | §2 | P1.4 | P1-AC1, P1-AC4 | REV | Done (P1) |
-| DES-2.7 | No raster mockup as the icon; no repeated full mascot in the UI | §2 | P1.6, P17.8 | P1-AC2, P17-AC8 | REV | Planned |
+| DES-2.7 | No raster mockup as the icon; no repeated full mascot in the UI | §2 | P1.6, P17.8 | P1-AC2, P17-AC8 | REV | Done (P17) |
 | DES-3.1 | `theme/tokens.json` is the machine-readable color source | §3 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DES-3.2 | Color table values | §3 | P0.6 | P0-AC5 | UT | Done (P0) |
-| DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Planned (D10) |
+| DES-3.3 | Red for playback emphasis, current navigation, focus and identity; not every clickable item | §3 | P0.7, P2.10, P17.8 | P2-AC7, P17-AC8 | E2E, REV | Done (P17, D10) |
 | DES-3.4 | Adequate contrast; red never the only state cue | §3 | P0.15, P7.7, P6.4, P2.8 | P0-AC5, P7-AC8, P2-AC15, P6-AC9 | UT, E2E | Done (P7, C13) |
 | DES-4.1 | UI font Geist Sans or Inter | §4 | P0.9 | P0-AC7 | REV | Done (P0, C4) |
 | DES-4.2 | Wordmark is custom vector lettering, no generic font | §4 | P1.1 | P1-AC4 | UT | Done (P1) |
 | DES-4.3 | Type sizes 24, 18 to 20, 14, 12 to 13, 11 to 12 px | §4 | P0.7, P17.7 | P17-AC8 | REV | Resolved (C12) |
 | DES-4.4 | Tabular numerals for times | §4 | P0.7, P7.7 | P7-AC9 | E2E | Done (P7) |
-| DES-4.5 | Sentence case; uppercase spaced text only for brand collateral | §4 | P17.7 | P17-AC8 | REV | Planned |
+| DES-4.5 | Sentence case; uppercase spaced text only for brand collateral | §4 | P17.7 | P17-AC8 | REV | Done (P17) |
 | DES-5.1 | Six widgets; headers with grip, title and close (hideable only); drag docking; show and hide | §5 | P2.1, P2.2, P2.3, P2.6 | P2-AC1, P2-AC2, P2-AC3, P2-AC4 | E2E | Done (P2) |
 | DES-5.2 | Fixed chrome: status line and top-right menu button; no layout hides them | §5 | P2.5, P2.6, P2.7 | P2-AC6 | E2E | Done (P2, C14) |
 | DES-5.3 | Library widget: mode switch, search in header, dropdown when narrow | §5 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | DES-5.4 | Default arrangement, auto-save, Reset layout, tabbed groups, no floating or pop-out | §5 | P2.4, P9.3 | P2-AC1, P9-AC2, P9-AC3 | E2E | Done (P9) |
 | DES-5.5 | Main area prioritizes browsing, metadata and art | §5 | P2.4, P6.4 | P2-AC1 | E2E | Planned |
 | DES-5.6 | Persistent, reachable transport controls; keys and media keys when Transport is hidden | §5 | P7.7, P7.11, P8.2 | P7-AC5, P8-AC4 | E2E, MAN-W | Planned |
-| DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Planned |
-| DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Planned (D45) |
+| DES-5.7 | Clear active, focus and disabled states, including headers, splitters and drop zones | §5 | P0.7, P2.10 | P2-AC7, P2-AC10, P17-AC1, P2-AC14, P2-AC17 | E2E | Done (P17) |
+| DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Done (P17, D45) |
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Done (P10) |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Done (P15) |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
@@ -460,22 +460,22 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-6.7 | Volume: neutral icon, clear mute state and level | §6 | P7.7 | P7-AC9, P7-AC11 | E2E | Done (P7, C3) |
 | DES-6.8 | Search: dark field, visible focus, no animation | §6 | P2.8 | P2-AC5, P6-AC5 | E2E | Done (P6) |
 | DES-6.9 | Settings: few options grouped by task | §6 | P4.10, P5.4 | P4-AC1, P5-AC6 | E2E | Done (P5, D12) |
-| DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Planned |
-| DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Planned |
+| DES-6.10 | Dialogs: matte panels, no heavy red glow | §6 | P2.14, P17.8 | P17-AC8 | REV | Done (P17) |
+| DES-6.11 | Tooltips: short; shown on keyboard focus | §6 | P2.3, P7.7 | P17-AC2 | E2E, MAN-L | Done (P17) |
 | DES-6.12 | Error states: plain, actionable text for missing and invalid files | §6 | P5.10, P11.8 | P5-AC12, P11-AC3, P11-AC10 | E2E, IT | Done (P11) |
 | DES-6.13 | Lucide outline icons; no mismatched or decorative icons in navigation | §6 | P2.13 | P2-AC11 | UT, REV | Done (P2) |
 | DES-7.1 | Magic UI only if the stack supports it | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DES-7.2 | Install only components with real value | §7 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | DES-7.3 | Blur Fade or Magic Card may fit About or empty states | §7 | none | none | REV | Resolved (C8) |
-| DES-7.4 | No marquees, border beams, animated gradients, confetti, particles or per-track animation | §7 | P17.8 | P17-AC3 | REV, E2E | Planned (D6) |
+| DES-7.4 | No marquees, border beams, animated gradients, confetti, particles or per-track animation | §7 | P17.8 | P17-AC3 | REV, E2E | Done (P17, D6) |
 | DES-7.5 | CSS transitions over a motion dependency | §7 | P0.7 | P2-AC13 | E2E | Done (P2, D6) |
 | DES-7.6 | Check Magic UI docs before choosing components | §7 | none | none | REV | Planned (D6) |
 | DES-7.7 | No new framework only for Magic UI | §7 | none | P0-AC1 | REV | Done (P0, D6) |
 | DES-8.1 | Hover and focus feedback 120 to 180 ms | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
 | DES-8.2 | Panel transitions 180 to 240 ms at most | §8 | P0.7 | P2-AC13 | E2E | Done (P2) |
-| DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Planned |
+| DES-8.3 | Reduced motion supported; control response first | §8 | P0.7 | P2-AC8, P17-AC3, P17-AC9 | E2E | Done (P17) |
 | DES-8.4 | No animation on repeated rows, the seek bar or live times | §8 | P0.7, P6.4, P7.7 | P2-AC13 | E2E | Done (P7, C16) |
-| DES-8.5 | No recurring decorative motion during playback | §8 | P17.8 | P17-AC3 | REV | Planned (D6) |
+| DES-8.5 | No recurring decorative motion during playback | §8 | P17.8 | P17-AC3 | REV | Done (P17, D6) |
 | DES-9.1 | Works offline with no account | §9 | P14.1 | P14-AC1, P14-AC13 | IT | Done (P14) |
 | DES-9.2 | Respects Windows and Linux controls, text scaling and keyboard access | §9 | P4.2, P17.5 | P17-AC2, P17-AC5 | MAN-W, MAN-L | Planned |
 | DES-9.3 | No macOS window buttons in production | §9 | P4.2 | P0-AC2 | MAN-L | Resolved (C9) |
@@ -483,8 +483,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-9.5 | Data paths follow the requirements; no silent profile-path assumptions | §9 | P4.1 | P4-AC4 | IT | Done (P4) |
 | DES-10.1 | Wordmark and icon identifiable at practical sizes | §10 | P1.7 | P1-AC3, P1-AC4 | MAN-L | Done (P1) |
 | DES-10.2 | Icons exported and configured for Windows and Linux | §10 | P1.6, P18.1 | P1-AC2, P18-AC11 | CI, MAN-W, MAN-L | Planned |
-| DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Planned |
-| DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Planned |
+| DES-10.3 | Contrast and focus visibility tested | §10 | P0.15, P17.1, P2.15 | P0-AC5, P17-AC1, P2-AC9, P2-AC14 | UT, E2E | Done (P17) |
+| DES-10.4 | Navigation usable in a narrow window | §10 | P17.4 | P17-AC4 | MAN-L | Done (P17) |
 | DES-10.5 | Semantic theme variables, not copied hex values | §10 | P0.14 | P0-AC6 | UT | Done (P0, D34) |
 | DES-10.6 | No loss of audio, playlist, library, lyric or metadata behavior | §10 | P0.16 | P0-AC1 | CI | Resolved (C1) |
 | DES-10.7 | Offline startup and operation | §10 | P14.1 | P14-AC1, P14-AC13 | IT | Done (P14) |
@@ -514,8 +514,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-2.5 | No copies of third-party character art; flat SVG, no filters or raster | Phase 2.5 | P1.5 | P1-AC1, P1-AC7 | UT, REV | Done (P1) |
 | BRD-3.1 | Tokens map to the styling system as semantic tokens; no scattered hex | Phase 3.1 | P0.6, P0.7, P0.14 | P0-AC6 | UT | Done (P0) |
 | BRD-3.2 | Rename consistently in UI, metadata, READMEs and launchers; leave dependencies alone | Phase 3.2 | P0.4, P1.9, P18.1 | P18-AC11 | MAN-W, MAN-L | Planned |
-| BRD-3.3 | Dark matte UI, restrained red, muted surfaces, legible type | Phase 3.3 | P0.7 | P0-AC5, P17-AC8 | UT, REV | Planned (D10) |
-| BRD-3.4 | Style shell, library and album views, now playing, controls, dialogs, lyrics and art views | Phase 3.4 | P2.10, P6.4, P7.7, P10.3, P13.4 | P2-AC7, P17-AC1 | E2E | Planned |
+| BRD-3.3 | Dark matte UI, restrained red, muted surfaces, legible type | Phase 3.3 | P0.7 | P0-AC5, P17-AC8 | UT, REV | Done (P17, D10) |
+| BRD-3.4 | Style shell, library and album views, now playing, controls, dialogs, lyrics and art views | Phase 3.4 | P2.10, P6.4, P7.7, P10.3, P13.4 | P2-AC7, P17-AC1 | E2E | Done (P17) |
 | BRD-3.5 | Keep navigation, keyboard access, focus, contrast, resizing and reduced motion | Phase 3.5 | P17.1, P17.2, P17.3, P17.4 | P17-AC1, P17-AC2, P17-AC3, P17-AC4 | E2E, MAN-L, MAN-W | Planned |
 | BRD-3.6 | Minimal Magic UI subset only where it helps | Phase 3.6 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | BRD-3.7 | Promo art, invented song data and reference-only menus are not requirements | Phase 3.7 | none | none | REV | Resolved (C9) |
@@ -523,10 +523,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | BRD-3.9 | Keep library parsing, playback, queues, lyrics, metadata, settings and portable offline use working | Phase 3.9 | P0.16 | P0-AC1 | CI | Resolved (C1) |
 | BRD-4.1 | Run format, lint, typecheck, tests and builds | Phase 4.1 | P0.5, P0.16 | P0-AC1 | CI | Done (P0) |
 | BRD-4.2 | Verify SVG syntax, exports, icon sizes and app metadata | Phase 4.2 | P1.5, P1.6, P18.1 | P1-AC1, P1-AC2, P18-AC11 | UT, CI | Planned |
-| BRD-4.3 | Check normal and narrow windows, contrast, state and small-icon legibility | Phase 4.3 | P17.4, P1.7 | P17-AC4, P1-AC3 | MAN-L | Planned |
+| BRD-4.3 | Check normal and narrow windows, contrast, state and small-icon legibility | Phase 4.3 | P17.4, P1.7 | P17-AC4, P1-AC3 | MAN-L | Done (P17) |
 | BRD-4.4 | Two-pass critical self-review; fix confirmed problems only | Phase 4.4 | P0.1 | P0-AC7 | REV | Done (P0) |
 | BRD-4.5 | Validate Windows and Linux artifacts; report checks not performed | Phase 4.5 | P18.7 | P18-AC12 | MAN-W, MAN-L | Planned |
-| BRD-4.6 | Update design.md only for justified implementation differences | Phase 4.6 | P17.9 | P17-AC7 | REV | Planned |
+| BRD-4.6 | Update design.md only for justified implementation differences | Phase 4.6 | P17.9 | P17-AC7 | REV | Done (P17) |
 | BRD-FD1 | Final summary: changes with paths | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
 | BRD-FD2 | Final summary: assets and export sizes | Final deliverable | P18.9 | P18-AC12 | REV | Planned |
 | BRD-FD3 | Final summary: Magic UI components or the reason for none | Final deliverable | P18.9 | P18-AC13 | REV | Planned |

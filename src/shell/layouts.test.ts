@@ -69,8 +69,8 @@ describe("defaultArrangement (P2.4)", () => {
     defaultArrangement(api);
     expect(panels.map((panel) => [panel.id, panel.tabComponent, panel.minimumWidth, panel.minimumHeight])).toEqual([
       ["library", "library", 320, 240],
-      ["nowPlaying", "widget", 240, 88],
-      ["transport", "widget", 320, 88],
+      ["nowPlaying", "widget", 240, 112],
+      ["transport", "widget", 320, 112],
     ]);
   });
 });

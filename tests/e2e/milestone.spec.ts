@@ -1,7 +1,6 @@
 // P3-AC1 (browser part): every widget shows data and each Library mode scrolls its lists.
-import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
-import { closeMenu, expect, openMenu, settle, test, widget } from "./test-base";
+import { closeMenu, expect, expectNoSeriousViolations, openMenu, test, widget } from "./test-base";
 
 async function open(page: Page, measure: string) {
   await page.goto(`/?data=library&measure=${measure}`);
@@ -104,10 +103,5 @@ test("P3: F6 leaves a focused Library list", async ({ page }) => {
 test("P3: axe finds no serious or critical violation with data", async ({ page }) => {
   await open(page, "columns");
   await expect(widget(page, "queue").getByRole("option").first()).toBeVisible();
-  await settle(page);
-  const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations
-    .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
-    .map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
-  expect(serious).toEqual([]);
+  await expectNoSeriousViolations(page);
 });

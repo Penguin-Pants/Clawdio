@@ -115,4 +115,45 @@
     forced-color-adjust: none;
     background-color: CanvasText;
   }
+
+  /* Pressed toggles, the switch and the slider show their state with system colors (P17.6). */
+  [aria-pressed="true"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  [aria-pressed="true"] [data-slot="mask-icon"] {
+    background-color: HighlightText;
+  }
+
+  [data-slot="switch"] {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background-color: Canvas;
+  }
+
+  [data-slot="switch"][data-checked] {
+    background-color: Highlight;
+  }
+
+  [data-slot="switch-thumb"] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+
+  [data-slot="switch"][data-checked] [data-slot="switch-thumb"] {
+    background-color: HighlightText;
+  }
+
+  [data-slot="slider-track"] {
+    forced-color-adjust: none;
+    background-color: GrayText;
+  }
+
+  [data-slot="slider-range"],
+  [data-slot="slider-thumb"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+  }
 }

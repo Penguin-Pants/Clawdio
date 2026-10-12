@@ -73,7 +73,7 @@ function NewPlaylistDialog({ addTracks }: { addTracks?: number[] }) {
           aria-describedby={shown ? messageId : undefined}
           onChange={(event) => setName(event.target.value)}
         />
-        <p id={messageId} role="alert" className="min-h-5 text-[13px] text-text-secondary">
+        <p id={messageId} role="alert" className="min-h-5 text-xs text-text-secondary">
           {shown}
         </p>
         <DialogFooter>

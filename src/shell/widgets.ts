@@ -35,7 +35,7 @@ export const WIDGETS: Record<WidgetId, WidgetDefinition> = {
     title: "Transport controls",
     hideable: true,
     minWidth: 320,
-    minHeight: 88,
+    minHeight: 112,
     component: TransportWidget,
   },
   nowPlaying: {
@@ -43,7 +43,7 @@ export const WIDGETS: Record<WidgetId, WidgetDefinition> = {
     title: "Now playing",
     hideable: true,
     minWidth: 240,
-    minHeight: 88,
+    minHeight: 112,
     component: NowPlayingWidget,
   },
   playlists: {
