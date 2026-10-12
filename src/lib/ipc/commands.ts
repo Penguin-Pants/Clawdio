@@ -10,13 +10,14 @@ import type { PlayerSnapshot } from "./bindings/PlayerSnapshot";
 import type { PlaylistEntry } from "./bindings/PlaylistEntry";
 import type { PlaylistRow } from "./bindings/PlaylistRow";
 import type { QueueSnapshot } from "./bindings/QueueSnapshot";
+import type { ImportReport } from "./bindings/ImportReport";
 import type { RepeatMode } from "./bindings/RepeatMode";
 import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
 import type { SongScope } from "./bindings/SongScope";
 import type { TreeArtist } from "./bindings/TreeArtist";
 
-export type { AlbumRow, ArtistRow, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
+export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
 
 export const commands = {
@@ -47,6 +48,8 @@ export const commands = {
   /** The heart (R26): true when the track is a favorite now. */
   favoriteToggle: (track: number) => invoke<boolean>("favorite_toggle", { track }),
   favorites: () => invoke<number[]>("favorites"),
+  /** "Import playlist" (P12.6): Rust opens the picker. Null when the user cancels. */
+  playlistImport: () => invoke<ImportReport[] | null>("playlist_import"),
   lyricsGet: (track: number) => invoke<Lyrics | null>("lyrics_get", { track }),
   playerPlayList: (ids: number[], start: number) => invoke<void>("player_play_list", { ids, start }),
   playerToggle: () => invoke<void>("player_toggle"),

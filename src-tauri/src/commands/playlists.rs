@@ -3,9 +3,11 @@
 
 use std::path::PathBuf;
 
-use clawdio_core::api::{IpcError, PlaylistEntry, PlaylistRow};
+use clawdio_core::api::{ImportReport, IpcError, PlaylistEntry, PlaylistRow};
+use clawdio_core::import::import_file;
 use clawdio_core::playlist::PlaylistError;
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_dialog::DialogExt;
 
 use super::{lock_error, CommandResult};
 use crate::events::{emit, PLAYLISTS_CHANGED};
@@ -133,4 +135,37 @@ pub fn favorites(
     let set = playlists.0.lock().map_err(|_| lock_error())?;
     let index = library.0.read().map_err(|_| lock_error())?;
     Ok(set.favorite_tracks(&index))
+}
+
+/// "Import playlist" (P12.6): a Rust file picker for `.m3u`, `.m3u8` and `.xml`; each playlist
+/// in the file becomes a new `.m3u8` in `Playlists/`. Matching searches the library only.
+/// Returns the reports, or null when the user cancels. The source file is only read.
+#[tauri::command]
+pub async fn playlist_import(app: AppHandle) -> CommandResult<Option<Vec<ImportReport>>> {
+    let picked = app
+        .dialog()
+        .file()
+        .add_filter("Playlists", &["m3u", "m3u8", "xml"])
+        .blocking_pick_file();
+    let Some(file) = picked.and_then(|path| path.into_path().ok()) else {
+        return Ok(None);
+    };
+    let reports = edit_import(&app, &file)?;
+    Ok(Some(reports))
+}
+
+fn edit_import(app: &AppHandle, file: &std::path::Path) -> CommandResult<Vec<ImportReport>> {
+    let root = root(app)?;
+    let playlists = app.state::<Playlists>();
+    let mut set = playlists.0.lock().map_err(|_| lock_error())?;
+    let library = app.state::<Library>();
+    let index = library.0.read().map_err(|_| lock_error())?;
+    let reports = import_file(&mut set, &root, &index, file).map_err(|error| IpcError {
+        code: "import".into(),
+        message: error.to_string(),
+    });
+    drop(index);
+    drop(set);
+    emit(app, PLAYLISTS_CHANGED, ());
+    reports
 }

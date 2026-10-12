@@ -76,7 +76,7 @@ A phase is Done when all of these are true:
 | P9 | Persistence: state, arrangement and instance | P8 | Done with exceptions |
 | P10 | Local artwork and thumbnails | P9 | Done with exceptions |
 | P11 | Playlists and Favorites | P10 | Done with exceptions |
-| P12 | Playlist import | P11 | Not started |
+| P12 | Playlist import | P11 | Done with exceptions |
 | P13 | Local lyrics | P12 | Not started |
 | P14 | Online lookups and artwork fetch | P13 | Not started |
 | P15 | Lyrics fetch | P14 | Not started |
@@ -739,6 +739,46 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - F2: a playlist made while a scan ran dropped out of the set at the scan's end (`load` now keeps known files that exist; tested). A missing entry's label sent its path, which can be absolute, against D13 (now the `#EXTINF` title or the file name; tested). The P11-AC3 test wrote the old file back before the check (a read-only folder test now runs for non-root users). A line break in a tag split an entry (now a space; tested). The dialog checked names in every folder and create only in `Playlists/` (one check now, with the disk). The D20 filter matched any playlist named "favorites" (now a flag from Rust). Menu keys were labels, which can repeat. The delete dialog named `<name>.m3u8` for files with another extension case (now the file name from Rust).
   - F3: F-18 (letter case on Windows).
   - F4: a scan reload overwriting an edit, lock order, BOM and CRLF, `..` out of the folder, ids across rescans, every copy removed, Unicode case, "CON .mix", the row heart and play from an entry hold.
+
+**Follow-ups:** F-13 to F-18 (open).
+
+---
+
+#### P12. Playlist import (October 12, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `8348415`. Messages start with `P12:`.
+- **Packages:** `plist` 1.10.1 and `encoding_rs` 0.8.42 (section 6.2).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P12-AC1 | Pass | `import/matching.rs`: one test per stage (relative, longest suffix, file name, names), the narrowing of stage 4 to the stage 3 candidates, the ambiguous rule, not found and no location; normalization of drive, UNC, slashes, case and NFD. |
+| P12-AC2 | Pass | `tests/import.rs` with `tests/fixtures/import/`: Apple XML (library `Master`, a `Distinguished Kind` list, one user playlist, a track with no `Location`, `file://localhost/C:/` with `%20` and `%C3%B6`), a MusicBee-style M3U8 (absolute Windows and UNC paths), a legacy Windows-1252 `.m3u`; golden `.m3u8` text and reports. |
+| P12-AC3 | Pass | Each golden test checks the source file is byte-identical after the import. |
+| P12-AC4 | Pass | `parse.rs` and the legacy fixture: "é" from Windows-1252; UTF-8 is tried first. |
+| P12-AC5 | Pass | The streaming track is in the report as "no file location" and not in the file. |
+| P12-AC6 | Not verified (E1) | No owner export reached this session (Q5). Each format stays "not verified". |
+
+**Notes**
+
+- N1: one stage-2 rule needed a choice: the longest shared path end must hold at least a folder and the file name; a file name alone is stage 3.
+- N2: import names follow D21; "..." becomes "_" (".." first, then the edge dots).
+- N3: report labels are "artist - title", the title or the file name, never a path (D13).
+- N4: "Import playlist" opens the Rust picker; the browser e2e mock returns a fixed report.
+
+**Exceptions**
+
+- E1: P12-AC6 and gate B4 need the owner's real exports (Q5: Apple XML, MusicBee M3U8, legacy `.m3u`). None was supplied in this session, so each format stays "not verified" and B4 stays open.
+
+**Blockers:** none for the code. B4 waits for the owner's files.
+
+**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 3. Source: own audit. A reviewer agent's findings follow in the next commit.
+
+- F2: clippy found a complex closure type (now a `Stage` alias) and a `match` that is a `?`. The D21 test expected "Imported playlist" for "..." (the rule gives "_").
+- F4:
+  - Report labels and errors carry no paths (D13).
+  - The source file is only read: each golden test hashes it.
+  - Matching never leaves the library: the candidates are index tracks.
 
 **Follow-ups:** F-13 to F-18 (open).
 

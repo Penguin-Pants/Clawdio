@@ -155,3 +155,26 @@ Example (`Playlists/Road trip.m3u8`):
 ```
 
 `Playlists/Favorites.m3u8` is a normal playlist (R26). The heart adds the song or removes every copy of it; the first use creates the file.
+
+## Playlist import
+
+Source: `crates/clawdio-core/src/import/` (P12, R14). The source file is only read; each playlist in it becomes a new `.m3u8` in `Playlists/`.
+
+| Format | Reading |
+|---|---|
+| `.m3u` | UTF-8 when valid, else Windows-1252. A BOM is removed. |
+| `.m3u8` | UTF-8. |
+| Apple XML (`.xml`) | The export of the Apple Music app or iTunes. Each playlist with no `Master` key and no `Distinguished Kind` key (D22). A track's `Location` URL becomes a path: the host goes and `%xx` is decoded (`file://localhost/C:/A%20B.mp3` gives `C:/A B.mp3`). A track with no `Location` goes to the report only. |
+
+Matching runs on normalized paths: backslashes become slashes, a drive letter or UNC prefix goes, the text is NFC normalized and compared without case. The stages, in order:
+
+1. Relative to the playlist file, inside the music folder (M3U family only).
+2. The longest path end shared with a library track (at least a folder and the file name).
+3. The file name.
+4. The title, plus the artist and album the source has (`#EXTINF` "artist - title", or the Apple fields), compared like search (D4).
+
+A stage with one hit matches. A stage with more than one hit passes only those to the next stage. More than one after the last stage is "ambiguous".
+
+Output: matched entries are written like an app playlist. Unmatched entries keep their entry text (for Apple XML, the decoded path) and `#EXTINF` text, and show as missing. The new name comes from the file name or the Apple playlist name by D21: forbidden characters become `_`, edge spaces and dots go, a reserved name gets ` (imported)`, a taken name gets ` (2)`, ` (3)` and so on.
+
+The report lists, per new playlist, the matched count and each missing entry with its reason: not found, more than one match, or no file location. Report labels are titles or file names, not paths (D13).

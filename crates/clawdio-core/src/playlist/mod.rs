@@ -267,11 +267,27 @@ impl PlaylistSet {
 
     /// Creates `Playlists/<name>.m3u8` (R12, R13). It never replaces a file on disk.
     pub fn create(&mut self, root: &Path, name: &str) -> Result<u32, PlaylistError> {
+        self.create_with(root, name, Vec::new())
+    }
+
+    /// Creates `Playlists/<name>.m3u8` with `entries` (an import, P12.4).
+    pub fn create_with(
+        &mut self,
+        root: &Path,
+        name: &str,
+        entries: Vec<Entry>,
+    ) -> Result<u32, PlaylistError> {
         self.check_name(root, name)?;
-        let playlist = self.new_playlist(name);
+        let mut playlist = self.new_playlist(name);
+        playlist.entries = entries;
         let id = playlist.id;
         self.commit(root, playlist)?;
         Ok(id)
+    }
+
+    /// The path a new playlist of this name gets.
+    pub fn new_path(name: &str) -> String {
+        format!("{PLAYLISTS_FOLDER}/{name}.m3u8")
     }
 
     fn entry_for(playlist: &Playlist, track: TrackId, index: &LibraryIndex) -> Option<Entry> {

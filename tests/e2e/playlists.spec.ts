@@ -142,3 +142,14 @@ test("R12: Delete playlist asks first and names the file", async ({ page }) => {
   await dialog.getByRole("button", { name: "Delete" }).click();
   await expect(tree(page).getByRole("treeitem", { name: /Mix 5/ })).toHaveCount(0);
 });
+
+test("P12.5: Import playlist shows the matched and missing report", async ({ page }) => {
+  await openPlaylists(page);
+  await widget(page, "playlists").getByRole("button", { name: "Import playlist" }).click();
+  const dialog = page.getByRole("dialog", { name: "Import report" });
+  await expect(dialog).toContainText("1 matched, 2 missing");
+  await expect(dialog).toContainText("Cloud Band - Streaming Song: no file location");
+  await expect(dialog).toContainText("Lost Song: not found");
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toBeVisible();
+});

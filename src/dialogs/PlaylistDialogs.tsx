@@ -9,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { commands } from "@/lib/ipc/commands";
+import { commands, type ImportReport } from "@/lib/ipc/commands";
+import type { MissingReason } from "@/lib/ipc/bindings/MissingReason";
 import { addToPlaylist, playlistEdit } from "@/store/playlists";
 import { type AppDialog, useUiStore } from "@/store/ui";
 
@@ -131,6 +132,54 @@ function ErrorDialog({ text }: { text: string }) {
   );
 }
 
+const REASONS: Record<MissingReason, string> = {
+  notFound: "not found",
+  ambiguous: "more than one match",
+  noLocation: "no file location",
+};
+
+/**
+ * The import report (P12.5): per new playlist, the matched count, then each missing entry and
+ * why. Entries with no file location are in the report only.
+ */
+function ImportReportDialog({ reports }: { reports: ImportReport[] }) {
+  const close = useUiStore((state) => state.closeDialog);
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Import report</DialogTitle>
+        <DialogDescription>
+          {reports.length === 0
+            ? "The file holds no playlist to import."
+            : `${reports.length === 1 ? "One playlist" : `${reports.length} playlists`} imported. Missing songs stay in the file and show as missing.`}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex max-h-80 flex-col gap-3 overflow-auto text-sm">
+        {reports.map((report) => (
+          <section key={report.playlist} aria-label={report.playlist}>
+            <h3 className="font-medium">{report.playlist}</h3>
+            <p className="text-text-secondary">
+              {report.matched} matched, {report.missing.length} missing
+            </p>
+            {report.missing.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-text-secondary">
+                {report.missing.map((entry, index) => (
+                  <li key={index}>
+                    {entry.label}: {REASONS[entry.reason]}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
+      </div>
+      <DialogFooter>
+        <Button onClick={close}>OK</Button>
+      </DialogFooter>
+    </>
+  );
+}
+
 function Body({ dialog }: { dialog: AppDialog }) {
   switch (dialog.kind) {
     case "newPlaylist":
@@ -139,6 +188,8 @@ function Body({ dialog }: { dialog: AppDialog }) {
       return <DeletePlaylistDialog id={dialog.id} fileName={dialog.fileName} />;
     case "error":
       return <ErrorDialog text={dialog.text} />;
+    case "importReport":
+      return <ImportReportDialog reports={dialog.reports} />;
   }
 }
 

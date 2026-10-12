@@ -556,9 +556,11 @@ dependencies = [
 name = "clawdio-core"
 version = "0.1.0"
 dependencies = [
+ "encoding_rs",
  "image",
  "lofty",
  "log",
+ "plist",
  "rusqlite",
  "serde",
  "serde_json",

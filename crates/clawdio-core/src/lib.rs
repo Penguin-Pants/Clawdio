@@ -8,6 +8,7 @@ pub mod cache;
 pub mod config;
 pub mod error;
 pub mod fold;
+pub mod import;
 pub mod layout;
 pub mod library;
 pub mod paths;

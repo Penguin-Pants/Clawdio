@@ -5,7 +5,7 @@ import { VirtualList } from "@/components/virtual-list";
 import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
-import { playlistEdit, usePlaylistsStore } from "@/store/playlists";
+import { errorText, playlistEdit, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
 import { EmptyHint } from "../hint";
 import { ROW_HEIGHT, Row, SongCells } from "../library/rows";
@@ -49,6 +49,17 @@ export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number
 async function play(id: number, from = 0) {
   const queue = playlistQueue(await commands.playlistEntries(id), from);
   if (queue) await commands.playerPlayList(queue.ids, queue.start);
+}
+
+/** "Import playlist" (P12.6): the picker and the import run in Rust; then the report shows. */
+function importPlaylist() {
+  void commands.playlistImport().then(
+    (reports) => {
+      if (reports) useUiStore.getState().openDialog({ kind: "importReport", reports });
+    },
+    (error: unknown) =>
+      useUiStore.getState().openDialog({ kind: "error", text: errorText(error, "Cannot import the playlist") }),
+  );
 }
 
 function removeEntry(id: number, index: number) {
@@ -171,8 +182,7 @@ export function PlaylistsWidget() {
       <Button variant="ghost" size="xs" onClick={() => openDialog({ kind: "newPlaylist" })}>
         New playlist
       </Button>
-      {/* P12 wires Import. */}
-      <Button variant="ghost" size="xs" disabled>
+      <Button variant="ghost" size="xs" onClick={importPlaylist}>
         Import playlist
       </Button>
     </div>

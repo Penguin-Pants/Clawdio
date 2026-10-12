@@ -24,7 +24,7 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 301 | 135 | 96 | 17 | 5 | 6 | 42 | 0 |
+| Requirements | 301 | 146 | 86 | 16 | 5 | 6 | 42 | 0 |
 | design.md | 76 | 39 | 18 | 8 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 17 | 13 | 3 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 13 | 3 | 1 | 1 | 0 | 0 | 0 |
@@ -202,17 +202,17 @@
 | R13-5 | Writes use a temp file, then a rename | §2 R13 | P11.1 | P11-AC3 | IT | Done (P11) |
 | R13-6 | Startup finds `.m3u8` files anywhere; entries resolve relative to the file; other playlist files not listed | §2 R13 | P11.2 | P11-AC6 | IT | Done (P11) |
 | R13-7 | Rescan never edits playlists | §2 R13 | P11.2 | P11-AC7 | IT | Done (P11) |
-| R14-1 | Import M3U, M3U8 and Apple XML; PLS, XSPF and Apple text deferred | §2 R14 | P12.1 | P12-AC2 | IT | Planned |
-| R14-2 | Writes a new `.m3u8` in `Playlists/`; the original stays untouched | §2 R14 | P12.4 | P12-AC3 | IT | Planned (D21) |
+| R14-1 | Import M3U, M3U8 and Apple XML; PLS, XSPF and Apple text deferred | §2 R14 | P12.1 | P12-AC2 | IT | Done (P12) |
+| R14-2 | Writes a new `.m3u8` in `Playlists/`; the original stays untouched | §2 R14 | P12.4 | P12-AC3 | IT | Done (P12, D21) |
 | R14-3 | Apple XML is the Apple Music or iTunes playlist export | §2 R14 | P12.1 | P12-AC2, P12-AC6 | IT | Planned (D22) |
-| R14-4 | Matching order: relative, longest suffix, file name, name plus artist plus album | §2 R14 | P12.3 | P12-AC1 | UT | Planned |
-| R14-5 | Path normalization before matching | §2 R14 | P12.2 | P12-AC1 | UT | Planned |
-| R14-6 | Each stage must yield one track; narrowing; ambiguous entries stay missing | §2 R14 | P12.3 | P12-AC1 | UT | Planned |
-| R14-7 | Apple XML `file://` locations become paths | §2 R14 | P12.1 | P12-AC2 | UT | Planned |
-| R14-8 | Unmatched entries stay as missing and appear in a report | §2 R14 | P12.4, P12.5 | P12-AC2 | IT, E2E | Planned |
-| R14-9 | Tracks with no file location appear in the report only | §2 R14 | P12.1 | P12-AC5 | UT | Planned |
-| R14-10 | M3U8 is UTF-8; legacy `.m3u` UTF-8, then Windows-1252 | §2 R14 | P12.1 | P12-AC4 | UT | Planned |
-| R14-11 | Entry point is a file picker; matching searches the library only | §2 R14 | P12.6 | P12-AC2 | E2E | Planned |
+| R14-4 | Matching order: relative, longest suffix, file name, name plus artist plus album | §2 R14 | P12.3 | P12-AC1 | UT | Done (P12) |
+| R14-5 | Path normalization before matching | §2 R14 | P12.2 | P12-AC1 | UT | Done (P12) |
+| R14-6 | Each stage must yield one track; narrowing; ambiguous entries stay missing | §2 R14 | P12.3 | P12-AC1 | UT | Done (P12) |
+| R14-7 | Apple XML `file://` locations become paths | §2 R14 | P12.1 | P12-AC2 | UT | Done (P12) |
+| R14-8 | Unmatched entries stay as missing and appear in a report | §2 R14 | P12.4, P12.5 | P12-AC2 | IT, E2E | Done (P12) |
+| R14-9 | Tracks with no file location appear in the report only | §2 R14 | P12.1 | P12-AC5 | UT | Done (P12) |
+| R14-10 | M3U8 is UTF-8; legacy `.m3u` UTF-8, then Windows-1252 | §2 R14 | P12.1 | P12-AC4 | UT | Done (P12) |
+| R14-11 | Entry point is a file picker; matching searches the library only | §2 R14 | P12.6 | P12-AC2 | E2E | Done (P12) |
 | R14-12 | Verify that MusicBee exports M3U8 | §2 R14 | P12.7 | P12-AC6 | MAN-W | Gate (B4) |
 | R26-1 | Heart on Now playing and on song rows toggles the song in `Playlists/Favorites.m3u8` | §2 R26 | P11.7 | P11-AC5 | IT, E2E | Done (P11, D23) |
 | R26-2 | Favorites file created on first use; a normal playlist in the widget | §2 R26 | P11.7 | P11-AC5 | IT | Done (P11) |
@@ -364,7 +364,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-1 | Docking shell stays; design.md §5 rewrite (done in the repo before planning) | §8.1 | P2.1 | P2-AC1 | E2E | Done (P2) |
 | DEC-2 | Online lookups off by default with a first-run choice | §8.2 | P4.6 | P4-AC1 | E2E | Done (P4) |
 | DEC-3 | Metadata fill kept | §8.3 | P16.2 | P16-AC3 | IT | Planned |
-| DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Planned |
+| DEC-4 | Import formats M3U, M3U8, Apple XML | §8.4 | P12.1 | P12-AC2 | IT | Done (P12) |
 | DEC-5 | User theme deferred; build compiles `theme/tokens.json` | §8.5 | P0.6 | P0-AC3 | UT | Done (P0) |
 | DEC-6 | Named layouts deferred; built-ins and auto-save stay | §8.6 | P2.4, P9.3 | P9-AC2 | E2E | Done (P9) |
 | DEC-7 | Tabbed groups allowed | §8.7 | P2.1 | P9-AC3 | E2E | Done (P9) |

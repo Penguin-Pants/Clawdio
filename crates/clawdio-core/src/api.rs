@@ -165,6 +165,37 @@ pub struct PlaylistRow {
     pub is_favorites: bool,
 }
 
+/// Why an imported entry is missing (P12.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MissingReason {
+    NotFound,
+    Ambiguous,
+    /// A track with no file location (Apple XML): in the report only, not in the file.
+    NoLocation,
+}
+
+/// A missing entry in an import report. The label is a title or a file name, not a path (D13).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MissingImport {
+    pub label: String,
+    pub reason: MissingReason,
+}
+
+/// The report of one imported playlist (P12.5).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ImportReport {
+    /// The name of the new playlist.
+    pub playlist: String,
+    pub matched: u32,
+    pub missing: Vec<MissingImport>,
+}
+
 /// A playlist entry: a library track, or a missing file shown by its label (R13).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]

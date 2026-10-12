@@ -85,6 +85,29 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
       return !had;
     },
     favorites: () => favorites()?.entries.flatMap((entry) => (entry.track === null ? [] : [entry.track])) ?? [],
+    // The Rust picker is not in the browser: the mock imports one fixed playlist (P12.5).
+    playlist_import: () => {
+      lists.push({
+        id: nextId,
+        name: "Road Trip_ 2026",
+        entries: [
+          { track: 0, label: "" },
+          { track: null, label: "Lost Song" },
+        ],
+      });
+      nextId += 1;
+      changed();
+      return [
+        {
+          playlist: "Road Trip_ 2026",
+          matched: 1,
+          missing: [
+            { label: "Cloud Band - Streaming Song", reason: "noLocation" },
+            { label: "Lost Song", reason: "notFound" },
+          ],
+        },
+      ];
+    },
   };
   /** Handles a playlist command, or returns undefined for other commands. */
   return (command: string, args: Args): unknown => {
