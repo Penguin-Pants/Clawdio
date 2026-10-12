@@ -1,11 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.5, October 11, 2026.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 and 1.5.
+**Status:** Decision-complete. Version 1.6, October 12, 2026.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4, 1.5 and 1.6.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
-- `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
+- `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 27 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
 ---
@@ -20,6 +20,8 @@ The closest open source player (Strawberry) has many features the owner does not
 - The UI is made of widgets. The user docks, resizes, hides and shows them. Three built-in layouts exist. `(v1.4)`
 - It adds artwork, lyrics and missing metadata.
 - It keeps playlists as portable files.
+- It imports many playlists at once and finds their songs in the library, also when the source names another format of the song. `(v1.6)`
+- It lowers or pauses the music while another app uses the microphone (Windows). `(v1.6)`
 - It takes its theme from one token file in the repo (`theme/tokens.json`), compiled at build time. `(v1.4)`
 - The music folder holds all music-related user data: playlists, Favorites, artwork, lyrics and sidecars. Per-machine settings, the widget arrangement, playback state, cache and logs live in the OS config directory, or next to the executable in portable mode (R18). `(v1.5)`
 
@@ -164,7 +166,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - The file name is the playlist name.
   - Writes use a temp file, then a rename.
   - Startup finds `.m3u8` files anywhere in the folder. `(v1.5)` Entries resolve relative to the playlist file. Other playlist files (`.m3u`, `.pls`) are not listed; use Import.
-  - Rescan never edits playlists.
+  - Rescan never edits playlists. `(v1.6)` Only import (R14, R32) and the user command "Find missing songs" (R33) write matches.
 - **R14 (v1.4).** Import M3U, M3U8 and Apple XML. PLS, XSPF and Apple text are deferred (section 7).
   - The app writes a new `.m3u8` in `Playlists/`. The original file stays untouched.
   - Apple XML is the playlist export from the Apple Music app or iTunes. `[D]`
@@ -175,10 +177,35 @@ The closest open source player (Strawberry) has many features the owner does not
   - Unmatched entries stay in the file as "missing" and appear in an import report.
   - `[D]` A track with no file location (for example a streaming-only track) appears in the import report only. The app does not write it to the `.m3u8`.
   - Encodings: M3U8 is UTF-8. Legacy `.m3u` reads as UTF-8 first, then Windows-1252. `[D]`
-  - `[D]` Entry point: a file picker. Matching searches only inside the library.
+  - `[D]` Entry point: a file picker. Matching searches only inside the library. `(v1.6)` The picker accepts more than one file, and a folder import exists (R32).
+  - `(v1.6)` Stages 1 and 2 can also match a song with another extension (R33.2).
   - Assumption to verify: MusicBee exports M3U8. Test in the owner's version.
+- **R32 (v1.6).** Bulk playlist import.
+  - The Import picker accepts more than one file. A second command, "Import folder", takes one folder. Both dialogs run in Rust.
+  - A folder import reads every `.m3u`, `.m3u8` and `.xml` file in the folder and in all its subfolders. The extension comparison ignores case.
+  - Name rule for every import, also a single file: when a playlist with the same name exists (ignoring case), the app skips the source and reports it as "skipped, name exists". It does not create "Name (2)" for an existing playlist. A source named "Favorites" still gets " (imported)".
+  - Two sources in one import with the same name both import. The second gets " (2)", the third " (3)" and so on.
+  - One combined report lists each source playlist as imported (matched count, then each missing entry with its reason), skipped (name exists) or failed (with the reason). Labels are file or playlist names, never paths.
+  - `[D]` While the import runs, the UI shows a busy state. There is no cancel. Each playlist is written when it is ready, so a crash keeps the playlists that were already written.
+- **R33 (v1.6).** Matching repair and "Find missing songs".
+  - **R33.1 Rescan first.** Import (R14, R32) and "Find missing songs" first run the normal incremental scan, then match. If a scan is running, they wait for it to end.
+  - **R33.2 Other extension.** Stage 1 (relative to the playlist file) and stage 2 (longest path suffix) can match a library song whose extension differs from the entry. The folder part and the file name without extension must match. Example: `Artist/Album/Song.m4a` matches `Artist/Album/Song.mp3`. Within a stage, a hit with the same extension wins over hits with another extension. Stage 3 (file name only) still needs the same extension. The other R14 rules stay, including the narrowing and the "more than one match" rule.
+  - **R33.3 Command.** "Find missing songs" runs on one playlist that has missing entries, including Favorites and `.m3u8` files found anywhere in the music folder. `[D]` A second command, "Find missing songs in all playlists", runs it on each playlist that has missing entries.
+  - **R33.4 Write rule.** Each missing entry goes through the R14 stages with its path text and its `#EXTINF` artist and title. A unique match replaces the entry at the same position: the path (relative to the playlist file) and the `#EXTINF` line. Entries with no match or more than one match stay unchanged. The write is atomic (R13). A playlist with no change is not written.
+  - **R33.5 Report.** The report lists, per playlist, the number of fixed entries and each entry that is still missing, with its reason (not found or more than one match). Labels are titles or file names, never paths.
 - **R26 (v1.2).** Favorites. A heart button on the Now playing widget and on song rows adds or removes the song in `Playlists/Favorites.m3u8`.
   - `[D]` The app creates the file on first use. It is a normal playlist and appears in the Playlists widget.
+
+### Microphone ducking
+
+- **R34 (v1.6).** Lower or pause the music while another app uses a microphone. Windows only in this version.
+  - **R34.1 Setting.** Settings has "When the microphone is in use" with three values: Off, Lower volume and Pause. `[D]` The default is Off.
+  - **R34.2 Trigger.** The trigger is any other app that records from a microphone, for example a dictation tool (Handy) or a call (Google Meet, Slack, WhatsApp, Signal). The app never opens a microphone itself and never measures sound level. Detection does not depend on the name of an app.
+  - **R34.3 Lower volume.** The output volume becomes a set percentage of the user's current volume. The percentage is adjustable in Settings. Default 20%. `[D]` Range 5% to 90%, steps of 5%. Example: volume 60 with 20% plays at 12.
+  - **R34.4 Pause.** Playback pauses. When the microphone is free again, playback resumes only if the duck caused the pause.
+  - **R34.5 Timing.** `[D]` The volume fades down in about 150 ms. When the microphone is free, the app waits a fixed time of about 1 s, then fades the volume back up in about 500 ms (Lower volume) or resumes with a fade in (Pause). If the microphone starts again during the wait, the duck stays. There is no setting for the wait.
+  - **R34.6 User volume.** `[D]` The volume control and the saved volume (R27) always show the user's own volume, never the ducked value. A volume change during a duck sets the user's volume, and the duck applies to the new value.
+  - **R34.7 Linux.** The setting shows as unavailable with the note "Windows only".
 
 ### Theme
 
@@ -216,6 +243,9 @@ The closest open source player (Strawberry) has many features the owner does not
 - MusicBee and Apple Music are example playlist sources. R14 lists the formats.
 - "Any system" means Windows and Linux only.
 - "All the basics" is defined by R5, R6, R24, R25, R26 and R27.
+- "Twenty percent" is the default duck level (R34.3). It is not a fixed value. `(v1.6)`
+- Handy, Google Meet, Slack, WhatsApp and Signal are examples of microphone users (R34.2). Detection must work for any app. `(v1.6)`
+- "Automatically scan the music library" means rescan, then match (R33.1). Matching against the library already existed (R14). `(v1.6)`
 
 ---
 
@@ -234,6 +264,11 @@ These are out under the owner's "few features" rule.
 - Smart playlists, ratings and play counts. `[D]`
 - Floating panels and pop-out windows (not selected for v1). `(v1.4)` Tabbed groups are allowed (R29).
 - Per-view layout overrides. `[D]`
+- Playback of `.m4a`, `.flac` or other formats to make a playlist entry play (R33.2 finds another format of the song only). `(v1.6)`
+- Fuzzy or typo-tolerant matching of titles and file names. `(v1.6)`
+- Opening the microphone or measuring its sound level (R34.2). `(v1.6)`
+- Automatic repair of playlists on Rescan (R13). `(v1.6)`
+- Replacing an existing playlist on import (R32). `(v1.6)`
 
 ---
 
@@ -267,6 +302,13 @@ These are out under the owner's "few features" rule.
 - **Second app launch `[D]`:** focus the running instance. Do not start a second one.
 - **Closing the window `[D]`:** quits the app. Media keys work only while the app runs.
 - **Folder edited while the app runs:** changes appear after Rescan or restart.
+- **Folder import with other files `(v1.6)`:** an `.xml` file that is not an Apple Music playlist export, or an unreadable file, shows as failed in the report. The other files still import.
+- **Same song in two other formats `(v1.6)`:** an entry `Song.m4a` with `Song.mp3` and `Song.ogg` in the same folder gives two hits. The R14 narrowing applies; if the last stage still has more than one, the reason is "more than one match".
+- **Find missing songs on a read-only folder `(v1.6)`:** the app shows the error and writes nothing.
+- **A tool that keeps the microphone open `(v1.6)`:** the music stays ducked while the tool runs. Example: the Handy setting "Always-On Microphone" (off by default). The Settings help text names this case.
+- **Microphone in use while playback is stopped or paused by the user `(v1.6)`:** nothing happens. A later Play plays at the ducked volume (Lower volume) or plays normally until the next microphone start (Pause).
+- **Play pressed during a Pause duck `(v1.6)`:** playback continues. The app does not pause again until the microphone is free and then starts again.
+- **Track change, seek or queue edit during a duck `(v1.6)`:** the duck stays.
 
 ---
 
@@ -278,7 +320,8 @@ These are out under the owner's "few features" rule.
 - **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no named layouts, no floating panels, no pop-out windows and no layout import or export in v1. `(v1.4)` Adding any of these needs an owner decision.
 - **Audio engine `[D] (v1.5)`:** rodio pinned to a release, Symphonia with the `mp3` feature, lofty for tags. Design it so gapless playback can be added later (decode the next track ahead of time). Gapless is not in v1.
 - **License `(v1.5)`:** MIT application. Symphonia is MPL-2.0. The AppImage bundles WebKitGTK and GTK (LGPL). Each release ships the license texts of bundled and linked third-party components and states, per component, the exact version and where its source is available. This covers Symphonia in every build and the LGPL libraries bundled in the AppImage. The repo keeps this list in a NOTICE file. Strawberry is GPL-3.0, so do not copy its code into an MIT project.
-- **Platforms:** Windows and Linux (R22).
+- **Platforms:** Windows and Linux (R22). `(v1.6)` Exception: microphone ducking (R34) is Windows only in this version.
+- **Microphone privacy `(v1.6)`:** the app reads only whether another app uses a microphone. It never records audio and never logs app names.
 - **Formats:** mp3, ogg (Vorbis) and wav.
 - **Source of truth:** the music folder.
 - **Audio files:** never modified.
@@ -307,6 +350,10 @@ These are out under the owner's "few features" rule.
 - Accessibility work beyond platform defaults and R25.
 - Multiple music folders (likely the first growth request).
 - Light theme variant of the brand tokens.
+- Microphone ducking on Linux (PipeWire and PulseAudio). `(v1.6)`
+- An exclusion list of apps that do not trigger ducking. `(v1.6)`
+- Picking the right song by hand for a "more than one match" entry. `(v1.6)`
+- An adjustable wait time before the music comes back (R34.5). `(v1.6)`
 
 ---
 
@@ -336,7 +383,23 @@ Version 1.5 applies section G of the requirements review (`docs/REQUIREMENTS_REV
 
 Defaults applied without a decision, changeable: three consecutive decode failures stop playback (R6); the sidecar file is `sidecar.json` (R10); acceptance check 2 uses a 100 ms redraw limit.
 
-Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, and the R20 Milestone 0 outcome.
+Version 1.6 adds bulk import, missing-song repair and microphone ducking, with these owner decisions made on October 12, 2026:
+
+17. **Bulk import (R32):** several files or one folder, with all subfolders.
+18. **Name rule (R32):** an existing name is skipped for every import. Names that repeat inside one import get " (2)".
+19. **Matching (R33.2):** another extension matches when the folder and the file name without extension match.
+20. **Repair (R33.3):** a "Find missing songs" command on existing playlists, not an automatic repair on Rescan.
+21. **Repair writes (R33.4):** unique matches are written, then a report. No preview.
+22. **Rescan first (R33.1):** import and repair run the incremental scan first.
+23. **Ducking trigger (R34.2):** another app records from a microphone. The app never opens the microphone.
+24. **Ducking platform (R34):** Windows first. Linux is deferred.
+25. **Duck level (R34.3):** a percentage of the current volume, default 20%.
+26. **Resume (R34.5):** a short fixed wait, then a fade. No setting for the wait.
+27. **Ducking modes (R34.1):** the user picks Lower volume or Pause.
+
+The owner reported that most missing songs in imports had the reason "not found" and that some sources name `.m4a` or `.flac` files. R33.2 addresses this.
+
+Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
 
@@ -363,6 +426,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 19. **Decode error `(v1.5)`:** a corrupt file in the queue is skipped with a status message. Playback continues.
 20. **First run `(v1.5)`:** first run shows the folder prompt. After choosing a folder, the user can play a song before the scan ends.
 21. **Embedded lyrics `(v1.5)`:** a song with ID3 USLT lyrics and no lyric file shows the embedded lyrics.
+22. **Bulk import and repair `(v1.6)`:** a folder with the owner's playlists imports in one action. Entries that name `.m4a` or `.flac` files match the `.mp3` copies in the same album folders. "Find missing songs" fixes such entries in playlists imported before.
+23. **Microphone ducking `(v1.6)`:** on Windows, with Lower volume at 20%, the music drops while Handy records and comes back about 1 s after it stops. With Pause, the music pauses and resumes. The same works during a call in one call app.
+24. **No microphone access `(v1.6)`:** after a ducking test, the Windows microphone privacy settings list no microphone use by the app.
 
 ---
 
@@ -384,6 +450,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.6 (October 12, 2026):** bulk import, missing-song repair and microphone ducking, with owner decisions 17 to 27 (section 8).
+  - **Added:** R32, R33, R34, outcome bullets (section 1), preferences (section 3), five non-goals, seven edge cases, platform and privacy constraints (section 6), four deferred ideas, acceptance checks 22 to 24.
+  - **Changed:** R13 (only import and "Find missing songs" write matches), R14 (multi-file picker, folder import, other extension).
 - **1.5 (October 11, 2026):** section G of the requirements review applied, with owner decisions 9 to 16 (section 8).
   - **Added:** R1.1 first run, R18.1 portable mode, WAV encodings (R1), scan rules (R2), sort order and multi-disc order (R3, R4), playback semantics and queue edits (R6), OS command set (R24), Delete key (R25), relative paths (R19, R27), artwork match and writability rules (R8), lyrics source order with embedded lyrics (R9), sidecar name (R10), playlist name rule and duplicates (R12), import normalization and unique-match rule (R14), Linux baseline and WebView2 prerequisite (R22), portable zip (R21), five edge cases, acceptance checks 17 to 21.
   - **Changed:** Search moved into the Library header (R5, R28, R29, R25). Scan report reduced to counts plus log (R2). Lookup pause removed (R5, R8). Audio device case softened (section 5, check 10). Audio engine and license constraints (section 6). Checks 2 and 13.

@@ -1,13 +1,13 @@
 # Clawdio Build Plan
 
-**Version:** 1.11, October 11, 2026 (owner decision on D41, section 13).
+**Version:** 1.13, October 12, 2026 (requirements v1.6: phases P19 and P20, section 13).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it.
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - The repository holds documents, brand inputs and the owner's `AGENTS.md`. No code or tests exist yet.
-- The plan has 19 phases (P0 to P18). P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- The plan has 21 phases (P0 to P20). P19 and P20 come from requirements v1.6. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - No genuine blocker stops P0. Owner inputs are in section 5.3 and gates in section 5.4. The owner signed off the brand (Q6) after P1.
 
@@ -83,6 +83,8 @@ A phase is Done when all of these are true:
 | P16 | Metadata fill | P15 | Done |
 | P17 | UI quality audit | P16 | Done with exceptions |
 | P18 | Release readiness | P17, gate B3 closed | In progress |
+| P19 | Bulk import and missing-song repair | P18 | Not started |
+| P20 | Microphone ducking (Windows) | P19 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1224,7 +1226,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D18 | A transient status message shows for 5 s, then the line returns to "Ready" or the running job. | R5 status line. |
 | D19 | "Set cover" over an existing `cover.jpg` asks for confirmation, then replaces it atomically. | C17. R8's "never overwrites" applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | D20 | The "Add to playlist" submenu lists all playlists except Favorites, so only the heart adds to Favorites and Favorites never holds duplicates. "Remove from playlist" and Delete work on Favorites entries like on any playlist. The name "Favorites" is reserved in any letter case. | R12 (Favorites toggles), R25 (Delete in a playlist), R26 (a normal playlist). |
-| D21 | A new playlist name that matches an existing file (ignoring case) is rejected with a message. Import names: each forbidden character becomes "_", leading and trailing spaces and dots are removed, a reserved name gets " (imported)" and a taken name gets " (2)", " (3)" and so on. | R12 rule applied to R14 output names. |
+| D21 | A new playlist name that matches an existing file (ignoring case) is rejected with a message. Import names: each forbidden character becomes "_", leading and trailing spaces and dots are removed, a reserved name gets " (imported)" and a taken name gets " (2)", " (3)" and so on. From P19, D51 replaces the taken-name part for imports. | R12 rule applied to R14 output names. |
 | D22 | Apple XML: import each playlist in the file that has no `Master` key and no `Distinguished Kind` key. One `.m3u8` per playlist. | R14. Library-wide system playlists are not user playlists. |
 | D23 | Heart buttons on song rows are pointer targets (`tabIndex = -1`). Keyboard users use the Now playing heart. | Section 7 defers accessibility work beyond platform defaults and R25. Buttons inside listbox options break the listbox pattern. |
 | D24 | Enter on a playlist row plays the playlist, like a double-click. | R25 Enter rule and R12 double-click rule. |
@@ -1254,6 +1256,8 @@ The sources leave these details open. The owner may change any of them. Section 
 | D48 | Tauri's CSP nonce injection stays on. If a release build reports a `style-src` violation, add `dangerousDisableAssetCspModification: ["style-src"]` and record it. The e2e suite serves the section 6.13 CSP and fails on any violation. | A nonce makes browsers ignore `'unsafe-inline'`. Inline styles from libraries must not break silently. |
 | D49 | Milestone 0 over 300 MB on an OS: that OS's worst value becomes its memory target, and the build continues. No stop. An OS at or under 300 MB keeps the 200 MB target. | Owner answer to B2, October 11, 2026. R20 calls the targets adjustable. This replaces the R20 `[D]` stop rule. |
 | D50 | Linux only: the app sets `WEBKIT_DISABLE_COMPOSITING_MODE=1` and `WEBKIT_DISABLE_DMABUF_RENDERER=1` before GTK starts (a value the user set wins), limits glibc to two malloc arenas and trims the heap after each scan (`src-tauri/src/linux_memory.rs`). | Owner asked for a Linux memory reduction (B9, October 12, 2026). Measured worst mode: 519 MB to 298 MB (container), 450 MB to 294 MB (CI VM); input latency did not get worse (max 24 ms against 64 ms). |
+| D51 | Import name rule (R32): a source whose cleaned name matches an existing playlist (ignoring case) is skipped and reported. Inside one import, a name that an earlier source of the same import took gets " (2)", " (3)" and so on. The reserved-name rule of D21 stays. | Owner decisions 17 and 18 (requirements v1.6). A repeat import must not duplicate playlists. |
+| D52 | Duck timing (R34.5): fade down 150 ms, wait 1 s after the microphone is free, fade up 500 ms. Fades are linear on the output gain. Pause mode resumes with the same 500 ms fade in. The values are constants, not settings. | Owner decision 26 (short fixed wait, then a fade). R34.5 gives "about" values. |
 
 ### 5.3 Owner confirmations
 
@@ -1624,6 +1628,7 @@ P0 foundation -> P1 brand assets -> P2 themed shell -> P3 GATE (Milestone 0)
   -> P11 playlists -> P12 import -> P13 local lyrics
   -> P14 online and artwork fetch -> P15 lyrics fetch -> P16 metadata fill
   -> P17 UI quality audit -> P18 release readiness
+  -> P19 bulk import and repair -> P20 microphone ducking
 ```
 
 - **Brand and design early.** Tokens and focus styles come in P0, brand assets in P1 and the themed shell in P2. Every later widget is built on them. P17 is an audit of what exists, not a styling pass.
@@ -2443,6 +2448,68 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 ---
 
+### P19. Bulk import and missing-song repair
+
+**Objective.** Import many playlists in one action, match songs stored in another format and repair playlists that hold missing entries.
+
+**Scope.** R32. R33. R13 (v1.6 note). R14 (v1.6 items). Requirements section 5 (v1.6 import cases). AC-22. D51.
+
+**Depends on.** P18.
+
+**Tasks.**
+
+- **P19.1** Matching (R33.2) in `import/matching.rs`: index each track also by its file name without extension. Stage 1 and stage 2 first look for hits with the same extension; with none, they look for hits with the same folder part and file name without extension. Stage 3 is unchanged.
+- **P19.2** Name rule (D51) in `playlist/name.rs` and `import/mod.rs`: skip a source whose name exists; number names that repeat inside one import. `ImportReport` gets a status: imported, skipped or failed (`ts-rs` bindings).
+- **P19.3** Batch import (R32): `playlist_import` uses a multi-file picker. A new `playlist_import_folder` command opens a Rust folder picker and walks the folder and all subfolders for `.m3u`, `.m3u8` and `.xml` (extension without case). Sources import in path order. One combined report. The UI shows a busy state with no cancel.
+- **P19.4** Rescan first (R33.1): import and repair start the incremental scan, wait for it (or for a running scan) to end, then match against the updated index.
+- **P19.5** Repair (R33.3 to R33.5) in `playlist/`: for each missing entry, build a source entry from its path and `#EXTINF` text and run the matcher with the playlist file as the stage 1 base. A unique match replaces the path and the `#EXTINF` line at the same position. Other lines stay byte-identical. Atomic write; no write when nothing changed. Commands `playlist_find_missing(id)` and `playlist_find_missing_all()` return the repair report.
+- **P19.6** UI: "Import folder" next to "Import playlist" in the Playlists widget. Context menu "Find missing songs" on a playlist with missing entries. Widget menu "Find missing songs in all playlists". Report dialog with imported, skipped, failed and repaired sections. Labels are names only (D13).
+- **P19.7** Docs: `docs/file-formats.md` playlist import section (extension rule, name rule, repair).
+
+**Acceptance criteria.**
+
+- **P19-AC1** Unit tests: `Song.m4a` matches `Song.mp3` in the same folder part (stages 1 and 2); a same-extension hit wins; a different folder part does not match; stage 3 does not match across extensions; two other-format hits give "more than one match".
+- **P19-AC2** Unit tests for D51: an existing name (other letter case) is skipped and reported; two sources with one name in a batch give "Name" and "Name (2)"; "Favorites" gives "Favorites (imported)".
+- **P19-AC3** Folder import of a fixture tree (subfolders, upper-case extensions, a non-Apple `.xml`, an unreadable file, an Apple XML with two playlists) gives the golden combined report and `.m3u8` files. Source files stay byte-identical.
+- **P19-AC4** Repair of a fixture playlist with `.m4a` entries, an ambiguous entry and a not-found entry: matched entries change in place, the others and all other lines are byte-identical, the report is correct. A playlist with no match is not written (modified time unchanged).
+- **P19-AC5** A song added to the folder after the last scan matches during import and repair (rescan first).
+- **P19-AC6** Repair on a read-only folder shows the error and changes no file.
+- **P19-AC7** Playwright: multi-file import, folder import, both "Find missing songs" commands and the report dialog. IPC payloads hold no path.
+- **P19-AC8** The owner's real playlists import from one folder and repair (AC-22). Manual on Windows. The files are never committed.
+
+**Verification.** Rust tests (P19-AC1 to P19-AC6). Playwright (P19-AC7). Manual Windows (P19-AC8).
+
+---
+
+### P20. Microphone ducking (Windows)
+
+**Objective.** Lower or pause the music while another app uses a microphone, on Windows, without the app opening a microphone.
+
+**Scope.** R34. Requirements section 5 (v1.6 ducking cases), section 6 (platform exception, microphone privacy). AC-23. AC-24. D52.
+
+**Depends on.** P19.
+
+**Tasks.**
+
+- **P20.0** Spike (K21): find a Windows API that reports "another process records from a microphone" without opening a capture stream. Candidates to test (unverified assumptions): the per-app microphone `LastUsedTimeStart` and `LastUsedTimeStop` values under the `CapabilityAccessManager\ConsentStore\microphone` registry key (packaged and `NonPackaged` apps), and WASAPI `IAudioSessionManager2` session states on the active capture endpoints. Test each with Handy (push-to-talk) and one call app. Record the choice and the evidence as a new D entry. If no candidate works for both, stop and ask the owner.
+- **P20.1** Settings (R34.1, R34.3): `micDucking` (`"off"`, `"lower"`, `"pause"`, default `"off"`) and `micDuckPercent` (5 to 90, step 5, default 20) in `settings.json`, validated in `clawdio-core` settings. Document both in `docs/file-formats.md`.
+- **P20.2** Detector in `src-tauri/src/mic.rs` (Windows only, `cfg(windows)`): watches the P20.0 signal, ignores the app's own process and sends "microphone busy" and "microphone free" to the player thread. It logs state changes only, never app names.
+- **P20.3** Duck state in the player engine (R34.4 to R34.6, D52): the output gain is user volume times the duck factor. Pause mode keeps a "paused by duck" flag; only that flag resumes playback. Play during a Pause duck clears the flag and blocks a new pause until the next "microphone busy". The saved volume and the volume control use the user volume.
+- **P20.4** Settings UI: "When the microphone is in use" with Off, Lower volume and Pause, and a percentage slider shown for Lower volume. Help text names tools that keep the microphone open. On Linux the control is disabled with "Windows only".
+
+**Acceptance criteria.**
+
+- **P20-AC1** Unit tests for the duck state machine with a fake clock: busy and free in both modes, the 1 s wait, busy again during the wait, Play during a Pause duck, a user pause during a duck, a volume change during a duck, a track change during a duck, busy while stopped.
+- **P20-AC2** Unit tests: the saved state (R27) stores the user volume during a duck; settings reject a percentage outside 5 to 90 or off the 5 step.
+- **P20-AC3** Playwright: the setting values, the slider only for Lower volume, the disabled control with "Windows only" when the platform is Linux (mocked IPC).
+- **P20-AC4** Manual Windows: AC-23 with Handy and one call app, in both modes.
+- **P20-AC5** Manual Windows: AC-24. The Windows microphone privacy page lists no microphone use by the app after P20-AC4.
+- **P20-AC6** Review: `cargo clippy` for `x86_64-pc-windows-msvc` passes; Linux builds hold no detector code.
+
+**Verification.** Rust tests (P20-AC1, P20-AC2). Playwright (P20-AC3). Manual Windows (P20-AC4, P20-AC5). Review (P20-AC6).
+
+---
+
 ## 9. Risks
 
 | ID | Risk | Effect | Mitigation | Phase |
@@ -2467,6 +2534,8 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K18 | Two portable copies share the single-instance key | The second copy only focuses the first | Accepted behavior (section 5 "second launch") | P9 |
 | K19 | shadcn/ui templates ship focus styles below 3:1 on this palette | Invisible focus | P0.10 focus rule; P2-AC14 | P0, P2 |
 | K20 | The agent environment lacks native build packages | Validation cannot run locally | P0.0; section 1.2 fallback | P0 |
+| K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | P20.0 spike before other P20 work; stop and ask the owner on failure | P20 |
+| K22 | A tool that keeps the microphone open (Handy "Always-On Microphone") holds the duck | Music stays quiet | Settings help text (P20.4); requirements section 5 | P20 |
 
 ---
 
@@ -2495,6 +2564,9 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | AC-19 | Decode error skip | P7-AC3 |
 | AC-20 | First run to first song before the scan ends | P4-AC3, P7-AC10 (50,000-track library) |
 | AC-21 | Embedded lyrics | P13-AC3 |
+| AC-22 | Bulk import and repair of real playlists | P19-AC8 |
+| AC-23 | Microphone ducking with Handy and a call app | P20-AC4 |
+| AC-24 | No microphone access by the app | P20-AC5 |
 
 ---
 
@@ -2647,6 +2719,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.13 (October 12, 2026):** requirements v1.6 (R32 to R34, AC-22 to AC-24). Added phases P19 and P20, D51, D52, K21 and K22. D21 points to D51 for import names. The header now gives the current version.
 - **1.12 (October 12, 2026):** owner decisions: keep thumbnails across a folder change (Codex finding), reduce Linux memory (B9, new D50), push to `measure/p18` (B10), then accept the Linux value of 294 MB after D50. F-19 left section 11 (done in D50).
 - **1.11 (October 11, 2026):** owner decision on the P3 review conflict between D13 (no file paths over IPC) and D41 (asset protocol with `convertFileSrc`): D13 wins. D41, P3.2, P3-AC5, P10.3, K9 and the section 6.13 CSP now use a `thumb://` scheme that serves file names from the thumbnail folder.
 - **1.10 (October 11, 2026):** owner approved F-06, F-07 (as a source guard), F-08 and F-10. P0.15 states the row rule for `state.redActive`. D34 adds the Tailwind palette guard in `npm run check:sources`. Section 6.16 adds `color-scheme: dark`. `scripts/contact-sheet.sh` (`npm run contact-sheet`) builds the P1.7 contact sheet. The four proposals left section 11.
