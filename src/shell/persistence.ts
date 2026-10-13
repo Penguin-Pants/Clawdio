@@ -147,6 +147,37 @@ export function parseLayout(
   };
 }
 
+type GridNode = SerializedDockview["grid"]["root"];
+
+/** The id of the first group (leaf) in a grid node, and whether the node holds the Library. */
+function firstGroup(node: GridNode): { id: string | undefined; library: boolean } {
+  if (node.type === "leaf") {
+    const data = node.data as { id: string; views: string[] };
+    return { id: data.id, library: data.views.includes("library") };
+  }
+  const children = (node.data as GridNode[]).map(firstGroup);
+  return { id: children[0]?.id, library: children.some((child) => child.library) };
+}
+
+/**
+ * Gives the columns beside the Library their saved pixel widths after the dock fits a new
+ * window size (SP-4): Dockview gives the whole difference to the last column, so a restart in a
+ * wider window would widen the Play queue instead of the Library.
+ */
+export function restoreSideWidths(api: DockviewApi, dock: SerializedDockview): void {
+  const root = dock.grid.root;
+  if (root.type !== "branch") return;
+  const columns = root.data as GridNode[];
+  const total = columns.reduce((sum, column) => sum + (column.size ?? 0), 0);
+  // Only a root split into columns (sizes that add up to the saved width) has sidebars.
+  if (Math.abs(total - dock.grid.width) > 1) return;
+  for (const column of columns) {
+    const { id, library } = firstGroup(column);
+    const group = !library && id !== undefined ? api.getGroup(id) : undefined;
+    if (group && column.size) group.api.setSize({ width: column.size });
+  }
+}
+
 /**
  * Applies a saved layout by the P9.4 order. A file that fails (PS-4, UD5) is backed up as
  * `layout.json.bak` with one log line, and the default preset loads (Reset layout). Returns
@@ -197,6 +228,8 @@ export function restoreLayout(
   for (const warning of restoreCollapsed(layout.collapsed, api)) log.warn(`layout: ${warning}`);
   // Step 5: fit the saved layout to this window; the clamp uses the saved minimums.
   api.layout(size.width, size.height, true);
+  // The sidebars keep their saved pixel widths; the Library group takes the new width (SP-4).
+  restoreSideWidths(api, layout.dock);
   applyClamp(api);
   return true;
 }

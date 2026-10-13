@@ -131,3 +131,27 @@ Each phase adds its acceptance check here (rework section 14).
 - Secondary sort (TB-13): Shift+click or Shift+Enter adds or flips the second key; the headers show "1" and "2".
 - Compact rows (TB-14): the View menu; saved in `columns.json`; album rows keep their height.
 - `row-drag.spec.ts`, `density.spec.ts`, `table.spec.ts` (TB-13); `row-drag.test.ts`, `columns.test.ts`, `columns-persistence.test.ts`, `rows.test.tsx`.
+
+### U7: Verification and close
+
+After screenshots: `docs/ui-reference/after/800x560.png`, `1280x720.png`, `1920x1080.png` (`npm run shots -- after`, Chromium, mocked app); the before shots are in `docs/ui-reference/before/`.
+
+TA-1: `npm run check:sources` passes with the drag guard on the final tree (no HTML5 drag events and no truthy `draggable` under `src/`); `tauri.conf.json` sets no `dragDropEnabled`, and every drag (dock, separators, column reorder, row drag, customize handles) uses pointer events.
+
+Rework section 9 checklist (800 x 560 stands in for 800 x 500, UC10). Linux: the real app (`npm run tauri dev`, WebKitGTK 2.52 under Xvfb, `xdotool`, a 12-song generated folder), October 13, 2026. Windows 11 (WebView2): no Windows machine in this environment (B5).
+
+| Check | Linux (WebKitGTK, real app) | CI and e2e (Chromium here; WebKit in CI) | Windows 11 (WebView2) |
+|---|---|---|---|
+| Window sizes 800 x 560, 1280 x 720, 1920 x 1080, 2560 x 1440 | Pass at each size: the band, the dock and the status line show; nothing clips. The 2560 x 1440 run found a defect (a restart in a wider window widened the Play queue, not the Library); fixed in U7 (`restoreSideWidths`). | Pass: `transport-band.spec.ts` (800 to 2560 px), `resize.spec.ts` (live resize and restart), the after shots | Not run |
+| Display scaling 100 %, 150 %, 200 % | Pass: 100 %; 200 % with `GDK_SCALE=2`; 150 % text with `GDK_DPI_SCALE=1.5` (GTK has no fractional window scale under Xvfb). The band height follows the scale and nothing clips. | Pass: TH-1 at 100 %, 125 % and 140 % root font (`transport-band.spec.ts`); mini player at 125 % and 140 % | Not run |
+| Windows 11 (WebView2) and one Linux distribution (WebKitGTK) | Pass: every U phase ran its rule 10 smoke check in WebKitGTK | Pass: Chromium and WebKit projects in CI | Not run |
+| 50,000-row library: scroll, sort, resize a column, resize a panel | Not run: no 50,000-file library in the container | Pass: `table-perf.spec.ts`, longest frame gap 16.8 ms (budget 100 ms) | Not run (the PF-3 reference machine, UQ3) |
+| Drag every widget to every edge, merge as a tab, float, dock again | Partly: preset changes (U1, U2) | Pass: `docking.spec.ts`, `floating.spec.ts`, `layouts.spec.ts` | Not run |
+| Close every widget; reopen each from the View menu | Not run by hand | Pass: `docking.spec.ts` (P2-AC4) | Not run |
+| Lock layout on: drag is off, column resize still works | Not run by hand | Pass: `lock.spec.ts` | Not run |
+| Corrupt or delete the layout file: the app starts with defaults | Pass: a version 1 file is backed up and the default preset loads (U1) | Pass: `persistence.spec.ts` (PS-4, U2-AC1) | Not run |
+| Transport position bottom and back | Not run by hand | Pass: `persistence.spec.ts` (SH-6) | Not run |
+| Tab through all controls; move a splitter with arrow keys | Pass: Tab reaches the band, the group options and the separators; five Right presses move the Playlists separator from 240 to 320 px (U3) | Pass: `splitters.spec.ts`, `audit.spec.ts`, `table.spec.ts` (AX-1) | Not run |
+| Resize the window while a track plays: no audio glitch | Not run: the container has no real-time audio output | Not applicable (mocked audio) | Not run |
+
+Also in U7: the Playlists rail's tab moved to the tab overflow list at 56 px, so the group showed no name. A container query now shows a grip-only tab below 140 px (`rail.spec.ts`).

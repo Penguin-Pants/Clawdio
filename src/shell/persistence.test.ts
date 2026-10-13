@@ -11,6 +11,7 @@ import {
   currentLayout,
   parseLayout,
   restoreLayout,
+  restoreSideWidths,
   watchLayout,
 } from "./persistence";
 import { DEFAULT_SLOTS } from "./transport/slots";
@@ -384,5 +385,44 @@ describe("saving (P9.3, P9-AC8)", () => {
     expect(save).toHaveBeenCalledTimes(1);
     expect(JSON.parse(save.mock.calls[0][0]).libraryFrames.columns).toEqual([0.3, 0.3, 0.4]);
     watcher.dispose();
+  });
+});
+
+describe("restoreSideWidths (SP-4)", () => {
+  const leaf = (id: string, views: string[], size: number) => ({ type: "leaf", data: { id, views }, size });
+  function dockWith(root: unknown, width = 1200) {
+    return {
+      grid: { root, width, height: 700, orientation: "HORIZONTAL" },
+      panels: {},
+    } as unknown as SerializedDockview;
+  }
+  function groups() {
+    const sizes = new Map<string, unknown>();
+    const api = {
+      getGroup: (id: string) => ({ api: { setSize: (size: unknown) => sizes.set(id, size) } }),
+    } as unknown as DockviewApi;
+    return { api, sizes };
+  }
+
+  it("gives the columns beside the Library their saved widths, not the Library column", () => {
+    const { api, sizes } = groups();
+    const root = {
+      type: "branch",
+      size: 700,
+      data: [
+        leaf("1", ["playlists"], 240),
+        leaf("2", ["library"], 680),
+        { type: "branch", size: 280, data: [leaf("3", ["queue"], 400), leaf("4", ["lyrics"], 300)] },
+      ],
+    };
+    restoreSideWidths(api, dockWith(root));
+    expect(Object.fromEntries(sizes)).toEqual({ "1": { width: 240 }, "3": { width: 280 } });
+  });
+
+  it("does nothing for a root split into rows", () => {
+    const { api, sizes } = groups();
+    const root = { type: "branch", size: 1200, data: [leaf("1", ["library"], 500), leaf("2", ["queue"], 200)] };
+    restoreSideWidths(api, dockWith(root));
+    expect(sizes.size).toBe(0);
   });
 });

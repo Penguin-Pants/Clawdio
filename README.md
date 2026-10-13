@@ -62,6 +62,9 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 | Shift+F10, Menu key (headers) | Open the column menu: show or hide columns, auto size, reset |
 | Down (headers) | Return to the songs |
 | Ctrl+Shift+L | Reset the layout |
+| Left, Right or Up, Down (on a separator) | Move the separator; with Shift in bigger steps |
+| Home, End (on a separator) | Move the separator to its smallest or largest place |
+| Enter (on a separator) | Collapse the widget beside it, or put it back |
 
 Media keys (play, pause, next, previous, stop) work while the app runs in the background.
 
@@ -81,7 +84,7 @@ The music folder holds your music, playlists (`Playlists/*.m3u8`), `cover.jpg` f
 
 | Data | Windows | Linux |
 |---|---|---|
-| Settings, arrangement, playback state | `%APPDATA%\io.github.penguinpants.clawdio` | `~/.config/io.github.penguinpants.clawdio` |
+| Settings (`settings.json`), arrangement (`layout.json` v2), Songs columns (`columns.json`), playback state | `%APPDATA%\io.github.penguinpants.clawdio` | `~/.config/io.github.penguinpants.clawdio` |
 | Library cache and thumbnails (rebuilt when deleted) | `%LOCALAPPDATA%\io.github.penguinpants.clawdio` | `~/.cache/io.github.penguinpants.clawdio` |
 | Logs (Settings, "Open log folder") | `%LOCALAPPDATA%\io.github.penguinpants.clawdio\logs` | `~/.local/share/io.github.penguinpants.clawdio/logs` |
 

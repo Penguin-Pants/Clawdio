@@ -34,7 +34,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
-| UI shell rework | 74 | 66 | 4 | 0 | 0 | 0 | 4 | 0 | 0 |
+| UI shell rework | 74 | 67 | 5 | 0 | 0 | 0 | 2 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
@@ -778,12 +778,12 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 | Resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
 | PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Done (U5) |
-| PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U4 CI pass; reference machine in U7) |
+| PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U7: CI pass; reference machine with the owner, UQ3) |
 | AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Done (U5) |
 | AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
-| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
-| TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
-| TA-3 | WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
+| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Done (U7: drag guard passes; pointer drag only) |
+| TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | In progress (U7: Linux dialog opens; a completed choice and Windows with the owner, UQ5) |
+| TA-3 | WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | In progress (U7: WebKitGTK real app pass; WebView2 with the owner, UQ5) |
 | TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | RW-8-P0 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
@@ -791,8 +791,8 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
 | RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Done (U6) |
-| RW-9 | Rework 9 checklist | U7 | MAN | Planned |
-| RW-14 | Rework 14 definition of done | U7 | REV | Planned |
+| RW-9 | Rework 9 checklist | U7 | MAN | In progress (U7: Linux and CI rows recorded; Windows with the owner, UQ5) |
+| RW-14 | Rework 14 definition of done | U7 | REV | In progress (U7: the MUST rows pass or carry UQ3 and UQ5; decisions closed) |
 
 ## 8. Supporting tasks
 

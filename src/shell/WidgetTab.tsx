@@ -122,7 +122,9 @@ export function WidgetTab({ api }: IDockviewPanelHeaderProps) {
   return (
     <div className="flex h-full items-center gap-1 pr-1 pl-2">
       <Icon name="grip" className="size-3.5 text-text-muted" />
-      <span className="truncate text-[13px]">{title}</span>
+      <span data-slot="tab-title" className="truncate text-[13px]">
+        {title}
+      </span>
       <TabControl icon="close" label={`Hide ${title}`} slot="tab-close" onPress={() => api.close()} />
     </div>
   );
@@ -150,7 +152,9 @@ export function LibraryTab({ api }: IDockviewPanelHeaderProps) {
   return (
     <div ref={ref} className="flex h-full items-center gap-1 pr-1 pl-2">
       <Icon name="grip" className="size-3.5 text-text-muted" />
-      <span className="truncate text-[13px]">{titleOf(api.id)}</span>
+      <span data-slot="tab-title" className="truncate text-[13px]">
+        {titleOf(api.id)}
+      </span>
     </div>
   );
 }

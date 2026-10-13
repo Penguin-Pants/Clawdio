@@ -1,7 +1,7 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.7, October 13, 2026.
-**Status:** In progress. See section 2.
+**Version:** 1.8, October 13, 2026.
+**Status:** Done with exceptions (October 13, 2026). U0 to U6 Done; U7 Done with exceptions (UQ3, UQ4, UQ5). See section 2.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
 **Baseline:** commit `3f747b4` on `main` (P23 Done with exceptions).
@@ -43,7 +43,7 @@
 | U4 | Library table | U1 | Done |
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Done |
 | U6 | Table extras: row drag, secondary sort, density | U4, U5 | Done |
-| U7 | Verification, screenshots and release notes | U6 | Not started |
+| U7 | Verification, screenshots and release notes | U6 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -142,7 +142,7 @@ The owner may change any of them. Section 11 records changes.
 
 ### 4.4 Open owner items
 
-None blocks a phase. Each has a default.
+None blocks a phase. Each has a default. UQ3, UQ4 and UQ5 are open at the U7 close.
 
 | ID | Item | Default | Needed by |
 |---|---|---|---|
@@ -150,6 +150,7 @@ None blocks a phase. Each has a default.
 | UQ2 | UD9: no TanStack Table. | Accept. | U4 start |
 | UQ3 | Reference machine for PF-3 (rework 7.7). | The owner's Windows machine from build plan B5. | U7 |
 | UQ4 | Requirements v1.8 text (U0 writes the change list; the owner approves the wording). | The U0 change list as written. | U7 close |
+| UQ5 | U7 exceptions: the Windows 11 (WebView2) checklist rows, a completed native folder choice (TA-2), the window position check and the audio-glitch row. No Windows machine or audio output exists here. | The owner runs them with the Release packages and records them in `docs/release-checklist.md`. | Owner, after U7 |
 
 ---
 
@@ -696,12 +697,12 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
 | PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Done (U5) |
-| PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U4 CI pass; reference machine in U7) |
+| PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U7: CI pass; reference machine with the owner, UQ3) |
 | AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Done (U5) |
 | AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
-| TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
-| TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
-| TA-3 WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
+| TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Done (U7: drag guard passes; pointer drag only) |
+| TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | In progress (U7: Linux dialog opens; a completed choice and Windows with the owner, UQ5) |
+| TA-3 WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | In progress (U7: WebKitGTK real app pass; WebView2 with the owner, UQ5) |
 | TA-4 not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
@@ -709,8 +710,8 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Done (U6) |
-| Rework 9 checklist | U7 | MAN | Planned |
-| Rework 14 definition of done | U7 | REV | Planned |
+| Rework 9 checklist | U7 | MAN | In progress (U7: Linux and CI rows recorded; Windows with the owner, UQ5) |
+| Rework 14 definition of done | U7 | REV | In progress (U7: the MUST rows pass or carry UQ3 and UQ5; decisions closed) |
 
 ### 8.1 Deferred and out of scope
 
@@ -981,9 +982,34 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: drag starts only from the Songs table. TB-12 names the selected songs of the table.
 - F4: a plain click on the first key with two keys goes back to one key. That is the TB-8 cycle; Shift+click keeps both.
 
-### U7
+### U7. Verification, screenshots and release notes (October 13, 2026)
 
-Not started.
+**Status:** Done with exceptions (UQ3, UQ4, UQ5). **Commit:** `U7: verification, after screenshots and the close of the rework`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U7-AC1 | Pass with exceptions | Section 8: every MUST row is Done except PF-3 (the reference-machine number, UQ3), TA-2 and TA-3 (the Windows rows and a completed folder choice, UQ5); each carries its exception. The owner's acknowledgement is open (UQ5). |
+| U7-AC2 | Pass | `docs/ui-reference/after/800x560.png`, `1280x720.png`, `1920x1080.png`; `scripts/ui-shots.test.ts` checks both folders. |
+| U7-AC3 | Pass for Linux and CI; Windows not run | `docs/ui-audit.md` U7: a result per row and per platform; the manual rows in `docs/release-checklist.md`. |
+| U7-AC4 | Pass | Traceability v1.18 (summary counted from the rows), `docs/build-plan.md` v1.25, `docs/file-formats.md` (U4 to U6), `docs/theming-and-brand.md` (U1), `docs/design.md` (U0, U3, PR 23), requirements v1.8 (change log; approval open, UQ4), `README.md` (table, separator, transport and mini player keys; the file names). |
+| U7-AC5 | Pass with exceptions | Every phase has its check in `docs/ui-audit.md`; before and after screenshots exist; the five rework decisions are closed and unchanged. The MUST rows as in U7-AC1. |
+
+**Notes**
+
+- Two defects found in U7, both in code the U phases changed (F2), fixed with tests: a restart in a wider window gave the whole new width to the last dock column (`restoreSideWidths` in `persistence.ts`; `resize.spec.ts`); the 56 px Playlists rail moved its tab to the overflow list (a container query shows a grip-only tab below 140 px; `rail.spec.ts`).
+- TA-1: the drag guard of `check:sources` passes on the final tree; `tauri.conf.json` has no `dragDropEnabled` setting.
+- PF-3: CI (Chromium) 16.8 ms longest frame gap. The reference-machine number is for the owner's Windows machine (UQ3).
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb: the four window sizes, 200 % (`GDK_SCALE=2`) and 150 % text (`GDK_DPI_SCALE=1.5`), the restart at 2560 x 1440 after the fix, and Settings, Change folder (the GTK dialog opens).
+
+**Checks that could not run:** WebKit e2e here (CI runs it on the pushed head). Every Windows row (no Windows machine). The 50,000-file real library, the audio-glitch row (no audio output) and the window position (no window manager). A Release workflow dispatch (an owner action; the checks used the dev build).
+
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 0, F4 2.
+
+- F2 (fixed): a restart in a wider window widened the Play queue instead of the Library (SP-4).
+- F2 (fixed): the 56 px rail group showed its tab in the overflow list, so the group had no visible name.
+- F4: the GTK dialog's typed-path completion stops an automated folder choice; the dialog itself opens. The completed choice is a manual row (UQ5).
+- F4: `container-type: inline-size` on every group could change a size that depends on content. Groups have fixed sizes from the dock; the dock, floating, frame and rail specs pass.
 
 ---
 
@@ -1068,6 +1094,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.8 (October 13, 2026):** U0 to U7 executed. U7 Done with exceptions; UQ5 added (the U7 exceptions for the owner).
 - **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.
 - **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.
 - **1.5 (October 13, 2026):** PR 21 review, Codex round 4: five findings fixed (section 11): grid row-count semantics (UD8), UD19 signature, real-app smoke check per phase (rule 10), F6 order, TA-2 manual rows.

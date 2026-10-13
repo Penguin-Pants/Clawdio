@@ -502,6 +502,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
   - **Added:** the R28 Songs table (columns, sort, multi-select, row drag, density), the R29 presets, Lock layout, floating groups, transport position and splitter rules, the layout backup, the rework's section 7 list by reference (section 8).
   - **Changed:** R5 (Transport controls is a fixed band; Now playing is a card widget; the menu groups), R28.1 (keyboard splitters), R29 (presets replace the built-in layouts; default arrangement; Reset layout; corrupt file backup), section 4 (floating panels and the edit lock leave the non-goals), section 7 (keyboard splitters and density leave the deferred ideas).
   - **Deleted:** R29.1. Decisions 30 to 34, 36 and 37 are marked superseded (section 8).
+  - **Also in 1.8 (PR 23 review):** R28.1 (presets restore frame sizes), the docking and complexity constraints (floating groups inside the window), acceptance checks 12 and 13, and the R29.1 note.
+  - **Approval:** open at the U7 close. The owner approves this wording or lists the changes (UQ4).
 - **1.7 (October 12, 2026):** Library frame splitters and fixed-height bar widgets, with owner decisions 29 to 37 (section 8).
   - **Added:** R28.1, R29.1, an outcome bullet (section 1), one non-goal, three edge cases, two deferred ideas, acceptance checks 25 to 27.
   - **Changed:** R5 (Transport controls and Now playing are bar widgets), R29 (tabbed groups exclude bar widgets).

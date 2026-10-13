@@ -185,3 +185,19 @@
   > .dv-view:not(:first-child) {
   padding-top: 1px;
 }
+
+/*
+ * A group narrower than the Playlists rail threshold (140 px, UD18) shows its tab as the grip
+ * only, so the tab stays in the strip and does not move to the overflow list. The name is in the
+ * group options button and the View menu.
+ */
+.dv-groupview {
+  container-type: inline-size;
+}
+
+@container (max-width: 139px) {
+  .dv-tab [data-slot="tab-title"],
+  .dv-tab [data-slot="tab-close"] {
+    display: none;
+  }
+}

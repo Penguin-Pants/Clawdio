@@ -1,5 +1,5 @@
 // U3 (SP-5, UD18): the Playlists widget becomes an icon rail below 140 px.
-import { drag, expect, test, widget } from "./test-base";
+import { drag, expect, group, test, widget } from "./test-base";
 
 test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it and selects the playlist", async ({
   page,
@@ -15,6 +15,11 @@ test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it an
   await expect.poll(async () => (await playlists.boundingBox())?.width ?? 0).toBeLessThan(140);
   const rail = playlists.getByRole("navigation", { name: "Playlists" });
   await expect(rail).toBeVisible();
+  // The narrow group keeps its tab (grip only) in the tab strip, not in the overflow list.
+  const tabStrip = group(page, "playlists").locator(".dv-tabs-container");
+  await expect(tabStrip.locator(".dv-tab")).toHaveCount(1);
+  await expect(tabStrip.locator(".dv-tab")).toBeVisible();
+  await expect(group(page, "playlists").locator(".dv-tabs-overflow-dropdown-root")).toHaveCount(0);
   const mix = rail.getByRole("button", { name: "Mix 2" });
   await mix.hover();
   await expect(page.getByText("Mix 2", { exact: true }).last()).toBeVisible();
