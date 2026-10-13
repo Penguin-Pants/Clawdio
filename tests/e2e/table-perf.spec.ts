@@ -14,31 +14,42 @@ const DOCK_SASH = ".dv-split-view-container.dv-horizontal > .dv-sash-container >
 
 declare global {
   interface Window {
-    frameGap?: { max: number; frames: number; stop: boolean };
+    frameGap?: { max: number; frames: number; stop: boolean; phase: string; phases: Record<string, number> };
   }
 }
 
-/** Records the longest gap between animation frames until `stopFrames`. */
-async function startFrames(page: Page) {
-  await page.evaluate(() => {
-    const state = { max: 0, frames: 0, stop: false };
+/**
+ * Records the longest gap between animation frames until `stopFrames`, also per test phase
+ * (`phase`), so a failure names the step that made the long frame.
+ */
+async function startFrames(page: Page, phase: string) {
+  await page.evaluate((first) => {
+    const state = { max: 0, frames: 0, stop: false, phase: first, phases: {} as Record<string, number> };
     window.frameGap = state;
     let last = performance.now();
     const tick = (now: number) => {
       state.max = Math.max(state.max, now - last);
+      state.phases[state.phase] = Math.max(state.phases[state.phase] ?? 0, now - last);
       state.frames += 1;
       last = now;
       if (!state.stop) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  });
+  }, phase);
 }
 
-async function stopFrames(page: Page): Promise<{ max: number; frames: number }> {
+/** Starts the next test phase: later frame gaps count for it. */
+async function phase(page: Page, name: string) {
+  await page.evaluate((next) => {
+    if (window.frameGap) window.frameGap.phase = next;
+  }, name);
+}
+
+async function stopFrames(page: Page): Promise<{ max: number; frames: number; phases: Record<string, number> }> {
   return page.evaluate(() => {
-    const state = window.frameGap ?? { max: Number.POSITIVE_INFINITY, frames: 0, stop: true };
+    const state = window.frameGap ?? { max: Number.POSITIVE_INFINITY, frames: 0, stop: true, phases: {} };
     state.stop = true;
-    return { max: state.max, frames: state.frames };
+    return { max: state.max, frames: state.frames, phases: state.phases };
   });
 }
 
@@ -61,7 +72,7 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
   }
   await expect(grid.locator(SONG_ROWS).first()).toContainText("Song 1 of Album A0");
 
-  await startFrames(page);
+  await startFrames(page, "scroll");
   const middle = await center(grid);
   await page.mouse.move(middle.x, middle.y);
   const end = Date.now() + 3_000;
@@ -70,24 +81,30 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
     await page.waitForTimeout(16);
   }
   expect(await grid.evaluate((element) => element.scrollTop)).toBeGreaterThan(10_000);
+  await phase(page, "sort");
   await titleCss.click();
   await expect(titleCss).toHaveAttribute("aria-sort", "ascending");
   const divider = grid.locator("[data-col-header='artist'] [data-slot='column-divider']");
+  await phase(page, "column");
   const from = await center(divider);
   await drag(page, from, { x: from.x + 60, y: from.y });
+  await phase(page, "dock");
   const sash = page.locator(DOCK_SASH).first();
   const at = await center(sash);
   await drag(page, at, { x: at.x - 80, y: at.y });
   await page.waitForTimeout(200);
   const frames = await stopFrames(page);
+  const phases = Object.entries(frames.phases)
+    .map(([name, gap]) => `${name} ${gap.toFixed(1)}`)
+    .join(", ");
+  console.log(`PF-3: longest frame gap ${frames.max.toFixed(1)} ms over ${frames.frames} frames (${phases})`);
 
   expect(frames.frames).toBeGreaterThan(60);
-  expect(frames.max).toBeLessThanOrEqual(MAX_GAP_MS);
+  expect(frames.max, `longest frame gap per phase in ms: ${phases}`).toBeLessThanOrEqual(MAX_GAP_MS);
   // Only the rows in view and the overscan are in the DOM.
   const { height, row } = await grid.evaluate((element) => ({
     height: element.clientHeight,
     row: element.querySelector<HTMLElement>("[role='row'][aria-selected]")?.getBoundingClientRect().height ?? 1,
   }));
   expect(await grid.locator(SONG_ROWS).count()).toBeLessThanOrEqual(Math.ceil(height / row) + OVERSCAN_ROWS);
-  console.log(`PF-3: longest frame gap ${frames.max.toFixed(1)} ms over ${frames.frames} frames`);
 });
