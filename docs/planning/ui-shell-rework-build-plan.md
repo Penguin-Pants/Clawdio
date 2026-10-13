@@ -1,7 +1,7 @@
 # UI Shell Rework Build Plan
 
 **Version:** 1.7, October 13, 2026.
-**Status:** Ready for implementation. No phase has started.
+**Status:** In progress. See section 2.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
 **Baseline:** commit `3f747b4` on `main` (P23 Done with exceptions).
@@ -36,7 +36,7 @@
 
 | Phase | Name | Dependencies | Status |
 |---|---|---|---|
-| U0 | Audit and source alignment | none | Not started |
+| U0 | Audit and source alignment | none | Done |
 | U1 | Shell zones and transport band | U0 | Not started |
 | U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Not started |
 | U3 | Splitters and sidebar rail | U2 | Not started |
@@ -703,7 +703,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
 | TA-3 WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
 | TA-4 not only `localStorage` | U1 (re-verify) | REV | Passes today |
-| Rework 8 Phase 0 accept | U0 | REV | Planned |
+| Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | Rework 8 Phase 1 accept | U1 | E2E | Planned |
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
@@ -745,7 +745,34 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 
 Each phase appends its record here when it closes: status, commits, packages, criteria table with evidence, notes, exceptions, blockers, the TWO-PASS REVIEW counts with every F3 and F4 finding, and follow-ups.
 
-### U0 to U7
+### U0. Audit and source alignment (October 13, 2026)
+
+**Status:** Done. **Commit:** `U0: audit, screenshots and source alignment`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U0-AC1 | Pass | `docs/ui-audit.md` sections 1 to 4: what exists, what breaks, what passes (with file evidence) and the conflict list. |
+| U0-AC2 | Pass | `docs/ui-reference/before/800x560.png`, `1280x720.png`, `1920x1080.png` from `npm run shots -- before` (Chromium, mocked app, loaded library); `scripts/ui-shots.test.ts` checks the PNG sizes. |
+| U0-AC3 | Pass | `docs/MusicPlayer_REQUIREMENTS.md` v1.8 (change log, decision 38, R5, R28, R28.1, R29, R29.1 deleted, sections 4, 5, 7 and 9); `docs/design.md` section 5 names the four zones. |
+
+**Notes**
+
+- `docs/requirements-traceability.md` gets section 7 with the 74 rows of section 8 of this plan; the old sections 7 and 8 become 8 and 9.
+- The parent-plan items (pointer row, superseded marks) shipped with this plan; U0 confirms them. F-12 and F-13 already stand in `docs/build-plan.md` section 11.
+- Baseline before U0: `npm run check` passes (253 Vitest tests); 115 of 115 Chromium e2e tests pass; `cargo test --workspace --no-run` builds.
+
+**Rule 10 (real app):** not applicable. U0 changes docs and adds a script; no app code changes. The screenshots ran the mocked e2e app in Chromium.
+
+**Checks that could not run:** WebKit e2e. The environment has no Playwright WebKit build and forbids `playwright install`; CI runs WebKit.
+
+**TWO-PASS REVIEW:** F1 0, F2 1, F3 0, F4 3.
+
+- F2 (fixed): the screenshot could fire before the album thumbnails loaded. The script now waits for network idle.
+- F4: a server already on port 4173 is reused by the script. It serves the same `dist-e2e` folder that the script builds first.
+- F4: renumbering the traceability sections breaks no reference (grep: no other file cites traceability section 7 or 8).
+- F4: v1.8 goes beyond owner wording. It is a change list for the owner's approval (UQ4), as U0 requires.
+
+### U1 to U7
 
 Not started.
 

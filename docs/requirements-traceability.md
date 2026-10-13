@@ -1,12 +1,12 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.16, October 13, 2026.
+**Version:** 1.17, October 13, 2026 (section 7: the UI shell rework, U0).
 **Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
 - **One row per requirement.** Long source items are split into rows, one rule per row.
-- **Source** gives the document section. Section 1 of this file covers the requirements, section 2 `design.md`, section 3 the branding prompt, section 4 the asset manifest, section 5 `theme/tokens.json` and section 6 `AGENTS.md`.
+- **Source** gives the document section. Section 1 of this file covers the requirements, section 2 `design.md`, section 3 the branding prompt, section 4 the asset manifest, section 5 `theme/tokens.json`, section 6 `AGENTS.md` and section 7 the UI shell rework (its phase IDs `U0` to `U7` refer to `docs/planning/ui-shell-rework-build-plan.md`).
 - **Verify** codes: UT unit test, IT integration test, E2E Playwright with mocked IPC, CI pipeline job, MAN-L manual on Linux, MAN-W manual on Windows, MEAS measurement, REV review of code or docs.
 - **Status** values:
   - Planned: mapped to tasks and criteria. Not started.
@@ -30,8 +30,9 @@
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
+| UI shell rework | 74 | 1 | 70 | 0 | 0 | 0 | 3 | 0 |
 
-**Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
+**Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
 ---
 
@@ -706,7 +707,88 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 ---
 
-## 7. Supporting tasks
+## 7. UI shell rework (`docs/planning/ui-shell-rework.md`)
+
+One row per rework requirement and per rework section that the plan `docs/planning/ui-shell-rework-build-plan.md` maps (its section 8). Phases U0 to U7 update the Status column in the same push as that plan's section 8. The rework wins over requirements v1.7 where they conflict (owner decision, October 13, 2026).
+
+| ID | Requirement | Phase | Verify | Status |
+|---|---|---|---|---|
+| SH-1 | Three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Planned |
+| SH-2 | Bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Planned |
+| SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Planned |
+| SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Passes today |
+| SH-5 | Minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Passes today (Rust) |
+| SH-6 | Transport top or bottom | U2 | E2E `persistence.spec.ts` | Planned |
+| SH-7 | Drag region (MAY) | none | Not applicable: native title bar | Not applicable |
+| TR-1 | Height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Planned |
+| TR-2 | Size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Planned |
+| TR-3 | Play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Planned |
+| TR-4 | Seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Passes today (widget) |
+| TR-5 | Art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Planned |
+| TR-6 | Never overlays the list | U1 | E2E (band box and dock box do not intersect) | Planned |
+| TR-7 | Opaque background | U1 | E2E (alpha 1) | Passes today |
+| TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Planned (28 px today) |
+| TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
+| TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
+| TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
+| DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Passes today |
+| DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Passes today |
+| DK-3 | Edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Planned (float missing) |
+| DK-4 | Drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Passes today |
+| DK-5 | Lock layout | U2 | E2E `lock.spec.ts` | Planned |
+| DK-6 | View menu with every widget | U2 | E2E `layouts.spec.ts` | Passes today (as Widgets) |
+| DK-7 | Reset layout | U2 | UT `presets.test.ts`; E2E | Passes today; preset changes |
+| DK-8 | Default preset | U2 | E2E `presets.spec.ts` | Planned |
+| DK-9 | Three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Planned |
+| DK-10 | Pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Passes today |
+| SP-1 | 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Planned (hit area) |
+| SP-2 | Double-click reset | U3 | UT, E2E | Planned |
+| SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Planned |
+| SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Planned |
+| SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Planned |
+| SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Planned |
+| SP-7 | Auto-hide with pin (MAY) | none | Not built | Not built |
+| TB-1 | Virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Passes today |
+| TB-2 | Divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Planned |
+| TB-3 | Auto size, header menu | U4 | E2E `table.spec.ts` | Planned |
+| TB-4 | Header drag reorder | U4 | E2E | Planned |
+| TB-5 | Right-click show or hide | U4 | E2E | Planned |
+| TB-6 | Title flexible, numeric right | U4 | E2E (computed widths and `text-align`) | Planned |
+| TB-7 | Sticky header, shared horizontal scroll | U4 | E2E | Planned |
+| TB-8 | Click to sort with an arrow | U4 | UT `cargo test` sort; E2E | Planned |
+| TB-9 | State per view | U4 | UT parse; E2E (per mode, reload) | Planned (two Songs views, UD8) |
+| TB-10 | Arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Partly today |
+| TB-11 | Playing indicator in the first column | U4 | E2E | Passes today (moves to `#`) |
+| TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
+| TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Planned |
+| TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
+| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Passes today (v1); v2 planned |
+| PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Passes today |
+| PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Passes today |
+| PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Planned (backup) |
+| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Planned (position, transport) |
+| PS-6 | Column state apart from the layout | U4 | UT; E2E | Planned |
+| TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Planned (sizes and spacing unit) |
+| TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Passes today |
+| PF-1 | Resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
+| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Planned |
+| PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
+| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Planned |
+| AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Passes today |
+| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag |
+| TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
+| TA-3 | WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
+| TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Passes today |
+| RW-8-P0 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
+| RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Planned |
+| RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
+| RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
+| RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Planned |
+| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
+| RW-9 | Rework 9 checklist | U7 | MAN | Planned |
+| RW-14 | Rework 14 definition of done | U7 | REV | Planned |
+
+## 8. Supporting tasks
 
 These tasks have no single source requirement. They exist so that other rows can be built and verified. They are listed so that every plan task traces somewhere.
 
@@ -719,7 +801,7 @@ These tasks have no single source requirement. They exist so that other rows can
 | P6.7 | Remove Milestone 0 fixture code (D35) | CON-1 (no dead spike code) |
 | P6-AC8 | Confirms P6.7 | CON-1 |
 
-## 8. Open items that need outside input
+## 9. Open items that need outside input
 
 These are not gaps in the plan. Each has a task, a criterion and a path to closure. Closed questions leave this table. Their answers stay in section 5.3 of the plan.
 

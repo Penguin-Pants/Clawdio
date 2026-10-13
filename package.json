@@ -14,6 +14,7 @@
     "tokens": "node scripts/build-tokens.mjs",
     "icons": "node scripts/icons.mjs",
     "contact-sheet": "bash scripts/contact-sheet.sh",
+    "shots": "node scripts/ui-shots.mjs",
     "lint": "eslint . && prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
