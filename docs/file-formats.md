@@ -14,7 +14,7 @@ The app writes the file atomically: a temp file in the same folder, then a renam
 | `musicFolder` | string or `null` | `null` | The music folder, absolute. In portable mode (R18.1): relative to the executable folder when both are on the same volume, else absolute. |
 | `onlineLookups` | boolean | `false` | The Online lookups switch (R7). |
 | `onlineNoticeDone` | boolean | `false` | `true` after the user answers the first-run notice. |
-| `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers). |
+| `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers), and the optional outer position `x` and `y` in physical pixels (integers, PS-5, UD14). The position applies at start only when that point lies on an available monitor; else the OS places the window. A file without `x` and `y` loads with no position. |
 | `lastScan` | object or `null` | `null` | Counts of the last scan (R2): `added`, `removed` and `skipped`. Settings shows them. A file without the key reads as `null`. |
 | `micDucking` | `"off"`, `"lower"` or `"pause"` | `"off"` | "When the microphone is in use" (R34.1). Windows only; other platforms keep the value and do not use it (D53). A file without the key reads as `"off"`. |
 | `micDuckPercent` | integer | `20` | The ducked volume for `"lower"`, as a percentage of the user volume (R34.3): 5 to 90 in steps of 5. A file without the key, or with another value, reads as `20`. |
@@ -92,7 +92,7 @@ On load, a file that fails validation (not JSON, an unknown `version`, no `dock`
 | `locked` | boolean | Lock layout (DK-5). Another value loads as `false` with a log line. |
 | `libraryMode` | string | `tree`, `columns` or `topBottom`. |
 | `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
-| `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, and the active group. |
+| `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, the active group, and `floatingGroups` (DK-3): each floating group's panels and its position and size over the dock. A floating group outside a smaller window moves back inside. |
 
 The file holds no window size: that is in `settings.json` only (P9-AC8). The grid `width` and `height` are the dock size when saved; the app fits the grid to the current window at start.
 

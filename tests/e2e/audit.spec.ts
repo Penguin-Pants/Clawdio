@@ -206,10 +206,10 @@ async function expectNoClipOrOverlap(page: Page, testInfo: TestInfo, name: strin
   expect(overlaps, `${name}: overlapping controls`).toEqual([]);
 }
 
-/** A built-in layout from the menu (menu items; the Library modes are radio items). */
-async function applyLayout(page: Page, name: string) {
+/** A Library mode from the menu (radio items). */
+async function setMode(page: Page, name: string) {
   await openMenu(page);
-  await page.getByRole("menuitem", { name, exact: true }).click();
+  await page.getByRole("menuitemradio", { name, exact: true }).click();
   if (await page.getByRole("menu").isVisible()) await closeMenu(page);
 }
 
@@ -217,9 +217,9 @@ test("P17-AC4: at 800 x 560 no control is clipped or overlaps another", async ({
   await page.setViewportSize({ width: 800, height: 560 });
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  for (const layout of ["Tree", "Columns", "Top/bottom"]) {
-    await applyLayout(page, layout);
-    await expectNoClipOrOverlap(page, testInfo, `${layout} layout`);
+  for (const mode of ["Tree", "Columns", "Top/bottom"]) {
+    await setMode(page, mode);
+    await expectNoClipOrOverlap(page, testInfo, `${mode} mode`);
   }
   // A tabbed layout: Now playing as a tab in the Playlists group, beside Play queue and Lyrics.
   await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "playlists"));

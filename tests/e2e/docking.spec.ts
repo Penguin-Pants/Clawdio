@@ -65,6 +65,59 @@ test("P2-AC2: a header dragged to a widget edge docks there", async ({ page }) =
   expect(Math.abs(queue.y - library.y)).toBeLessThan(1);
 });
 
+test("DK-3: Play queue docks on each window edge and on each edge of Library", async ({ page }) => {
+  await openApp(page);
+  const dock = await page.locator(".dv-dockview").first().boundingBox();
+  if (!dock) throw new Error("no dock");
+  // Window edges: the Dockview root drop target, a band along the dock edge.
+  const edges: [string, { x: number; y: number }, (q: Box, d: Box) => boolean][] = [
+    ["left", { x: dock.x + 4, y: dock.y + dock.height / 2 }, (q) => q.x <= dock.x + 1],
+    [
+      "right",
+      { x: dock.x + dock.width - 4, y: dock.y + dock.height / 2 },
+      (q) => q.x + q.width >= dock.x + dock.width - 1,
+    ],
+    ["top", { x: dock.x + dock.width / 2, y: dock.y + 4 }, (q) => q.y <= dock.y + 40],
+    [
+      "bottom",
+      { x: dock.x + dock.width / 2, y: dock.y + dock.height - 4 },
+      (q) => q.y + q.height >= dock.y + dock.height - 1,
+    ],
+  ];
+  for (const [name, point, check] of edges) {
+    await page.keyboard.press("Control+Shift+L");
+    await drag(page, await center(tab(page, "Play queue")), point);
+    const queue = await widget(page, "queue").boundingBox();
+    if (!queue) throw new Error("no queue");
+    expect(check(queue, dock), `window ${name}`).toBe(true);
+  }
+  // Library edges.
+  for (const side of ["left", "right", "top", "bottom"] as const) {
+    await page.keyboard.press("Control+Shift+L");
+    const library = await widget(page, "library").boundingBox();
+    if (!library) throw new Error("no library");
+    const point = {
+      left: { x: library.x + 20, y: library.y + library.height / 2 },
+      right: { x: library.x + library.width - 20, y: library.y + library.height / 2 },
+      top: { x: library.x + library.width / 2, y: library.y + 20 },
+      bottom: { x: library.x + library.width / 2, y: library.y + library.height - 20 },
+    }[side];
+    await drag(page, await center(tab(page, "Play queue")), point);
+    const queue = await widget(page, "queue").boundingBox();
+    const after = await widget(page, "library").boundingBox();
+    if (!queue || !after) throw new Error("missing widget");
+    const ok = {
+      left: queue.x + queue.width <= after.x + 1,
+      right: queue.x >= after.x + after.width - 1,
+      top: queue.y + queue.height <= after.y + 1,
+      bottom: queue.y >= after.y + after.height - 1,
+    }[side];
+    expect(ok, `Library ${side}`).toBe(true);
+  }
+});
+
+type Box = { x: number; y: number; width: number; height: number };
+
 test("P2-AC2: a header dropped on another tab bar forms a tabbed group", async ({ page }) => {
   await openApp(page);
   const bar = await group(page, "queue").locator(".dv-tabs-and-actions-container").boundingBox();
@@ -75,7 +128,7 @@ test("P2-AC2: a header dropped on another tab bar forms a tabbed group", async (
   await expect(tabs.filter({ hasText: "Playlists" })).toHaveCount(1);
 });
 
-test("P2-AC2: splitters resize and no float or pop-out command exists", async ({ page }) => {
+test("P2-AC2, DK-10: splitters resize and no pop-out command exists", async ({ page }) => {
   await openApp(page);
   const before = await widget(page, "library").boundingBox();
   const point = await sashPoint(page);
@@ -87,8 +140,8 @@ test("P2-AC2: splitters resize and no float or pop-out command exists", async ({
   await tab(page, "Library").click({ button: "right" });
   await expect(page.locator(".dv-context-menu")).toHaveCount(0);
   await openMenu(page);
-  await expect(page.getByRole("menuitem", { name: /float|pop/i })).toHaveCount(0);
-  await expect(page.getByRole("menuitemcheckbox", { name: /float|pop/i })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: /pop/i })).toHaveCount(0);
+  await expect(page.getByRole("menuitemcheckbox", { name: /pop/i })).toHaveCount(0);
 });
 
 test("P2-AC3: Library cannot be closed or hidden", async ({ page }) => {

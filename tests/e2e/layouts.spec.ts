@@ -49,7 +49,36 @@ test("P2-AC4: the menu shows and hides each hideable widget", async ({ page }) =
   }
 });
 
-test("P2-AC4: the menu switches the Library mode and applies each layout", async ({ page }) => {
+test("DK-6: each hideable widget closes with its tab control and reopens from the View menu", async ({ page }) => {
+  await openApp(page);
+  await setWidgetShown(page, "Now playing", true);
+  const widgets: [string, string][] = [
+    ["nowPlaying", "Now playing"],
+    ["playlists", "Playlists"],
+    ["queue", "Play queue"],
+    ["lyrics", "Lyrics"],
+  ];
+  for (const [id, name] of widgets) {
+    await tab(page, name).click();
+    await tab(page, name).locator("[data-slot='tab-close']").click();
+    await expect(tab(page, name)).toHaveCount(0);
+    await expect(widget(page, id)).toHaveCount(0);
+  }
+  await expect(tab(page, "Library").locator("[data-slot='tab-close']")).toHaveCount(0);
+  await openMenu(page);
+  const library = page.getByRole("menuitemcheckbox", { name: "Library" });
+  await expect(library).toHaveAttribute("aria-checked", "true");
+  await expect(library).toHaveAttribute("aria-disabled", "true");
+  await closeMenu(page);
+  for (const [id, name] of widgets) {
+    await setWidgetShown(page, name, true);
+    await expect(widget(page, id)).toBeVisible();
+  }
+});
+
+test("P2-AC4, DK-9: the menu switches the Library mode and applies each preset, which keeps the mode", async ({
+  page,
+}) => {
   await openApp(page);
   const body = page.locator("[data-library-body]");
   await expect(body).toHaveAttribute("data-library-body", "columns");
@@ -58,17 +87,15 @@ test("P2-AC4: the menu switches the Library mode and applies each layout", async
   await menuItem(page, "menuitemradio", "Top/bottom");
   await expect(body).toHaveAttribute("data-library-body", "topBottom");
 
-  const layouts: [string, string][] = [
-    ["Tree", "tree"],
-    ["Top/bottom", "topBottom"],
-    ["Columns", "columns"],
-  ];
-  for (const [name, mode] of layouts) {
-    await setWidgetShown(page, "Now playing", true);
-    await menuItem(page, "menuitem", name);
-    await expect(body).toHaveAttribute("data-library-body", mode);
-    await expectDefaultArrangement(page);
-  }
+  await menuItem(page, "menuitem", "Compact");
+  await expect(body).toHaveAttribute("data-library-body", "topBottom");
+  for (const id of ["playlists", "queue", "lyrics", "nowPlaying"]) await expect(widget(page, id)).toHaveCount(0);
+  await menuItem(page, "menuitem", "MusicBee style");
+  await expect(widget(page, "nowPlaying")).toBeVisible();
+  await expect(widget(page, "lyrics")).toHaveCount(0);
+  await menuItem(page, "menuitem", "Apple Music classic");
+  await expectDefaultArrangement(page);
+  await expect(body).toHaveAttribute("data-library-body", "topBottom");
 });
 
 test("P2-AC4: Reset layout from the menu and from Ctrl+Shift+L restores the default", async ({ page }) => {
@@ -88,9 +115,9 @@ test("P2-AC4: Reset layout from the menu and from Ctrl+Shift+L restores the defa
   await expect(page.locator("[data-library-body]")).toHaveAttribute("data-library-body", "columns");
 });
 
-test("P2-AC4: applying layouts 20 times leaves one Library panel", async ({ page }) => {
+test("P2-AC4: applying presets 20 times leaves one Library panel", async ({ page }) => {
   await openApp(page);
-  const names = ["Columns", "Tree", "Top/bottom"];
+  const names = ["Compact", "Apple Music classic", "MusicBee style"];
   for (let index = 0; index < 20; index += 1) await menuItem(page, "menuitem", names[index % 3]);
   await expect(widget(page, "library")).toHaveCount(1);
   await expect(page.locator(".dv-tab", { hasText: "Library" })).toHaveCount(1);

@@ -1,5 +1,5 @@
 import { commands } from "@/lib/ipc/commands";
-import { focusLibrarySearch, resetLayout } from "@/shell/layouts";
+import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
 
 /** Reset layout shortcut (D17, R29). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
@@ -81,7 +81,11 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
     return focusLibrarySearch(doc);
   }
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
-    nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey)?.focus();
+    const region = nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey);
+    // The widget becomes the active dock panel, so the Layout menu acts on it (UD17). Dockview
+    // can move focus while it activates a panel, so the region takes focus after it.
+    if (region?.dataset.widget) activateWidget(region.dataset.widget);
+    region?.focus();
     return true;
   }
   return false;

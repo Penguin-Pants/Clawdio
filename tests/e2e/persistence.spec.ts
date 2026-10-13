@@ -166,3 +166,37 @@ test("U1, UD5: a stored version 1 layout starts with the default preset and is b
     .poll(() => page.evaluate(() => window.e2eLog ?? []))
     .toContain("layout: version 1 backed up as layout.json.bak");
 });
+
+test("U2-AC1, PS-4: a hand-corrupted layout.json starts with the default preset and is backed up", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem("e2e-corrupt-done")) return;
+    sessionStorage.setItem("e2e-corrupt-done", "1");
+    sessionStorage.setItem("e2e-layout", '{"version": 2, "dock": {');
+  });
+  await openApp(page);
+  await expect(widget(page, "playlists")).toBeVisible();
+  await expect(widget(page, "queue")).toBeVisible();
+  await expect(page.locator("body")).toHaveAttribute("data-layout-backups", "1");
+  expect(await page.evaluate(() => sessionStorage.getItem("e2e-layout.bak"))).toBe('{"version": 2, "dock": {');
+});
+
+test("SH-6, PS-5: Transport bar Bottom moves the band below the dock and survives a reload", async ({ page }) => {
+  await openApp(page);
+  await openMenu(page);
+  await page.getByRole("menuitemradio", { name: "Bottom", exact: true }).click();
+  await closeMenu(page);
+  const below = async () => {
+    const band = await page.locator('[data-widget="transport"]').boundingBox();
+    const dock = await page.locator("main").boundingBox();
+    return band !== null && dock !== null && band.y >= dock.y + dock.height - 1;
+  };
+  await expect.poll(below).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("e2e-layout") ?? "{}").transport))
+    .toBe("bottom");
+  await page.reload();
+  await expect(widget(page, "library")).toBeVisible();
+  await expect.poll(below).toBe(true);
+  await page.keyboard.press("Control+Shift+L");
+  await expect.poll(below).toBe(false);
+});

@@ -3,9 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
 import { useUiStore } from "@/store/ui";
 import {
-  LAYOUTS,
-  applyLayout,
   applyMeasureLayout,
+  applyPreset,
   attachDock,
   defaultArrangement,
   guardLibrary,
@@ -84,14 +83,14 @@ describe("defaultArrangement: the default preset (DK-8, UD6)", () => {
   });
 });
 
-describe("applyLayout and resetLayout (P2.4)", () => {
-  it.each(LAYOUTS)("applies %s: the default arrangement and its Library mode", (id) => {
+describe("applyPreset and resetLayout (P2.4, UD6)", () => {
+  it("a preset replaces the arrangement and keeps the Library mode", () => {
     const { api } = dockStandIn();
     defaultArrangement(api);
-    setWidgetVisible("queue", true, api);
-    applyLayout(id, api);
-    expect(visibleWidgets(api)).toEqual(["library", "playlists", "queue", "lyrics"]);
-    expect(useLibraryStore.getState().mode).toBe(id);
+    useLibraryStore.setState({ mode: "tree" });
+    applyPreset("compact", api);
+    expect(visibleWidgets(api)).toEqual(["library"]);
+    expect(useLibraryStore.getState().mode).toBe("tree");
   });
 
   it("reset applies the default preset, Columns, the band at the top and unlocked (UD6)", () => {
@@ -108,7 +107,8 @@ describe("applyLayout and resetLayout (P2.4)", () => {
     const { api, panels } = dockStandIn();
     guardLibrary(api);
     defaultArrangement(api);
-    for (let index = 0; index < 20; index += 1) applyLayout(LAYOUTS[index % 3], api);
+    const presets = ["appleMusicClassic", "musicBee", "compact"] as const;
+    for (let index = 0; index < 20; index += 1) applyPreset(presets[index % 3], api);
     await Promise.resolve();
     expect(panels.filter((panel) => panel.id === "library")).toHaveLength(1);
   });
@@ -121,20 +121,12 @@ describe("applyLayout and resetLayout (P2.4)", () => {
         throw new Error("boom");
       },
     } as unknown as DockviewApi;
-    expect(() => applyLayout("tree", failing)).toThrow("boom");
+    expect(() => applyPreset("compact", failing)).toThrow("boom");
     expect(isReplacing()).toBe(false);
   });
 
   it("does nothing without a dock", () => {
     expect(() => resetLayout()).not.toThrow();
-  });
-
-  it.each(LAYOUTS)("applying %s restores the frame sizes of all modes (P22-AC1, R28.1)", (id) => {
-    const { api } = dockStandIn();
-    useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
-    useLibraryStore.getState().setFrames("rows", [0.8, 0.2]);
-    applyLayout(id, api);
-    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
   });
 
   it("reset restores the frame sizes of all modes (P22-AC1)", () => {
@@ -218,7 +210,7 @@ describe("guardLibrary (P2.3)", () => {
     const tasks: (() => void)[] = [];
     guardLibrary(api, (task) => tasks.push(task));
     defaultArrangement(api);
-    applyLayout("tree", api);
+    applyPreset("musicBee", api);
     expect(tasks).toEqual([]);
   });
 });

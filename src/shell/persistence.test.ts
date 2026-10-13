@@ -168,6 +168,16 @@ describe("restoreLayout (P9.4, P9-AC4)", () => {
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("visualizer");
   });
 
+  it("keeps a floating group and removes an unknown widget in floatingGroups (DK-3, UD17)", () => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, fixture("floating.json"), SIZE, noBackup)).toBe(true);
+    expect(dock.panels).toEqual(["library", "queue", "nowPlaying"]);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("visualizer");
+    const saved = JSON.parse(fixture("floating.json"));
+    expect(parseLayout(JSON.stringify(saved))).toMatchObject({ unknown: ["visualizer"] });
+  });
+
   it("marks unknown widget ids before the dock sees them", () => {
     const parsed = parseLayout(fixture("unknown-widget.json"));
     expect("layout" in parsed && parsed.unknown).toEqual(["visualizer"]);

@@ -17,22 +17,48 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
 import { useSettingsStore } from "@/store/settings";
-import { useUiStore } from "@/store/ui";
+import { type TransportPosition, useUiStore } from "@/store/ui";
 import { commands } from "@/lib/ipc/commands";
 import { MODE_LABELS } from "@/widgets/library/LibraryWidget";
 import { RESET_SHORTCUT_LABEL } from "@/lib/keyboard";
-import { LAYOUTS, LAYOUT_TITLES, applyLayout, resetLayout, setWidgetVisible } from "./layouts";
+import {
+  activeWidget,
+  applyPreset,
+  dockWidget,
+  floatWidget,
+  getDock,
+  isFloating,
+  resetLayout,
+  setWidgetVisible,
+} from "./layouts";
+import { PRESETS, PRESET_IDS } from "./presets";
 import { WIDGET_IDS, WIDGETS } from "./widgets";
 
-/** The menu button (P2.6, R5, R29 non-drag path): Widgets, Library mode, Layouts, Settings and Rescan. */
+/** The active widget and whether it floats, read when the menu opens (UD17). */
+function activeWidgetState(open: boolean) {
+  if (!open) return { id: null, floating: false };
+  const id = activeWidget();
+  return { id, floating: id !== null && isFloating(getDock()?.getPanel(id)) };
+}
+
+/**
+ * The menu button (P2.6, R5, R29 non-drag path): View (every widget), Library mode, Layout
+ * (presets, Lock layout, transport position, float and dock of the active widget, Reset layout),
+ * Settings and Rescan (DK-5 to DK-9, SH-6, UD17).
+ */
 export function AppMenu() {
   const visible = useUiStore((state) => state.visibleWidgets);
   const setSettingsOpen = useUiStore((state) => state.setSettingsOpen);
+  const locked = useUiStore((state) => state.locked);
+  const setLocked = useUiStore((state) => state.setLocked);
+  const transportPosition = useUiStore((state) => state.transportPosition);
+  const setTransportPosition = useUiStore((state) => state.setTransportPosition);
   const mode = useLibraryStore((state) => state.mode);
   const setMode = useLibraryStore((state) => state.setMode);
   const hasFolder = useSettingsStore((state) => state.view.folderState === "ready");
   // The tooltip would cover the open menu, so it is off while the menu shows.
   const [open, setOpen] = useState(false);
+  const active = activeWidgetState(open);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <Tooltip disabled={open}>
@@ -45,7 +71,7 @@ export function AppMenu() {
       </Tooltip>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Widgets</DropdownMenuLabel>
+          <DropdownMenuLabel>View</DropdownMenuLabel>
           {WIDGET_IDS.map((id) => (
             <DropdownMenuCheckboxItem
               key={id}
@@ -70,12 +96,38 @@ export function AppMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Layouts</DropdownMenuLabel>
-          {LAYOUTS.map((id) => (
-            <DropdownMenuItem key={id} onClick={() => applyLayout(id)}>
-              {LAYOUT_TITLES[id]}
+          <DropdownMenuLabel>Layout</DropdownMenuLabel>
+          {PRESET_IDS.map((id) => (
+            <DropdownMenuItem key={id} onClick={() => applyPreset(id)}>
+              {PRESETS[id].title}
             </DropdownMenuItem>
           ))}
+          <DropdownMenuCheckboxItem checked={locked} onCheckedChange={(checked) => setLocked(checked)}>
+            Lock layout
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuItem
+            disabled={active.id === null || active.floating || locked}
+            onClick={() => active.id && floatWidget(active.id)}
+          >
+            Float widget
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={active.id === null || !active.floating || locked}
+            onClick={() => active.id && dockWidget(active.id)}
+          >
+            Dock widget
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Transport bar</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={transportPosition}
+            onValueChange={(value: TransportPosition) => setTransportPosition(value)}
+          >
+            <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => resetLayout()}>
             Reset layout

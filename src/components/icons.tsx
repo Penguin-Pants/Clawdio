@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import {
   AudioLines,
+  PanelTopClose,
+  PictureInPicture2,
   Columns3,
   Ellipsis,
   FileX,
@@ -32,6 +34,8 @@ import { cn } from "@/lib/utils";
  */
 export const ICONS = {
   close: X,
+  dock: PanelTopClose,
+  float: PictureInPicture2,
   columns: Columns3,
   grip: GripVertical,
   heart: Heart,

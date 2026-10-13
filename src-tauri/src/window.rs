@@ -1,17 +1,18 @@
-//! Main window (P4.2): title, WebView profile folder, saved size and minimum size (D33).
+//! Main window (P4.2): title, WebView profile folder, saved size and position (PS-5, UD14) and
+//! minimum size (D33).
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use clawdio_core::settings::{save, WindowSize};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{
+    AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    WindowEvent,
+};
 
 use crate::state::AppState;
 
-pub const DEFAULT_SIZE: WindowSize = WindowSize {
-    width: 1200.0,
-    height: 800.0,
-};
+pub const DEFAULT_SIZE: WindowSize = WindowSize::new(1200.0, 800.0);
 pub const MIN_WIDTH: f64 = 800.0;
 pub const MIN_HEIGHT: f64 = 560.0;
 /// A resize is saved once the size has not changed for this long.
@@ -23,8 +24,46 @@ pub fn start_size(saved: Option<WindowSize>) -> WindowSize {
         Some(size) if size.width.is_finite() && size.height.is_finite() => WindowSize {
             width: size.width.max(MIN_WIDTH),
             height: size.height.max(MIN_HEIGHT),
+            ..size
         },
         _ => DEFAULT_SIZE,
+    }
+}
+
+/// A monitor's physical bounds: left, top, width and height.
+type MonitorRect = (i32, i32, u32, u32);
+
+/// True when the physical point lies inside one of the monitors (UD14). No scale factor math:
+/// the saved point and the monitor bounds are both physical pixels.
+fn inside_a_monitor(x: i32, y: i32, monitors: &[MonitorRect]) -> bool {
+    monitors.iter().any(|&(left, top, width, height)| {
+        let (x, y) = (i64::from(x), i64::from(y));
+        let (left, top) = (i64::from(left), i64::from(top));
+        x >= left && y >= top && x < left + i64::from(width) && y < top + i64::from(height)
+    })
+}
+
+/// Moves the window to its saved position when that point is on an available monitor; else
+/// the OS position stays (a monitor was unplugged).
+fn restore_position(window: &WebviewWindow, size: WindowSize) {
+    let (Some(x), Some(y)) = (size.x, size.y) else {
+        return;
+    };
+    let monitors: Vec<MonitorRect> = window
+        .available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(|monitor| {
+            let (position, size) = (monitor.position(), monitor.size());
+            (position.x, position.y, size.width, size.height)
+        })
+        .collect();
+    if !inside_a_monitor(x, y, &monitors) {
+        log::info!("window: the saved position is on no monitor; the OS places the window");
+        return;
+    }
+    if let Err(error) = window.set_position(PhysicalPosition::new(x, y)) {
+        log::warn!("window: cannot restore the position: {error}");
     }
 }
 
@@ -38,16 +77,20 @@ fn store_size(app: &AppHandle, size: WindowSize) {
     }
     settings.window = Some(size);
     if let Err(error) = save(&state.dirs.config, &settings) {
-        log::warn!("window: cannot save the size: {error}");
+        log::warn!("window: cannot save the size and position: {error}");
     }
 }
 
-fn logical_size(window: &WebviewWindow) -> Option<WindowSize> {
+/// The logical inner size and the physical outer position of the window now.
+fn current_window(window: &WebviewWindow) -> Option<WindowSize> {
     let scale = window.scale_factor().ok()?;
     let size = window.inner_size().ok()?.to_logical::<f64>(scale);
+    let position = window.outer_position().ok();
     Some(WindowSize {
         width: size.width,
         height: size.height,
+        x: position.map(|point| point.x),
+        y: position.map(|point| point.y),
     })
 }
 
@@ -83,6 +126,7 @@ pub fn create_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         builder = builder.data_directory(folder);
     }
     let window = builder.build()?;
+    restore_position(&window, size);
     #[cfg(windows)]
     crate::webview2_keys::disable_in_release(&window)?;
     watch_size(app, &window);
@@ -103,20 +147,21 @@ pub fn bring_to_front(app: &AppHandle) {
     }
 }
 
-/// Saves the size 1 s after the last resize, and at once when the window closes.
+/// Saves the size and position 1 s after the last resize or move, and at once when the window
+/// closes.
 fn watch_size(app: &AppHandle, window: &WebviewWindow) {
     let pending: Arc<Mutex<Option<Instant>>> = Arc::default();
     let watched = window.clone();
     let events_app = app.clone();
     let events_pending = pending.clone();
     window.on_window_event(move |event| match event {
-        WindowEvent::Resized(_) => {
+        WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
             if let Ok(mut changed) = events_pending.lock() {
                 *changed = Some(Instant::now());
             }
         }
         WindowEvent::CloseRequested { .. } => {
-            if let Some(size) = logical_size(&watched) {
+            if let Some(size) = current_window(&watched) {
                 save_size(&events_app, &watched, size);
             }
         }
@@ -139,7 +184,7 @@ fn watch_size(app: &AppHandle, window: &WebviewWindow) {
                 })
                 .unwrap_or(false);
             if due {
-                match logical_size(&timer_window) {
+                match current_window(&timer_window) {
                     Some(size) => save_size(&timer_app, &timer_window, size),
                     None => break,
                 }
@@ -158,36 +203,47 @@ mod tests {
     fn a_minimized_or_zero_size_is_not_saved() {
         assert!(worth_saving(DEFAULT_SIZE, false));
         assert!(!worth_saving(DEFAULT_SIZE, true));
-        let zero = WindowSize {
-            width: 0.0,
-            height: 0.0,
-        };
+        let zero = WindowSize::new(0.0, 0.0);
         assert!(!worth_saving(zero, false));
     }
 
     #[test]
     fn opens_with_the_saved_size_but_never_below_the_minimum() {
         assert_eq!(start_size(None), DEFAULT_SIZE);
-        let saved = WindowSize {
-            width: 1000.0,
-            height: 700.0,
-        };
+        let saved = WindowSize::new(1000.0, 700.0);
         assert_eq!(start_size(Some(saved)), saved);
-        let small = WindowSize {
-            width: 300.0,
-            height: 200.0,
-        };
+        let small = WindowSize::new(300.0, 200.0);
         assert_eq!(
             start_size(Some(small)),
-            WindowSize {
-                width: MIN_WIDTH,
-                height: MIN_HEIGHT
-            }
+            WindowSize::new(MIN_WIDTH, MIN_HEIGHT)
         );
-        let broken = WindowSize {
-            width: f64::NAN,
-            height: 700.0,
-        };
+        let broken = WindowSize::new(f64::NAN, 700.0);
         assert_eq!(start_size(Some(broken)), DEFAULT_SIZE);
+    }
+
+    #[test]
+    fn a_position_outside_every_monitor_is_not_applied() {
+        let monitors = [(0, 0, 1920, 1080), (1920, -200, 2560, 1440)];
+        assert!(inside_a_monitor(100, 100, &monitors));
+        assert!(
+            inside_a_monitor(1920, -200, &monitors),
+            "the left top corner belongs to the monitor"
+        );
+        assert!(inside_a_monitor(4000, 1000, &monitors));
+        assert!(!inside_a_monitor(-10, 100, &monitors));
+        assert!(!inside_a_monitor(1919, 1080, &monitors));
+        assert!(!inside_a_monitor(100, 100, &[]));
+    }
+
+    #[test]
+    fn the_saved_position_stays_with_the_start_size() {
+        let saved = WindowSize {
+            x: Some(50),
+            y: Some(60),
+            ..WindowSize::new(300.0, 200.0)
+        };
+        let size = start_size(Some(saved));
+        assert_eq!((size.x, size.y), (Some(50), Some(60)));
+        assert_eq!((size.width, size.height), (MIN_WIDTH, MIN_HEIGHT));
     }
 }

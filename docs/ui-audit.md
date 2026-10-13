@@ -101,3 +101,8 @@ Each phase adds its acceptance check here (rework section 14).
 - Four fixed zones (header, band, dock, status); the band is not a dock panel; the bar-widget code is gone.
 - `tests/e2e/transport-band.spec.ts` checks the rework Phase 1 accept: from 800 to 2560 px the band never wraps, never changes height and keeps Play. SM and XS at a narrowed band, the overflow menu, seek by click, drag and keyboard, the 32 px buttons, text scaling at 100%, 125% and 140%.
 - Real app on Linux (WebKitGTK, Xvfb): the band and the default preset show; a version 1 layout is backed up.
+
+### U2: Docking
+
+- Presets (Apple Music classic, MusicBee style, Compact), Lock layout, floating groups with Float and Dock (pointer and keyboard), the View menu, transport top or bottom, `layout.json` v2 with floating groups, the window position in `settings.json`.
+- Rework Phase 2 accept: a hand-corrupted `layout.json` starts the app with the default preset and leaves `layout.json.bak` (`persistence.spec.ts`; the real app backed up a version 1 file in U1).

@@ -31,10 +31,28 @@ pub fn check_duck_percent(percent: u8) -> Result<u8, BadPercent> {
     }
 }
 
+/// The main window: logical size, and the outer position in physical pixels (PS-5, UD14).
+/// Files written before the UI shell rework have no position; the OS places the window then.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct WindowSize {
     pub width: f64,
     pub height: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<i32>,
+}
+
+impl WindowSize {
+    /// A size with no saved position.
+    pub const fn new(width: f64, height: f64) -> Self {
+        Self {
+            width,
+            height,
+            x: None,
+            y: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -158,10 +176,7 @@ mod tests {
             music_folder: Some("Music".into()),
             online_lookups: true,
             online_notice_done: true,
-            window: Some(WindowSize {
-                width: 1000.0,
-                height: 700.0,
-            }),
+            window: Some(WindowSize::new(1000.0, 700.0)),
             last_scan: Some(ScanCounts {
                 added: 3,
                 removed: 2,
@@ -215,10 +230,7 @@ mod tests {
                 music_folder: Some("Music".into()),
                 online_lookups: true,
                 online_notice_done: true,
-                window: Some(WindowSize {
-                    width: 900.0,
-                    height: 600.0
-                }),
+                window: Some(WindowSize::new(900.0, 600.0)),
                 last_scan: Some(ScanCounts {
                     added: 1,
                     removed: 0,
@@ -259,5 +271,29 @@ mod tests {
         assert!(
             matches!(load(dir.path()), Loaded::Invalid(reason) if reason.contains("version 9"))
         );
+    }
+
+    #[test]
+    fn a_window_position_round_trips_and_a_file_without_one_loads() {
+        let dir = tempfile::tempdir().unwrap();
+        let settings = Settings {
+            window: Some(WindowSize {
+                x: Some(-1200),
+                y: Some(40),
+                ..WindowSize::new(1000.0, 700.0)
+            }),
+            ..Settings::default()
+        };
+        save(dir.path(), &settings).unwrap();
+        let Loaded::Read(read) = load(dir.path()) else {
+            panic!("the file reads");
+        };
+        assert_eq!(read.window, settings.window);
+        let text = r#"{"version":1,"musicFolder":null,"onlineLookups":false,"onlineNoticeDone":true,"window":{"width":900.0,"height":600.0}}"#;
+        std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
+        let Loaded::Read(old) = load(dir.path()) else {
+            panic!("the file reads");
+        };
+        assert_eq!(old.window, Some(WindowSize::new(900.0, 600.0)));
     }
 }

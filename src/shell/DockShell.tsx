@@ -14,6 +14,7 @@ import { commands } from "@/lib/ipc/commands";
 import { observeSize } from "@/lib/resize";
 import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
 import { applySideWidths } from "./presets";
+import { keepSideWidths } from "./side-widths";
 import { UNKNOWN_COMPONENT, restoreLayout, watchLayout } from "./persistence";
 import { LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
@@ -119,18 +120,19 @@ const stripObserver = new ResizeObserver((entries) => {
   }
 });
 
-/** Layout work after a dock size change: the D45 clamp and the active tabs (P17-AC4). */
-export function onDockResize(api: DockviewApi | null, element: HTMLElement | null): void {
-  if (api) applyClamp(api);
-  showActiveTabs(element);
+/** Lock layout (DK-5, UD15): no widget drag and no group resize. */
+function applyLock(api: DockviewApi, locked: boolean): void {
+  api.updateOptions({ locked, disableDnd: locked });
 }
 
 /**
- * The docking shell (P2.1, D8): drag docking, splitters and tabbed groups. Floating groups are
- * off, no pop-out call exists and no tab context menu is configured.
+ * The docking shell (P2.1, D8): drag docking, splitters, tabbed groups and floating groups
+ * inside the window (DK-3). No pop-out call exists and no tab context menu is configured
+ * (DK-10). The proportional layout is off, so sidebars keep their pixel widths (SP-4).
  */
 export function DockShell() {
   const apiRef = useRef<DockviewApi | null>(null);
+  const sideRef = useRef<ReturnType<typeof keepSideWidths> | null>(null);
   const setVisibleWidgets = useUiStore((state) => state.setVisibleWidgets);
 
   const onReady = useCallback(
@@ -152,6 +154,8 @@ export function DockShell() {
       api.onDidLayoutFromJSON(sync);
       defaultArrangement(api);
       sync();
+      applyLock(api, useUiStore.getState().locked);
+      sideRef.current = keepSideWidths(api);
       void startArrangement(api, containerRef.current);
     },
     [setVisibleWidgets],
@@ -161,9 +165,20 @@ export function DockShell() {
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = containerRef.current;
-    const stop = element ? observeSize(element, () => onDockResize(apiRef.current, element)) : () => {};
+    const stop = element
+      ? observeSize(element, () => {
+          if (apiRef.current) applyClamp(apiRef.current);
+          sideRef.current?.onDockResize();
+          showActiveTabs(element);
+        })
+      : () => {};
+    const stopLock = useUiStore.subscribe((state, previous) => {
+      if (apiRef.current && state.locked !== previous.locked) applyLock(apiRef.current, state.locked);
+    });
     return () => {
       stop();
+      stopLock();
+      sideRef.current?.dispose();
       attachDock(null);
     };
   }, []);
@@ -176,8 +191,9 @@ export function DockShell() {
         components={COMPONENTS}
         tabComponents={TAB_COMPONENTS}
         defaultTabComponent={WidgetTab}
-        disableFloatingGroups
         dndStrategy="pointer"
+        proportionalLayout={false}
+        floatingGroupBounds="boundedWithinViewport"
         singleTabMode="default"
         onReady={onReady}
       />

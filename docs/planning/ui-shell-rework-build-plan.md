@@ -38,7 +38,7 @@
 |---|---|---|---|
 | U0 | Audit and source alignment | none | Done |
 | U1 | Shell zones and transport band | U0 | Done |
-| U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Not started |
+| U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Done |
 | U3 | Splitters and sidebar rail | U2 | Not started |
 | U4 | Library table | U1 | Not started |
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Not started |
@@ -642,7 +642,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | SH-3 dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
 | SH-4 no page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |
 | SH-5 minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Done (U1, UC7, UC8) |
-| SH-6 transport top or bottom | U2 | E2E `persistence.spec.ts` | Planned |
+| SH-6 transport top or bottom | U2 | E2E `persistence.spec.ts` | Done (U2) |
 | SH-7 drag region (MAY) | none | Not applicable: native title bar | Not applicable |
 | TR-1 height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Done (U1) |
 | TR-2 size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Done (U1) |
@@ -655,20 +655,20 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TR-9 mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
 | TR-10 customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
 | TR-11 Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
-| DK-1 one docking library | U2 (re-verify) | REV `package.json` | Passes today |
-| DK-2 minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Passes today |
-| DK-3 edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Planned (float missing) |
-| DK-4 drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Passes today |
-| DK-5 Lock layout | U2 | E2E `lock.spec.ts` | Planned |
-| DK-6 View menu with every widget | U2 | E2E `layouts.spec.ts` | Passes today (as Widgets) |
-| DK-7 Reset layout | U2 | UT `presets.test.ts`; E2E | Passes today; preset changes |
-| DK-8 default preset | U2 | E2E `presets.spec.ts` | Planned |
-| DK-9 three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Planned |
-| DK-10 pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Passes today |
+| DK-1 one docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
+| DK-2 minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
+| DK-3 edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Done (U2) |
+| DK-4 drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Done (U2) |
+| DK-5 Lock layout | U2 | E2E `lock.spec.ts` | Done (U2) |
+| DK-6 View menu with every widget | U2 | E2E `layouts.spec.ts` | Done (U2) |
+| DK-7 Reset layout | U2 | UT `presets.test.ts`; E2E | Done (U2) |
+| DK-8 default preset | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-9 three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-10 pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Done (U2) |
 | SP-1 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Planned (hit area) |
 | SP-2 double-click reset | U3 | UT, E2E | Planned |
 | SP-3 keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Planned |
-| SP-4 pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Planned |
+| SP-4 pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
 | SP-5 icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Planned |
 | SP-6 no zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Planned |
 | SP-7 auto-hide with pin (MAY) | none | Not built | Not built |
@@ -686,11 +686,11 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TB-12 row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
 | TB-13 secondary sort (SHOULD) | U6 | UT, E2E | Planned |
 | TB-14 density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
-| PS-1 JSON with a schema version | U1, U2 | UT `persistence.test.ts` | In progress (v2 in U1; U2 re-verifies) |
+| PS-1 JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Done (U2) |
 | PS-2 config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
-| PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Passes today |
+| PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
 | PS-4 validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
-| PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Planned (position, transport) |
+| PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | In progress (U2: size, position, transport; collapse state in U3) |
 | PS-6 column state apart from the layout | U4 | UT; E2E | Planned |
 | TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
@@ -705,7 +705,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TA-4 not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
-| Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
+| Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
 | Rework 8 Phase 4 accept | U3 | E2E | Planned |
 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
@@ -808,7 +808,40 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: the drag guard can flag the word "draggable" in a comment; no such comment exists, and the strict rule is intended.
 - F4: `layout_backup` runs before the default preset loads; a save happens only 500 ms after a later change, so the rename and the next save do not race.
 
-### U2 to U7
+### U2. Docking: presets, lock, View menu, persistence v2 (October 13, 2026)
+
+**Status:** Done. **Commit:** `U2: presets, lock, floating groups, View menu and window position`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U2-AC1 | Pass | `presets.spec.ts` (DK-7, DK-8, DK-9); `docking.spec.ts` (DK-3 every window edge and every Library edge, tab group, DK-4 overlay, DK-10 no pop-out, Library guard); `floating.spec.ts` (Float, move, Dock by pointer and keyboard, reload, inside the window); `lock.spec.ts` (DK-5); `layouts.spec.ts` (DK-6 close by tab control, reopen from View, Library disabled and checked); `persistence.spec.ts` (hand-corrupted `layout.json` starts with the default preset and leaves `layout.json.bak`). |
+| U2-AC2 | Pass (code and tests); real-app position not exercised | `layout.json` version 2 with `transport`, `locked`, `floatingGroups` (`persistence.test.ts`, `persistence.spec.ts`); debounce and close flush (P9-AC11); backup (U1). `settings.json` `window.x` and `window.y` (`settings.rs`, `window.rs` tests: a position off every monitor is not applied). |
+| U2-AC3 | Pass | `resize.spec.ts`: 1280 to 1600 px, Playlists and Play queue keep their widths within 1 px and Library takes the 320 px. |
+| U2-AC4 | Pass | `persistence.spec.ts`: Transport bar Bottom puts the band below the dock, survives a reload, Reset puts it back at the top. |
+| U2-AC5 | Pass (Chromium) | Validation command set; Chromium e2e 129 of 129. |
+
+**Notes**
+
+- UD16: Dockview 8.5.1 groups expose no layout priority (`priority` exists on Gridview panels only), so the fallback runs: `src/shell/side-widths.ts` puts the side groups back to their pixel widths after each dock resize, with `proportionalLayout={false}`.
+- UD17: Float and Dock show on the active tab of a group only, so the 280 px right group keeps both tabs in view; the tab controls are 20 px pointer targets. F6 makes the focused widget the active dock panel, so "Float widget" and "Dock widget" in the Layout menu act on it. Both menu items are disabled while the layout is locked.
+- `floatingGroupBounds="boundedWithinViewport"` keeps floating groups inside the dock on load and on resize (UK3).
+- The menu groups are now View, Library mode, Layout (presets, Lock layout, Float widget, Dock widget), Transport bar (Top, Bottom) and Reset layout. `LAYOUTS`, `LAYOUT_TITLES` and `applyLayout` are gone.
+- Floating group colors come from tokens (`src/styles/dockview-theme.css`).
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb, `npm run tauri dev`: the default preset with the Float controls on the active tabs. Xvfb has no window manager, so no move, resize or close event reached the window and `settings.json` was not written; the window position path is covered by the Rust tests only. The owner checks window position restore on Windows (rule 10).
+
+**Checks that could not run:** WebKit e2e (no Playwright WebKit build here; CI runs it). The real-app window position save and restore (no window manager under Xvfb).
+
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 0, F4 4.
+
+- F2 (fixed): the Float control made the tabs wider, so the 280 px right group lost the Lyrics tab to the overflow list.
+- F2 (fixed): the e2e "no float command" assertion contradicted DK-3; it now checks pop-out only (DK-10).
+- F4: a moved floating group might not be saved. `floating.spec.ts` shows the new position in `layout.json`.
+- F4: the side-width fix can push Library below its minimum at a small window. Dockview clamps `setSize` to the group constraints; the 800 x 560 cases in `layouts.spec.ts` and `persistence.spec.ts` pass (UK2).
+- F4: the window shows at the OS position before `restore_position` moves it. It is one frame at start and needs no fix.
+- F4: on Wayland `outer_position` fails; the position is then not saved and the OS places the window, which UD14 allows.
+
+### U3 to U7
 
 Not started.
 

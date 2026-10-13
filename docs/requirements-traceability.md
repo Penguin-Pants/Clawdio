@@ -718,7 +718,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
 | SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |
 | SH-5 | Minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Done (U1, UC7, UC8) |
-| SH-6 | Transport top or bottom | U2 | E2E `persistence.spec.ts` | Planned |
+| SH-6 | Transport top or bottom | U2 | E2E `persistence.spec.ts` | Done (U2) |
 | SH-7 | Drag region (MAY) | none | Not applicable: native title bar | Not applicable |
 | TR-1 | Height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Done (U1) |
 | TR-2 | Size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Done (U1) |
@@ -731,20 +731,20 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
 | TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
 | TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
-| DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Passes today |
-| DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Passes today |
-| DK-3 | Edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Planned (float missing) |
-| DK-4 | Drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Passes today |
-| DK-5 | Lock layout | U2 | E2E `lock.spec.ts` | Planned |
-| DK-6 | View menu with every widget | U2 | E2E `layouts.spec.ts` | Passes today (as Widgets) |
-| DK-7 | Reset layout | U2 | UT `presets.test.ts`; E2E | Passes today; preset changes |
-| DK-8 | Default preset | U2 | E2E `presets.spec.ts` | Planned |
-| DK-9 | Three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Planned |
-| DK-10 | Pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Passes today |
+| DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
+| DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
+| DK-3 | Edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Done (U2) |
+| DK-4 | Drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Done (U2) |
+| DK-5 | Lock layout | U2 | E2E `lock.spec.ts` | Done (U2) |
+| DK-6 | View menu with every widget | U2 | E2E `layouts.spec.ts` | Done (U2) |
+| DK-7 | Reset layout | U2 | UT `presets.test.ts`; E2E | Done (U2) |
+| DK-8 | Default preset | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-9 | Three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-10 | Pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Done (U2) |
 | SP-1 | 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Planned (hit area) |
 | SP-2 | Double-click reset | U3 | UT, E2E | Planned |
 | SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Planned |
-| SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Planned |
+| SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
 | SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Planned |
 | SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Planned |
 | SP-7 | Auto-hide with pin (MAY) | none | Not built | Not built |
@@ -762,11 +762,11 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
 | TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Planned |
 | TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
-| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | In progress (v2 in U1; U2 re-verifies) |
+| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Done (U2) |
 | PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
-| PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Passes today |
+| PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
 | PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
-| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Planned (position, transport) |
+| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | In progress (U2: size, position, transport; collapse state in U3) |
 | PS-6 | Column state apart from the layout | U4 | UT; E2E | Planned |
 | TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
@@ -781,7 +781,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | RW-8-P0 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
-| RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
+| RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
 | RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Planned |
 | RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
