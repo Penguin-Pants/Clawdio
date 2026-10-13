@@ -108,6 +108,16 @@ test("P22-AC3: frame sizes per mode survive a mode switch and a restart; Reset r
   expectClose(resetRows, [resetRows[1] ?? 0, resetRows[0] ?? 0]);
 });
 
+test("P22-AC3: a small splitter drag is saved too", async ({ page }) => {
+  await openApp(page);
+  await dragSash(page, "columns", 0, 40, 0);
+  await expect.poll(async () => (await savedFrames(page))?.columns[0] ?? 0).toBeGreaterThan(0.26);
+  const first = (await savedFrames(page)).columns[0] ?? 0;
+  // One px of a wide Library is less than 0.2% of the group.
+  await dragSash(page, "columns", 0, 1, 0);
+  await expect.poll(async () => (await savedFrames(page)).columns[0] ?? 0).toBeGreaterThan(first);
+});
+
 test("P22-AC3: Tree mode shows no frame splitter", async ({ page }) => {
   await openApp(page);
   await modeButton(page, "Tree").click();

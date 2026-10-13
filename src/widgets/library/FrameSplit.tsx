@@ -12,9 +12,6 @@ import { type FrameGroup, frameFractions, useLibraryStore } from "@/store/librar
 export const FRAME_MIN_WIDTH = 96;
 export const FRAME_MIN_HEIGHT = 64;
 
-/** Fractions that differ by less than this are the same layout. */
-const SAME_FRACTION = 0.002;
-
 export interface FrameView {
   id: string;
   content: ReactNode;
@@ -73,15 +70,15 @@ export function FrameSplit({
       if (previous instanceof HTMLElement && previous !== document.body) previous.focus({ preventScroll: true });
       else if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     }
-    // Only a splitter drag fires this event (dockview `onDidSashEnd`).
+    // Only a splitter drag fires this event (dockview `onDidSashEnd`), so every result is saved.
     api.onDidLayoutChange(() => {
       const sizes = api.panels.map((panel) => (horizontal ? panel.api.width : panel.api.height));
       const sum = sizes.reduce((total, size) => total + size, 0);
-      if (sum <= 0) return;
-      const next = sizes.map((size) => size / sum);
-      if (next.some((value, index) => Math.abs(value - (currentFractions(group)[index] ?? 0)) > SAME_FRACTION)) {
-        useLibraryStore.getState().setFrames(group, next);
-      }
+      if (sum > 0)
+        useLibraryStore.getState().setFrames(
+          group,
+          sizes.map((size) => size / sum),
+        );
     });
     const element = containerRef.current;
     if (element) {

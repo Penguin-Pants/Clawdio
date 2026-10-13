@@ -16,11 +16,7 @@ function contentHeight(page: Page, id: string): Promise<number> {
   return page.locator(`[data-bar-content="${id}"]`).evaluate((element) => element.getBoundingClientRect().height);
 }
 
-/**
- * The top drop zone of Library's content, just below its tab bar. Library spans the window, so
- * this docks across the full width. Dockview offers no separate window-edge zone here, and the
- * tab bar above is a tab drop.
- */
+/** The top drop zone of Library's content, just below its tab bar. */
 async function libraryTop(page: Page): Promise<{ x: number; y: number }> {
   const body = await widget(page, "library").boundingBox();
   if (!body) throw new Error("no library");
@@ -83,6 +79,26 @@ test("P23-AC4: Transport controls dropped on the top of Library is a full-width 
   });
   await expect(page.locator(".dv-tabs-container", { has: tab(page, "Library") }).locator(".dv-tab")).toHaveCount(1);
   expect(await box(page, "transport")).toEqual(transport);
+});
+
+test("P23-AC4: Transport controls dropped on the window top edge spans a side-by-side layout (D58)", async ({
+  page,
+}) => {
+  await openApp(page);
+  await showWidget(page, "Play queue");
+  const queue = await box(page, "queue");
+  const library = await box(page, "library");
+  // Library and Play queue sit side by side, so no group top spans the dock.
+  expect(Math.abs(queue.y - library.y)).toBeLessThan(1);
+  const dock = await page.locator(".dv-dockview").first().boundingBox();
+  if (!dock) throw new Error("no dock");
+  await drag(page, await center(tab(page, "Transport controls")), { x: dock.x + dock.width / 2, y: dock.y + 3 });
+  const transport = await box(page, "transport");
+  expect(Math.abs(transport.y - dock.y)).toBeLessThan(1);
+  expect(Math.abs(transport.width - dock.width)).toBeLessThan(2);
+  expect(Math.abs(transport.height - ((await contentHeight(page, "transport")) + HEADER))).toBeLessThanOrEqual(1);
+  expect((await box(page, "library")).y).toBeGreaterThanOrEqual(transport.y + transport.height - 1);
+  expect((await box(page, "queue")).y).toBeGreaterThanOrEqual(transport.y + transport.height - 1);
 });
 
 test("P23-AC4: the two bar widgets share a row at the larger height; Play queue cannot join a bar group", async ({
