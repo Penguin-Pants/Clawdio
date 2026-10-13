@@ -12,7 +12,7 @@ async function box(page: Page, id: string) {
 }
 
 /** The bar content's natural height (D57). */
-async function contentHeight(page: Page, id: string): Promise<number> {
+function contentHeight(page: Page, id: string): Promise<number> {
   return page.locator(`[data-bar-content="${id}"]`).evaluate((element) => element.getBoundingClientRect().height);
 }
 
