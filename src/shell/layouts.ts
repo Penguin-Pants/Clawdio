@@ -76,11 +76,16 @@ export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) =
   }
 }
 
-/** Replaces the arrangement with the default one and sets the layout's Library mode. */
+/**
+ * Replaces the arrangement with the default one and sets the layout's Library mode. The frame
+ * sizes of all modes go back to their defaults (R28.1).
+ */
 export function applyLayout(id: LayoutId, api: DockviewApi | null = dock): void {
   if (!api) return;
   replaceArrangement(api, defaultArrangement);
-  useLibraryStore.getState().setMode(id);
+  const library = useLibraryStore.getState();
+  library.setMode(id);
+  library.resetFrames();
 }
 
 /**

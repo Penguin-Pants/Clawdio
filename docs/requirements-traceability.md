@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.13, October 13, 2026.
-**Plan:** `docs/build-plan.md` v1.19. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.14, October 13, 2026.
+**Plan:** `docs/build-plan.md` v1.20. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 400 | 210 | 115 | 8 | 5 | 5 | 57 | 0 |
-| design.md | 78 | 58 | 8 | 1 | 10 | 0 | 1 | 0 |
+| Requirements | 400 | 223 | 102 | 8 | 5 | 5 | 57 | 0 |
+| design.md | 78 | 59 | 7 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -104,14 +104,14 @@
 | R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Done (P6) |
 | R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Done (P6) |
 | R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Done (P2) |
-| R28.1-1 | Columns: splitters between Artist and Album and between Album and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Planned (D56) |
-| R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Planned (D56) |
-| R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Planned |
-| R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Planned (D56) |
-| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Planned (D56) |
-| R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Planned |
-| R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Planned (D55) |
-| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Planned |
+| R28.1-1 | Columns: splitters between Artist and Album and between Album and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
+| R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
+| R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22) |
+| R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Done (P22, D56) |
+| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
+| R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
+| R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Done (P22, D55) |
+| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
 | R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
 | R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Done (P9) |
 | R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Done (P2) |
@@ -376,7 +376,7 @@
 | E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
 | E-40 | Window too short for bar widgets: other widgets and frames shrink first, then the clamp | §5 | P23.4, P22.4 | P23-AC3, P22-AC4 | UT, E2E | Planned (D59) |
 | E-41 | One bar widget shown: own row; showing the other joins that row | §5 | P23.1 | P23-AC4 | E2E | Planned |
-| E-42 | Corrupt or unknown frame-size data: defaults for that mode, logged; rest loads | §5 | P22.3 | P22-AC2 | UT | Planned (D55) |
+| E-42 | Corrupt or unknown frame-size data: defaults for that mode, logged; rest loads | §5 | P22.3 | P22-AC2 | UT | Done (P22, D55) |
 
 ### 1.11 Section 6: constraints
 
@@ -460,15 +460,15 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-26 | Resume: short fixed wait, then a fade | §8.26 | P20.3 | P20-AC1 | UT | Done (P20) |
 | DEC-27 | Ducking modes: Lower volume or Pause | §8.27 | P20.1 | P20-AC3 | E2E | Done (P20) |
 | DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Done (P19) |
-| DEC-29 | Component size means frame splitters; content scale deferred | §8.29 | P22.1 | P22-AC3 | E2E | Planned |
-| DEC-30 | No layout mode; arrangement keeps saving automatically | §8.30 | P22.3 | P22-AC3 | E2E | Planned |
+| DEC-29 | Component size means frame splitters; content scale deferred | §8.29 | P22.1 | P22-AC3 | E2E | Done (P22) |
+| DEC-30 | No layout mode; arrangement keeps saving automatically | §8.30 | P22.3 | P22-AC3 | E2E | Done (P22) |
 | DEC-31 | Transport controls get a fixed natural height | §8.31 | P23.1 | P23-AC6 | E2E | Planned (D57) |
 | DEC-32 | Side drops refused for bar widgets | §8.32 | P23.2 | P23-AC4 | E2E | Planned (D58) |
 | DEC-33 | Tabbing refused both ways for bar widgets | §8.33 | P23.2 | P23-AC4 | E2E | Planned (D58) |
 | DEC-34 | Now playing is a bar widget; the two can share a row | §8.34 | P23.1 | P23-AC4 | E2E | Planned |
-| DEC-35 | Frame sizes kept per Library mode | §8.35 | P22.2 | P22-AC1 | UT | Planned |
+| DEC-35 | Frame sizes kept per Library mode | §8.35 | P22.2 | P22-AC1 | UT | Done (P22) |
 | DEC-36 | Old arrangements: repair only the widget that breaks the rules | §8.36 | P23.3 | P23-AC2 | UT | Planned |
-| DEC-37 | Frame splitters mouse only | §8.37 | P22.1 | P22-AC4 | E2E | Planned (D56) |
+| DEC-37 | Frame splitters mouse only | §8.37 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -551,7 +551,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Done (P10) |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Done (P15) |
 | DES-5.11 | Bar widgets: fixed height, top and bottom edges only, shared row, no tab group | §5 | P23.1, P23.2 | P23-AC4 | E2E | Planned (D57, D58) |
-| DES-5.12 | Library frame splitters in Columns and Top/bottom, styled like dock splitters | §5 | P22.1 | P22-AC3, P22-AC4 | E2E | Planned (D56) |
+| DES-5.12 | Library frame splitters in Columns and Top/bottom, styled like dock splitters | §5 | P22.1 | P22-AC3, P22-AC4 | E2E | Done (P22, D56) |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
 | DES-6.3 | Dense, scannable track rows | §6 | P6.4 | P6-AC1 | E2E | Done (P6) |

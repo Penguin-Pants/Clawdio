@@ -1,7 +1,7 @@
 import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { commands } from "@/lib/ipc/commands";
 import * as log from "@/lib/log";
-import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import { DEFAULT_FRAMES, LIBRARY_MODES, type LibraryFrames, type LibraryMode, useLibraryStore } from "@/store/library";
 import { applyClamp } from "./clamp";
 import { RESET_LAYOUT, applyLayout, replaceArrangement } from "./layouts";
 import { isWidgetId } from "./widgets";
@@ -17,7 +17,54 @@ export const UNKNOWN_COMPONENT = "unknown";
 export interface SavedLayout {
   version: number;
   libraryMode: LibraryMode;
+  /** Optional in the file (D55): a file without it loads with the default sizes. */
+  libraryFrames: LibraryFrames;
   dock: SerializedDockview;
+}
+
+/** A sum of fractions this close to 1 is accepted (D55). */
+const FRACTION_SUM_TOLERANCE = 0.01;
+
+/** True for `length` finite positive numbers that add up to 1 (D55). */
+function isFractions(value: unknown, length: number): value is number[] {
+  if (!Array.isArray(value) || value.length !== length) return false;
+  if (!value.every((item) => typeof item === "number" && Number.isFinite(item) && item > 0)) return false;
+  const sum = (value as number[]).reduce((total, item) => total + item, 0);
+  return Math.abs(sum - 1) <= FRACTION_SUM_TOLERANCE;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Reads `libraryFrames` (D55). An invalid mode entry, or one with an unknown property, gives that
+ * mode its defaults; an unknown mode key is ignored. Each case adds one warning.
+ */
+export function parseFrames(value: unknown): { frames: LibraryFrames; warnings: string[] } {
+  if (value === undefined) return { frames: DEFAULT_FRAMES, warnings: [] };
+  if (!isObject(value)) return { frames: DEFAULT_FRAMES, warnings: ["libraryFrames is not an object"] };
+  const warnings: string[] = [];
+  for (const key of Object.keys(value)) {
+    if (key !== "columns" && key !== "topBottom") warnings.push(`unknown libraryFrames mode ${key} ignored`);
+  }
+  let columns = DEFAULT_FRAMES.columns;
+  if (value.columns !== undefined) {
+    if (isFractions(value.columns, 3)) columns = value.columns;
+    else warnings.push("invalid libraryFrames.columns; using the default sizes");
+  }
+  let topBottom = DEFAULT_FRAMES.topBottom;
+  const entry = value.topBottom;
+  if (entry !== undefined) {
+    const valid =
+      isObject(entry) &&
+      Object.keys(entry).every((key) => key === "top" || key === "rows") &&
+      isFractions(entry.top, 2) &&
+      isFractions(entry.rows, 2);
+    if (valid) topBottom = { top: entry.top as number[], rows: entry.rows as number[] };
+    else warnings.push("invalid libraryFrames.topBottom; using the default sizes");
+  }
+  return { frames: { columns, topBottom }, warnings };
 }
 
 /** Why a saved layout was not used. */
@@ -27,7 +74,9 @@ export type Rejected = { reason: string };
  * Checks a saved layout (P9.4 step 1): it must parse, have version 1, a `dock` object and a
  * known `libraryMode`. Unknown widget ids become the placeholder; their ids are returned.
  */
-export function parseLayout(text: string): { layout: SavedLayout; unknown: string[] } | Rejected {
+export function parseLayout(
+  text: string,
+): { layout: SavedLayout; unknown: string[]; frameWarnings: string[] } | Rejected {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -52,7 +101,12 @@ export function parseLayout(text: string): { layout: SavedLayout; unknown: strin
       panel.contentComponent = UNKNOWN_COMPONENT;
     }
   }
-  return { layout: { version: LAYOUT_VERSION, libraryMode: mode as LibraryMode, dock: serialized }, unknown };
+  const { frames, warnings } = parseFrames(object.libraryFrames);
+  return {
+    layout: { version: LAYOUT_VERSION, libraryMode: mode as LibraryMode, libraryFrames: frames, dock: serialized },
+    unknown,
+    frameWarnings: warnings,
+  };
 }
 
 /**
@@ -68,7 +122,7 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
   };
   const parsed = parseLayout(text);
   if ("reason" in parsed) return fallback(parsed.reason);
-  const { layout, unknown } = parsed;
+  const { layout, unknown, frameWarnings } = parsed;
   try {
     replaceArrangement(api, (target) => {
       target.fromJSON(layout.dock);
@@ -84,6 +138,8 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
   if (unknown.length > 0) log.warn(`layout: unknown widget ids removed: ${unknown.join(", ")}`);
   if (!api.getPanel("library")) return fallback("the layout has no Library widget");
   useLibraryStore.getState().setMode(layout.libraryMode);
+  for (const warning of frameWarnings) log.warn(`layout: ${warning}`);
+  useLibraryStore.getState().setAllFrames(layout.libraryFrames);
   // Step 5: fit the saved layout to this window; the clamp uses the saved minimums.
   api.layout(size.width, size.height, true);
   applyClamp(api);
@@ -92,13 +148,14 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
 
 /** The object to save now. */
 export function currentLayout(api: DockviewApi): SavedLayout {
-  return { version: LAYOUT_VERSION, libraryMode: useLibraryStore.getState().mode, dock: api.toJSON() };
+  const library = useLibraryStore.getState();
+  return { version: LAYOUT_VERSION, libraryMode: library.mode, libraryFrames: library.frames, dock: api.toJSON() };
 }
 
 /**
- * Saves the layout 500 ms after each layout or mode change (P9.3). `flush` writes the
- * current layout at once, for the window close request: Dockview can report a change after
- * the request, so it does not wait for one. Returns the stop function too.
+ * Saves the layout 500 ms after each layout, mode or frame size change (P9.3, P22.3). `flush`
+ * writes the current layout at once, for the window close request: Dockview can report a change
+ * after the request, so it does not wait for one. Returns the stop function too.
  */
 export function watchLayout(
   api: DockviewApi,
@@ -124,7 +181,7 @@ export function watchLayout(
   };
   const layoutChange = api.onDidLayoutChange(schedule);
   const modeChange = useLibraryStore.subscribe((state, previous) => {
-    if (state.mode !== previous.mode) schedule();
+    if (state.mode !== previous.mode || state.frames !== previous.frames) schedule();
   });
   return {
     flush: () => write(true),

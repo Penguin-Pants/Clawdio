@@ -1,13 +1,13 @@
 # Clawdio Build Plan
 
-**Version:** 1.19, October 13, 2026 (requirements v1.7: phases P22 and P23).
+**Version:** 1.20, October 13, 2026 (P22 done).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
-- Requirements v1.7 adds P22 (Library frame splitters) and P23 (bar widgets). Both are Not started.
+- Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets).
 - The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
@@ -87,7 +87,7 @@ A phase is Done when all of these are true:
 | P19 | Bulk import and missing-song repair | P18 (waived, section 13 v1.14) | Done with exceptions |
 | P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
-| P22 | Library frame splitters | P21 | Not started |
+| P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
@@ -1264,6 +1264,45 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - "Linux memory regression must block": D49 sets the Linux gate at 468 MB; 315 MB passes it, and R20 asks only that the owner is told.
 
 **Follow-ups:** F-21 (done: run 38297586103).
+
+#### P22. Library frame splitters (October 13, 2026)
+
+- **Status:** Done with exceptions.
+- **Commits:** branch `clawd/zen-hopper-rszalw`, from `b05f619`. Messages start with `P22:`.
+- **Packages:** none new. `SplitviewReact` comes from `dockview-react` 8.5.1 (D56).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P22-AC1 | Pass | `src/store/library.test.ts`: per-group fractions survive a mode switch; `resetFrames`. `src/shell/layouts.test.ts`: each built-in layout and Reset layout restore the defaults of all modes. |
+| P22-AC2 | Pass | `src/shell/persistence.test.ts`: a file without `libraryFrames` (defaults, no log), a round trip, four invalid `columns` cases, an unknown property in `topBottom`, an unknown mode key, a non-object value; each with one log line and the dock and the other mode kept. A frame change saves after 500 ms. |
+| P22-AC3 | Pass (Chromium) (E1) | `tests/e2e/frames.spec.ts`: Columns and Top/bottom drags, a mode switch keeps the Columns sizes, a reload keeps both modes, Ctrl+Shift+L restores the defaults, Tree mode has no frame splitter. |
+| P22-AC4 | Pass (Chromium) (E1) | `frames.spec.ts`: a drag stops at the 96 px minimum; at 800 x 560 with six widgets no frame has zero size and the page has no horizontal scroll; the sash hover line is `border.strong`; the sash has no Tab stop. |
+
+**Notes**
+
+- N1: Dockview's splitview reports a layout change only at the end of a sash drag (`onDidSashEnd`), so only a drag writes the store. The container size drives `layout()` (`disableAutoResizing`), and each resize applies the saved fractions again.
+- N2: the store API is `setFrames(group, fractions)` with the groups `columns`, `top` and `rows`, in place of `setFrames(mode, fractions)` (P22.2): Top/bottom has two splitter groups.
+- N3: `addPanel` focuses the new panel. `FrameSplit` puts focus back where it was, so the frames do not take focus at start (P2-AC10) or on a keyboard mode switch (new test in `frames.spec.ts`).
+- N4: Dockview draws the frame separator over the frame's left edge. The theme adds 1 px padding on each later frame, so the selected-row marker stays visible (P6-AC9).
+
+**Exceptions**
+
+- E1: WebKit is not installed in this environment. The Playwright suite ran in Chromium (106 passed); CI runs WebKit. The manual Windows check of AC-25 is P23-AC7.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 2. Source: own audit and the full e2e run.
+
+- F2:
+  - A mode switch reused the splitview of the other mode, so Top/bottom showed three stacked frames. Each mode body now has its own key.
+  - The new frames took focus at start, which broke the F6 order (P2-AC10). Fixed (N3).
+  - The separator hid the selected-row marker (P6-AC9). Fixed (N4).
+  - A doc comment in `persistence.ts` ran past the line width.
+- F4:
+  - `applyMeasureLayout` does not reset frame sizes: the measurement layout is not saved (P3.1).
+  - Sashes have no keyboard resize: R28.1 asks for mouse only (K5, section 7 of the requirements).
+
+**Follow-ups:** none new.
 
 ## 3. Source documents and precedence
 
@@ -2949,6 +2988,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.20 (October 13, 2026):** P22 Done with exceptions (WebKit e2e runs in CI only).
 - **1.19 (October 13, 2026):** requirements v1.7 (R28.1, R29.1, AC-25 to AC-27). Added phases P22 and P23, D55 to D59 and K23. F-22 left section 11 (done). The owner skipped the Dockview check before planning; K23 records it.
 - **1.18 (October 12, 2026):** owner allowed `measure/p21`. F-21 done (run 38297586103 on `5625ff9`): Linux CI VM 293 MB, Windows 144 MB, NSIS 5.18 MiB. The 17 MB Linux container growth does not show on the CI VM. F-21 left section 11.
 - **1.17 (October 12, 2026):** P21 Done with exceptions: packages, licenses, Linux memory (315 MB), brand swap and the 24 checks recorded on the P20 head. F-21 proposed. P18 stays In progress (B3, B5).

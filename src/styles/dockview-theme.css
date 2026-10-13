@@ -129,3 +129,27 @@
   height: 2px;
   background-color: var(--color-border-strong);
 }
+
+/*
+ * Library frames (P22.1): the separator line sits on the frame edge. The content starts after
+ * it, so the selected-row marker on the left edge stays visible (P6-AC9).
+ */
+.dockview-theme-app
+  [data-frame-group]
+  > div
+  > div
+  > .dv-split-view-container.dv-horizontal
+  > .dv-view-container
+  > .dv-view:not(:first-child) {
+  padding-left: 1px;
+}
+
+.dockview-theme-app
+  [data-frame-group]
+  > div
+  > div
+  > .dv-split-view-container.dv-vertical
+  > .dv-view-container
+  > .dv-view:not(:first-child) {
+  padding-top: 1px;
+}

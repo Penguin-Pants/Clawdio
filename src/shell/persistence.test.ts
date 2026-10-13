@@ -2,7 +2,7 @@
 import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as log from "@/lib/log";
-import { useLibraryStore } from "@/store/library";
+import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
 import {
   SAVE_DELAY_MS,
   UNKNOWN_COMPONENT,
@@ -70,7 +70,7 @@ const SIZE = { width: 800, height: 560 };
 
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
-  useLibraryStore.setState({ mode: "columns" });
+  useLibraryStore.setState({ mode: "columns", frames: DEFAULT_FRAMES });
 });
 
 afterEach(() => {
@@ -125,12 +125,74 @@ describe("restoreLayout (P9.4, P9-AC4)", () => {
   });
 });
 
+/** valid.json with a `libraryFrames` value. */
+function withFrames(frames: unknown): string {
+  return JSON.stringify({ ...JSON.parse(fixture("valid.json")), libraryFrames: frames });
+}
+
+describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
+  const CUSTOM = { columns: [0.2, 0.3, 0.5], topBottom: { top: [0.6, 0.4], rows: [0.3, 0.7] } };
+
+  it("loads a version 1 file without libraryFrames with the default sizes", () => {
+    useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
+    expect(restoreLayout(dockStandIn().api, fixture("valid.json"), SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it("keeps both modes' sizes over a save and a load", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    useLibraryStore.getState().setAllFrames(CUSTOM);
+    const text = JSON.stringify(currentLayout(dock.api));
+    useLibraryStore.getState().resetFrames();
+    expect(restoreLayout(dockStandIn().api, text, SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual(CUSTOM);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a wrong length", [0.5, 0.5]],
+    ["a sum that is not 1", [0.2, 0.2, 0.2]],
+    ["a zero value", [0, 0.5, 0.5]],
+    ["a value that is not a number", ["a", 0.5, 0.5]],
+  ])("an invalid columns entry (%s) gives Columns defaults and one log line", (_case, columns) => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, withFrames({ ...CUSTOM, columns }), SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual({ columns: DEFAULT_FRAMES.columns, topBottom: CUSTOM.topBottom });
+    expect(dock.panels).toEqual(["library", "queue"]);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("columns");
+  });
+
+  it("an unknown property inside topBottom gives Top/bottom defaults and one log line", () => {
+    const text = withFrames({ ...CUSTOM, topBottom: { ...CUSTOM.topBottom, middle: [1] } });
+    expect(restoreLayout(dockStandIn().api, text, SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual({ columns: CUSTOM.columns, topBottom: DEFAULT_FRAMES.topBottom });
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("topBottom");
+  });
+
+  it("an unknown mode key is ignored with one log line, and both modes load", () => {
+    expect(restoreLayout(dockStandIn().api, withFrames({ ...CUSTOM, grid: [1] }), SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual(CUSTOM);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("grid");
+  });
+
+  it("libraryFrames that is not an object gives the defaults of all modes and one log line", () => {
+    expect(restoreLayout(dockStandIn().api, withFrames([1, 2]), SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("saving (P9.3, P9-AC8)", () => {
   it("saves the version, the Library mode and the dock, and no window size", () => {
     const dock = dockStandIn();
     dock.api.addPanel({ id: "library", component: "library" });
     const saved = currentLayout(dock.api);
-    expect(Object.keys(saved).sort()).toEqual(["dock", "libraryMode", "version"]);
+    expect(Object.keys(saved).sort()).toEqual(["dock", "libraryFrames", "libraryMode", "version"]);
     expect(saved.version).toBe(1);
   });
 
@@ -155,6 +217,17 @@ describe("saving (P9.3, P9-AC8)", () => {
     await watcher.flush();
     // A close request writes even with nothing pending.
     expect(save).toHaveBeenCalledTimes(3);
+    watcher.dispose();
+  });
+
+  it("saves 500 ms after a frame size change (P22.3)", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn<(json: string) => Promise<void>>(async () => {});
+    const watcher = watchLayout(dockStandIn().api, save);
+    useLibraryStore.getState().setFrames("columns", [0.3, 0.3, 0.4]);
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(save.mock.calls[0][0]).libraryFrames.columns).toEqual([0.3, 0.3, 0.4]);
     watcher.dispose();
   });
 });

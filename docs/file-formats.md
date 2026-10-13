@@ -87,6 +87,7 @@ The app writes the file atomically. It refuses text that is not one JSON object 
 |---|---|---|
 | `version` | integer | Schema version, `1`. |
 | `libraryMode` | string | `tree`, `columns` or `topBottom`. |
+| `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
 | `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, and the active group. |
 
 The file holds no window size: that is in `settings.json` only (P9-AC8). The grid `width` and `height` are the dock size when saved; the app fits the grid to the current window at start.
@@ -97,6 +98,7 @@ Example (shortened):
 {
   "version": 1,
   "libraryMode": "tree",
+  "libraryFrames": { "columns": [0.25, 0.25, 0.5], "topBottom": { "top": [0.5, 0.5], "rows": [0.5, 0.5] } },
   "dock": {
     "grid": {
       "root": {
@@ -127,8 +129,11 @@ Rules (P9.4), each with one warning in `app.log`:
 2. A widget id this version does not know: its panel is removed; the rest stays.
 3. No Library panel: the Columns layout applies.
 4. Any error while the dock loads: the Columns layout applies.
+5. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
 
-Saving: 500 ms after a layout or Library mode change, and at once when the window closes. The measurement layout (P3.1) is not saved.
+Reset layout and each built-in layout restore the default frame sizes of all modes (R28.1).
+
+Saving: 500 ms after a layout, Library mode or frame size change, and at once when the window closes. The measurement layout (P3.1) is not saved.
 
 ## Playlists (`.m3u8`)
 
