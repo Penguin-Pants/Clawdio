@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.5, October 13, 2026.
+**Version:** 1.6, October 13, 2026.
 **Status:** Ready for implementation. No phase has started.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -460,7 +460,7 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - Vitest `rows.test.tsx`: a container width change through the mocked `ResizeObserver` re-renders the header and no `Row` (PF-1, real path).
 - Playwright `table.spec.ts` (TB-2 to TB-11): drag a divider; a column never goes below its minimum; double-click a divider; the header menu items; drag a header to reorder; `#` has no drag handle and no hide item; hide Album and show it again; keyboard only: Tab to the header, Right to Artist, Enter sorts, Shift+Right moves it after Album, Ctrl+Right widens it by 8 px, Shift+F10 opens the header menu, Down returns to the body; Title takes the spare width; Time is right aligned; at a narrow Library the horizontal scrollbar appears and the header stays aligned with the body after scrolling; click Title to sort and the arrow and `aria-sort` show; Shift+click and Ctrl+click select ranges; Enter plays the active row; Shift+F10 on a row, then "Add to Favorites": the heart fills and the row is in Favorites; the playing row shows the icon in the `#` column; the state survives a mode switch and a reload per mode; Tree mode shows no header.
 - Playwright `table-perf.spec.ts` (TB-1, PF-3): 50,000 rows, the DOM holds at most the visible rows plus overscan, no frame gap over 100 ms.
-- Playwright `audit.spec.ts`: axe with the table (`grid`, `row`, `columnheader` and `gridcell` roles, `aria-multiselectable`, `aria-sort`); no role-context violation; `aria-rowcount` equals the song count plus one and the first rendered body row after a scroll carries the matching `aria-rowindex`.
+- Playwright `audit.spec.ts`: axe with the table (`grid`, `row`, `columnheader` and `gridcell` roles, `aria-multiselectable`, `aria-sort`); no role-context violation; `aria-rowcount` equals the song count plus one; the header row carries `aria-rowindex="1"`; after a scroll, every rendered body row carries `aria-rowindex` equal to its list position plus two, with no gap and no repeat between consecutive rows.
 
 **Acceptance criteria**
 
@@ -810,6 +810,8 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 4. The U1 F6 case listed only the band and Library. All visible regions of the default preset.
 5. TA-2 had no manual rows. U7 chooses the folder on both platforms.
 
+**Codex review round 5 (PR 22, head `3479e56`): F2 1, F4 0.** The U4 axe test checked one body row; it now asserts `aria-rowindex` on the header and on every rendered body row (version 1.6).
+
 **F3 (recorded in `docs/build-plan.md` section 11 by U0):**
 
 1. Dockview `keyboardNavigation` (F-12) could give keyboard moves of widgets after U3; it stays an owner decision.
@@ -829,6 +831,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.
 - **1.5 (October 13, 2026):** PR 21 review, Codex round 4: five findings fixed (section 11): grid row-count semantics (UD8), UD19 signature, real-app smoke check per phase (rule 10), F6 order, TA-2 manual rows.
 - **1.4 (October 13, 2026):** PR 21 review, Codex round 3: seven findings fixed (section 11): mini command height, XL at 1280 px, fixed `#` column, header keyboard path, Favorites drop, measurement arrangement, hideable-only close test.
 - **1.3 (October 13, 2026):** PR 21 review, Codex round 2: ten findings fixed (section 11): keyboard Float and Dock (UD17), Favorites in the row menu (UD8), mini height from the token (UD19), `observeSize` for every observer (UD24), spacing token (UD1), Collapse and Restore (UD25), 800 x 560 in the checklist (UC10), row heights migrated in U1, traceability rows in U0, close-request test in U2.
