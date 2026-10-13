@@ -168,6 +168,6 @@ P21 (October 12, 2026) ran the checks again on the P20 head `907a0e4`. Rows that
 | AC-22 Bulk import and repair | Pass (auto: P19-AC1 to P19-AC6, P19-AC9; Playwright P19-AC7) | Auto pass (CI); manual with the owner's playlists not run (P19-AC8) |
 | AC-23 Microphone ducking | Not applicable: Windows only (D53) | Not verified (owner decision at P20): the P20.0 probe showed the signal follows Handy and a WhatsApp call, and two overlapping users; the app itself was not run. Unit tests pass (P20-AC1, P20-AC7). |
 | AC-24 No microphone use by the app | Not applicable: Windows only | Not verified (owner decision at P20). The detector reads audio sessions only and opens no capture stream (D54, code review P20-AC6). |
-| AC-25 Library frames | Pass (auto: P22-AC1 to P22-AC4, Playwright Chromium) | Not run: the owner checks the P23.5 package (P23-AC7) |
-| AC-26 Bar widgets | Pass (auto: P23-AC1, P23-AC3, P23-AC4, P23-AC6, Playwright Chromium) | Not run: the owner checks the P23.5 package (P23-AC7) |
-| AC-27 Old arrangement repaired | Pass (auto: P23-AC2, P23-AC5) | Not run: the owner checks the P23.5 package (P23-AC7) |
+| AC-25 Library frames | Pass (auto: P22-AC1 to P22-AC4, Playwright Chromium) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |
+| AC-26 Bar widgets | Pass (auto: P23-AC1, P23-AC3, P23-AC4, P23-AC6, Playwright Chromium) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |
+| AC-27 Old arrangement repaired | Pass (auto: P23-AC2, P23-AC5) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |

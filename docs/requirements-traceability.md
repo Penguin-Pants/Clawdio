@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.15, October 13, 2026.
+**Version:** 1.16, October 13, 2026.
 **Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -505,9 +505,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-22 | Several files in one picker action and the owner's playlist folder import; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5, P21.2 | P19-AC8, P21-AC2 | MAN-W | Auto pass (P19, P21); manual Windows not run (P19-AC8) |
 | AC-23 | Ducking with Handy and one call app, both modes | §9.23 | P20.2, P20.3 | P20-AC4 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
 | AC-24 | No microphone use by the app in Windows privacy settings | §9.24 | P20.2 | P20-AC5 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
-| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
-| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
-| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
+| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
+| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
+| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
 
 ---
 

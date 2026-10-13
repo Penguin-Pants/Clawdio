@@ -1,13 +1,13 @@
 # Clawdio Build Plan
 
-**Version:** 1.22, October 13, 2026 (P23 code done; Windows build pending).
+**Version:** 1.23, October 13, 2026 (P23 Done with exceptions; the owner's Windows check remains).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
-- Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets, In progress: the Windows build and the owner's Windows check remain).
+- Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
 - The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
@@ -88,7 +88,7 @@ A phase is Done when all of these are true:
 | P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
-| P23 | Bar widgets and Windows build | P22 | In progress |
+| P23 | Bar widgets and Windows build | P22 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1312,7 +1312,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 #### P23. Bar widgets and Windows build (October 13, 2026)
 
-- **Status:** In progress. P23.1 to P23.4 are done; P23.5 (Windows build) and P23-AC7 (owner check on Windows) remain.
+- **Status:** Done with exceptions. P23.1 to P23.5 are done. P23-AC7 (owner check on Windows) is open (E2).
+- **Windows build (P23.5):** Release run 38377951211 (`workflow_dispatch`, Windows only) on `8c78a44`: artifact `windows`, `Clawdio_0.1.0_x64-setup.exe` 5,433,981 bytes (5.18 MiB), under the 30 MB check. Later commits change only a Rust test and docs, so the app code is the same.
 - **Commits:** branch `clawd/zen-hopper-rszalw`, after the P22 commit `15e2035`. Messages start with `P23:`.
 - **Packages:** none new.
 - **K23:** closed before P23.1 (section 9): Dockview 8.5.1 has `preventDefault()` on `onWillShowOverlay` and `onWillDrop`, and group `maximumHeight`.
@@ -1325,7 +1326,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P23-AC4 | Pass (Chromium) (E1) | `tests/e2e/bars.spec.ts`: Transport controls dropped on the window top edge (Library and Play queue side by side) is one full-width row with both below it; dropped on the top zone of Library it is one full-width row at its content height plus the header, and Library is below it; a splitter drag does not change the bar height; a drop on the left of Library shows no overlay and moves nothing; a drop into the Library tab bar is refused; the default bar row has both bars at the larger height; Play queue cannot join the Transport controls group or split the bar row. |
 | P23-AC5 | Pass (Chromium) (E1) | `bars.spec.ts`: a saved layout with Transport controls in the Library tab group starts with it in the bottom bar beside Now playing, and the log has the repair line; a top bar survives a reload with no repair line. |
 | P23-AC6 | Pass (Chromium) (E1) | `bars.spec.ts` at root font size 100%, 125% and 140%: the content never overflows its bar and leaves at most 4 px empty; the bar follows the change without a reload. |
-| P23-AC7 | Not run | The owner checks AC-25 to AC-27 on Windows with the P23.5 package. |
+| P23-AC7 | Not run (E2) | The owner checks AC-25 to AC-27 on Windows with the P23.5 package (run 38377951211, artifact `windows`). |
 
 **Notes**
 
@@ -1337,7 +1338,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Exceptions**
 
-- E1: WebKit is not installed in this environment. The Playwright suite ran in Chromium (115 passed); CI runs WebKit.
+- E1: WebKit is not installed in this environment. The Playwright suite ran in Chromium (115 passed); CI ran Chromium and WebKit on `5414940` and passed.
+- E2: P23-AC7 is a manual check on Windows. This environment has no Windows desktop, so the owner runs it.
 
 **Blockers:** none.
 
@@ -3044,6 +3046,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.23 (October 13, 2026):** P23 Done with exceptions. Windows build: Release run 38377951211 (`workflow_dispatch`, Windows only) on `8c78a44`: artifact `windows`, `Clawdio_0.1.0_x64-setup.exe` 5,433,981 bytes (5.18 MiB), under the 30 MB check. Later commits change only a Rust test and docs, so the app code is the same. P23-AC7 stays open for the owner.
 - **1.22 (October 13, 2026):** the window edge drop exists (Dockview root target): D58 and P23 note N1 corrected, with a test. Every frame splitter drag is saved.
 - **1.21 (October 13, 2026):** P23.1 to P23.4 done. K23 closed. D58 gained the shared-row case and the note that Dockview has no window-edge zone here.
 - **1.20 (October 13, 2026):** P22 Done with exceptions (WebKit e2e runs in CI only).
