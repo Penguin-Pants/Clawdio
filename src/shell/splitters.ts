@@ -264,26 +264,41 @@ export function resetSash(sash: HTMLElement): boolean {
  */
 export function decorateSashes(root: ParentNode = document): void {
   const locked = useUiStore.getState().locked;
-  for (const sash of root.querySelectorAll<HTMLElement>(".dv-split-view-container > .dv-sash-container > .dv-sash")) {
+  // All reads first, then the writes: a write between two reads makes each read force a new
+  // style and layout pass during a drag (PF-3).
+  const sashes = [...root.querySelectorAll<HTMLElement>(".dv-split-view-container > .dv-sash-container > .dv-sash")];
+  const states = sashes.map((sash) => {
     const place = placeOf(sash);
     const box = sash.getBoundingClientRect();
-    if (!place || box.width === 0 || box.height === 0) {
-      sash.removeAttribute("role");
-      sash.tabIndex = -1;
+    if (!place || box.width === 0 || box.height === 0) return { sash, attributes: null };
+    const frames = place.frames !== null;
+    const attributes: Record<string, string | null> = {
+      role: "separator",
+      "aria-orientation": place.horizontal ? "vertical" : "horizontal",
+      "aria-valuemin": "0",
+      "aria-valuemax": "100",
+      "aria-valuenow": String(share(sizeOf(place.before, place.horizontal), sizeOf(place.after, place.horizontal))),
+      "aria-label": separatorLabel(namesIn(place.before, frames), namesIn(place.after, frames)),
+      "aria-disabled": !frames && locked ? "true" : null,
+    };
+    return { sash, attributes };
+  });
+  for (const { sash, attributes } of states) {
+    if (attributes === null) {
+      setAttribute(sash, "role", null);
+      if (sash.tabIndex !== -1) sash.tabIndex = -1;
       continue;
     }
-    const frames = place.frames !== null;
-    sash.setAttribute("role", "separator");
-    sash.tabIndex = 0;
-    sash.setAttribute("aria-orientation", place.horizontal ? "vertical" : "horizontal");
-    sash.setAttribute("aria-valuemin", "0");
-    sash.setAttribute("aria-valuemax", "100");
-    const now = String(share(sizeOf(place.before, place.horizontal), sizeOf(place.after, place.horizontal)));
-    if (sash.getAttribute("aria-valuenow") !== now) sash.setAttribute("aria-valuenow", now);
-    sash.setAttribute("aria-label", separatorLabel(namesIn(place.before, frames), namesIn(place.after, frames)));
-    if (!frames && locked) sash.setAttribute("aria-disabled", "true");
-    else sash.removeAttribute("aria-disabled");
+    if (sash.tabIndex !== 0) sash.tabIndex = 0;
+    for (const [name, value] of Object.entries(attributes)) setAttribute(sash, name, value);
   }
+}
+
+/** Sets or removes an attribute only when it changes, so an unchanged sash costs no style pass. */
+function setAttribute(element: HTMLElement, name: string, value: string | null): void {
+  if (element.getAttribute(name) === value) return;
+  if (value === null) element.removeAttribute(name);
+  else element.setAttribute(name, value);
 }
 
 let refreshFrame = 0;
