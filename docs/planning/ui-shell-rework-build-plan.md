@@ -1044,6 +1044,8 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 
 **Validation:** the full set passed, with 179 Chromium e2e. WebKit e2e runs in CI on the pushed head.
 
+**Rule 10 (real app, review fixes):** Linux, WebKitGTK under Xvfb: the mini player enters at 400 x 40 and leaves at 1200 x 800. The maximize restore could not run: Xvfb has no window manager, so the window cannot maximize. That is a manual row with the Windows rows (UQ5).
+
 ---
 
 ## 11. Plan review record
