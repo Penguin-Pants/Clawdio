@@ -122,7 +122,7 @@
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
-| R29.1-1 | Bar widget fixed height: content plus header; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Planned (D57, K23) |
+| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Planned (D57, K23) |
 | R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Planned (D58) |
 | R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Planned (D58, K23) |
 | R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Planned (D58, K23) |
