@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.6, October 13, 2026.
+**Version:** 1.7, October 13, 2026.
 **Status:** Ready for implementation. No phase has started.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -289,6 +289,7 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 - Playwright `transport-band.spec.ts` at root font size 100%, 125% and 140%: the band height equals the computed token value, the content never overflows and leaves at most 4 px empty, and the height follows the change without a reload (the P23-AC6 cases).
 - Vitest `check-sources.test.ts`: the drag guard flags `onDragStart`, `draggable` and `draggable={true}` and accepts `draggable={false}`.
 - Playwright `audit.spec.ts`: axe finds no serious violation with the band (AX-1), and `expectNoMotion` passes under reduced motion (AX-2).
+- Playwright `keyboard.spec.ts` (P2-AC10): from the default preset, successive F6 presses focus the transport band, Playlists, Library and the active Play queue tab in that exact order, then wrap to the band; Shift+F6 runs it backwards; the hidden Lyrics tab is not visited.
 - `cargo test`: `backup` renames and overwrites; a missing file is not an error.
 
 **Acceptance criteria**
@@ -298,7 +299,7 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 - U1-AC3: no file under `src/` references `bar-rules`, `BarContent`, `TransportWidget` or `repairBars` (grep).
 - U1-AC4: TH-1: the band height, every row height and Tailwind's spacing scale come from `--size-*` and `--spacing-unit` variables in `rem`; no `ROW_HEIGHT` constant remains under `src/`; the band follows the 125% and 140% root font sizes without overflow; `npm run check:sources` passes with the drag guard and the spacing guard.
 - U1-AC6: DK-8: the first start shows the default preset (Playlists left, Library center, Play queue and Lyrics tabbed right, Now playing hidden).
-- U1-AC5: the validation command set passes; `tests/e2e` passes in Chromium and WebKit (CI).
+- U1-AC5: the validation command set passes; `tests/e2e` passes in Chromium and WebKit (CI), including the exact default-preset F6 order above.
 
 **Dependencies**
 
@@ -831,6 +832,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.
 - **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.
 - **1.5 (October 13, 2026):** PR 21 review, Codex round 4: five findings fixed (section 11): grid row-count semantics (UD8), UD19 signature, real-app smoke check per phase (rule 10), F6 order, TA-2 manual rows.
 - **1.4 (October 13, 2026):** PR 21 review, Codex round 3: seven findings fixed (section 11): mini command height, XL at 1280 px, fixed `#` column, header keyboard path, Favorites drop, measurement arrangement, hideable-only close test.
