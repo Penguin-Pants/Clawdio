@@ -77,6 +77,25 @@ describe("column model (UD9)", () => {
     expect(toggleSort(second, "artist").sort).toEqual([{ column: "artist", descending: false }]);
   });
 
+  it("Shift+click adds a second key, flips either key, and a plain click goes back to one key (TB-13)", () => {
+    const title = toggleSort(base, "title");
+    const two = toggleSort(title, "artist", true);
+    expect(two.sort).toEqual([
+      { column: "title", descending: false },
+      { column: "artist", descending: false },
+    ]);
+    expect(toggleSort(two, "artist", true).sort[1]).toEqual({ column: "artist", descending: true });
+    expect(toggleSort(two, "title", true).sort).toEqual([
+      { column: "title", descending: true },
+      { column: "artist", descending: false },
+    ]);
+    // A third column replaces the second key: two keys at most (UD11).
+    expect(toggleSort(two, "album", true).sort.map((key) => key.column)).toEqual(["title", "album"]);
+    // With no sort, Shift+click sets the first key.
+    expect(toggleSort(base, "artist", true).sort).toEqual([{ column: "artist", descending: false }]);
+    expect(toggleSort(two, "duration").sort).toEqual([{ column: "duration", descending: false }]);
+  });
+
   it("the content width is the sum of the visible columns and the heart", () => {
     expect(contentWidth(base)).toBe(48 + 240 + 160 + 160 + 64 + 28);
   });

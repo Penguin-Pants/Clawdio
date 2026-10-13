@@ -55,11 +55,14 @@ interface HeaderProps {
   onFocusBody: () => void;
 }
 
-/** The sort state of a column for `aria-sort` and the arrow (TB-8). */
-function sortOf(state: ColumnState, id: ColumnId): "ascending" | "descending" | "none" {
-  const key = state.sort.find((entry) => entry.column === id);
-  if (!key) return "none";
-  return key.descending ? "descending" : "ascending";
+/**
+ * The sort state of a column: its direction and its key number (1 or 2, TB-13). `aria-sort` goes on
+ * the first key's header only (ARIA: one sorted column at a time); the second shows a badge.
+ */
+function sortOf(state: ColumnState, id: ColumnId): { direction: "ascending" | "descending" | "none"; rank: number } {
+  const rank = state.sort.findIndex((entry) => entry.column === id);
+  if (rank === -1) return { direction: "none", rank: 0 };
+  return { direction: state.sort[rank].descending ? "descending" : "ascending", rank: rank + 1 };
 }
 
 /**
@@ -123,7 +126,7 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
       focusCell(key === "Home" ? 0 : columns.length - 1);
     } else if (key === "Enter" || key === " ") {
       event.preventDefault();
-      change((current) => toggleSort(current, id));
+      change((current) => toggleSort(current, id, event.shiftKey));
     } else if (key === "ArrowDown") {
       event.preventDefault();
       onFocusBody();
@@ -200,23 +203,24 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
     >
       {columns.map((id, index) => {
         const column = COLUMNS[id];
-        const sort = sortOf(state, id);
+        const { direction: sort, rank } = sortOf(state, id);
+        const twoKeys = state.sort.length > 1;
         return (
           <div
             key={id}
             role="columnheader"
-            aria-sort={sort}
+            aria-sort={rank === 1 ? sort : "none"}
             data-col-header={id}
             tabIndex={index === focusedIndex ? 0 : -1}
             onFocus={() => setFocused(index)}
             onKeyDown={(event) => onKeyDown(event, index, id)}
             onPointerDown={(event) => startReorder(event, id)}
-            onClick={() => {
+            onClick={(event) => {
               if (dragged.current) {
                 dragged.current = false;
                 return;
               }
-              change((current) => toggleSort(current, id));
+              change((current) => toggleSort(current, id, event.shiftKey));
             }}
             onContextMenu={(event) => {
               event.preventDefault();
@@ -231,6 +235,12 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
             <span className="truncate">{column.label}</span>
             {sort !== "none" && (
               <Icon name={sort === "ascending" ? "sortUp" : "sortDown"} className="size-3.5 shrink-0" />
+            )}
+            {sort !== "none" && twoKeys && (
+              <span data-slot="sort-rank" className="tabular text-xs text-text-muted">
+                {rank}
+                <span className="sr-only">{rank === 1 ? " (first sort)" : " (second sort)"}</span>
+              </span>
             )}
             <span
               aria-hidden="true"
@@ -303,7 +313,8 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="leading-snug font-normal">
-                  Enter sorts. Ctrl+← and Ctrl+→ resize. Down goes to the songs. Auto size fits the rows in view.
+                  Enter sorts; Shift+Enter or Shift+click adds a second sort. Ctrl+← and Ctrl+→ resize. Down goes to the
+                  songs. Auto size fits the rows in view.
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
             </>

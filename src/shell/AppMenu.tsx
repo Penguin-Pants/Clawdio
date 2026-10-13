@@ -18,6 +18,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useColumnsStore } from "@/store/columns";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
 import { useSettingsStore } from "@/store/settings";
 import { type TransportPosition, useUiStore } from "@/store/ui";
@@ -59,6 +60,8 @@ export function AppMenu() {
   const visible = useUiStore((state) => state.visibleWidgets);
   const setSettingsOpen = useUiStore((state) => state.setSettingsOpen);
   const openDialog = useUiStore((state) => state.openDialog);
+  const density = useColumnsStore((state) => state.density);
+  const setDensity = useColumnsStore((state) => state.setDensity);
   const locked = useUiStore((state) => state.locked);
   const setLocked = useUiStore((state) => state.setLocked);
   const transportPosition = useUiStore((state) => state.transportPosition);
@@ -92,6 +95,13 @@ export function AppMenu() {
               {WIDGETS[id].title}
             </DropdownMenuCheckboxItem>
           ))}
+          {/* Row density (TB-14), saved in columns.json. */}
+          <DropdownMenuCheckboxItem
+            checked={density === "compact"}
+            onCheckedChange={(checked) => setDensity(checked ? "compact" : "regular")}
+          >
+            Compact rows
+          </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

@@ -34,7 +34,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
-| UI shell rework | 74 | 62 | 8 | 0 | 0 | 0 | 4 | 0 | 0 |
+| UI shell rework | 74 | 66 | 4 | 0 | 0 | 0 | 4 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
@@ -765,9 +765,9 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TB-9 | State per view | U4 | UT parse; E2E (per mode, reload) | Done (U4) |
 | TB-10 | Arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Done (U4) |
 | TB-11 | Playing indicator in the first column | U4 | E2E | Done (U4) |
-| TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
-| TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Planned |
-| TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
+| TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Done (U6) |
+| TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Done (U6) |
+| TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Done (U6) |
 | PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Done (U2) |
 | PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
@@ -790,7 +790,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
-| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | In progress (U5 done; U6 next) |
+| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Done (U6) |
 | RW-9 | Rework 9 checklist | U7 | MAN | Planned |
 | RW-14 | Rework 14 definition of done | U7 | REV | Planned |
 

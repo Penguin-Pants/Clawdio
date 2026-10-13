@@ -162,6 +162,32 @@ test("TB-8: a header click sorts ascending, descending, then the default order",
   await expect(rows(page).nth(1)).toContainText("Song 1 of Album B0");
 });
 
+test("TB-13: Shift+click adds a second sort key; the mock gets both keys and the badges show", async ({ page }) => {
+  await openTable(page);
+  await header(page, "Title").click();
+  await songsGrid(page)
+    .locator("[data-col-header='artist']")
+    .click({ modifiers: ["Shift"] });
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-last-sort",
+    JSON.stringify([
+      { column: "title", descending: false },
+      { column: "artist", descending: false },
+    ]),
+  );
+  await expect(songsGrid(page).locator("[data-col-header='title'] [data-slot='sort-rank']")).toContainText("1");
+  await expect(songsGrid(page).locator("[data-col-header='artist'] [data-slot='sort-rank']")).toContainText("2");
+  // aria-sort marks the first key only (one sorted column at a time).
+  await expect(songsGrid(page).locator("[data-col-header='artist']")).toHaveAttribute("aria-sort", "none");
+  // Shift+Enter on the second key flips it.
+  await songsGrid(page).locator("[data-col-header='artist']").focus();
+  await page.keyboard.press("Shift+Enter");
+  await expect(page.locator("body")).toHaveAttribute("data-last-sort", /"artist","descending":true/);
+  // A plain click goes back to one key.
+  await songsGrid(page).locator("[data-col-header='album']").click();
+  await expect(songsGrid(page).locator("[data-slot='sort-rank']")).toHaveCount(0);
+});
+
 test("TB-9 and PS-6: column state is per view, survives a reload and is apart from the layout", async ({ page }) => {
   await openTable(page);
   await dragDivider(page, "Artist", 40);

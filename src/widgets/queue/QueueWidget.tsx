@@ -33,10 +33,18 @@ export function QueueWidget() {
     (start: number, end: number) => request(queue.entries.slice(start, end + 1)),
     [queue.entries, request],
   );
-  if (count === 0) return <EmptyHint>The queue is empty. Double-click a song to play it.</EmptyHint>;
+  if (count === 0) {
+    return (
+      // An empty queue takes a row drag too (TB-12).
+      <div data-drop-target="queue" className="size-full">
+        <EmptyHint>The queue is empty. Double-click a song to play it.</EmptyHint>
+      </div>
+    );
+  }
   const items = (index: number) => [{ label: "Remove", run: () => removeEntry(index) }];
   return (
-    <div className="flex size-full flex-col">
+    // The whole widget takes a row drag of songs (TB-12, UD21).
+    <div data-drop-target="queue" className="flex size-full flex-col">
       <div className="flex shrink-0 items-center justify-between px-2 py-1 text-[13px] text-text-secondary">
         <span>{count === 1 ? "1 song" : `${count} songs`}</span>
         <Button variant="ghost" size="xs" onClick={() => void commands.queueClear().catch(() => {})}>

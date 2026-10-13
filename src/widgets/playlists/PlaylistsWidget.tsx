@@ -313,6 +313,7 @@ export function PlaylistsWidget() {
                   <Row
                     key={`p${line.playlist.id}`}
                     role="treeitem"
+                    dropTarget={`playlist:${line.playlist.id}`}
                     level={1}
                     expanded={line.expanded}
                     frame={frame}

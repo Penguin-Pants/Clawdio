@@ -124,3 +124,10 @@ Each phase adds its acceptance check here (rework section 14).
 - Customize transport bar: a dialog with a checkbox per optional slot, Move up and Move down and drag handles; the order and hidden set save as `transportSlots` in `layout.json`.
 - Mini player: the art (or the menu) shrinks the window to the band at the compact token height; the dock stays mounted and inert; Exit mini player in the More menu returns the stored size and position.
 - Rework Phase 5 items 1, 2 and 4: `card.spec.ts`, `customize.spec.ts`, `mini.spec.ts`; `cargo test` for the window sizes.
+
+### U6: Table extras
+
+- Row drag (TB-12): selected songs drag to a playlist row (Favorites adds only new favorites) or to the Play queue, with a "N songs" ghost and a highlighted target; Escape cancels; pointer events only (UD10).
+- Secondary sort (TB-13): Shift+click or Shift+Enter adds or flips the second key; the headers show "1" and "2".
+- Compact rows (TB-14): the View menu; saved in `columns.json`; album rows keep their height.
+- `row-drag.spec.ts`, `density.spec.ts`, `table.spec.ts` (TB-13); `row-drag.test.ts`, `columns.test.ts`, `columns-persistence.test.ts`, `rows.test.tsx`.

@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { tokenPx } from "@/lib/tokens";
+import { useColumnsStore } from "@/store/columns";
 import { flushFrames, installControlledLayout, resize } from "@/test/resize";
 import { useAlbumRowHeight, useRowHeight } from "./rows";
 
@@ -34,5 +35,15 @@ describe("row heights from tokens (TH-1, UD1)", () => {
       flushFrames();
     });
     expect(screen.getByTestId("heights").textContent).toBe("35 60");
+  });
+
+  it("compact density takes the compact row token; the album rows keep theirs (TB-14)", () => {
+    document.documentElement.style.fontSize = "16px";
+    render(<Heights />);
+    act(() => useColumnsStore.getState().setDensity("compact"));
+    expect(screen.getByTestId("heights").textContent).toBe(`${tokenPx("--size-row-compact")} 48`);
+    expect(screen.getByTestId("heights").textContent).toBe("24 48");
+    act(() => useColumnsStore.getState().setDensity("regular"));
+    expect(screen.getByTestId("heights").textContent).toBe("28 48");
   });
 });

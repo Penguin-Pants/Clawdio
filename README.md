@@ -56,6 +56,7 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 | Tab (from the Songs table) | Move to the column headers |
 | Left, Right, Home, End (headers) | Move between column headers |
 | Enter, Space (headers) | Sort by the column: ascending, descending, then the default order |
+| Shift+Enter, Shift+click (headers) | Add the column as the second sort, or flip a sort key |
 | Shift+Left, Shift+Right (headers) | Move the column |
 | Ctrl+Left, Ctrl+Right (headers) | Make the column narrower or wider |
 | Shift+F10, Menu key (headers) | Open the column menu: show or hide columns, auto size, reset |
@@ -63,6 +64,11 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 | Ctrl+Shift+L | Reset the layout |
 
 Media keys (play, pause, next, previous, stop) work while the app runs in the background.
+
+## Songs table
+
+- **Drag to a playlist or the queue:** select songs, then drag them onto a playlist in Playlists or onto the Play queue. Escape cancels the drag. The row menu (Shift+F10) does the same by keyboard: Add to queue, Add to playlist.
+- **Compact rows:** the menu, View, "Compact rows".
 
 ## Transport bar
 

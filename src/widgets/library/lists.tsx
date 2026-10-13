@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { type ViewId, contentWidth, gridTemplate, visibleColumns } from "./columns";
 import { AlbumCells, type ClickModifiers, Row, SongCells, SongTableRow, useAlbumRowHeight, useRowHeight } from "./rows";
+import { type DropTarget, startRowDrag } from "./row-drag";
 import { TableHeader } from "./TableHeader";
 
 const NO_IDS: number[] = [];
@@ -38,6 +39,23 @@ function usePlayingTrack(): number | null {
 }
 
 /** Appends `ids` to the queue and says so in the status line, which shows with the queue hidden (R6). */
+/**
+ * A row drag drop (TB-12): the queue appends; Favorites adds only songs that are not favorites
+ * yet (R12, D20: no duplicates); another playlist appends.
+ */
+function dropSongs(target: DropTarget, ids: number[]) {
+  if (target.kind === "queue") {
+    addToQueue(ids);
+    return;
+  }
+  const { rows, favorites } = usePlaylistsStore.getState();
+  if (rows.find((row) => row.id === target.id)?.isFavorites) {
+    for (const id of ids) if (!favorites.has(id)) toggleFavorite(id);
+  } else {
+    addToPlaylist(target.id, ids);
+  }
+}
+
 function addToQueue(ids: number[]) {
   if (ids.length === 0) return;
   void commands.queueAppend(ids).then(
@@ -350,6 +368,15 @@ export function SongTable({ view }: { view: ViewId }) {
     select(index, modifiers.shift ? "range" : modifiers.ctrl ? "toggle" : "single"),
   );
   const onActivate = useStable((index: number) => playList(ids, index));
+  // Row drag (TB-12, UD21): the selection, or the row itself when it is not selected.
+  const onRowPointerDown = useStable((index: number, event: PointerEvent) => {
+    const id = ids[index];
+    if (id === undefined) return;
+    const inSelection = selectedSongs.has(id);
+    startRowDrag(event, selection(index), dropSongs, () => {
+      if (!inSelection) select(index, "single");
+    });
+  });
   const onMenu = useStable((index: number, anchor: HTMLElement) => {
     // A right-click on a row outside the selection selects that row first.
     if (!selectedSongs.has(ids[index])) select(index, "single");
@@ -397,6 +424,7 @@ export function SongTable({ view }: { view: ViewId }) {
               onSelect={onSelect}
               onActivate={onActivate}
               onMenu={onMenu}
+              onRowPointerDown={onRowPointerDown}
             />
           );
         }}

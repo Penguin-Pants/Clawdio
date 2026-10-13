@@ -42,7 +42,7 @@
 | U3 | Splitters and sidebar rail | U2 | Done |
 | U4 | Library table | U1 | Done |
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Done |
-| U6 | Table extras: row drag, secondary sort, density | U4, U5 | Not started |
+| U6 | Table extras: row drag, secondary sort, density | U4, U5 | Done |
 | U7 | Verification, screenshots and release notes | U6 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
@@ -683,9 +683,9 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TB-9 state per view | U4 | UT parse; E2E (per mode, reload) | Done (U4) |
 | TB-10 arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Done (U4) |
 | TB-11 playing indicator in the first column | U4 | E2E | Done (U4) |
-| TB-12 row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
-| TB-13 secondary sort (SHOULD) | U6 | UT, E2E | Planned |
-| TB-14 density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
+| TB-12 row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Done (U6) |
+| TB-13 secondary sort (SHOULD) | U6 | UT, E2E | Done (U6) |
+| TB-14 density (SHOULD) | U6 | E2E `density.spec.ts` | Done (U6) |
 | PS-1 JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Done (U2) |
 | PS-2 config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
@@ -708,7 +708,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
-| Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | In progress (U5 done; U6 next) |
+| Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Done (U6) |
 | Rework 9 checklist | U7 | MAN | Planned |
 | Rework 14 definition of done | U7 | REV | Planned |
 
@@ -950,7 +950,38 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: previous and next cannot move. UD20 keeps the three together; the fixed order is the smallest rule that does.
 - F4: the off-screen dock keeps its memory while the mini player shows. It is the same dock as before; nothing new is allocated.
 
-### U6 to U7
+### U6. Table extras: row drag, secondary sort, density (October 13, 2026)
+
+**Status:** Done. **Commit:** `U6: row drag to playlists and the queue, secondary sort, compact rows`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U6-AC1 | Pass (Chromium; WebKitGTK real app for TB-12 and TB-13) | TB-12 `row-drag.spec.ts`: two selected songs to a playlist (6 to 8 entries, "2 songs" ghost, highlighted target); to the Play queue (50 to 52, "Added to queue"); to an empty queue; to Favorites (only the new favorite is added); Escape adds nothing and an unselected row drags itself. `row-drag.test.ts`: threshold, target, Escape, no text selection. TB-13 `table.spec.ts`: Shift+click Artist after Title sends two keys, "1" and "2" badges, `aria-sort` on the first key only, Shift+Enter flips, a plain click returns to one key; `columns.test.ts`. TB-14 `density.spec.ts`: the Songs and queue rows take `--size-row-compact`, the album rows keep theirs, no motion, the setting survives a reload; `rows.test.tsx`, `columns-persistence.test.ts`. |
+| U6-AC2 | Pass (Chromium) | Validation command set; Chromium e2e 172 of 172. |
+
+**Notes**
+
+- Row drag follows the pointer on the document with no pointer capture, and blocks `selectstart` while a drag can start. Drop targets: every playlist row (`data-drop-target="playlist:<id>"`) and the whole Play queue widget, empty or not (`"queue"`).
+- A drag from an unselected row selects it when the drag starts, not on pointer down, so Shift and Ctrl clicks keep working.
+- The second sort key shows a badge and a screen reader note; `aria-sort` stays on the first key's header (ARIA: one sorted column).
+- Density applies to every `useRowHeight` reader (Songs table, Tree, Play queue, playlist entries); `useAlbumRowHeight` is unchanged.
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb with `xdotool`: a drag of a selected song to the empty Play queue shows the "1 song" ghost and adds the song; a Title click and a Shift+click on Artist show the "1" and "2" badges and the Rust order.
+
+**Checks that could not run:** WebKit e2e (CI runs it).
+
+**TWO-PASS REVIEW:** F1 2, F2 3, F3 0, F4 3.
+
+- F1 (fixed): the drag captured the pointer on pointer down, so a click on the row heart went to the row and the heart did nothing.
+- F1 (fixed): an empty Play queue rendered a hint with no drop target, so a drop there added nothing (found in the real app).
+- F2 (fixed): a drag over the queue hint selected its text in WebKitGTK; `selectstart` is blocked while a drag can start.
+- F2 (fixed): the row prop was named `onDragStart`, which the drag guard of `check:sources` bans; it is `onRowPointerDown`.
+- F2 (fixed): the spec matched the Favorites row by a leading name; the row name starts with the heart.
+- F4: the second key has no `aria-sort`. ARIA allows one sorted column; the badge and the note name the second key.
+- F4: drag starts only from the Songs table. TB-12 names the selected songs of the table.
+- F4: a plain click on the first key with two keys goes back to one key. That is the TB-8 cycle; Shift+click keeps both.
+
+### U7
 
 Not started.
 

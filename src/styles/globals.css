@@ -119,6 +119,11 @@
   height: var(--dock-height);
 }
 
+/* The drop target under a row drag (TB-12, UD21): an inset brand line, no layout change. */
+[data-drop-active] {
+  box-shadow: inset 0 0 0 2px var(--color-brand-red);
+}
+
 /* Tabular numerals for times (design.md section 4). */
 @utility tabular {
   font-variant-numeric: tabular-nums;

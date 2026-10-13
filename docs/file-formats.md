@@ -161,12 +161,12 @@ The Songs table column state, apart from the layout: Reset layout does not chang
 | Key | Type | Meaning |
 |---|---|---|
 | `version` | integer | Schema version, `1`. |
-| `density` | string | Row density: `regular` (the only value until U6 adds `compact`). |
+| `density` | string | Row density (TB-14): `regular` (default) or `compact` (View, Compact rows). Compact rows apply to the Songs table, the Tree, the Play queue and playlist entries; album rows keep their height. |
 | `views` | object | One entry per Songs view: `songs.columns` (Columns mode) and `songs.topBottom` (Top/bottom mode). Tree mode has no table. |
 | `views.*.order` | array of strings | Column ids in order: `track`, `title`, `artist`, `album`, `duration`. `track` (#) is always first. |
 | `views.*.widths` | object | Width in px per column id. Minimums: `track` 40, `title` 120, `artist` 80, `album` 80, `duration` 56. Title takes the spare width over its saved width. |
 | `views.*.hidden` | array of strings | Hidden column ids. `track` and `title` cannot hide. Default: `album` in `songs.columns`, none in `songs.topBottom`. |
-| `views.*.sort` | array | Up to two `{ "column": <id>, "descending": <boolean> }` keys. Empty: the R4 default order. |
+| `views.*.sort` | array | Up to two `{ "column": <id>, "descending": <boolean> }` keys: a header click sets the first, Shift+click adds or flips the second (TB-13). Empty: the R4 default order. |
 
 Example:
 

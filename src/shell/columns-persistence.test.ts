@@ -2,7 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as log from "@/lib/log";
 import { useColumnsStore } from "@/store/columns";
 import { DEFAULT_COLUMNS } from "@/widgets/library/columns";
-import { COLUMNS_VERSION, SAVE_DELAY_MS, parseColumnsFile, restoreColumns, watchColumns } from "./columns-persistence";
+import {
+  COLUMNS_VERSION,
+  SAVE_DELAY_MS,
+  currentColumns,
+  parseColumnsFile,
+  restoreColumns,
+  watchColumns,
+} from "./columns-persistence";
 
 vi.mock("@/lib/log", () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
 
@@ -38,6 +45,14 @@ describe("columns.json (PS-6, UD13)", () => {
     const text = JSON.stringify({ version: 1, density: "regular", views: { albums: {} } });
     const parsed = parseColumnsFile(text);
     expect(parsed).toMatchObject({ file: { views: DEFAULT_COLUMNS }, warnings: ["unknown view albums ignored"] });
+  });
+
+  it("round-trips compact density, and a bad density loads regular with a warning (TB-14)", () => {
+    useColumnsStore.getState().setDensity("compact");
+    const parsed = parseColumnsFile(JSON.stringify(currentColumns()));
+    expect(parsed).toMatchObject({ file: { density: "compact" }, warnings: [] });
+    const bad = parseColumnsFile(JSON.stringify({ ...currentColumns(), density: "tiny" }));
+    expect(bad).toMatchObject({ file: { density: "regular" }, warnings: ['invalid density "tiny"; using regular'] });
   });
 
   it("restores a valid file into the store", async () => {

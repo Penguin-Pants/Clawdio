@@ -97,11 +97,20 @@ export function setColumnHidden(state: ColumnState, id: ColumnId, hidden: boolea
   return { ...state, hidden: hidden ? [...state.hidden, id] : state.hidden.filter((other) => other !== id) };
 }
 
-/** A header click (TB-8): ascending, then descending, then the R4 default order. */
-export function toggleSort(state: ColumnState, id: ColumnId): ColumnState {
-  const current = state.sort[0];
-  if (current?.column !== id) return { ...state, sort: [{ column: id, descending: false }] };
-  if (!current.descending) return { ...state, sort: [{ column: id, descending: true }] };
+/**
+ * A header click (TB-8): ascending, then descending, then the R4 default order. With Shift
+ * (TB-13): a click on a sort key flips it; a click on another column makes it the second key.
+ */
+export function toggleSort(state: ColumnState, id: ColumnId, secondary = false): ColumnState {
+  const [first, second] = state.sort;
+  if (secondary && first) {
+    const flip = (key: SortKey) => ({ column: key.column, descending: !key.descending });
+    if (first.column === id) return { ...state, sort: second ? [flip(first), second] : [flip(first)] };
+    if (second?.column === id) return { ...state, sort: [first, flip(second)] };
+    return { ...state, sort: [first, { column: id, descending: false }] };
+  }
+  if (first?.column !== id) return { ...state, sort: [{ column: id, descending: false }] };
+  if (!first.descending) return { ...state, sort: [{ column: id, descending: true }] };
   return { ...state, sort: [] };
 }
 

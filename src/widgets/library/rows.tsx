@@ -3,17 +3,21 @@ import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
 import { Icon } from "@/components/icons";
 import type { RowFrame } from "@/components/virtual-list";
 import { useAlbumArt } from "@/lib/art";
+import { useColumnsStore } from "@/store/columns";
 import { useTokenPx } from "@/lib/tokens";
 import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { COLUMNS, type ColumnId } from "./columns";
+import { takeDragClick } from "./row-drag";
 import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 
 /** The height of a list row in px, from the `sizes.rowRegular` token (TH-1, UD1). */
 export function useRowHeight(): number {
-  return useTokenPx("--size-row-regular");
+  // Compact rows (TB-14) for every list but the album rows (`useAlbumRowHeight`).
+  const compact = useColumnsStore((state) => state.density === "compact");
+  return useTokenPx(compact ? "--size-row-compact" : "--size-row-regular");
 }
 
 /** The height of an Album row in px, from the `sizes.rowAlbum` token (UD1). */
@@ -37,6 +41,8 @@ interface RowProps {
   /** Tree rows only. */
   level?: number;
   expanded?: boolean;
+  /** `data-drop-target` for a row drag (TB-12): a playlist row takes songs. */
+  dropTarget?: string;
 }
 
 /**
@@ -56,6 +62,7 @@ export function Row({
   children,
   level,
   expanded,
+  dropTarget,
 }: RowProps) {
   return (
     <div
@@ -68,6 +75,7 @@ export function Row({
       aria-setsize={frame.setsize}
       data-row=""
       data-active={frame.active ? "" : undefined}
+      data-drop-target={dropTarget}
       onClick={onSelect}
       onDoubleClick={onActivate}
       onContextMenu={(event) => {
@@ -150,6 +158,8 @@ interface SongTableRowProps {
   onSelect: (index: number, modifiers: ClickModifiers) => void;
   onActivate: (index: number) => void;
   onMenu: (index: number, row: HTMLElement) => void;
+  /** A pointer down that may start a row drag (TB-12). */
+  onRowPointerDown?: (index: number, event: PointerEvent) => void;
 }
 
 /** One cell's text per column (UD8): `#` shows the playing indicator for the playing row (TB-11). */
@@ -192,6 +202,7 @@ export const SongTableRow = memo(function SongTableRow({
   onSelect,
   onActivate,
   onMenu,
+  onRowPointerDown,
 }: SongTableRowProps) {
   return (
     <div
@@ -201,7 +212,12 @@ export const SongTableRow = memo(function SongTableRow({
       aria-selected={selected}
       data-row=""
       data-active={active ? "" : undefined}
-      onClick={(event) => onSelect(index, { shift: event.shiftKey, ctrl: event.ctrlKey || event.metaKey })}
+      onPointerDown={(event) => onRowPointerDown?.(index, event.nativeEvent)}
+      onClick={(event) => {
+        // The click that ends a row drag does not select (UD21).
+        if (takeDragClick()) return;
+        onSelect(index, { shift: event.shiftKey, ctrl: event.ctrlKey || event.metaKey });
+      }}
       onDoubleClick={() => onActivate(index)}
       onContextMenu={(event) => {
         event.preventDefault();
