@@ -1291,7 +1291,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 4. Source: own audit, the full e2e run, CI and the PR review (Codex, DeepSource).
+**TWO-PASS REVIEW:** F1 0, F2 8, F3 0, F4 4. Source: own audit, the full e2e run, CI and the PR review (Codex, DeepSource).
 
 - F2:
   - A mode switch reused the splitview of the other mode, so Top/bottom showed three stacked frames. Each mode body now has its own key.
@@ -1299,6 +1299,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - The separator hid the selected-row marker (P6-AC9). Fixed (N4).
   - A doc comment in `persistence.ts` ran past the line width.
   - CI: P22-AC3 measured and dragged before a new splitview had its first layout (empty sizes in Chromium, a missed drag in WebKit). `sizes` now waits until every frame has a size.
+  - CI (WebKit): P22-AC3 grabbed the Top/bottom rows sash at its middle, where the Artist and Album sash ends on it; WebKit gave the press to the nested sash. The test now grabs a quarter along the sash and hovers first, so Playwright checks the sash receives the pointer. A user who grabs that junction moves the sash the browser picks, as at any Dockview sash junction (F4).
   - Codex: a sum exactly at the 0.01 tolerance (0.33 + 0.33 + 0.33) failed by floating-point error. A 1e-9 slack fixes it, with a test.
   - DeepSource: a one-child fragment in `FrameContent`. Removed.
 - F4:

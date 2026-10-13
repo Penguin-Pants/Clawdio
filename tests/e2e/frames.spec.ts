@@ -29,13 +29,24 @@ async function sizes(page: Page, group: Group): Promise<number[]> {
   return read();
 }
 
-/** Drags sash `index` of a group by `dx`, `dy` px, once the group has its layout. */
+/**
+ * Drags sash `index` of a group by `dx`, `dy` px, once the group has its layout. The grab point
+ * is a quarter along the sash, away from where a nested sash meets it (Top/bottom: the Artist and
+ * Album sash ends on the rows sash at its middle). The hover makes Playwright check that this
+ * sash receives the pointer there.
+ */
 async function dragSash(page: Page, group: Group, index: number, dx: number, dy: number): Promise<void> {
   await sizes(page, group);
-  const box = await sashes(page, group).nth(index).boundingBox();
+  const sash = sashes(page, group).nth(index);
+  const box = await sash.boundingBox();
   if (!box) throw new Error("no splitter");
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
+  const position = {
+    x: box.width > box.height ? box.width / 4 : box.width / 2,
+    y: box.height > box.width ? box.height / 4 : box.height / 2,
+  };
+  await sash.hover({ position, timeout: 5000 });
+  const x = box.x + position.x;
+  const y = box.y + position.y;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + dx, y + dy, { steps: 8 });
