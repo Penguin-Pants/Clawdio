@@ -2748,6 +2748,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
 | F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
+| F-22 | Plan a phase for requirements v1.7: R28.1 (Library frame splitters), R29.1 (bar widgets) and acceptance checks 25 to 27. Add their rows to `docs/requirements-traceability.md`. First verify that Dockview 8.5.1 can refuse drop overlays per widget and lock a group height. | Requirements v1.7 adds these items. The plan and the traceability file do not map them yet. | Requirements v1.7 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
