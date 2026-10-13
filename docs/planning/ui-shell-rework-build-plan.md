@@ -458,7 +458,7 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - `cargo test`: sort by each column ascending and descending with the D4 fold ("Émile" sorts with "Emile"; "2" before "10"); ties keep the R4 order; two keys; `track_no` and `disc` in `SongRow`; the columns file round trip and backup.
 - Vitest `columns.test.ts`: resize respects minimums; reorder moves one column; hide and show; auto-size clamp; the sort cycle; parse of a valid file, a bad width, an unknown column (ignored with one log line), a wrong version (rejected).
 - Vitest `library.test.ts`: multi-select rules of UD12.
-- Vitest `rows.test.tsx`: a container width change through the mocked `ResizeObserver` re-renders the header and no `Row` (PF-1, real path).
+- Vitest `table.test.tsx`: a container width change through the mocked `ResizeObserver` re-renders the header and no `Row` (PF-1, real path).
 - Playwright `table.spec.ts` (TB-2 to TB-11): drag a divider; a column never goes below its minimum; double-click a divider; the header menu items; drag a header to reorder; `#` has no drag handle and no hide item; hide Album and show it again; keyboard only: Tab to the header, Right to Artist, Enter sorts, Shift+Right moves it after Album, Ctrl+Right widens it by 8 px, Shift+F10 opens the header menu, Down returns to the body; Title takes the spare width; Time is right aligned; at a narrow Library the horizontal scrollbar appears and the header stays aligned with the body after scrolling; click Title to sort and the arrow and `aria-sort` show; Shift+click and Ctrl+click select ranges; Enter plays the active row; Shift+F10 on a row, then "Add to Favorites": the heart fills and the row is in Favorites; the playing row shows the icon in the `#` column; the state survives a mode switch and a reload per mode; Tree mode shows no header.
 - Playwright `table-perf.spec.ts` (TB-1, PF-3): 50,000 rows, the DOM holds at most the visible rows plus overscan, no frame gap over 100 ms.
 - Playwright `audit.spec.ts`: axe with the table (`grid`, `row`, `columnheader` and `gridcell` roles, `aria-multiselectable`, `aria-sort`); no role-context violation; `aria-rowcount` equals the song count plus one; the header row carries `aria-rowindex="1"`; after a scroll, every rendered body row carries `aria-rowindex` equal to its list position plus two, with no gap and no repeat between consecutive rows.
@@ -765,10 +765,10 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 
 **Checks that could not run:** WebKit e2e. The environment has no Playwright WebKit build and forbids `playwright install`; CI runs WebKit.
 
-**TWO-PASS REVIEW:** F1 0, F2 1, F3 0, F4 3.
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 0, F4 2.
 
 - F2 (fixed): the screenshot could fire before the album thumbnails loaded. The script now waits for network idle.
-- F4: a server already on port 4173 is reused by the script. It serves the same `dist-e2e` folder that the script builds first.
+- F2 (fixed after review, PR 23): a server already on port 4173 was reused, and it can serve other content. The script now stops when the port answers before it starts the preview, fails when its preview process exits, and runs Vite with Node directly (no `npx` wrapper on Windows, and `kill` stops the server).
 - F4: renumbering the traceability sections breaks no reference (grep: no other file cites traceability section 7 or 8).
 - F4: v1.8 goes beyond owner wording. It is a change list for the owner's approval (UQ4), as U0 requires.
 

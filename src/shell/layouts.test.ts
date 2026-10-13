@@ -1,6 +1,7 @@
 import type { DockviewApi } from "dockview-react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
 import {
   applyMeasureLayout,
@@ -88,9 +89,12 @@ describe("applyPreset and resetLayout (P2.4, UD6)", () => {
     const { api } = dockStandIn();
     defaultArrangement(api);
     useLibraryStore.setState({ mode: "tree" });
+    useCollapseStore.setState({ sizes: { g1: { axis: "width", size: 320 } } });
     applyPreset("compact", api);
     expect(visibleWidgets(api)).toEqual(["library"]);
     expect(useLibraryStore.getState().mode).toBe("tree");
+    // New groups can reuse ids: the old collapse sizes go with the old arrangement.
+    expect(useCollapseStore.getState().sizes).toEqual({});
   });
 
   it("reset applies the default preset, Columns, the band at the top and unlocked (UD6)", () => {

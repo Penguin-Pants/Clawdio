@@ -17,11 +17,12 @@ export const SHOT_SIZES = Object.freeze([
 
 const FOLDER_NAME = /^[a-z0-9-]+$/;
 const PREVIEW_URL = "http://localhost:4173";
+const VITE = "node_modules/vite/bin/vite.js";
 
 /**
  * The files to write for one folder name.
  * @param {string} root repository root
- * @param {string | undefined} folder
+ * @param {string} [folder]
  * @returns {{ path: string, width: number, height: number }[]}
  */
 export function shotPlan(root, folder) {
@@ -44,19 +45,40 @@ export function pngSize(bytes) {
   return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
-/** @param {string} url */
-async function waitForServer(url, timeoutMs = 30_000) {
+/** True when a server answers at `url`. @param {string} url */
+async function answers(url) {
+  try {
+    return (await fetch(url)).ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Waits until the spawned preview serves `url`. Fails when that process exits first (for
+ * example, the port is taken and `strictPort` stops it).
+ * @param {string} url
+ * @param {import("node:child_process").ChildProcess} server
+ */
+async function waitForServer(url, server, timeoutMs = 30_000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return;
-    } catch {
-      // Not up yet.
-    }
+    if (server.exitCode !== null || server.signalCode !== null) throw new Error("the preview server stopped");
+    if (await answers(url)) return;
     await new Promise((done) => setTimeout(done, 250));
   }
   throw new Error(`no server at ${url}`);
+}
+
+/**
+ * Runs a Node script of the repository with this Node, with no shell (Windows has no `npx`
+ * executable, only a `.cmd` shim).
+ * @param {string} root
+ * @param {string[]} args
+ * @returns {[string, string[]]}
+ */
+function nodeArgs(root, args) {
+  return [process.execPath, [resolve(root, args[0]), ...args.slice(1)]];
 }
 
 /**
@@ -66,11 +88,24 @@ async function waitForServer(url, timeoutMs = 30_000) {
  */
 async function run(root, folder) {
   const plan = shotPlan(root, folder);
-  const build = spawnSync("npx", ["vite", "build", "-c", "vite.e2e.config.ts"], { cwd: root, stdio: "inherit" });
-  if (build.status !== 0) throw new Error("the e2e build failed");
-  const server = spawn("npx", ["vite", "preview", "-c", "vite.e2e.config.ts"], { cwd: root, stdio: "ignore" });
+  // The token CSS and the icon sprite are generated files; `npm run build` makes them first too.
+  for (const step of [
+    ["scripts/build-tokens.mjs"],
+    ["scripts/icons.mjs"],
+    [VITE, "build", "-c", "vite.e2e.config.ts"],
+  ]) {
+    const [command, args] = nodeArgs(root, step);
+    if (spawnSync(command, args, { cwd: root, stdio: "inherit" }).status !== 0) {
+      throw new Error(`${step.join(" ")} failed`);
+    }
+  }
+  // Another server on the port would be photographed in place of this build.
+  if (await answers(PREVIEW_URL)) throw new Error(`${PREVIEW_URL} is in use; stop that server first`);
+  const [command, args] = nodeArgs(root, [VITE, "preview", "-c", "vite.e2e.config.ts"]);
+  // The Vite process itself, not a wrapper, so kill() stops the server.
+  const server = spawn(command, args, { cwd: root, stdio: "ignore" });
   try {
-    await waitForServer(PREVIEW_URL);
+    await waitForServer(PREVIEW_URL, server);
     const { chromium } = await import("@playwright/test");
     const executablePath = process.env.PW_CHROMIUM_PATH;
     const browser = await chromium.launch(executablePath ? { executablePath } : {});
@@ -84,7 +119,7 @@ async function run(root, folder) {
         // Thumbnails and fonts load after the rows; the image waits for them.
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready);
-        await page.screenshot({ path: shot.path });
+        await page.screenshot({ path: shot.path, animations: "disabled" });
         const size = pngSize(readFileSync(shot.path));
         if (size?.width !== shot.width || size.height !== shot.height) {
           throw new Error(`${shot.path} is ${JSON.stringify(size)}, not ${shot.width} x ${shot.height}`);
@@ -104,6 +139,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const root = fileURLToPath(new URL("..", import.meta.url));
   run(root, process.argv[2]).catch((error) => {
     console.error(`shots: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    process.exitCode = 1;
   });
 }

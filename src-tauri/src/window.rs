@@ -33,13 +33,21 @@ pub fn start_size(saved: Option<WindowSize>) -> WindowSize {
 /// A monitor's physical bounds: left, top, width and height.
 type MonitorRect = (i32, i32, u32, u32);
 
-/// True when the physical point lies inside one of the monitors (UD14). No scale factor math:
-/// the saved point and the monitor bounds are both physical pixels.
+/// The part of the window at its saved origin that must be on one monitor, in physical px: enough
+/// of the title bar to see and drag it.
+const VISIBLE: (i32, i32) = (160, 40);
+
+/// True when the area of `VISIBLE` size at the physical point lies inside one of the monitors
+/// (UD14). No scale factor math: the saved point and the monitor bounds are both physical pixels.
 fn inside_a_monitor(x: i32, y: i32, monitors: &[MonitorRect]) -> bool {
     monitors.iter().any(|&(left, top, width, height)| {
         let (x, y) = (i64::from(x), i64::from(y));
         let (left, top) = (i64::from(left), i64::from(top));
-        x >= left && y >= top && x < left + i64::from(width) && y < top + i64::from(height)
+        let (grip_x, grip_y) = (i64::from(VISIBLE.0), i64::from(VISIBLE.1));
+        x >= left
+            && y >= top
+            && x + grip_x <= left + i64::from(width)
+            && y + grip_y <= top + i64::from(height)
     })
 }
 
@@ -233,6 +241,14 @@ mod tests {
         assert!(!inside_a_monitor(-10, 100, &monitors));
         assert!(!inside_a_monitor(1919, 1080, &monitors));
         assert!(!inside_a_monitor(100, 100, &[]));
+        // The origin is on the monitor but the title bar is not: the window would be lost.
+        assert!(!inside_a_monitor(1919, 100, &monitors[..1]));
+        assert!(!inside_a_monitor(100, 1060, &monitors[..1]));
+        assert!(inside_a_monitor(
+            1920 - VISIBLE.0,
+            1080 - VISIBLE.1,
+            &monitors[..1]
+        ));
     }
 
     #[test]

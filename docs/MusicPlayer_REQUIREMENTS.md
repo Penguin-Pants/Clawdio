@@ -86,7 +86,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - Splitters work with the mouse and the keyboard (R29). They look and behave like the dock splitters (R30). `(v1.8)`
   - Columns and Top/bottom each keep their own frame sizes. Switching the mode does not reset them.
   - Frame sizes are part of the arrangement (R29). They save automatically and restore at startup.
-  - Reset layout and applying any built-in layout restore the default frame sizes of all modes.
+  - Reset layout and applying any preset restore the default frame sizes of all modes. `(v1.8)`
 - **R29 (v1.2).** Docking and layouts.
   - Free-form drag-and-drop docking inside the main window. The user drags a widget by its header and drops it on the edge of another widget or of the window. Splitters resize widgets.
   - `(v1.8)` Floating groups inside the main window are allowed: a widget floats from its tab or the Layout menu and docks again the same way. Pop-out windows are not in v1. Tabbed groups are allowed. `(v1.7)` The saved arrangement must round-trip a tabbed group `(v1.8)` and a floating group.
@@ -101,7 +101,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - `[D]` **Reset layout** applies the default preset, the Columns Library mode, the default frame sizes, the band at the top and unlocked. `(v1.8)` The menu button offers it, and a documented keyboard shortcut also runs it. No layout can hide the menu button or the status line. `(v1.5)`
   - `[D]` **Non-drag path:** the menu button offers show and hide for each widget, switching the Library mode and applying presets `(v1.8)`, and float, dock, collapse and restore for the active widget. Moving a widget needs drag in v1.
   - `[D]` Corrupt layout file: back it up, log it and load the default preset `(v1.8)`. Unknown widget in a layout: ignore that widget. Layout without the Library widget: apply the default preset.
-- **R29.1 (v1.7).** Deleted in v1.8: the transport band is not a dock widget (R5), and Now playing is an ordinary widget. `(v1.8)`
+- **R29.1 (v1.7).** Removed in v1.8: its bar-widget rules (a fixed natural height for Transport controls and Now playing, no side drops, no tabbing, repair of old arrangements) no longer apply. R5 now defines the transport band and the Now playing card. `(v1.8)`
 - **R30 (v1.4).** UI framework: React, Tailwind CSS v4 and shadcn/ui components. Magic UI (https://github.com/magicuidesign/magicui) is optional.
   - `[D]` A Magic UI component may be copied into the repo only when a named component serves a function in R5, R6 or R29. The docs (R17) list the copied components. If the list is empty, Motion is not a dependency. Decorative effects (backgrounds, marquees, shimmer, confetti) are out under the "few features" rule.
   - `[D]` Every animation honors the OS "reduce motion" setting. Animations never block input.
@@ -341,8 +341,8 @@ These are out under the owner's "few features" rule.
 
 - **Stack:** Tauri v2 with a Rust backend (audio decoding and playback), SQLite, and a React UI with Tailwind CSS and shadcn/ui (R30). Magic UI and Motion only by named component. Revisit if Milestone 0 fails (R20). `(v1.4)`
 - **Branding `[D]`:** no feature code depends on the placeholder name, icon or theme. All brand inputs are the files named in R31. `(v1.4)`
-- **Docking `[D]`:** a docking library may be used if its license is MIT or compatible, it has React bindings and it passes Milestone 0. One example is the MIT Dockview with its React package. Do not use commercial add-ons (Dockview Enterprise is commercial). Turn off floating panels and pop-out windows (section 4). Tabbed groups stay on (R29). `(v1.4)`
-- **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no named layouts, no floating panels, no pop-out windows and no layout import or export in v1. `(v1.4)` Adding any of these needs an owner decision.
+- **Docking `[D]`:** a docking library may be used if its license is MIT or compatible, it has React bindings and it passes Milestone 0. One example is the MIT Dockview with its React package. Do not use commercial add-ons (Dockview Enterprise is commercial). Turn off pop-out windows (section 4). Tabbed groups and floating groups inside the main window stay on (R29). `(v1.8)`
+- **Complexity budget (the owner's "massively simpler than MusicBee"):** a fixed widget list (R5), no per-view overrides, no named layouts, no pop-out windows and no layout import or export in v1. `(v1.4)` Floating groups inside the main window are allowed (R29). `(v1.8)` Adding any of these needs an owner decision.
 - **Audio engine `[D] (v1.5)`:** rodio pinned to a release, Symphonia with the `mp3` feature, lofty for tags. Design it so gapless playback can be added later (decode the next track ahead of time). Gapless is not in v1.
 - **License `(v1.5)`:** MIT application. Symphonia is MPL-2.0. The AppImage bundles WebKitGTK and GTK (LGPL). Each release ships the license texts of bundled and linked third-party components and states, per component, the exact version and where its source is available. This covers Symphonia in every build and the LGPL libraries bundled in the AppImage. The repo keeps this list in a NOTICE file. Strawberry is GPL-3.0, so do not copy its code into an MIT project.
 - **Platforms:** Windows and Linux (R22). `(v1.6)` Exception: microphone ducking (R34) is Windows only in this version.
@@ -461,8 +461,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 9. **Cache rebuild:** deleting the cache restores the same library and playlists, with no new lookups for albums that have a "no match" marker.
 10. **Audio device `(v1.5)`:** unplugging the output device mid-song stops playback with a message. Play resumes on the default device.
 11. **Docking:** in each Library mode, the user can dock, resize, hide and show widgets. The arrangement survives a restart.
-12. **Built-in layouts `(v1.4)`:** applying each built-in layout works. A tabbed group survives a restart. (Named layouts are deferred.)
-13. **Layout lockout `(v1.5)`:** with Transport controls hidden, keyboard shortcuts and media keys still work. Reset layout restores the default.
+12. **Presets `(v1.8)`:** applying each preset works. A tabbed group and a floating group survive a restart. (Named layouts are deferred.)
+13. **Layout lockout `(v1.8)`:** the transport band cannot be hidden (R5). With every optional widget hidden, keyboard shortcuts and media keys still work. Reset layout restores the default preset.
 14. **Library widget:** it cannot be closed. Switching its mode keeps the selection and search text.
 15. **Branding swap `(v1.4)`:** replacing `theme/tokens.json` and the icon source and rebuilding changes the theme and the app icon with no other code changes.
 16. **Reduced motion `(v1.4)`:** with the OS reduce-motion setting on, no animation plays. Applies to Magic UI components only if R30 names any.

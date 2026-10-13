@@ -174,7 +174,7 @@ async function controlBoxes(page: Page) {
           // Rows of scrolling lists and inactive tabs of a scrolling tab strip may scroll out;
           // the active tab may not.
           inList:
-            element.closest("[role='listbox'], [role='tree']") !== null ||
+            element.closest("[role='listbox'], [role='tree'], [role='grid']") !== null ||
             (element.closest(".dv-tab") !== null && element.closest(".dv-active-tab") === null),
         };
       });

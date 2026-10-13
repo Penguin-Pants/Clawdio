@@ -64,7 +64,7 @@ Checked against the code on October 13, 2026. Each row repeats plan section 3.1 
 | TH-2 dark default | `index.html` class `dark`, `globals.css:6-15` |
 | AX-2 reduced motion | `globals.css:90-98`; `expectNoMotion` in `test-base.ts` |
 | TA-2 folder selection by dialog (code) | Rust picker (D13), `SettingsDialog.tsx` `chooseMusicFolder` |
-| TA-3 both webviews (CI part) | `playwright.config.ts` projects `chromium` and `webkit` |
+| TA-3 both webviews: not verified | `playwright.config.ts` runs Playwright's own Chromium and WebKit builds, not WebView2 or WebKitGTK. The real-app runs on Windows and Linux (U7) verify TA-3. |
 | TA-4 not only `localStorage` | `layout.json` through Rust; no `localStorage` under `src/` |
 
 ## 4. Conflicts with the requirements

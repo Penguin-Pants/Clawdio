@@ -1,5 +1,6 @@
 import type { DockviewApi } from "dockview-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
 import {
   BIG_STEP,
@@ -13,7 +14,8 @@ import {
   sashKey,
   separatorLabel,
   share,
-  useCollapseStore,
+  collapsedSizes,
+  restoreCollapsed,
 } from "./splitters";
 
 /** A splitview with one sash between two views, as Dockview builds it. */
@@ -160,9 +162,37 @@ describe("collapse and restore (SP-6, UD25)", () => {
       element,
       api: { location: { type: "grid" }, setSize: (size: unknown) => sizes.push(size) },
     };
-    const api = { getPanel: () => ({ group }) } as unknown as DockviewApi;
-    return { api, sizes };
+    const api = {
+      getPanel: () => ({ group }),
+      getGroup: (id: string) => (id === "g1" ? group : undefined),
+    } as unknown as DockviewApi;
+    return { api, sizes, group };
   }
+
+  it("a floated collapsed group is not collapsed: Restore is off and does nothing", () => {
+    const { api, sizes, group } = dockWith(320);
+    collapseGroup("queue", api);
+    group.api.location = { type: "floating" };
+    expect(isCollapsed("queue", api)).toBe(false);
+    restoreGroup("queue", api);
+    expect(sizes).toEqual([{ width: 200 }]);
+  });
+
+  it("keeps the collapse sizes of groups that exist over a save and a load (PS-5)", () => {
+    const { api } = dockWith(320);
+    collapseGroup("queue", api);
+    const saved = collapsedSizes();
+    expect(saved).toEqual({ g1: { axis: "width", size: 320 } });
+    useCollapseStore.setState({ sizes: {} });
+    expect(restoreCollapsed({ ...saved, gone: { axis: "width", size: 9 }, bad: { axis: "x", size: 1 } }, api)).toEqual([
+      "invalid collapse entry bad ignored",
+    ]);
+    expect(isCollapsed("queue", api)).toBe(true);
+    expect(useCollapseStore.getState().sizes).toEqual({ g1: { axis: "width", size: 320 } });
+    expect(restoreCollapsed("no", api)).toEqual(["invalid collapsed; nothing restored"]);
+    expect(restoreCollapsed(undefined, api)).toEqual([]);
+    expect(useCollapseStore.getState().sizes).toEqual({});
+  });
 
   it("collapses a group to its minimum, keeps its size and restores it", () => {
     const { api, sizes } = dockWith(320);

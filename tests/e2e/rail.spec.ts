@@ -19,14 +19,26 @@ test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it an
   await mix.hover();
   await expect(page.getByText("Mix 2", { exact: true }).last()).toBeVisible();
 
-  // The rail state is in the saved dock (the group width): it survives a reload.
+  // The rail state is in the saved dock (the group width): it survives a reload once saved.
   await expect
-    .poll(async () => {
-      const saved = JSON.parse((await page.evaluate(() => sessionStorage.getItem("e2e-layout"))) ?? "{}");
-      return JSON.stringify(saved.dock?.grid ?? {}).length > 0;
-    })
-    .toBe(true);
-  await page.waitForTimeout(700);
+    .poll(() =>
+      page.evaluate(() => {
+        // The saved width of the leaf that holds Playlists.
+        type Node = { type: string; data: unknown; size: number };
+        const find = (node: Node): number | null => {
+          if (node.type === "leaf")
+            return (node.data as { views: string[] }).views.includes("playlists") ? node.size : null;
+          for (const child of node.data as Node[]) {
+            const size = find(child);
+            if (size !== null) return size;
+          }
+          return null;
+        };
+        const saved = JSON.parse(sessionStorage.getItem("e2e-layout") ?? "null");
+        return saved ? find(saved.dock.grid.root) : null;
+      }),
+    )
+    .toBeLessThan(140);
   await page.reload();
   await expect(widget(page, "playlists").getByRole("navigation", { name: "Playlists" })).toBeVisible();
 

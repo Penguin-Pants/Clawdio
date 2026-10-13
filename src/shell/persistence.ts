@@ -2,9 +2,11 @@ import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { commands } from "@/lib/ipc/commands";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, LIBRARY_MODES, type LibraryFrames, type LibraryMode, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
 import { type TransportPosition, useUiStore } from "@/store/ui";
 import { applyClamp } from "./clamp";
 import { replaceArrangement, resetLayout } from "./layouts";
+import { collapsedSizes, restoreCollapsed } from "./splitters";
 import { isWidgetId } from "./widgets";
 
 /** The `layout.json` version (UD5). Version 1 (P9 to P23) held a `transport` dock panel. */
@@ -24,6 +26,11 @@ export interface SavedLayout {
   libraryMode: LibraryMode;
   /** Optional in the file (D55): a file without it loads with the default sizes. */
   libraryFrames: LibraryFrames;
+  /**
+   * Collapsed groups and their sizes before the collapse (PS-5, UD25). Optional in the file;
+   * `restoreCollapsed` checks a loaded value.
+   */
+  collapsed: unknown;
   dock: SerializedDockview;
 }
 
@@ -126,6 +133,7 @@ export function parseLayout(
       locked,
       libraryMode: mode as LibraryMode,
       libraryFrames: frames,
+      collapsed: object.collapsed,
       dock: serialized,
     },
     unknown,
@@ -178,6 +186,8 @@ export function restoreLayout(
   useLibraryStore.getState().setMode(layout.libraryMode);
   for (const warning of frameWarnings) log.warn(`layout: ${warning}`);
   useLibraryStore.getState().setAllFrames(layout.libraryFrames);
+  // After the dock load: the entries name its group ids, and the load cleared the old ones.
+  for (const warning of restoreCollapsed(layout.collapsed, api)) log.warn(`layout: ${warning}`);
   // Step 5: fit the saved layout to this window; the clamp uses the saved minimums.
   api.layout(size.width, size.height, true);
   applyClamp(api);
@@ -194,6 +204,7 @@ export function currentLayout(api: DockviewApi): SavedLayout {
     locked: ui.locked,
     libraryMode: library.mode,
     libraryFrames: library.frames,
+    collapsed: collapsedSizes(),
     dock: api.toJSON(),
   };
 }
@@ -232,11 +243,13 @@ export function watchLayout(
   const uiChange = useUiStore.subscribe((state, previous) => {
     if (state.transportPosition !== previous.transportPosition || state.locked !== previous.locked) schedule();
   });
+  const collapseChange = useCollapseStore.subscribe(schedule);
   return {
     flush: () => write(true),
     dispose: () => {
       clearTimeout(timer);
       layoutChange.dispose();
+      collapseChange();
       modeChange();
       uiChange();
     },

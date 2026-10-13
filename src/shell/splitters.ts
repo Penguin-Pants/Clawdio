@@ -1,5 +1,5 @@
 import type { DockviewApi } from "dockview-react";
-import { create } from "zustand";
+import { type CollapseSizes, useCollapseStore } from "@/store/collapse";
 import { DEFAULT_FRAMES, type FrameGroup, frameFractions, useLibraryStore } from "@/store/library";
 import { useUiStore } from "@/store/ui";
 import { getDock } from "./layouts";
@@ -123,13 +123,6 @@ export function moveSash(sash: HTMLElement, horizontal: boolean, delta: number):
   doc.dispatchEvent(new PointerEvent("pointerup", { ...point(delta), buttons: 0 }));
 }
 
-/** Collapsed groups and their size before the collapse (SP-6, UD25). */
-interface CollapseState {
-  sizes: Record<string, { axis: "width" | "height"; size: number }>;
-}
-
-export const useCollapseStore = create<CollapseState>()(() => ({ sizes: {} }));
-
 /** The axis a group resizes on: width beside a neighbor in a row, else height. */
 function groupAxis(element: HTMLElement): "width" | "height" {
   const container = element.closest(".dv-view")?.parentElement?.parentElement;
@@ -150,7 +143,7 @@ export function collapseGroup(widget: string, api: DockviewApi | null = getDock(
 export function restoreGroup(widget: string, api: DockviewApi | null = getDock()): void {
   const group = api?.getPanel(widget)?.group;
   const saved = group ? useCollapseStore.getState().sizes[group.id] : undefined;
-  if (!group || !saved) return;
+  if (!group || !saved || group.api.location.type !== "grid") return;
   useCollapseStore.setState((state) => {
     const sizes = { ...state.sizes };
     delete sizes[group.id];
@@ -159,10 +152,51 @@ export function restoreGroup(widget: string, api: DockviewApi | null = getDock()
   group.api.setSize(saved.axis === "width" ? { width: saved.size } : { height: saved.size });
 }
 
+/** The collapse sizes to save in `layout.json` (PS-5): group id to axis and size. */
+export function collapsedSizes(): CollapseSizes {
+  return useCollapseStore.getState().sizes;
+}
+
+function isCollapseEntry(value: unknown): value is { axis: "width" | "height"; size: number } {
+  if (typeof value !== "object" || value === null) return false;
+  const entry = value as Record<string, unknown>;
+  return (
+    (entry.axis === "width" || entry.axis === "height") &&
+    typeof entry.size === "number" &&
+    Number.isFinite(entry.size) &&
+    entry.size > 0
+  );
+}
+
+/**
+ * Loads the saved collapse sizes after the dock loads (PS-5), so Restore works after a restart.
+ * Entries of groups that no longer exist are dropped; a bad entry is ignored with a warning.
+ * Returns the warnings.
+ */
+export function restoreCollapsed(value: unknown, api: DockviewApi | null = getDock()): string[] {
+  const sizes: CollapseSizes = {};
+  const warnings: string[] = [];
+  if (value !== undefined && (typeof value !== "object" || value === null || Array.isArray(value))) {
+    warnings.push("invalid collapsed; nothing restored");
+  } else if (value !== undefined) {
+    for (const [id, entry] of Object.entries(value)) {
+      if (!isCollapseEntry(entry)) warnings.push(`invalid collapse entry ${id} ignored`);
+      else if (api?.getGroup(id)?.api.location.type === "grid") sizes[id] = { axis: entry.axis, size: entry.size };
+    }
+  }
+  useCollapseStore.setState({ sizes });
+  return warnings;
+}
+
 /** True while the group of a widget is collapsed. */
 export function isCollapsed(widget: string, api: DockviewApi | null = getDock()): boolean {
   const group = api?.getPanel(widget)?.group;
-  return group !== undefined && useCollapseStore.getState().sizes[group.id] !== undefined;
+  // A floating group is not collapsed: its dock size does not apply (UD17).
+  return (
+    group !== undefined &&
+    group.api.location.type === "grid" &&
+    useCollapseStore.getState().sizes[group.id] !== undefined
+  );
 }
 
 /** The one dock widget in a view, when the view is exactly one group, else null. */

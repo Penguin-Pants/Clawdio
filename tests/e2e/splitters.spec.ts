@@ -126,3 +126,17 @@ test("SP-6: Collapse sets Play queue to its minimum and Restore puts it back, by
   await closeMenu(page);
   await expect(separator(page, "Resize Library and Play queue, Lyrics")).toHaveAttribute("aria-disabled", "true");
 });
+
+test("PS-5, UD25: a collapsed widget stays collapsed over a restart and Restore still works", async ({ page }) => {
+  await open(page);
+  const queue = widget(page, "queue");
+  const start = await width(queue);
+  const saves = Number((await page.locator("body").getAttribute("data-layout-saves")) ?? 0);
+  await groupAction(page, "queue", "Play queue", "Collapse widget");
+  await expect.poll(() => width(queue)).toBeCloseTo(200, -1);
+  await expect.poll(() => page.evaluate(() => Number(document.body.dataset.layoutSaves ?? 0))).toBeGreaterThan(saves);
+  await page.reload();
+  await expect.poll(() => width(widget(page, "queue"))).toBeCloseTo(200, -1);
+  await groupAction(page, "queue", "Play queue", "Restore widget");
+  await expect.poll(() => width(widget(page, "queue"))).toBeCloseTo(start, 0);
+});

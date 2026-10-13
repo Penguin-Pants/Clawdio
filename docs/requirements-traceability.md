@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.17, October 13, 2026 (section 7: the UI shell rework, U0).
+**Version:** 1.18, October 13, 2026 (section 1 rows that v1.8 replaces are Superseded; the summary is counted again from the rows).
 **Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -18,25 +18,31 @@
   - Deferred: the source defers it. No task.
   - Non-goal: the source excludes it. No task. AGENTS.md scope rules and reviews keep it out.
   - Reference: not a requirement. No task.
+  - In progress (Un): some tasks of the row passed; phase Un of the UI shell rework is the last.
+  - Superseded (v1.8): requirements v1.8 replaced the rule. The status names the section 7 rows that replace it.
 - Phases update the Status column as work completes (AGENTS.md workflow rule).
 
 ## Coverage summary
 
-| Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
-|---|---|---|---|---|---|---|---|---|
-| Requirements | 400 | 240 | 85 | 8 | 5 | 5 | 57 | 0 |
-| design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 |
-| Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
-| Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
-| tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
-| UI shell rework | 74 | 1 | 70 | 0 | 0 | 0 | 3 | 0 |
+Counted from the Status cells. Open: Planned, In progress, and an automatic pass that waits on a manual Windows check. With decision or owner input: Planned (Dn), Planned (Qn) and Changed (Dn).
+
+| Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
+|---|---|---|---|---|---|---|---|---|---|
+| Requirements | 376 | 270 | 42 | 6 | 5 | 5 | 33 | 15 | 0 |
+| design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
+| Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
+| Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
+| tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| UI shell rework | 74 | 57 | 13 | 0 | 0 | 0 | 4 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.7)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.8)
+
+Rows that the UI shell rework replaces keep their v1.7 text with the status Superseded (v1.8); section 7 holds the rows that replace them.
 
 ### 1.1 Section 1: desired outcome
 
@@ -86,7 +92,7 @@
 |---|---|---|---|---|---|---|
 | R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
-| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Done (P7) |
+| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Superseded (v1.8: section 7 SH-2, TR-1 to TR-8) |
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Done (P11) |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Done (P11) |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
@@ -96,7 +102,7 @@
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
-| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
+| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: section 7 SH-2, TR-11) |
 | R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
@@ -109,28 +115,28 @@
 | R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
 | R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22) |
 | R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Done (P22, D56) |
-| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
+| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Superseded (v1.8: section 7 SP-3) |
 | R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
 | R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Done (P22, D55) |
-| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
+| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Superseded (v1.8: section 7 DK-9; presets restore the default sizes) |
 | R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
-| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Done (P9) |
-| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Done (P2) |
-| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Done (P2) |
+| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Superseded (v1.8: section 7 DK-3, floating groups) |
+| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Superseded (v1.8: section 7 DK-9, presets) |
+| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Superseded (v1.8: section 7 DK-8, default preset) |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
 | R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9) |
 | R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9) |
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
-| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
-| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
-| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
-| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Done (P23, D58) |
-| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Done (P23) |
+| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
@@ -713,7 +719,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 
 | ID | Requirement | Phase | Verify | Status |
 |---|---|---|---|---|
-| SH-1 | Three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Done (U1) |
+| SH-1 | Three zones (plus the header strip, `docs/design.md` section 5) | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Done (U1) |
 | SH-2 | Bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Done (U1) |
 | SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
 | SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |

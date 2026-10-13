@@ -12,7 +12,9 @@ pub const COLUMNS_FILE: &str = "columns.json";
 /// A six-widget arrangement is a few KB; anything this large is not a layout.
 pub const MAX_LAYOUT_BYTES: usize = 1024 * 1024;
 
-/// The stored text of `file`, or None when there is none or it cannot be read (logged).
+/// The stored text of `file`, or None when there is none. A file that cannot be read (not UTF-8,
+/// no permission) gives empty text, so the webview rejects it and backs it up (PS-4) instead of
+/// treating it as missing and saving the defaults over it.
 pub fn load(config_dir: &Path, file: &str) -> Option<String> {
     let path = config_dir.join(file);
     match std::fs::read_to_string(&path) {
@@ -20,7 +22,7 @@ pub fn load(config_dir: &Path, file: &str) -> Option<String> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
         Err(error) => {
             log::warn!("layout: cannot read {}: {error}", path.display());
-            None
+            Some(String::new())
         }
     }
 }
@@ -116,5 +118,14 @@ mod tests {
             load(dir.path(), LAYOUT_FILE).as_deref(),
             Some(r#"{"version":2}"#)
         );
+    }
+
+    #[test]
+    fn an_unreadable_file_loads_as_bad_text_so_it_is_backed_up_not_replaced() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join(COLUMNS_FILE), [0xff, 0xfe, b'{']).unwrap();
+        let text = load(dir.path(), COLUMNS_FILE).expect("a present file is not missing");
+        assert!(serde_json::from_str::<serde_json::Value>(&text).is_err());
+        assert_eq!(load(dir.path(), "absent.json"), None);
     }
 }

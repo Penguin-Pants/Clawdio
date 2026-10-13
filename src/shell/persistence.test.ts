@@ -3,6 +3,7 @@ import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
 import {
   SAVE_DELAY_MS,
@@ -50,6 +51,8 @@ function dockStandIn() {
     },
     getPanel: (id: string) =>
       panels.includes(id) ? { id, api: { setActive: () => {} }, group: { api: { setSize: () => {} } } } : undefined,
+    // One grid group, "g1", for the collapse sizes (PS-5).
+    getGroup: (id: string) => (id === "g1" ? { id, api: { location: { type: "grid" } } } : undefined),
     removePanel: ({ id }: { id: string }) => panels.splice(panels.indexOf(id), 1),
     clear: () => panels.splice(0),
     fromJSON: (dock: SerializedDockview) => {
@@ -260,6 +263,7 @@ describe("saving (P9.3, P9-AC8)", () => {
     dock.api.addPanel({ id: "library", component: "library" });
     const saved = currentLayout(dock.api);
     expect(Object.keys(saved).sort()).toEqual([
+      "collapsed",
       "dock",
       "libraryFrames",
       "libraryMode",
@@ -278,6 +282,31 @@ describe("saving (P9.3, P9-AC8)", () => {
     useUiStore.setState({ transportPosition: "top", locked: false });
     expect(restoreLayout(dockStandIn().api, text, SIZE, noBackup)).toBe(true);
     expect(useUiStore.getState()).toMatchObject({ transportPosition: "bottom", locked: true });
+  });
+
+  it("round-trips the collapse sizes, and a file without them loads none (PS-5)", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    useCollapseStore.setState({ sizes: { g1: { axis: "width", size: 320 } } });
+    const saved = currentLayout(dock.api);
+    useCollapseStore.setState({ sizes: {} });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    expect(useCollapseStore.getState().sizes).toEqual({ g1: { axis: "width", size: 320 } });
+    const without: Partial<typeof saved> = { ...saved };
+    delete without.collapsed;
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(without), SIZE, noBackup)).toBe(true);
+    expect(useCollapseStore.getState().sizes).toEqual({});
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it("saves 500 ms after a collapse change", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
+    const watcher = watchLayout(dockStandIn().api, save);
+    useCollapseStore.setState({ sizes: { g1: { axis: "height", size: 200 } } });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(save).toHaveBeenCalledTimes(1);
+    watcher.dispose();
   });
 
   it("saves 500 ms after a layout or mode change, and flush writes at once", async () => {

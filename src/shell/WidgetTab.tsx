@@ -11,7 +11,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUiStore } from "@/store/ui";
 import { dockWidget, floatWidget } from "./layouts";
-import { collapseGroup, restoreGroup, useCollapseStore } from "./splitters";
+import { useCollapseStore } from "@/store/collapse";
+import { collapseGroup, restoreGroup } from "./splitters";
 import { WIDGETS, isWidgetId } from "./widgets";
 
 function titleOf(id: string): string {

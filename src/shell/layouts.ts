@@ -1,5 +1,6 @@
 import type { AddPanelPositionOptions, DockviewApi, IDockviewPanel, Position } from "dockview-react";
 import { type LibraryMode, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
 import { DEFAULT_PRESET, type PresetId, buildPreset } from "./presets";
 import { WIDGET_IDS, WIDGETS, type WidgetId, isWidgetId } from "./widgets";
@@ -62,6 +63,8 @@ export function defaultArrangement(api: DockviewApi): void {
 /** Clears the dock and builds a new arrangement. The Library guard is off meanwhile (P2.3). */
 export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) => void): void {
   replacing = true;
+  // New groups can reuse ids, so the old collapse sizes go with the old arrangement (UD25).
+  useCollapseStore.setState({ sizes: {} });
   try {
     api.clear();
     build(api);

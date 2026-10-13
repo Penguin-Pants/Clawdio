@@ -15,7 +15,7 @@ describe("ui-shots", () => {
   });
 
   it("refuses a missing or unsafe folder name", () => {
-    expect(() => shotPlan("/repo", undefined)).toThrow(/folder name/);
+    expect(() => shotPlan("/repo")).toThrow(/folder name/);
     expect(() => shotPlan("/repo", "../x")).toThrow(/folder name/);
     const run = runScript("ui-shots.mjs", []);
     expect(run.status).toBe(1);
@@ -34,7 +34,9 @@ describe("ui-shots", () => {
   // The committed screenshots (U0-AC2, U7-AC2) have the planned pixel sizes.
   for (const folder of ["before", "after"]) {
     const plan = shotPlan(REPO_ROOT, folder);
-    it.skipIf(!plan.every((shot) => existsSync(shot.path)))(`the ${folder} screenshots have their sizes`, () => {
+    // The before shots are committed (U0); the after shots come in U7, so until then they may be missing.
+    const pending = folder === "after" && !plan.every((shot) => existsSync(shot.path));
+    it.skipIf(pending)(`the ${folder} screenshots exist and have their sizes`, () => {
       for (const shot of plan) {
         expect(pngSize(readFileSync(shot.path))).toEqual({ width: shot.width, height: shot.height });
       }
