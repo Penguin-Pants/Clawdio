@@ -1,13 +1,14 @@
 # Clawdio Build Plan
 
-**Version:** 1.18, October 12, 2026 (F-21 CI measurement on the P21 head, section 2.1).
+**Version:** 1.19, October 13, 2026 (requirements v1.7: phases P22 and P23).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20).
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
-- The plan has 22 phases (P0 to P21). P19, P20 and P21 come from requirements v1.6. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.7 adds P22 (Library frame splitters) and P23 (bar widgets). Both are Not started.
+- The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
 
@@ -86,6 +87,8 @@ A phase is Done when all of these are true:
 | P19 | Bulk import and missing-song repair | P18 (waived, section 13 v1.14) | Done with exceptions |
 | P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
+| P22 | Library frame splitters | P21 | Not started |
+| P23 | Bar widgets and Windows build | P22 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1394,6 +1397,11 @@ The sources leave these details open. The owner may change any of them. Section 
 | D54 | Microphone signal (P20.0, R34.2): the active audio sessions on the active capture endpoints (WASAPI `IAudioSessionManager2`), other than the app's own process, read every 250 ms. The app opens no capture stream. The privacy consent store gave the same result and was dropped: one signal, a documented API. | P20.0 probe on the owner's Windows machine, October 12, 2026: both signals went 0, 1, 0 for Handy push-to-talk (6.1 s to 9.6 s) and for a WhatsApp call (204.3 s to 207.9 s). |
 | D53 | Microphone ducking off Windows (R34.7): Settings does not show the ducking control at all, in place of a disabled control with "Windows only". The settings keys still load and save. | Owner decision, October 12, 2026 ("hide the setting on Linux"). |
 | D52 | Duck timing (R34.5): fade down 150 ms, wait 1 s after the microphone is free, fade up 500 ms. Fades are linear on the output gain. Pause mode resumes with the same 500 ms fade in. The values are constants, not settings. | Owner decision 26 (short fixed wait, then a fade). R34.5 gives "about" values. |
+| D55 | Library frame sizes (R28.1) are an optional `libraryFrames` field in `layout.json`: `columns` holds three fractions (Artist, Album, Songs) and `topBottom` holds `top` (Artist, Album) and `rows` (top row, Songs). Fractions, not pixels, so a window change keeps the proportions. The version stays 1: a file without the field loads with the default sizes, and an older app ignores the field. An invalid entry for one mode gives that mode its defaults and one log line (requirements section 5). Defaults are the old fixed ratios: Columns 1:1:2, Top/bottom top row 1:1 and rows 1:1. | R28.1 says frame sizes are part of the arrangement. A version change would make an older app drop the whole arrangement. |
+| D56 | Frame splitters use `SplitviewReact` from `dockview-react`, which is already a dependency. Its sashes take the dock splitter styles (P2.10), so no new component and no new dependency. Frame minimums: 96 px wide, 64 px tall (three Columns frames fit the 320 px Library minimum of D33). When the Library is smaller than the sum, the frame minimums scale in proportion, as in D45. Sashes are not in the Tab order (R28.1 mouse only, K5). | Edits rules 4 and 5: reuse the existing splitter code. |
+| D57 | Bar height (R29.1): each bar widget has a `barHeight` constant in `src/shell/widgets.ts`: its content height at the default font plus the 32 px header. The bar group's minimum and maximum height both equal it. When the two bar widgets share a row, both groups take the larger value. P23-AC6 fails when the content overflows or leaves more than 4 px empty, so the constants stay true to the content. | "Natural content height" needs a testable value. A constant is simpler than a live measurement and gives the same result at a fixed font. |
+| D58 | Bar drop rules (R29.1) live in one pure function, `allowDrop(source, target, position)` in `src/shell/bar-rules.ts`. A bar widget may drop on a top or bottom edge of a group or of the window, and on the left or right of a group that holds only the other bar widget. It may never drop into the center (tab). A non-bar widget may not drop into the center of a bar group or on its left or right, so a bar row holds bar widgets only. All other drops are unchanged. A refused drop shows no overlay and writes no log line. | R29.1 makes bar rows full width at a fixed height. A non-bar widget in the row would take the fixed height too. |
+| D59 | Clamp with bar widgets (requirements section 5, v1.7): the D45 clamp lowers the minimums of non-bar groups first. Bar group heights fall only when the non-bar groups are at their D45 floor, and never below 32 px. | Section 5 says bar widgets keep their heights and the other widgets shrink first. |
 
 ### 5.3 Owner confirmations
 
@@ -1765,6 +1773,7 @@ P0 foundation -> P1 brand assets -> P2 themed shell -> P3 GATE (Milestone 0)
   -> P14 online and artwork fetch -> P15 lyrics fetch -> P16 metadata fill
   -> P17 UI quality audit -> P18 release readiness
   -> P19 bulk import and repair -> P20 microphone ducking -> P21 release readiness again
+  -> P22 Library frame splitters -> P23 bar widgets and Windows build
 ```
 
 - **Brand and design early.** Tokens and focus styles come in P0, brand assets in P1 and the themed shell in P2. Every later widget is built on them. P17 is an audit of what exists, not a styling pass.
@@ -2670,6 +2679,63 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 ---
 
+### P22. Library frame splitters
+
+**Objective.** Let the user resize the Artist, Album and Songs frames in the Library widget, and keep the sizes per mode.
+
+**Scope.** R28.1. Requirements section 5 (v1.7 frame-size case). AC-25. design.md §5 (Library widget). D55. D56.
+
+**Depends on.** P21.
+
+**Tasks.**
+
+- **P22.1** Frames in `src/widgets/library/LibraryWidget.tsx` (D56): Columns uses one horizontal `SplitviewReact` with three views. Top/bottom uses a vertical one with two views; its top view holds a horizontal one with Artist and Album. Tree mode does not change.
+- **P22.2** Store: `useLibraryStore` keeps the frame fractions per mode, with `setFrames(mode, fractions)` and `resetFrames()`. A mode switch keeps them. `applyLayout` and `resetLayout` in `src/shell/layouts.ts` call `resetFrames()` for all modes.
+- **P22.3** Persistence (D55) in `src/shell/persistence.ts`: `currentLayout` writes `libraryFrames`; `parseLayout` checks it (array lengths, finite positive values, sum within 0.01 of 1). An invalid mode entry gives that mode its defaults and one `layout:` log line. `watchLayout` also saves 500 ms after a frame change.
+- **P22.4** Minimums and clamp (D56): 96 px wide and 64 px tall. They scale in proportion when the Library is smaller than their sum.
+- **P22.5** Docs: `docs/file-formats.md` `layout.json` section adds `libraryFrames` (R17).
+
+**Acceptance criteria.**
+
+- **P22-AC1** Unit tests: `setFrames` per mode; a mode switch keeps both modes' fractions; `applyLayout` (each built-in layout) and `resetLayout` restore the defaults of all modes.
+- **P22-AC2** Unit tests: a version 1 file without `libraryFrames` loads with defaults; a round trip keeps both modes; an invalid `columns` entry gives Columns defaults and one log line, and keeps `topBottom` and the dock.
+- **P22-AC3** Playwright (AC-25): in Columns, drag both splitters; the frame widths change. Switch to Top/bottom and back: the Columns sizes stay. Drag the Top/bottom splitters, reload: both modes keep their sizes. Reset layout restores the defaults. Tree mode shows no frame splitter.
+- **P22-AC4** Playwright: a drag cannot take a frame below its minimum. At 800 x 560 with all six widgets, no frame has zero size and the page has no horizontal scroll. The frame splitter colors equal the dock splitter tokens (as P2-AC7). The splitters are not in the Tab order.
+
+**Verification.** Vitest (P22-AC1, P22-AC2). Playwright (P22-AC3, P22-AC4).
+
+---
+
+### P23. Bar widgets and Windows build
+
+**Objective.** Keep Transport controls and Now playing as thin full-width bars wherever they dock, repair old arrangements, and build a Windows package with P22 and P23.
+
+**Scope.** R29.1. R5 (v1.7 bar widget notes). R29 (v1.7 tab exception). Requirements section 5 (v1.7 bar cases). AC-26. AC-27. design.md §5 (bar widgets, tabbed groups). D57. D58. D59. K23.
+
+**Depends on.** P22.
+
+**Tasks.**
+
+- **P23.1** Bar height (D57): `barHeight` for `transport` and `nowPlaying` in `src/shell/widgets.ts`. `addWidget` and every load and drop set the bar group's minimum and maximum height to it; a shared row uses the larger value. If Dockview 8.5.1 cannot lock a group height, stop and ask the owner (K23).
+- **P23.2** Drop rules (D58) in `src/shell/bar-rules.ts`, wired to the Dockview drop overlay event in `DockShell.tsx`. If Dockview 8.5.1 cannot refuse an overlay for each drop, stop and ask the owner (K23).
+- **P23.3** Repair (R29.1): `restoreLayout` checks each bar panel after `fromJSON` and before the clamp. A bar panel in a tab group with another widget, or in a row with a non-bar widget, is removed and added again at its `showPosition` (the default bottom bar). One log line per repair names the widget id only.
+- **P23.4** Clamp (D59) in `src/shell/clamp.ts`.
+- **P23.5** Release: run the Release workflow (`workflow_dispatch`) on the P23 head for Windows. Record AC-25 to AC-27 in `docs/release-checklist.md`.
+
+**Acceptance criteria.**
+
+- **P23-AC1** Unit tests for `allowDrop`: each bar widget on the top, bottom, left, right and center of a non-bar group, of the other bar widget's group and of the window; a non-bar widget on each position of a bar group and of a non-bar group. Results follow D58.
+- **P23-AC2** Unit tests for the repair: Transport in the Library tab group; Transport beside Library; Now playing in the Play queue tab group; a valid arrangement with a top bar (unchanged, no log line). Each repair writes one log line with the widget id.
+- **P23-AC3** Unit tests for D59: with a short dock, non-bar minimums fall first and bar heights stay; at the D45 floor, bar heights fall, never below 32 px.
+- **P23-AC4** Playwright (AC-26): drag Transport controls to the window top edge: one full-width row at `barHeight`, and Library gets the rest. A drag of that row's splitter does not change its height. A drop on the left of Library shows no overlay and moves nothing. A drop into the Library tab bar is refused. Now playing dropped on the right of Transport controls shares its row at the larger height. Play queue cannot join the Transport controls group.
+- **P23-AC5** Playwright (AC-27): a saved layout with Transport controls in the Library tab group starts with Transport controls in the bottom bar and the rest unchanged; the log has the repair line. A top bar survives a reload.
+- **P23-AC6** Playwright: at `barHeight`, each bar widget's content does not overflow and leaves at most 4 px empty (D57).
+- **P23-AC7** Manual Windows: the owner runs the P23.5 package and checks AC-25 to AC-27. `docs/release-checklist.md` records the result.
+
+**Verification.** Vitest (P23-AC1 to P23-AC3). Playwright (P23-AC4 to P23-AC6). Manual Windows (P23-AC7).
+
+---
+
 ## 9. Risks
 
 | ID | Risk | Effect | Mitigation | Phase |
@@ -2696,6 +2762,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K20 | The agent environment lacks native build packages | Validation cannot run locally | P0.0; section 1.2 fallback | P0 |
 | K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | Closed October 12, 2026: the P20.0 probe found two working signals; D54 | P20 |
 | K22 | A tool that keeps the microphone open (Handy "Always-On Microphone") holds the duck | Music stays quiet | Settings help text (P20.4); requirements section 5 | P20 |
+| K23 | Dockview 8.5.1 may not refuse a drop overlay for each widget or lock a group height (unverified assumption; the owner skipped the check on October 13, 2026) | R29.1 cannot ship as specified | P23.1 and P23.2 stop and ask the owner on failure (section 1.1 rule 9). Check: the 8.5.1 typings for the overlay event and the group `maximumHeight` constraint | P23 |
 
 ---
 
@@ -2727,6 +2794,9 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | AC-22 | Bulk import and repair of real playlists | P19-AC8 |
 | AC-23 | Microphone ducking with Handy and a call app | P20-AC4 |
 | AC-24 | No microphone access by the app | P20-AC5 |
+| AC-25 | Library frames: per mode, survive restart, Reset restores | P22-AC3, P23-AC7 |
+| AC-26 | Bar widgets: top edge row, side and tab drops refused, shared row | P23-AC4, P23-AC7 |
+| AC-27 | Old arrangement repaired at start | P23-AC5, P23-AC7 |
 
 ---
 
@@ -2748,7 +2818,6 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
 | F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
-| F-22 | Plan a phase for requirements v1.7: R28.1 (Library frame splitters), R29.1 (bar widgets) and acceptance checks 25 to 27. Add their rows to `docs/requirements-traceability.md`. First verify that Dockview 8.5.1 can refuse drop overlays per widget and lock a group height. | Requirements v1.7 adds these items. The plan and the traceability file do not map them yet. | Requirements v1.7 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
@@ -2880,6 +2949,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.19 (October 13, 2026):** requirements v1.7 (R28.1, R29.1, AC-25 to AC-27). Added phases P22 and P23, D55 to D59 and K23. F-22 left section 11 (done). The owner skipped the Dockview check before planning; K23 records it.
 - **1.18 (October 12, 2026):** owner allowed `measure/p21`. F-21 done (run 38297586103 on `5625ff9`): Linux CI VM 293 MB, Windows 144 MB, NSIS 5.18 MiB. The 17 MB Linux container growth does not show on the CI VM. F-21 left section 11.
 - **1.17 (October 12, 2026):** P21 Done with exceptions: packages, licenses, Linux memory (315 MB), brand swap and the 24 checks recorded on the P20 head. F-21 proposed. P18 stays In progress (B3, B5).
 - **1.16 (October 12, 2026):** P20.0 result from the owner's Windows probe: D54 (audio sessions). K21 closed. P20 Done with exceptions (P20-AC4 and P20-AC5 are manual Windows checks).
