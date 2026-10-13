@@ -129,3 +129,28 @@ test("TB-12: a rail playlist button takes a drop", async ({ page }) => {
   });
   await expect(page.locator("footer")).toContainText("Added to playlist");
 });
+
+test("TB-12: two quick drops on Favorites keep the songs favorites", async ({ page }) => {
+  await open(page);
+  await rows(page).nth(0).hover();
+  await rows(page).nth(0).locator("[data-slot='row-heart']").click();
+  await expect(playlist(page, "Favorites")).toContainText("1");
+  await rows(page).nth(1).click();
+  await rows(page)
+    .nth(2)
+    .click({ modifiers: ["Shift"] });
+  // The second drop starts before the first one's reload can reach the hearts.
+  await page.evaluate(() => {
+    window.e2eSlowFavorites = true;
+  });
+  await dragTo(page, rows(page).nth(1), playlist(page, "Favorites"));
+  await dragTo(page, rows(page).nth(1), playlist(page, "Favorites"));
+  // Let the slow reloads land.
+  await page.waitForTimeout(2_000);
+  await page.evaluate(() => {
+    window.e2eSlowFavorites = false;
+  });
+  await expect(playlist(page, "Favorites")).toContainText("3");
+  for (const index of [1, 2])
+    await expect(rows(page).nth(index).locator("[data-slot='row-heart']")).toHaveAttribute("data-favorite", "");
+});

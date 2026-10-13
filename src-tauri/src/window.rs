@@ -292,7 +292,11 @@ pub fn set_mini(
             .ok_or_else(|| format!("the band height {height} is outside 32 to 200 px"))?;
         if stored.is_none() {
             let maximized = window.is_maximized().unwrap_or(false);
-            *stored = Some((current_window(window).unwrap_or(DEFAULT_SIZE), maximized));
+            let normal = current_window(window).unwrap_or(DEFAULT_SIZE);
+            // Saved now: the resize timer and the close handler only see the mini size, which
+            // is not worth saving, so a move just before entering would be lost at quit.
+            save_size(window.app_handle(), window, normal);
+            *stored = Some((normal, maximized));
         }
         ops
     } else {

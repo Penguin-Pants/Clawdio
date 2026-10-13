@@ -5,7 +5,7 @@ import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { selectSongs, useLibraryStore } from "@/store/library";
 import { useColumnsStore } from "@/store/columns";
 import { currentTrack, usePlayerStore } from "@/store/player";
-import { addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
+import { addFavorites, addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
@@ -48,9 +48,9 @@ function dropSongs(target: DropTarget, ids: number[]) {
     addToQueue(ids);
     return;
   }
-  const { rows, favorites } = usePlaylistsStore.getState();
-  if (rows.find((row) => row.id === target.id)?.isFavorites) {
-    for (const id of ids) if (!favorites.has(id)) toggleFavorite(id);
+  // Favorites takes only new songs, in Rust, so a second drop before the reload removes nothing.
+  if (usePlaylistsStore.getState().rows.find((row) => row.id === target.id)?.isFavorites) {
+    addFavorites(ids);
   } else {
     addToPlaylist(target.id, ids);
   }

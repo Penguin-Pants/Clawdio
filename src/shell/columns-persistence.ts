@@ -62,8 +62,15 @@ export async function restoreColumns(
   load: () => Promise<string | null> = () => commands.columnsLoad(),
   backup: () => Promise<void> = () => commands.columnsBackup(),
 ): Promise<void> {
+  const before = useColumnsStore.getState();
   const text = await load().catch(() => null);
   if (text === null) return;
+  // A sort, resize or density change during the load wins over the file: the user saw it.
+  const { views, density } = useColumnsStore.getState();
+  if (views !== before.views || density !== before.density) {
+    log.info("columns: changed during the load; the saved columns were not applied");
+    return;
+  }
   const parsed = parseColumnsFile(text);
   if ("reason" in parsed) {
     log.warn(`columns: ${parsed.reason}; backed up as columns.json.bak; using the defaults`);

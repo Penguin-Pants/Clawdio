@@ -62,6 +62,15 @@ describe("columns.json (PS-6, UD13)", () => {
     expect(useColumnsStore.getState().views["songs.topBottom"].hidden).toEqual(["album"]);
   });
 
+  it("keeps a column edit the user made while the file loaded", async () => {
+    let resolve: (text: string) => void = () => {};
+    const loading = restoreColumns(() => new Promise((done) => (resolve = done)));
+    useColumnsStore.getState().setDensity("compact");
+    resolve(valid());
+    await loading;
+    expect(useColumnsStore.getState().density).toBe("compact");
+  });
+
   it("backs up a bad file and keeps the defaults, with one log line (PS-4)", async () => {
     const backup = vi.fn(async () => {});
     await restoreColumns(async () => "{", backup);

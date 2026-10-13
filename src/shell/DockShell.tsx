@@ -76,9 +76,10 @@ async function startArrangement(api: DockviewApi, container: HTMLElement | null)
     applySideWidths(api);
   }
   const watcher = watchLayout(api);
-  // The Songs column state is a file of its own (PS-6, UD13).
-  await restoreColumns();
+  // The Songs column state is a file of its own (PS-6, UD13). The watcher starts first, so an
+  // edit made while the file loads is saved too.
   const columns = watchColumns();
+  await restoreColumns();
   try {
     await getCurrentWindow().onCloseRequested(async () => {
       await Promise.all([watcher.flush(), columns.flush()]);

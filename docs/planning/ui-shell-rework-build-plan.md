@@ -1044,6 +1044,17 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 
 **Validation:** the full set passed, with 179 Chromium e2e. WebKit e2e runs in CI on the pushed head.
 
+**PR 23 review, Codex round on `1b294d9`:** four findings, all F2, fixed with tests:
+
+1. Two quick drops on Favorites toggled the songs off again: the second drop read the hearts before the reload. A new core call, `add_favorites` (command `favorites_add`), adds only the new tracks in one write (`a_favorites_drop_adds_only_new_tracks_and_never_removes`; `row-drag.spec.ts` with a slow reload; the test fails on the old code).
+2. A column edit made while `columns.json` loaded was replaced by the file. The edit now wins, and the save watcher starts before the load (`columns-persistence.test.ts`).
+3. A Playlists group collapsed while it was a rail restored to the rail width, so a rail button did not widen it. A width below 140 px after Restore now takes the 240 px preset width (`rail.spec.ts`).
+4. Entering the mini player within 1 s of a move or resize lost the new normal bounds at quit. The bounds now save when the mini player starts. Real app: a resize to 1000 x 700, then the mini player 0.3 s later, saved 1000 x 700.
+
+**TWO-PASS REVIEW (round 2):** F1 0, F2 4, F3 0, F4 1.
+
+- F4: the restored column file is not applied when the user changed a column during the load. The user saw and chose that state, and the next change saves it.
+
 **Rule 10 (real app, review fixes):** Linux, WebKitGTK under Xvfb: the mini player enters at 400 x 40 and leaves at 1200 x 800. The maximize restore could not run: Xvfb has no window manager, so the window cannot maximize. That is a manual row with the Windows rows (UQ5).
 
 ---
@@ -1129,7 +1140,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
-- **1.9 (October 13, 2026):** PR 23 review after U7: the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
+- **1.9 (October 13, 2026):** PR 23 review after U7 (two Codex rounds): the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
 - **1.8 (October 13, 2026):** U0 to U7 executed. U7 Done with exceptions; UQ5 added (the U7 exceptions for the owner).
 - **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.
 - **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.

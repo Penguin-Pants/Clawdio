@@ -70,6 +70,8 @@ export const commands = {
   playlistDelete: (id: number) => invoke<void>("playlist_delete", { id }),
   /** The heart (R26): true when the track is a favorite now. */
   favoriteToggle: (track: number) => invoke<boolean>("favorite_toggle", { track }),
+  /** A row drop on Favorites (TB-12): adds only the tracks that are not favorites yet. */
+  favoritesAdd: (tracks: number[]) => invoke<number>("favorites_add", { tracks }),
   favorites: () => invoke<number[]>("favorites"),
   /** "Import playlist" (P12.6, R32): Rust opens a multi-file picker. Null when the user cancels. */
   playlistImport: () => invoke<ImportBatch | null>("playlist_import"),

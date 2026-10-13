@@ -408,6 +408,32 @@ impl PlaylistSet {
             .unwrap_or_default()
     }
 
+    /// A row drop on Favorites (TB-12, UD21): adds the tracks that are not favorites yet, in
+    /// one write, and never removes one. Returns how many it added.
+    pub fn add_favorites(
+        &mut self,
+        root: &Path,
+        tracks: &[TrackId],
+        index: &LibraryIndex,
+    ) -> Result<usize, PlaylistError> {
+        let mut changed = self.favorites_or_new(root)?;
+        let mut known: Vec<TrackId> = changed.tracks(index).into_iter().flatten().collect();
+        let mut added = 0;
+        for &track in tracks {
+            if known.contains(&track) {
+                continue;
+            }
+            let entry = Self::entry_for(&changed, track, index).ok_or(PlaylistError::Unknown)?;
+            changed.entries.push(entry);
+            known.push(track);
+            added += 1;
+        }
+        if added > 0 {
+            self.commit(root, changed)?;
+        }
+        Ok(added)
+    }
+
     /// The heart (R26, P11.7): adds the track, or removes every copy of it. The first use
     /// creates `Playlists/Favorites.m3u8`. Returns whether the track is a favorite now.
     pub fn toggle_favorite(
@@ -594,6 +620,23 @@ mod tests {
         assert!(!set.toggle_favorite(dir.path(), 1, &index).unwrap());
         assert!(set.favorite_tracks(&index).is_empty());
         assert_eq!(read(dir.path(), "Playlists/Favorites.m3u8"), "#EXTM3U\n");
+    }
+
+    #[test]
+    fn a_favorites_drop_adds_only_new_tracks_and_never_removes() {
+        let dir = tempfile::tempdir().unwrap();
+        let index = index();
+        let mut set = PlaylistSet::default();
+        assert_eq!(set.add_favorites(dir.path(), &[1], &index).unwrap(), 1);
+        // The same drop again, and a drop with a known and a new track.
+        assert_eq!(set.add_favorites(dir.path(), &[1], &index).unwrap(), 0);
+        assert_eq!(
+            set.add_favorites(dir.path(), &[1, 0, 0], &index).unwrap(),
+            1
+        );
+        let mut tracks = set.favorite_tracks(&index);
+        tracks.sort_unstable();
+        assert_eq!(tracks, [0, 1]);
     }
 
     #[test]

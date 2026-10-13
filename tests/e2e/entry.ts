@@ -52,6 +52,8 @@ declare global {
     e2e: typeof hooks;
     /** Messages the app sent to the log plugin (install-mocks.ts). */
     e2eLog?: string[];
+    /** Delays the mocked `favorites` reply (row-drag.spec.ts). */
+    e2eSlowFavorites?: boolean;
     /** The mocked `window_set_mini` calls (UD19). */
     e2eMini?: { on: boolean; height: number }[];
   }

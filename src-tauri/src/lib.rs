@@ -217,6 +217,7 @@ pub fn run() -> tauri::Result<()> {
             commands::playlists::playlist_remove_entry,
             commands::playlists::playlist_delete,
             commands::playlists::favorite_toggle,
+            commands::playlists::favorites_add,
             commands::playlists::favorites,
             commands::playlists::playlist_import,
             commands::playlists::playlist_import_folder,

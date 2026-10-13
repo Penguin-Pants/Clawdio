@@ -94,10 +94,15 @@ type Selection = { playlist: number; entry: number | null } | null;
 /** Below this width the widget shows the icon rail (SP-5, UD18). */
 export const RAIL_WIDTH = 140;
 
-/** Widens the Playlists group out of the rail: Restore after a collapse, else the preset width. */
+/**
+ * Widens the Playlists group out of the rail: Restore after a collapse, else the preset width.
+ * A group collapsed while it was already a rail restores to that rail width, so it takes the
+ * preset width then too (UD18).
+ */
 function leaveRail() {
+  const group = getDock()?.getPanel("playlists")?.group;
   if (isCollapsed("playlists")) restoreGroup("playlists");
-  else getDock()?.getPanel("playlists")?.group.api.setSize({ width: SIDEBAR_WIDTH });
+  if (group && group.width < RAIL_WIDTH) group.api.setSize({ width: SIDEBAR_WIDTH });
 }
 
 /**
