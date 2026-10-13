@@ -1341,12 +1341,14 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 4. Source: own audit and the full e2e run.
+**TWO-PASS REVIEW:** F1 0, F2 5, F3 0, F4 4. Source: own audit, the full e2e run and the PR review (Codex, CodeRabbit, DeepSource).
 
 - F2:
   - The planned "window top edge" drop does not exist in this dock (N1). The test and D58 now use the top zone of Library.
   - A non-bar widget could split a shared bar row (N2). Refused now.
   - Six earlier tests used bar widgets as ordinary drag targets (N4). Updated.
+  - Codex and CodeRabbit: the repair re-added a misplaced bar beside its partner even when the partner sat in a top row, so it did not reach the bottom bar. `repairBars` now puts it beside the partner only when the partner is in the bottom bar (`inBottomBar`, which looks through the one-child root Dockview saves), else as a new bottom row. New unit and restore tests.
+  - DeepSource: three effects returned early; each now creates its observer first and always returns the cleanup.
 - F4:
   - A mixed group from an old file locks its height until the repair a moment later: the repair runs in the same start step.
   - `dropAllowed` serializes the dock on each overlay event: six widgets, small next to the drag itself.

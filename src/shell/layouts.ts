@@ -1,6 +1,7 @@
 import type { AddPanelPositionOptions, DockviewApi } from "dockview-react";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
-import type { BarWidgetId } from "./bar-rules";
+import { type BarWidgetId, inBottomBar } from "./bar-rules";
+import { type Orientation, toNode } from "./clamp";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
 /** Built-in layouts (R29). Each one sets the default arrangement and its Library mode. */
@@ -129,12 +130,22 @@ export function setWidgetVisible(id: WidgetId, visible: boolean, api: DockviewAp
 }
 
 /**
- * Moves the bar widgets that break R29.1 to their default places (P23.3): all of them leave
- * first, then each comes back at its `showPosition`, so a bar never lands beside a misplaced one.
+ * Moves the bar widgets that break R29.1 to the bottom bar (P23.3). All of them leave first.
+ * Each comes back beside the other bar widget when that one is in the bottom bar, else as a new
+ * full-width row at the bottom of the dock.
  */
 export function repairBars(api: DockviewApi, ids: BarWidgetId[]): void {
   for (const id of ids) setWidgetVisible(id, false, api);
-  for (const id of ids) setWidgetVisible(id, true, api);
+  for (const id of ids) {
+    const partner = id === "nowPlaying" ? "transport" : "nowPlaying";
+    const { grid } = api.toJSON();
+    const besidePartner =
+      api.getPanel(partner) && inBottomBar(toNode(grid.root), grid.orientation as Orientation, partner);
+    const position: AddPanelPositionOptions = besidePartner
+      ? { referencePanel: partner, direction: id === "nowPlaying" ? "left" : "right" }
+      : { direction: "below" };
+    addWidget(api, id, position, BOTTOM_ROW_HEIGHT);
+  }
 }
 
 /** The widgets in the dock, in registry order. */

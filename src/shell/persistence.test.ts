@@ -217,10 +217,17 @@ describe("bar repair at start (P23.3, R29.1, P23-AC2)", () => {
     expect(dock.panels).toEqual(["library", "nowPlaying", "transport"]);
     expect(dock.added.at(-1)).toEqual({
       id: "transport",
-      position: { referencePanel: expect.objectContaining({ id: "nowPlaying" }), direction: "right" },
+      position: { referencePanel: "nowPlaying", direction: "right" },
     });
     expect(log.warn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("moved transport to the bottom bar");
+  });
+
+  it("moves a misplaced bar to a new bottom row when its partner is in a top row", () => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, fixture("bar-partner-top.json"), SIZE)).toBe(true);
+    expect(dock.added.at(-1)).toEqual({ id: "transport", position: { direction: "below" } });
+    expect(log.warn).toHaveBeenCalledTimes(1);
   });
 
   it("keeps a valid top bar as saved, with no log line", () => {

@@ -6,6 +6,7 @@ import {
   allowDrop,
   barHeight,
   barViolations,
+  inBottomBar,
   onBarHeightChange,
   resetBarHeights,
   setBarContentHeight,
@@ -122,5 +123,27 @@ describe("sharesRow", () => {
     expect(sharesRow(bottom, "VERTICAL", "g3")).toBe(true);
     expect(sharesRow(top, "VERTICAL", "g1")).toBe(false);
     expect(sharesRow(top, "VERTICAL", "missing")).toBe(false);
+  });
+});
+
+describe("inBottomBar", () => {
+  it("is true for a bar in the last row of a vertical root, alone or with the other bar", () => {
+    const shared = split(leaf("g1", "library"), split(leaf("g2", "nowPlaying"), leaf("g3", "transport")));
+    const alone = split(leaf("g1", "library"), leaf("g2", "nowPlaying"));
+    expect(inBottomBar(shared, "VERTICAL", "nowPlaying")).toBe(true);
+    expect(inBottomBar(alone, "VERTICAL", "nowPlaying")).toBe(true);
+  });
+
+  it("looks through a one-child root of the other orientation, as Dockview saves it", () => {
+    const wrapped = split(split(leaf("g1", "library", "transport"), leaf("g2", "nowPlaying")));
+    expect(inBottomBar(wrapped, "HORIZONTAL", "nowPlaying")).toBe(true);
+  });
+
+  it("is false for a top bar, a bar beside a column and a horizontal root", () => {
+    const top = split(leaf("g1", "nowPlaying"), leaf("g2", "library"));
+    const column = split(leaf("g1", "library"), split(leaf("g2", "nowPlaying"), leaf("g3", "queue")));
+    expect(inBottomBar(top, "VERTICAL", "nowPlaying")).toBe(false);
+    expect(inBottomBar(column, "VERTICAL", "nowPlaying")).toBe(false);
+    expect(inBottomBar(split(leaf("g1", "library"), leaf("g2", "nowPlaying")), "HORIZONTAL", "nowPlaying")).toBe(false);
   });
 });

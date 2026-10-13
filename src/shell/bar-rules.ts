@@ -109,3 +109,20 @@ export function onBarHeightChange(listener: () => void): () => void {
 export function resetBarHeights(): void {
   for (const id of BAR_WIDGETS) contentHeights[id] = DEFAULT_CONTENT_HEIGHT;
 }
+
+/**
+ * True when the widget sits in the bottom bar (R29 default arrangement): the last row of a
+ * VERTICAL root, alone or in a row of bar groups.
+ */
+export function inBottomBar(root: DockNode, orientation: Orientation, widget: string): boolean {
+  // Dockview can wrap the grid in a one-child branch of the other orientation.
+  while (root.kind === "split" && root.children.length === 1 && root.children[0]) {
+    root = root.children[0];
+    orientation = orientation === "HORIZONTAL" ? "VERTICAL" : "HORIZONTAL";
+  }
+  if (root.kind !== "split" || orientation !== "VERTICAL") return false;
+  const last = root.children.at(-1);
+  if (!last) return false;
+  const row = last.kind === "group" ? [last] : last.children;
+  return row.every(barGroup) && row.some((node) => node.kind === "group" && node.widgets[0] === widget);
+}
