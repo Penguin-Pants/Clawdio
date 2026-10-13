@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.0, October 13, 2026.
+**Version:** 1.1, October 13, 2026.
 **Status:** Ready for implementation. No phase has started.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -105,7 +105,7 @@ Rework section 2.2 names `REQUIREMENTS.md` v1.3 and `DESIGN.md`. In this reposit
 | UC10 | Rework 8 Phase 0 (screenshots at 800 x 500) vs the 800 x 560 minimum | 800 x 500 cannot be reached. | Screenshots use 800 x 560. |
 | UC11 | TR-5 (the bar shows art, title and artist) vs R5 (Now playing is a widget with art, title, artist, album and the heart) | Two homes for the now-playing display. | Both. The band carries the compact display (TR-5). The Now playing widget stays as the dockable card (TR-11), hidden by default. |
 | UC12 | Rework 6.1 (no header strip in the zone diagram) vs R5 (fixed menu button), D11 (32 px header strip) | Where the menu button lives. | The header strip stays above the band. Four fixed zones: header, transport band, dock, status. Folding the menu into the band is a later owner choice. |
-| UC13 | TA-1 vs P2 note N1 (pointer-event drag in the dock) | `dragDropEnabled: false` is required only when HTML5 drag events are used. | No config change. Column reorder (U4) and row drag (U6) use pointer events too (UD10). U7 checks that no `dragstart` listener exists. |
+| UC13 | TA-1 vs P2 note N1 (pointer-event drag in the dock) | `dragDropEnabled: false` is required only when HTML5 drag events are used. | No config change. Column reorder (U4) and row drag (U6) use pointer events too (UD10). A drag guard in `scripts/check-sources.mjs` (U1) fails the build on `dragstart`, `onDragStart`, `onDragOver`, `onDrop` or a truthy `draggable` under `src/`; U7 records the result. |
 
 ### 4.3 Plan decisions
 
@@ -113,24 +113,24 @@ The owner may change any of them. Section 11 records changes.
 
 | ID | Decision | Reason and evidence |
 |---|---|---|
-| UD1 | Size tokens in `theme/tokens.json`: `sizes.transportBar` 56px, `sizes.transportBarCompact` 40px, `sizes.rowRegular` 28px, `sizes.rowCompact` 24px. `scripts/build-tokens.mjs` adds them to `SCHEMA` with kind `px` (the kind exists at `scripts/build-tokens.mjs:42`). They compile to `--size-transport-bar`, `--size-transport-bar-compact`, `--size-row-regular`, `--size-row-compact`. | TH-1 wants row height and bar height from tokens. The current row height is a constant (`src/widgets/library/rows.tsx:12`). |
+| UD1 | Size tokens in `theme/tokens.json`, in `rem`: `sizes.transportBar` 3.5rem, `sizes.transportBarCompact` 2.5rem, `sizes.rowRegular` 1.75rem, `sizes.rowCompact` 1.5rem (56, 40, 28 and 24 px at the 16 px root font). `scripts/build-tokens.mjs` adds a `rem` kind next to `px` (`scripts/build-tokens.mjs:42`) and the four keys to `SCHEMA`. They compile to `--size-transport-bar`, `--size-transport-bar-compact`, `--size-row-regular`, `--size-row-compact`. A `useTokenPx(name)` hook (`src/lib/tokens.ts`) resolves the computed px value for the virtualizer and the band and reads it again when the root font size changes (a `ResizeObserver` on a 1 rem probe element). | TH-1 wants row height and bar height from tokens. The current row height is a constant (`src/widgets/library/rows.tsx:12`). `rem` follows the root font size, so Windows display scaling and the P17.5 text scales (125%, 140%) grow the band and the rows instead of clipping (D57 history, build plan P17 note N2). |
 | UD2 | The band is a React component outside Dockview (`src/shell/TransportBand.tsx`). `transport` leaves `WIDGET_IDS`. Delete `src/shell/bar-rules.ts` and its test, `BarContent` and the bar branches of `src/shell/clamp.ts` (D57 to D59), the repair step 4b of `persistence.ts`, `src/widgets/transport/TransportWidget.tsx` and `tests/e2e/bars.spec.ts`. `nowPlaying` becomes an ordinary hideable widget. | SH-2, TR-1. AGENTS.md Edits rules 6 and 7: a new pattern replaces the old one in the same change. |
-| UD3 | Band height by size class: `sizes.transportBar` at MD, LG and XL; `sizes.transportBarCompact` at SM and XS. The user cannot drag it. | Rework 6.2 names a regular and a compact height but not when the compact one applies. At SM and XS the seek bar is a thin line, so one row fits in 40 px. At 800 px and wider the class is MD or larger, so the height does not change in the rework's Phase 1 check. |
+| UD3 | Size classes by the band's own width, from rework 6.2: XS below 420 px, SM 420 to 639 px, MD 640 to 899 px, LG 900 to 1199 px, XL 1200 px and above. The lower bound belongs to the class (420 px is SM, 1200 px is XL). Band height by class: `sizes.transportBar` at MD, LG and XL; `sizes.transportBarCompact` at SM and XS. The user cannot drag it. | Rework 6.2 names a regular and a compact height but not when the compact one applies. At SM and XS the seek bar is a thin line, so one row fits in 40 px. At 800 px and wider the class is MD or larger, so the height does not change in the rework's Phase 1 check. |
 | UD4 | Band slots, in default order: previous, play or pause, next, now-playing display (art, title, artist), seek bar with times, stop, shuffle, repeat, volume, queue toggle, search button (hidden by default). Drop order as the width shrinks: search button, stop with shuffle and repeat, queue toggle, volume slider (an icon with a popover), seek bar (a thin progress line at the band's bottom edge), previous and next. Play or pause never drops. Hidden slots move to the overflow menu. | TR-2, TR-3 and rework 6.2. Stop is an R6 control, so it is a slot (UC11 keeps R6). The queue toggle shows or hides the Play queue widget. |
 | UD5 | `layout.json` version 2: `version`, `transport` ("top" or "bottom"), `locked`, `libraryMode`, `libraryFrames`, `transportSlots` (optional, U5) and `dock` (Dockview `toJSON`, including `floatingGroups`). A version 1 file, or any file that fails validation, is backed up as `layout.json.bak` by a new Rust command and the default preset loads. No migration of version 1. | PS-1, PS-4, PS-5. The app is 0.1.0 and the old file holds a `transport` panel that no longer exists. A backup keeps the user's file for inspection (R29 "ignore and log" becomes "back up, log and reset"). |
 | UD6 | Presets on the five remaining widgets. "Apple Music classic" (default, DK-8): Playlists left at 240 px, Library center, Play queue and Lyrics as one tab group right at 280 px, Now playing hidden, transport top. "MusicBee style": Playlists left top at 240 px, Now playing card below it, Library center, Play queue right at 280 px, Lyrics hidden. "Compact": Library only. A preset keeps the current Library mode. Reset layout applies the default preset, Columns mode, default frames, transport top and unlocked. | DK-8, DK-9, DK-7, rework decisions 1 and 3. The owner's limit keeps the widget list. |
-| UD7 | Keyboard splitters as an app layer in `src/shell/splitters.ts`: after each layout change it decorates every `.dv-sash` in the dock and in the Library frames with `role="separator"`, `tabindex="0"`, `aria-orientation`, `aria-valuenow` (the first neighbor's share in percent), `aria-valuemin`, `aria-valuemax` and `aria-label` ("Resize Playlists and Library"). Keys: Arrow 16 px, Shift+Arrow 64 px, Home and End to the minimum and maximum, Enter collapses to the minimum and Enter again restores. Double-click resets. The layer moves a sash by dispatching synthetic `pointerdown`, `pointermove` and `pointerup` events on it, so Dockview applies its own constraints, nesting and lock. Fallback if synthetic events fail in WebKit: `group.api.setSize` on the group after the sash. | SP-2, SP-3, SP-6. Dockview 8.5.1 has no keyboard sash API (K5, `dist/cjs/splitview/splitview.d.ts` has `onDidSashEnd` only). Synthetic events reuse the tested drag path. |
-| UD8 | The table is the Songs list of Columns and Top/bottom modes (`SongList` in `src/widgets/library/lists.tsx`). Tree mode keeps its indented rows with no column header. Columns: `#` (track number, or the playing indicator for the playing row), Title (flex), Artist, Album, Time (right aligned, fixed). The heart stays as a fixed trailing cell that is not a user column. Column state is kept per mode (`songs.columns`, `songs.topBottom`). | TB-2 to TB-9, TB-11, UC5. R28.1 keeps per-mode frame sizes, so column state follows the same rule. |
+| UD7 | Keyboard splitters as an app layer in `src/shell/splitters.ts`: after each layout change it decorates every `.dv-sash` in the dock and in the Library frames with `role="separator"`, `tabindex="0"`, `aria-orientation`, `aria-valuenow` (the first neighbor's share in percent), `aria-valuemin`, `aria-valuemax` and `aria-label` ("Resize Playlists and Library"). Keys: Arrow 16 px, Shift+Arrow 64 px, Home and End to the minimum and maximum, Enter collapses to the minimum and Enter again restores. Double-click resets. The layer moves a sash by dispatching synthetic `pointerdown`, `pointermove` and `pointerup` events on it, so Dockview applies its own constraints, nesting and lock. Fallback if synthetic events fail in WebKit: for a dock sash, `group.api.setSize` on the group after the sash; for a Library frame sash, `useLibraryStore.setFrames(group, fractions)` with the new fractions, which `FrameSplit` applies through `panel.api.setSize` (`src/widgets/library/FrameSplit.tsx`, `applyFractions`). | SP-2, SP-3, SP-6. Dockview 8.5.1 has no keyboard sash API (K5, `dist/cjs/splitview/splitview.d.ts` has `onDidSashEnd` only). Synthetic events reuse the tested drag path. |
+| UD8 | The table is the Songs list of Columns and Top/bottom modes (`SongList` in `src/widgets/library/lists.tsx`). Tree mode keeps its indented rows with no column header. Columns: `#` (track number, or the playing indicator for the playing row), Title (flex), Artist, Album, Time (right aligned, fixed). The heart stays as a fixed trailing cell that is not a user column. Column state is kept per mode (`songs.columns`, `songs.topBottom`). ARIA: the table is `role="grid"` with `aria-multiselectable`, a header `row` of `columnheader` cells that carry `aria-sort`, and body `row` elements of `gridcell` elements; `aria-activedescendant` on the grid names the active row (row-selection grid, W3C grid pattern). `VirtualList` gains the `grid` role next to `listbox` and `tree`. The Artist and Album lists stay listboxes. | TB-2 to TB-9, TB-11, UC5. R28.1 keeps per-mode frame sizes, so column state follows the same rule. |
 | UD9 | No TanStack Table. A small column model in `src/widgets/library/columns.ts` (pure functions: resize with minimums, reorder, visibility, auto-size clamp, sort toggle) and a `TableHeader` component. Rows render as a CSS grid whose `grid-template-columns` comes from the column state. `VirtualList` gains a sticky header slot and a horizontal scroll width. | AGENTS.md Edits rule 4 (fewest moving parts) and rule 5 (reuse `VirtualList`). TanStack Table's row model would hold 50,000 row objects in the webview, against D14. The owner may overturn this (rework 8 Phase 3 step 1). |
 | UD10 | Column reorder and row drag use pointer events with `setPointerCapture`, never HTML5 drag events. | UC13, TA-1. The dock already uses pointer drag. |
 | UD11 | Sorting runs in Rust. `library_song_ids` takes a `sort` argument: up to two keys (column: track, title, artist, album, duration; descending flag). Text compares with the D4 fold. Ties fall back to the R4 order. No sort means the R4 order. `SongRow` gains `trackNo` and `disc`. | TB-8, TB-13, D14 (the index lives in Rust; the webview never holds all rows). |
 | UD12 | Multi-select in the Songs table only: a `Set` of track ids plus an anchor in `useLibraryStore`. Click selects one. Ctrl+click toggles. Shift+click and Shift+Arrow extend from the anchor. Enter plays the active row. Add to queue and Add to playlist act on the selection. The Artist and Album lists stay single-select. | TB-10. R6 queue rule keeps "play from the active row". |
 | UD13 | `columns.json` in the config folder: `version` 1, `density` ("regular" or "compact"), `views` keyed by view id with `order`, `widths`, `hidden` and `sort`. Stored by the same Rust path as `layout.json` (the core `layout.rs` functions take the file name). Debounced 500 ms, flushed on close. A bad file is backed up as `columns.json.bak` and the defaults load. | PS-6, PS-4, TB-14. Reuse of the P9 storage code. |
-| UD14 | Window position: `settings.json` `window` gains optional `x` and `y` (logical). Saved with the size. Restored only when the point lies inside an available monitor; else the OS places the window. | PS-5. Older files load with no position (serde default). |
+| UD14 | Window position: `settings.json` `window` gains optional `x` and `y` in physical pixels (`outer_position`). Saved with the size. Restored only when the point lies inside the physical bounds of an available monitor; else the OS places the window. | PS-5. Older files load with no position (serde default). Physical coordinates avoid the mixed-DPI case where one logical point maps into two monitors. |
 | UD15 | Lock layout: `api.updateOptions({ locked: true, disableDnd: true })` (`DockviewComponentOptions.locked` and `disableDnd`, 8.5.1 typings). Locked separators get `aria-disabled` and ignore keys. Tab close controls, the Library frame splitters, column resizing and scrolling keep working. | DK-5. Verified names in `node_modules/dockview-core/dist/cjs/dockview/options.d.ts`. |
 | UD16 | Center absorbs resize: `proportionalLayout: false` on the dock and `LayoutPriority.High` on the Library group when the group exposes `priority` (`gridviewPanel.d.ts` has it). Fallback: after each dock resize the existing `ResizeObserver` in `DockShell.tsx` re-applies the pixel sizes of the non-Library groups. | SP-4. `proportionalLayout` and `LayoutPriority` exist in the 8.5.1 typings. |
 | UD17 | Floating: a Float control in the widget tab (`WidgetTab.tsx`, pointer target like the close control) calls `api.addFloatingGroup(panel)`; a floating group's tab shows Dock instead. The Library may float but never closes (R28 guard stays). Floating groups serialize in `dock.floatingGroups`. A floating group outside the window after a resize is moved back inside on load. | DK-3. `addFloatingGroup` and `SerializedDockview.floatingGroups` exist in the typings. |
-| UD18 | Sidebar icon rail (SP-5): the Playlists widget below 140 px width shows one icon button per playlist (heart for Favorites) with the name as tooltip and accessible name. Activating one widens its group to the preset width and selects the playlist. | SP-5 on the existing Playlists widget, the stand-in for Navigator. |
+| UD18 | Sidebar icon rail (SP-5): the Playlists widget below 140 px width shows one icon button per playlist (heart for Favorites) with the name as tooltip and accessible name. Activating one widens its group to the preset width and selects the playlist. The Playlists minimum width in `src/shell/widgets.ts` goes from 200 px to 56 px (the rail width), so a sash drag can reach the rail. | SP-5 on the existing Playlists widget, the stand-in for Navigator. A 200 px minimum would stop the drag before the rail threshold (DK-2 still holds with 56 px). |
 | UD19 | Mini player (TR-9): a Rust command `window_set_mini(on)` stores the normal size and position, sets the window to 400 x 56 logical with a minimum of 320 x 40 and a maximum height of 56. On exit it first clears the maximum height and restores the 800 x 560 minimum (D33), then restores the stored size and position. The shell renders only the band (SM or XS class) in mini mode. Click the art to enter; "Exit mini player" in the overflow menu and a click on the art to leave. The window size watcher never saves a mini size (`worth_saving` refuses sizes below the minimum). | TR-9. One player state (rework 5.10). |
 | UD20 | Customize transport (TR-10): a dialog with the slot list. Optional slots have a checkbox; play or pause has none. Pointer drag handles and Move up and Move down buttons reorder. Saved as `transportSlots` in `layout.json` v2. Reset layout restores the default. | TR-10 with a keyboard path (AX-1). |
 | UD21 | Row drag (TB-12): pointer drag from the selected Songs rows to a playlist row in the Playlists widget or to the Play queue body. A ghost shows "N songs". Escape cancels. The drop calls `addToPlaylist` or `queueAppend`. | TB-12 with the existing store functions. |
@@ -200,8 +200,7 @@ Rework section 8 Phase 0, section 12 (`before/*.png`), section 14 (every phase r
 - Create `scripts/ui-shots.mjs` (UD23) and add `npm run shots -- before` to `package.json`. Capture `docs/ui-reference/before/800x560.png`, `1280x720.png` and `1920x1080.png` from the mocked app (`tests/e2e` harness, default arrangement, a loaded library).
 - Update `docs/MusicPlayer_REQUIREMENTS.md` to v1.8: a change log entry and a section 8 entry that record the October 13 owner decision; rewrite R5 (Transport controls is a fixed band, Now playing is a card widget), R29 (presets, Lock layout, floating groups, keyboard splitters), delete R29.1, move "keyboard resize of splitters" and "density" out of section 7, delete the section 4 non-goals "floating panels" and "an edit lock", add TB sorting and multi-select to R28, and add the rework's MUST list as section 2 items or a reference to the rework file. Keep the `[D]` marks.
 - Update `docs/design.md` section 5 and 6: four fixed zones, the band, presets, the table, the card. Mark the bar-widget paragraph as superseded.
-- Add a pointer row to `docs/build-plan.md` section 2 ("U0 to U7: see `docs/planning/ui-shell-rework-build-plan.md`") and a section 13 entry. Mark D57, D58 and D59 as superseded by UD2 in section 5.2.
-- Copy the rework document into `docs/planning/ui-shell-rework.md` so the IDs it defines are in the repository.
+- `docs/build-plan.md`: mark D57, D58 and D59 as superseded by UD2 in section 5.2. (The pointer row in section 2, the section 13 entry and the copy of the rework document at `docs/planning/ui-shell-rework.md` ship with this plan, so U0 can read the governing source from the repository.)
 
 **Implementation notes**
 
@@ -218,7 +217,7 @@ Rework section 8 Phase 0, section 12 (`before/*.png`), section 14 (every phase r
 
 - U0-AC1: `docs/ui-audit.md` exists with the four sections named above and names each rework requirement that passes today, with the file evidence.
 - U0-AC2: the three "before" screenshots exist in `docs/ui-reference/before/` at 800 x 560, 1280 x 720 and 1920 x 1080.
-- U0-AC3: `docs/MusicPlayer_REQUIREMENTS.md` is v1.8 with the change list; `docs/design.md` section 5 names the four zones; `docs/build-plan.md` points to this plan.
+- U0-AC3: `docs/MusicPlayer_REQUIREMENTS.md` is v1.8 with the change list; `docs/design.md` section 5 names the four zones; `docs/build-plan.md` section 5.2 marks D57 to D59 as superseded.
 
 **Dependencies**
 
@@ -238,8 +237,10 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 
 **Changes**
 
-- `theme/tokens.json` and `scripts/build-tokens.mjs`: the `sizes` group (UD1). `docs/theming-and-brand.md`: the four new rows in the token map.
+- `theme/tokens.json` and `scripts/build-tokens.mjs`: the `sizes` group and the `rem` kind (UD1). New `src/lib/tokens.ts` with `useTokenPx`. `docs/theming-and-brand.md`: the four new rows in the token map and the `rem` kind.
 - `src/App.tsx`: the four-zone grid (section 5.1). `data-transport` attribute from `useUiStore` (default "top"; the setting arrives in U2).
+- New `src/shell/presets.ts` with the default preset "Apple Music classic" (UD6, DK-8) as the first-run arrangement and the Reset layout target. U2 adds the two other presets.
+- `scripts/check-sources.mjs`: a drag guard. Under `src/`, no `dragstart`, `onDragStart`, `onDragOver`, `onDrop` or `draggable` with a value other than `false` or `{false}` (UC13, TA-1). `draggable={false}` on images stays allowed.
 - New `src/shell/TransportBand.tsx`, `src/shell/transport/PlayControls.tsx`, `SeekBar.tsx`, `VolumeControl.tsx`, `NowPlayingDisplay.tsx`, `OverflowMenu.tsx`, `src/shell/use-size-class.ts`, `src/shell/transport/slots.ts` (slot ids, default order, drop order, visibility per class: UD4).
 - New `src/components/ui/popover.tsx` (shadcn, Base UI) for the volume icon at MD and below.
 - `src/components/ui/button.tsx`: a 32 px icon size if none exists (UD22).
@@ -247,7 +248,7 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 - Delete `src/widgets/transport/TransportWidget.tsx`, `src/shell/bar-rules.ts`, `src/shell/bar-rules.test.ts`, `tests/e2e/bars.spec.ts`, the fixtures `src/shell/layout-fixtures/bar-*.json`.
 - `src/shell/clamp.ts` and `clamp.test.ts`: remove the bar heights and `maxHeight`; keep the D45 proportional clamp.
 - `src/shell/DockShell.tsx`: remove `BarContent`, `dropAllowed`, the bar imports and the `onBarHeightChange` wiring.
-- `src/shell/layouts.ts`: `defaultArrangement` becomes Library only (U2 brings the preset); remove `showPosition` bar branches, `repairBars`, `BOTTOM_ROW_HEIGHT`.
+- `src/shell/layouts.ts`: `defaultArrangement` applies the default preset from `presets.ts`; remove `showPosition` bar branches, `repairBars`, `BOTTOM_ROW_HEIGHT`.
 - `src/shell/persistence.ts`: `LAYOUT_VERSION` 2 with the new fields (UD5); a version 1 file is rejected; on rejection call the new `commands.layoutBackup()` before the fallback. Fixtures: add `version-1.json`; update `valid.json`.
 - `crates/clawdio-core/src/layout.rs`: `backup(config_dir, file)` renames the file to `<file>.bak` (overwrite) and logs. `src-tauri/src/commands/layout.rs`: `layout_backup`. `src-tauri/src/lib.rs`: register it. `src/lib/ipc/commands.ts`: `layoutBackup`.
 - `src/shell/measure.ts`: the measurement check expects the band element and five widgets.
@@ -263,17 +264,22 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 - Text lines use one line with an ellipsis (TR-5). The band background is `bg-bg-surface` with a bottom border (TR-7). The list area ends above the band because the grid rows do not overlap (TR-6).
 - Tooltips carry the shortcut where one exists: "Play (Space)", "Pause (Space)" (TR-8). Other buttons show their name.
 - The now-playing display shows the 96 px thumbnail through `useAlbumArt(album, 96)` and `thumbUrl` (D41).
-- `nowPlaying` stays a bar-styled widget in this phase (the card restyle is U5). It is hidden by default (UD6) once U2 lands; in U1 the default arrangement is Library only.
-- A saved version 1 file from P9 to P23 is backed up and the default loads (UD5). Log one line: `layout: version 1 backed up as layout.json.bak`.
+- `nowPlaying` stays a bar-styled widget in this phase (the card restyle is U5). It is hidden by default (UD6).
+- The default preset ships in this phase, so a version 1 user who upgrades at U1 gets the final first-run arrangement, and the version 2 file that the close flush writes is already the one U2 expects. No second migration in U2.
+- A saved version 1 file from P9 to P23 is backed up and the default preset loads (UD5). Log one line: `layout: version 1 backed up as layout.json.bak`.
+- Text scaling: the band height and the row heights are `rem` tokens (UD1). The P23-AC6 cases (root font size 100%, 125% and 140%) move to `transport-band.spec.ts`: the band grows with the font, the content never overflows, and the class rule still applies.
 
 **Tests**
 
-- Vitest `use-size-class.test.ts`: the class for widths 300, 419, 420, 639, 640, 899, 900, 1199, 1200, 2560; one state update per frame when two observations arrive in one frame (PF-2).
+- Vitest `use-size-class.test.ts`: the class per width (UD3): 300 and 419 give XS; 420 and 639 give SM; 640 and 899 give MD; 900 and 1199 give LG; 1200 and 2560 give XL; one state update per frame when two observations arrive in one frame (PF-2).
+- Vitest `build-tokens.test.ts` (the existing tokens script test): the `rem` kind accepts `3.5rem` and rejects `56px` for a `sizes` key; a missing `sizes` key names the key path. Vitest `tokens.test.ts`: `useTokenPx` resolves 3.5rem to 56 at a 16 px root and to 70 at a 20 px root.
 - Vitest `slots.test.ts`: visible slots per class follow UD4; play or pause is visible at every class; every hidden slot appears in the overflow list.
 - Vitest `persistence.test.ts`: a version 1 file is rejected with the backup call and one log line; a version 2 round trip keeps `transport` and `locked`; a bad `transport` value falls back.
 - Vitest `clamp.test.ts`: the D45 clamp without bar groups; six-widget stack still fits 560 px.
 - Playwright `transport-band.spec.ts`: at 1280 x 800 the band shows LG; narrow the window to 800 x 560: the band shows MD, Play stays visible, the band height is unchanged, no slot wraps; set the band container to 400 px (test hook) and 600 px: XS and SM, the progress line shows, Previous and Next sit in the overflow at XS; seek by click, by drag and by keyboard on the slider with the mocked player; the band's background is opaque (computed `background-color` has alpha 1); every button has an accessible name and a 32 x 32 px box; the tooltip of Play reads "Play (Space)".
-- Playwright `persistence.spec.ts`: a stored version 1 layout starts with the default arrangement and `layout_backup` was called once.
+- Playwright `persistence.spec.ts`: a stored version 1 layout starts with the default preset and `layout_backup` was called once.
+- Playwright `transport-band.spec.ts` at root font size 100%, 125% and 140%: the band height equals the computed token value, the content never overflows and leaves at most 4 px empty, and the height follows the change without a reload (the P23-AC6 cases).
+- Vitest `check-sources.test.ts`: the drag guard flags `onDragStart`, `draggable` and `draggable={true}` and accepts `draggable={false}`.
 - Playwright `audit.spec.ts`: axe finds no serious violation with the band (AX-1), and `expectNoMotion` passes under reduced motion (AX-2).
 - `cargo test`: `backup` renames and overwrites; a missing file is not an error.
 
@@ -282,7 +288,8 @@ SH-1, SH-2, SH-3, SH-4, SH-5, TR-1, TR-2, TR-3, TR-4, TR-5, TR-6, TR-7, TR-8, TH
 - U1-AC1: SH-1 to SH-5 pass: four zones, the band and status line are not dock panels, the dock row is `minmax(0, 1fr)`, the page never scrolls, and the window minimum is 800 x 560 in `window.rs`.
 - U1-AC2: TR-1 to TR-8 pass as the tests above show. Rework Phase 1 accept: from 800 px to 2560 px the band never wraps, never changes height and never loses Play.
 - U1-AC3: no file under `src/` references `bar-rules`, `BarContent`, `TransportWidget` or `repairBars` (grep).
-- U1-AC4: TH-1: the band height and the row heights come from `--size-*` variables; `npm run check:sources` passes.
+- U1-AC4: TH-1: the band height and the row heights come from `--size-*` variables in `rem`; the band follows the 125% and 140% root font sizes without overflow; `npm run check:sources` passes with the drag guard.
+- U1-AC6: DK-8: the first start shows the default preset (Playlists left, Library center, Play queue and Lyrics tabbed right, Now playing hidden).
 - U1-AC5: the validation command set passes; `tests/e2e` passes in Chromium and WebKit (CI).
 
 **Dependencies**
@@ -303,13 +310,13 @@ SH-6, DK-1 to DK-10, SP-4, PS-1 to PS-5, TA-4. Rework section 8 Phase 2 accept.
 
 **Changes**
 
-- New `src/shell/presets.ts`: the three presets as functions of `DockviewApi` with pixel sizes (UD6). `src/shell/layouts.ts`: `applyPreset(id)`, `resetLayout()` as UD6 defines, delete `LAYOUTS` and `LAYOUT_TITLES` (the Library-mode layouts).
+- `src/shell/presets.ts`: add "MusicBee style" and "Compact" next to the U1 default preset, as functions of `DockviewApi` with pixel sizes (UD6). `src/shell/layouts.ts`: `applyPreset(id)`, `resetLayout()` as UD6 defines, delete `LAYOUTS` and `LAYOUT_TITLES` (the Library-mode layouts).
 - `src/shell/AppMenu.tsx`: groups "View" (widget checkboxes, Library disabled), "Library mode" (unchanged), "Layout" (presets, Lock layout checkbox, Transport bar: Top or Bottom radio, Reset layout with its shortcut), then Settings and Rescan.
 - `src/store/ui.ts`: `locked`, `transportPosition`, setters. `src/App.tsx` reads `transportPosition`.
 - `src/shell/DockShell.tsx`: remove `disableFloatingGroups`; `proportionalLayout={false}`; apply `locked` and `disableDnd` through `api.updateOptions` on change (UD15); set the Library group priority (UD16) in `attachDock` or after each layout; move floating groups back inside the dock bounds after load and on resize (UD17).
 - `src/shell/WidgetTab.tsx`: Float and Dock controls (UD17), hidden while locked.
 - `src/shell/persistence.ts`: save and restore `transport`, `locked` and `dock.floatingGroups`; `watchLayout` also saves on `locked` and `transportPosition` changes.
-- `crates/clawdio-core/src/settings.rs`: `WindowSize` gains optional `x` and `y` (UD14). `src-tauri/src/window.rs`: save the position with the size (`WindowEvent::Moved`; confirm the event name in the pinned Tauri 2.12.3 source), restore it when inside an available monitor. `docs/file-formats.md`: the `settings.json` row.
+- `crates/clawdio-core/src/settings.rs`: `WindowSize` gains optional `x` and `y` in physical pixels (UD14). `src-tauri/src/window.rs`: save `outer_position` with the size (`WindowEvent::Moved`; confirm the event name in the pinned Tauri 2.12.3 source), restore it when inside the physical bounds of an available monitor. `docs/file-formats.md`: the `settings.json` row.
 - `tests/e2e/install-mocks.ts`: nothing new (window position is Rust only). Update `docking.spec.ts`, `layouts.spec.ts`, `persistence.spec.ts`. New `presets.spec.ts`, `lock.spec.ts`, `floating.spec.ts`.
 - `docs/file-formats.md`: `layout.json` v2 fields `transport`, `locked`, `floatingGroups`.
 
@@ -319,7 +326,7 @@ SH-6, DK-1 to DK-10, SP-4, PS-1 to PS-5, TA-4. Rework section 8 Phase 2 accept.
 - The default preset applies on first run and after Reset layout. A preset applies with `replaceArrangement` (the Library guard is off meanwhile).
 - Lock layout hides no control that reopens a widget (DK-6). While locked, the Widgets checkboxes still work.
 - Transport position lives in `layout.json` and in the Layout menu (UC12 keeps the header; SH-6 "setting" is this menu item). Reset layout puts it back to top.
-- Window position restore: use `app.available_monitors()` and the saved logical point scaled by the monitor's scale factor; if no monitor contains the point, do not set a position.
+- Window position restore: compare the saved physical point with the physical `position` and `size` of each entry of `app.available_monitors()`; if no monitor contains the point, do not set a position. No scale factor math (UD14).
 - Pop-out windows: no `addPopoutGroup` call and no tab context menu (DK-10, unchanged).
 
 **Tests**
@@ -365,7 +372,7 @@ SP-1, SP-2, SP-3, SP-5, SP-6, SP-7 (MAY, not built), AX-1 (splitters). Rework se
 - `src/styles/dockview-theme.css`: sash hit area 6 px (override `.dv-sash` width or height and the centering offset), unchanged 1 px line and cursor.
 - New `src/shell/splitters.ts` and `splitters.test.ts` (UD7): decoration, key handling, double-click reset, the collapse and restore memory, the locked state.
 - `src/shell/DockShell.tsx` and `src/widgets/library/FrameSplit.tsx`: call the layer after `onReady`, after each layout change and after each frame layout. Remove the P22 "sashes not in the Tab order" note from `FrameSplit.tsx`.
-- `src/widgets/playlists/PlaylistsWidget.tsx`: rail mode below 140 px (UD18), measured with the shared rAF size hook from U1.
+- `src/widgets/playlists/PlaylistsWidget.tsx`: rail mode below 140 px (UD18), measured with the shared rAF size hook from U1. `src/shell/widgets.ts`: the Playlists minimum width becomes 56 px (UD18); `widgets.test.ts` and the 800 x 560 clamp case run again.
 - `tests/e2e/frames.spec.ts`: the Tab-order assertion flips (sashes are in the order now). New `splitters.spec.ts`, `rail.spec.ts`.
 - `docs/design.md` section 5: splitter keyboard rule.
 
@@ -412,8 +419,8 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - Rust: `crates/clawdio-core/src/api.rs`: `SongRow` gains `track_no: Option<u32>` and `disc: Option<u32>`; new `SongSort` and `SortKey` with `TS` derives. `crates/clawdio-core/src/library/query.rs`: `song_ids(scope, query, sort)` (UD11). `src-tauri/src/commands/library.rs`: the `sort` argument. `src/lib/ipc/bindings/`: regenerated and committed (D15). `src/lib/ipc/commands.ts`: `librarySongIds(scope, query, sort)`.
 - Rust storage: `crates/clawdio-core/src/layout.rs` functions take the file name; `COLUMNS_FILE`. `src-tauri/src/commands/layout.rs`: `columns_load`, `columns_save`, `columns_backup`. Register in `lib.rs`. `commands.ts`: the three wrappers.
 - New `src/store/columns.ts` (state per view, density placeholder "regular"), `src/widgets/library/columns.ts` (UD9 pure model), `TableHeader.tsx`, `HeaderMenu.tsx`, `src/shell/columns-persistence.ts` (parse, validate, debounce, flush; same shape as `persistence.ts`).
-- `src/components/virtual-list.tsx`: a sticky `header` slot inside the scroll element, a `contentWidth` so the body and header scroll together horizontally, `aria-multiselectable`, Shift and Ctrl modifiers passed to `onMove` and a new `onSelectRange`.
-- `src/widgets/library/lists.tsx`: `SongList` becomes `SongTable`; the Artist and Album lists are unchanged. `rows.tsx`: `Row` and `SongCells` are `memo` components (PF-1); the Songs cells render per column; the `#` cell shows the track number or the playing icon (TB-11); row height from `--size-row-regular` through a `useRowHeight()` hook.
+- `src/components/virtual-list.tsx`: the `grid` role next to `listbox` and `tree` (UD8), a sticky `header` slot inside the scroll element, a `contentWidth` so the body and header scroll together horizontally, `aria-multiselectable`, Shift and Ctrl modifiers passed to `onMove` and a new `onSelectRange`. Stable row props (PF-1): the list owns the positioned wrapper element per row (`transform`, `height`) and passes the row component only primitives (`id`, `index`, `active`, `selected`, `posinset`, `setsize`) and stable callbacks, so `memo` on `Row` compares equal across a container resize. The current `frame` object with its nested `style` (`src/components/virtual-list.tsx`, `renderRow`) goes away.
+- `src/widgets/library/lists.tsx`: `SongList` becomes `SongTable`; the Artist and Album lists are unchanged. `rows.tsx`: `Row` and `SongCells` are `memo` components with primitive props (PF-1); the Songs cells render per column as `gridcell` elements; the `#` cell shows the track number or the playing icon (TB-11); row height from `--size-row-regular` through `useTokenPx` (UD1).
 - `src/store/library.ts`: `selectedSongs: Set<number>`, `anchor`, `setSongSelection(ids, anchor)` (UD12). Context menu actions in `lists.tsx` act on the selection.
 - `tests/e2e/library-data.ts`: a `LIBRARY_SIZE` environment value (default as today; 50,000 for the perf spec), sort support in the mock `library_song_ids`, `trackNo` and `disc` in the rows. `install-mocks.ts`: the columns commands.
 - New `tests/e2e/table.spec.ts`, `table-perf.spec.ts`. Update `library.spec.ts`, `playback.spec.ts` (the playing indicator location).
@@ -427,9 +434,9 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - Reorder: pointer drag of a header cell with a drop indicator line; keyboard: the header menu offers "Move left" and "Move right" (AX-1). `#` can move like any column.
 - Visibility: right-click or Shift+F10 on the header opens the menu with a checkbox per column (Title cannot be hidden), "Auto size column", "Auto size all columns", "Move left", "Move right".
 - Sort: click a header to sort ascending, again for descending, again for the R4 default; `aria-sort` on the header cell and an arrow icon. The ids come sorted from Rust; the queue rule (R6) uses the ids as shown.
-- Selection: UD12. The listbox keeps `aria-activedescendant` on the active row; selected rows carry `aria-selected`. Delete does nothing in the Library (R25 scopes it to the queue and playlists).
+- Selection: UD12. The grid keeps `aria-activedescendant` on the active row; selected rows carry `aria-selected` (row-selection grid, UD8). Up and Down move rows; Left and Right scroll the grid horizontally when it overflows and are otherwise unused, because cells are not focus targets. Delete does nothing in the Library (R25 scopes it to the queue and playlists).
 - Per-view state (TB-9): the view id is `songs.columns` or `songs.topBottom`. A mode switch loads the other view's state. Reset layout does not touch column state (PS-6 keeps them apart); the header menu gets "Reset columns".
-- PF-1: a container resize re-renders the header and the grid template, not the rows. Verify with a render counter in a Vitest test (React Profiler `onRender` on `Row`).
+- PF-1: a container resize re-renders the header and the grid template, not the rows. Verify through the real path: mount `SongTable` in Vitest with a mocked `ResizeObserver`, fire a width change on the container, and count `Row` renders with React Profiler `onRender`. A test that passes identical props by hand does not count.
 - PF-3: `table-perf.spec.ts` runs with `LIBRARY_SIZE=50000`, scrolls the table by wheel for 3 s, sorts by Title, resizes a column and resizes the dock sash, and records the longest frame gap through `requestAnimationFrame` timestamps. CI asserts no gap over 100 ms (the AC-2 budget). The reference-machine number is recorded manually in U7 (UQ3).
 - Tree mode is unchanged: indented rows, no header, no columns (UD8).
 
@@ -438,10 +445,10 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - `cargo test`: sort by each column ascending and descending with the D4 fold ("Émile" sorts with "Emile"; "2" before "10"); ties keep the R4 order; two keys; `track_no` and `disc` in `SongRow`; the columns file round trip and backup.
 - Vitest `columns.test.ts`: resize respects minimums; reorder moves one column; hide and show; auto-size clamp; the sort cycle; parse of a valid file, a bad width, an unknown column (ignored with one log line), a wrong version (rejected).
 - Vitest `library.test.ts`: multi-select rules of UD12.
-- Vitest `rows.test.tsx`: `Row` does not re-render when the parent re-renders with the same props (PF-1).
+- Vitest `rows.test.tsx`: a container width change through the mocked `ResizeObserver` re-renders the header and no `Row` (PF-1, real path).
 - Playwright `table.spec.ts` (TB-2 to TB-11): drag a divider; a column never goes below its minimum; double-click a divider; the header menu items; drag a header to reorder; hide Album and show it again; Title takes the spare width; Time is right aligned; at a narrow Library the horizontal scrollbar appears and the header stays aligned with the body after scrolling; click Title to sort and the arrow and `aria-sort` show; Shift+click and Ctrl+click select ranges; Enter plays the active row; the playing row shows the icon in the `#` column; the state survives a mode switch and a reload per mode; Tree mode shows no header.
 - Playwright `table-perf.spec.ts` (TB-1, PF-3): 50,000 rows, the DOM holds at most the visible rows plus overscan, no frame gap over 100 ms.
-- Playwright `audit.spec.ts`: axe with the table (columnheader roles, the multiselectable listbox).
+- Playwright `audit.spec.ts`: axe with the table (`grid`, `row`, `columnheader` and `gridcell` roles, `aria-multiselectable`, `aria-sort`); no role-context violation.
 
 **Acceptance criteria**
 
@@ -562,7 +569,7 @@ PF-3 (reference machine), TA-1, TA-2, TA-3, TA-4, AX-1, AX-2 (whole app), rework
 - Run `npm run shots -- after` and commit `docs/ui-reference/after/*.png` at the three sizes.
 - Run the rework section 9 checklist on Windows 11 (WebView2) and one Linux distribution (WebKitGTK) with the Release workflow packages (`.github/workflows/release.yml`, `workflow_dispatch` as P23.5 did). Record each row in `docs/ui-audit.md` and the manual rows in `docs/release-checklist.md`.
 - Display scaling 100%, 150% and 200% (rework section 9): check the band height follows the font scale and nothing clips; record the result.
-- Grep check for TA-1: no `dragstart`, `ondragstart` or `draggable="true"` in `src/` other than `draggable={false}` on images.
+- TA-1: `npm run check:sources` with the U1 drag guard passes on the final tree (no `dragstart`, `onDragStart`, `onDragOver`, `onDrop` or truthy `draggable` under `src/`); record it in `docs/ui-audit.md`.
 - `docs/requirements-traceability.md`: a new section 7 with one row per rework requirement, status Done or the recorded exception.
 - `docs/build-plan.md`: section 2 pointer row status, section 13 entry, D57 to D59 marked superseded (done in U0; confirm).
 - `README.md`: the keyboard list (separators, table keys, lock shortcut if any) and the new files (`layout.json` v2, `columns.json`).
@@ -678,7 +685,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
 | AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Planned |
 | AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Passes today |
-| TA-1 `dragDropEnabled` only with HTML5 drag | U7 | REV grep (UC13) | Not applicable while pointer drag |
+| TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag |
 | TA-2 folder selection by dialog | U7 (re-verify) | REV `SettingsDialog.tsx`, D13 | Passes today |
 | TA-3 WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
 | TA-4 not only `localStorage` | U1 (re-verify) | REV | Passes today |
@@ -744,7 +751,20 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 4. Missing migration: a v1 `layout.json` holds a `transport` panel. The draft migrated it; UD5 now backs it up and resets, which PS-4 also requires.
 5. Missing failure handling: an invalid `transportSlots` value that hides play or pause. U5 refuses it in the parser with a test.
 6. Acceptance criterion not objective: "no visible stutter" (PF-3). U4 sets the CI threshold at the AC-2 100 ms frame budget and U7 records the reference number.
-7. Phase too large: the draft's U1 held the presets and the lock. They moved to U2, so U1 leaves the repository coherent with a Library-only default.
+7. Phase too large: the draft's U1 held all three presets and the lock. The two extra presets and the lock moved to U2. The default preset stays in U1, so a version 1 file migrates once (Codex round, item 4 below).
+
+**Codex review round (PR 21, October 13, 2026): F2 10, F4 0.** All ten findings held and are fixed in version 1.1:
+
+1. The governing rework document and the parent-plan pointer were deferred to U0, so a fresh implementer could not find them. Both ship with this plan (`docs/planning/ui-shell-rework.md`, `docs/build-plan.md` section 2).
+2. UD3 named no width ranges. The five ranges and their boundaries are now in UD3 and in the U1 unit test.
+3. The UD7 fallback covered dock groups only. Library frame sashes now fall back to `setFrames` through `FrameSplit`.
+4. A version 1 user upgrading at U1 would have saved a Library-only version 2 file that U2 never reset. The default preset now ships in U1.
+5. Fixed `px` size tokens would clip under text scaling (P17 note N2). The tokens are `rem`, with a `useTokenPx` hook and the 125% and 140% e2e cases in U1.
+6. A `listbox` cannot own `columnheader` cells. The Songs table is a `grid` (UD8).
+7. A logical window position can map into two monitors on mixed DPI. UD14 saves physical coordinates.
+8. `VirtualList` builds a fresh `frame` object per row per render, so `memo` on `Row` would not stop re-renders. U4 passes primitives and tests the real resize path.
+9. The 200 px Playlists minimum made the 140 px rail unreachable. UD18 lowers it to 56 px in U3.
+10. The TA-1 grep missed JSX forms. U1 adds a drag guard to `scripts/check-sources.mjs`.
 
 **F3 (recorded in `docs/build-plan.md` section 11 by U0):**
 
@@ -765,4 +785,5 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.1 (October 13, 2026):** PR 21 review. CodeRabbit: UD19 restores the window limits on mini player exit. Codex: ten findings fixed (section 11, Codex round): rework source and pointer committed, UD3 ranges, UD7 frame fallback, default preset in U1, `rem` size tokens (UD1), grid roles (UD8), physical window position (UD14), stable row props (U4), Playlists minimum 56 px (UD18), drag guard in `check-sources` (U1, UC13).
 - **1.0 (October 13, 2026):** first version. Owner decision of the same day: the rework wins over requirements v1.7 where they conflict; widget names and Library modes stay.

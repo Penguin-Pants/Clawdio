@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.23, October 13, 2026 (P23 Done with exceptions; the owner's Windows check remains).
+**Version:** 1.24, October 13, 2026 (UI shell rework plan added as phases U0 to U7 in `docs/planning/ui-shell-rework-build-plan.md`).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -89,6 +89,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
+| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | Not started. Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -3046,6 +3047,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.24 (October 13, 2026):** the owner's UI shell rework (October 13, 2026) gets its own plan, `docs/planning/ui-shell-rework-build-plan.md`, with phases U0 to U7. Owner decision of the same day: the rework wins over requirements v1.7 where they conflict; the widget names and the Library modes stay. U0 marks D57 to D59 as superseded.
 - **1.23 (October 13, 2026):** P23 Done with exceptions. Windows build: Release run 38377951211 (`workflow_dispatch`, Windows only) on `8c78a44`: artifact `windows`, `Clawdio_0.1.0_x64-setup.exe` 5,433,981 bytes (5.18 MiB), under the 30 MB check. Later commits change only a Rust test and docs, so the app code is the same. P23-AC7 stays open for the owner.
 - **1.22 (October 13, 2026):** the window edge drop exists (Dockview root target): D58 and P23 note N1 corrected, with a test. Every frame splitter drag is saved.
 - **1.21 (October 13, 2026):** P23.1 to P23.4 done. K23 closed. D58 gained the shared-row case and the note that Dockview has no window-edge zone here.
