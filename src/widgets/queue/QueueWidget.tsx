@@ -5,7 +5,7 @@ import { commands } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { usePlayerStore } from "@/store/player";
-import { ROW_HEIGHT, Row, SongCells } from "../library/rows";
+import { Row, SongCells, useRowHeight } from "../library/rows";
 import { EmptyHint } from "../hint";
 import { useRowMenu } from "../row-menu";
 
@@ -19,6 +19,7 @@ function removeEntry(index: number) {
  * select, Delete removes the selected entry (R25), a context menu with Remove, and Clear queue.
  */
 export function QueueWidget() {
+  const rowHeight = useRowHeight();
   const queue = usePlayerStore((state) => state.queue);
   const version = useLibraryStore((state) => state.version);
   const { row, request } = useSongRows(version);
@@ -47,7 +48,7 @@ export function QueueWidget() {
           label="Play queue"
           role="listbox"
           count={count}
-          rowHeight={ROW_HEIGHT}
+          rowHeight={rowHeight}
           onRange={onRange}
           activeIndex={active}
           onMove={setSelected}

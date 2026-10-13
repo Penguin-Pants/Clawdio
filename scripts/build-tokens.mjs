@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** @typedef {"color" | "px" | "ms" | "policy"} TokenKind */
+/** @typedef {"color" | "px" | "rem" | "ms" | "policy"} TokenKind */
 
 /**
  * Every required key path and the kind of value it holds.
@@ -28,6 +28,13 @@ export const SCHEMA = Object.freeze({
   "radii.control": "px",
   "radii.card": "px",
   "radii.dialog": "px",
+  // Sizes and spacing in rem follow the root font size, so text scaling grows them (UD1).
+  "sizes.transportBar": "rem",
+  "sizes.transportBarCompact": "rem",
+  "sizes.rowRegular": "rem",
+  "sizes.rowCompact": "rem",
+  "sizes.rowAlbum": "rem",
+  "spacing.unit": "rem",
   "motion.fast": "ms",
   "motion.panel": "ms",
   "motion.reduced": "policy",
@@ -40,6 +47,7 @@ const KINDS = {
     label: "a hex color",
   },
   px: { test: (value) => /^\d+(?:\.\d+)?px$/.test(value), label: "a px length" },
+  rem: { test: (value) => /^\d+(?:\.\d+)?rem$/.test(value), label: "a rem length" },
   ms: { test: (value) => /^\d+(?:\.\d+)?ms$/.test(value), label: "a ms duration" },
   policy: { test: (value) => value.trim().length > 0, label: "a non-empty text" },
 };
@@ -100,7 +108,8 @@ function kebab(name) {
 }
 
 /**
- * CSS for valid token values: a Tailwind v4 `@theme` block and `:root` motion variables.
+ * CSS for valid token values: a Tailwind v4 `@theme` block and `:root` motion, size and spacing
+ * variables (`--size-transport-bar`, `--spacing-unit`).
  * @param {Map<string, string>} values
  * @returns {string}
  */
@@ -116,6 +125,8 @@ export function renderCss(values) {
     if (group === "radii") theme.push(`  --radius-${name}: ${value};`);
     // motion.reduced is a policy, not a value (globals.css holds the reduced-motion rule).
     if (group === "motion" && SCHEMA[path] === "ms") root.push(`  --clawdio-motion-${name}: ${value};`);
+    if (group === "sizes") root.push(`  --size-${name}: ${value};`);
+    if (group === "spacing") root.push(`  --spacing-${name}: ${value};`);
   }
   theme.push("  --default-transition-duration: var(--clawdio-motion-fast);");
   return [

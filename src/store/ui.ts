@@ -22,7 +22,16 @@ export interface StatusJob {
   cancel?: () => void;
 }
 
+/** Where the transport band sits (SH-6). No left or right placement (rework decision 2). */
+export type TransportPosition = "top" | "bottom";
+
 interface UiState {
+  /** The transport band position, saved in `layout.json` (UD5). Default top (rework decision 1). */
+  transportPosition: TransportPosition;
+  /** Lock layout (DK-5, UD15), saved in `layout.json`. Unlocked on a fresh install. */
+  locked: boolean;
+  setTransportPosition: (position: TransportPosition) => void;
+  setLocked: (locked: boolean) => void;
   /** Widgets that are in the dock now, in registry order. */
   visibleWidgets: WidgetId[];
   settingsOpen: boolean;
@@ -50,6 +59,10 @@ let messageTimer: ReturnType<typeof setTimeout> | undefined;
 const withJobs = (jobs: StatusJob[]) => ({ jobs, job: jobs.at(-1) ?? null });
 
 export const useUiStore = create<UiState>()((set, get) => ({
+  transportPosition: "top",
+  locked: false,
+  setTransportPosition: (transportPosition) => set({ transportPosition }),
+  setLocked: (locked) => set({ locked }),
   visibleWidgets: [],
   settingsOpen: false,
   jobs: [],

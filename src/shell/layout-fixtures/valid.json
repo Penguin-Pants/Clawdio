@@ -1,5 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
+  "transport": "bottom",
+  "locked": true,
   "libraryMode": "tree",
   "dock": {
     "grid": {

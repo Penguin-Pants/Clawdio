@@ -15,10 +15,13 @@ afterEach(() => {
 });
 
 describe("measurementPopulated (P3.5, P6.7)", () => {
-  it("is true when all six widgets are in the page and the Library shows rows", () => {
+  it("is true when the band and the five dock widgets are in the page and the Library shows rows", () => {
     document.body.innerHTML = POPULATED_HTML;
     expect(measurementPopulated()).toBe(true);
     document.querySelector('[data-widget="queue"]')?.remove();
+    expect(measurementPopulated()).toBe(false);
+    document.body.innerHTML = POPULATED_HTML;
+    document.querySelector('[data-widget="transport"]')?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 

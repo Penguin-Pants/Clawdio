@@ -2,12 +2,12 @@
 // menu and the Play queue on the mocked player.
 import type { Page } from "@playwright/test";
 import { grayProfile } from "./gray";
-import { closeMenu, expect, openMenu, test, widget } from "./test-base";
+import { expect, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  await expect(widget(page, "nowPlaying")).toContainText("Song 4 of Album A0");
+  await expect(widget(page, "transport")).toContainText("Song 4 of Album A0");
 }
 
 /** The player commands the app sent, in order. */
@@ -19,16 +19,8 @@ const transport = (page: Page) => widget(page, "transport");
 const button = (page: Page, name: string) => transport(page).getByRole("button", { name, exact: true });
 const slider = (page: Page, name: string) => transport(page).getByRole("slider", { name });
 
-async function hideWidget(page: Page, name: string) {
-  await openMenu(page);
-  await page.getByRole("menuitemcheckbox", { name, exact: true }).click();
-  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
-}
-
-test("P7-AC5: Space toggles playback with Transport controls hidden", async ({ page }) => {
+test("P7-AC5: Space toggles playback with focus in the Library", async ({ page }) => {
   await openLibrary(page);
-  await hideWidget(page, "Transport controls");
-  await expect(widget(page, "transport")).toHaveCount(0);
   await widget(page, "library").getByRole("listbox", { name: "Songs" }).focus();
   await page.keyboard.press("Space");
   expect(await calls(page)).toEqual(["player_toggle"]);
@@ -57,7 +49,6 @@ test("P7-AC5: Space types a space in the search field", async ({ page }) => {
 
 test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async ({ page }) => {
   await openLibrary(page);
-  await page.evaluate(() => window.e2e.addAsTab("queue", "nowPlaying"));
   const queue = widget(page, "queue");
   await expect(queue).toContainText("50 songs");
   const songs = widget(page, "library").getByRole("listbox", { name: "Songs" });
@@ -140,7 +131,6 @@ test("P7-AC11: the volume slider reads the percent and shows VolumeX at 0", asyn
 
 test("P7-AC12: in the Play queue Up and Down move and Delete removes the entry", async ({ page }) => {
   await openLibrary(page);
-  await page.evaluate(() => window.e2e.addAsTab("queue", "nowPlaying"));
   const list = widget(page, "queue").getByRole("listbox", { name: "Play queue" });
   await list.focus();
   await page.keyboard.press("ArrowDown");
@@ -166,7 +156,7 @@ test("R4: a rescan that changes the playing song's tags updates Now playing and 
   const total = widget(page, "transport").getByText("2:04", { exact: true });
   await expect(total).toBeVisible();
   await page.evaluate(() => window.e2e.retagSong("Song 4 of Album A0", { title: "Retagged", durationMs: 300_000 }));
-  await expect(widget(page, "nowPlaying")).toContainText("Retagged");
+  await expect(widget(page, "transport")).toContainText("Retagged");
   await expect(widget(page, "transport").getByText("5:00", { exact: true })).toBeVisible();
 });
 

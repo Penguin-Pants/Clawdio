@@ -14,7 +14,7 @@ import { useLibraryStore } from "@/store/library";
 import { playlistEdit, playlistTask, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
 import { EmptyHint } from "../hint";
-import { ROW_HEIGHT, Row, SongCells } from "../library/rows";
+import { Row, SongCells, useRowHeight } from "../library/rows";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 
 type Line = { posinset: number; setsize: number } & (
@@ -92,6 +92,7 @@ type Selection = { playlist: number; entry: number | null } | null;
  * removes the selected entry (R25, D20).
  */
 export function PlaylistsWidget() {
+  const rowHeight = useRowHeight();
   const rows = usePlaylistsStore((state) => state.rows);
   const playlistsVersion = usePlaylistsStore((state) => state.version);
   const libraryVersion = useLibraryStore((state) => state.version);
@@ -249,7 +250,7 @@ export function PlaylistsWidget() {
           label="Playlists"
           role="tree"
           count={lines.length}
-          rowHeight={ROW_HEIGHT}
+          rowHeight={rowHeight}
           onRange={onRange}
           activeIndex={active >= 0 ? active : null}
           onMove={(index) => select(lines[index])}

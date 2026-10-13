@@ -1,7 +1,7 @@
 import type { AddPanelPositionOptions, DockviewApi } from "dockview-react";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
-import { type BarWidgetId, inBottomBar } from "./bar-rules";
-import { type Orientation, toNode } from "./clamp";
+import { useUiStore } from "@/store/ui";
+import { appleMusicClassic } from "./presets";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
 /** Built-in layouts (R29). Each one sets the default arrangement and its Library mode. */
@@ -14,11 +14,8 @@ export const LAYOUT_TITLES: Record<LayoutId, string> = {
   topBottom: "Top/bottom",
 };
 
-/** Reset layout applies this built-in layout (R29). */
+/** Reset layout sets this Library mode (UD6). */
 export const RESET_LAYOUT: LayoutId = "columns";
-
-/** Initial height of the bottom row in the default arrangement. */
-const BOTTOM_ROW_HEIGHT = 112;
 
 let dock: DockviewApi | null = null;
 let replacing = false;
@@ -37,12 +34,20 @@ export function isReplacing(): boolean {
   return replacing;
 }
 
+/** Optional initial size and activation of a new panel. */
+export interface AddOptions {
+  width?: number;
+  height?: number;
+  /** Add the panel without making it the active tab of its group. */
+  inactive?: boolean;
+}
+
 /** Adds a widget panel with its registry title, tab and minimum size (D33). */
 export function addWidget(
   api: DockviewApi,
   id: WidgetId,
   position?: AddPanelPositionOptions,
-  initialHeight?: number,
+  options: AddOptions = {},
 ): void {
   const widget = WIDGETS[id];
   api.addPanel({
@@ -52,19 +57,16 @@ export function addWidget(
     tabComponent: widget.hideable ? "widget" : "library",
     minimumWidth: widget.minWidth,
     minimumHeight: widget.minHeight,
-    initialHeight,
+    initialWidth: options.width,
+    initialHeight: options.height,
+    inactive: options.inactive,
     position,
   });
 }
 
-/**
- * The default arrangement (R29): Library in the main area, Now playing beside Transport
- * controls in a bottom row. Playlists, Play queue and Lyrics are not added.
- */
+/** The default arrangement: the default preset (DK-8, UD6). */
 export function defaultArrangement(api: DockviewApi): void {
-  addWidget(api, "library");
-  addWidget(api, "nowPlaying", { referencePanel: "library", direction: "below" }, BOTTOM_ROW_HEIGHT);
-  addWidget(api, "transport", { referencePanel: "nowPlaying", direction: "right" });
+  appleMusicClassic(api);
 }
 
 /** Clears the dock and builds a new arrangement. The Library guard is off meanwhile (P2.3). */
@@ -79,7 +81,7 @@ export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) =
 }
 
 /**
- * Replaces the arrangement with the default one and sets the layout's Library mode. The frame
+ * Replaces the arrangement with the default preset and sets the layout's Library mode. The frame
  * sizes of all modes go back to their defaults (R28.1).
  */
 export function applyLayout(id: LayoutId, api: DockviewApi | null = dock): void {
@@ -91,29 +93,41 @@ export function applyLayout(id: LayoutId, api: DockviewApi | null = dock): void 
 }
 
 /**
- * The measurement arrangement (P3.1): the default arrangement plus Playlists, Play queue and
- * Lyrics, in the given Library mode. It is not saved.
+ * The measurement arrangement (P3.1): the default preset plus every widget it hides (Now
+ * playing), so all five dock widgets and the band are in the page, in the given Library mode.
+ * Lyrics leaves the Play queue tab group, so its body mounts too. It is not saved.
  */
 export function applyMeasureLayout(mode: LibraryMode, api: DockviewApi | null = dock): void {
   if (!api) return;
   replaceArrangement(api, (target) => {
     defaultArrangement(target);
-    for (const id of ["playlists", "queue", "lyrics"] as const) setWidgetVisible(id, true, target);
+    setWidgetVisible("lyrics", false, target);
+    addWidget(target, "lyrics", { referencePanel: "queue", direction: "below" });
+    setWidgetVisible("nowPlaying", true, target);
   });
   useLibraryStore.getState().setMode(mode);
 }
 
+/**
+ * Reset layout (DK-7, UD6): the default preset, Columns mode, the default frame sizes, the band
+ * at the top and unlocked.
+ */
 export function resetLayout(api: DockviewApi | null = dock): void {
   applyLayout(RESET_LAYOUT, api);
+  useUiStore.getState().setTransportPosition("top");
+  useUiStore.getState().setLocked(false);
 }
 
-/** Where a shown widget goes: the bottom row for Now playing and Transport, else right of Library. */
+/**
+ * Where a shown widget goes, by the default preset (UD6): Playlists left of Library; Play queue
+ * and Lyrics as tabs together, else right of Library; Now playing below Playlists, else left of
+ * Library.
+ */
 function showPosition(api: DockviewApi, id: WidgetId): AddPanelPositionOptions {
-  if (id === "nowPlaying" || id === "transport") {
-    const partner = api.getPanel(id === "nowPlaying" ? "transport" : "nowPlaying");
-    if (partner) return { referencePanel: partner, direction: id === "nowPlaying" ? "left" : "right" };
-    return { referencePanel: "library", direction: "below" };
-  }
+  const partner = id === "queue" ? "lyrics" : id === "lyrics" ? "queue" : null;
+  if (partner && api.getPanel(partner)) return { referencePanel: partner, direction: "within" };
+  if (id === "nowPlaying" && api.getPanel("playlists")) return { referencePanel: "playlists", direction: "below" };
+  if (id === "playlists" || id === "nowPlaying") return { referencePanel: "library", direction: "left" };
   return { referencePanel: "library", direction: "right" };
 }
 
@@ -122,29 +136,9 @@ export function setWidgetVisible(id: WidgetId, visible: boolean, api: DockviewAp
   if (!api || !WIDGETS[id].hideable) return;
   const panel = api.getPanel(id);
   if (visible && !panel) {
-    const position = showPosition(api, id);
-    addWidget(api, id, position, id === "nowPlaying" || id === "transport" ? BOTTOM_ROW_HEIGHT : undefined);
+    addWidget(api, id, showPosition(api, id));
   } else if (!visible && panel) {
     api.removePanel(panel);
-  }
-}
-
-/**
- * Moves the bar widgets that break R29.1 to the bottom bar (P23.3). All of them leave first.
- * Each comes back beside the other bar widget when that one is in the bottom bar, else as a new
- * full-width row at the bottom of the dock.
- */
-export function repairBars(api: DockviewApi, ids: BarWidgetId[]): void {
-  for (const id of ids) setWidgetVisible(id, false, api);
-  for (const id of ids) {
-    const partner = id === "nowPlaying" ? "transport" : "nowPlaying";
-    const { grid } = api.toJSON();
-    const besidePartner =
-      api.getPanel(partner) && inBottomBar(toNode(grid.root), grid.orientation as Orientation, partner);
-    const position: AddPanelPositionOptions = besidePartner
-      ? { referencePanel: partner, direction: id === "nowPlaying" ? "left" : "right" }
-      : { direction: "below" };
-    addWidget(api, id, position, BOTTOM_ROW_HEIGHT);
   }
 }
 

@@ -8,7 +8,7 @@ import { addToPlaylist, usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
-import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
+import { AlbumCells, Row, SongCells, useAlbumRowHeight, useRowHeight } from "./rows";
 
 const NO_IDS: number[] = [];
 const NO_TREE: TreeArtist[] = [];
@@ -153,6 +153,7 @@ function albumItems(
 
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
 export function ArtistList() {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const selected = useLibraryStore((state) => state.selection.artist);
   const setSelection = useLibraryStore((state) => state.setSelection);
@@ -182,7 +183,7 @@ export function ArtistList() {
         label="Artists"
         role="listbox"
         count={ids.length + 1}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
@@ -210,6 +211,7 @@ export function ArtistList() {
 
 /** Album list of the selected artist with an "All" row first. Rows load for the visible window (D14). */
 export function AlbumList() {
+  const rowHeight = useAlbumRowHeight();
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const selected = useLibraryStore((state) => state.selection.album);
@@ -239,7 +241,7 @@ export function AlbumList() {
         label="Albums"
         role="listbox"
         count={ids.length + 1}
-        rowHeight={ALBUM_ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
@@ -276,6 +278,7 @@ export function AlbumList() {
 
 /** Songs of the selected artist and album, or all songs (R28). Rows load for the visible window. */
 export function SongList({ showAlbum }: { showAlbum: boolean }) {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const album = useLibraryStore((state) => state.selection.album);
@@ -308,7 +311,7 @@ export function SongList({ showAlbum }: { showAlbum: boolean }) {
         label="Songs"
         role="listbox"
         count={ids.length}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={active >= 0 ? active : null}
         onMove={(index) => setSelection({ song: ids[index] ?? null })}
@@ -391,6 +394,7 @@ export function treeLines(tree: TreeArtist[], openArtists: Set<number>, openAlbu
 
 /** One expandable artist, album and song tree (R28). Song rows load for the visible window. */
 export function TreeList() {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const selection = useLibraryStore((state) => state.selection);
   const setSelection = useLibraryStore((state) => state.setSelection);
@@ -507,7 +511,7 @@ export function TreeList() {
         label="Library"
         role="tree"
         count={lines.length}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={active >= 0 ? active : null}
         onMove={(index) => select(lines[index])}

@@ -4,10 +4,12 @@ import { LyricsWidget } from "@/widgets/lyrics/LyricsWidget";
 import { NowPlayingWidget } from "@/widgets/now-playing/NowPlayingWidget";
 import { PlaylistsWidget } from "@/widgets/playlists/PlaylistsWidget";
 import { QueueWidget } from "@/widgets/queue/QueueWidget";
-import { TransportWidget } from "@/widgets/transport/TransportWidget";
 
-/** The fixed widget list (R5). No other widget exists (section 6 complexity budget). */
-export const WIDGET_IDS = ["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"] as const;
+/**
+ * The dock widgets (R5). Transport controls is the band outside the dock (SH-2, UD2), so it is
+ * not here. No other widget exists (section 6 complexity budget).
+ */
+export const WIDGET_IDS = ["library", "nowPlaying", "playlists", "queue", "lyrics"] as const;
 export type WidgetId = (typeof WIDGET_IDS)[number];
 
 export interface WidgetDefinition {
@@ -30,20 +32,12 @@ export const WIDGETS: Record<WidgetId, WidgetDefinition> = {
     minHeight: 240,
     component: LibraryWidget,
   },
-  transport: {
-    id: "transport",
-    title: "Transport controls",
-    hideable: true,
-    minWidth: 320,
-    minHeight: 112,
-    component: TransportWidget,
-  },
   nowPlaying: {
     id: "nowPlaying",
     title: "Now playing",
     hideable: true,
-    minWidth: 240,
-    minHeight: 112,
+    minWidth: 220,
+    minHeight: 240,
     component: NowPlayingWidget,
   },
   playlists: {

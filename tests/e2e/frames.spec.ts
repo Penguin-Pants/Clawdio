@@ -1,7 +1,7 @@
 // P22-AC3 and P22-AC4: Library frame splitters (R28.1, AC-25). The mock keeps `layout.json` in
 // session storage, so a reload is the restart.
 import type { Page } from "@playwright/test";
-import { closeMenu, expect, openApp, openMenu, test, tokenRgb, widget } from "./test-base";
+import { expect, openApp, test, tokenRgb, widget } from "./test-base";
 
 /** The direct splitview of a frame group, not a nested one. */
 const splitview = (page: Page, group: string) =>
@@ -70,6 +70,8 @@ function expectClose(actual: number[], expected: number[], tolerance = 2): void 
 test("P22-AC3: frame sizes per mode survive a mode switch and a restart; Reset restores them (AC-25)", async ({
   page,
 }) => {
+  // The default preset puts side groups beside Library; a wide window keeps the frames above their minimums.
+  await page.setViewportSize({ width: 1600, height: 800 });
   await openApp(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.e2e))).toBe(true);
   const before = await sizes(page, "columns");
@@ -139,11 +141,8 @@ test("P22-AC4: frames keep their minimum, fit a small window and use the dock sp
   expect(await sash.evaluate((element) => getComputedStyle(element, "::after").backgroundColor)).toBe(strong);
 
   await page.setViewportSize({ width: 800, height: 560 });
-  for (const name of ["Playlists", "Play queue", "Lyrics"]) {
-    await openMenu(page);
-    await page.getByRole("menuitemcheckbox", { name, exact: true }).click();
-    if (await page.getByRole("menu").isVisible()) await closeMenu(page);
-  }
+  // Every dock widget is in the page (the default preset hides Now playing).
+  await page.evaluate(() => window.e2e.show("nowPlaying"));
   // `sizes` waits until every Columns frame has a width; each frame also keeps a height.
   for (const size of await sizes(page, "columns")) expect(size).toBeGreaterThan(0);
   const heights = await splitview(page, "columns")

@@ -106,6 +106,35 @@ describe("build-tokens", () => {
     expect(readFileSync(output, "utf8")).not.toContain("extra");
   });
 
+  it("writes the size and spacing tokens in rem (UD1, TH-1)", () => {
+    const tokens = readTokens();
+    const css = readFileSync(buildFrom(tokens).output, "utf8");
+    expect(css).toContain("--size-transport-bar: 3.5rem;");
+    expect(css).toContain("--size-transport-bar-compact: 2.5rem;");
+    expect(css).toContain("--size-row-regular: 1.75rem;");
+    expect(css).toContain("--size-row-compact: 1.5rem;");
+    expect(css).toContain("--size-row-album: 3rem;");
+    expect(css).toContain("--spacing-unit: 0.25rem;");
+  });
+
+  it("accepts a rem size and rejects a px size for a sizes key", () => {
+    const tokens = readTokens();
+    set(tokens, "sizes.transportBar", "3.5rem");
+    expect(buildFrom(tokens).status).toBe(0);
+    set(tokens, "sizes.transportBar", "56px");
+    const { status, stderr } = buildFrom(tokens);
+    expect(status).toBe(1);
+    expect(stderr).toContain("sizes.transportBar must be a rem length");
+  });
+
+  it.each(["sizes.rowRegular", "spacing.unit"])("fails and names %s when it is missing (UK7)", (path) => {
+    const tokens = readTokens();
+    remove(tokens, path);
+    const { status, stderr } = buildFrom(tokens);
+    expect(status).toBe(1);
+    expect(stderr).toContain(`${path} is missing`);
+  });
+
   it("renders only the values it gets", () => {
     const css = renderCss(new Map([["colors.brand.red", "#E10606"]]));
     expect(css).toContain("--color-brand-red: #E10606;");

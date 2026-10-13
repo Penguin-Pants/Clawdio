@@ -6,6 +6,7 @@ import {
   SplitviewReact,
 } from "dockview-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { observeSize } from "@/lib/resize";
 import { type FrameGroup, frameFractions, useLibraryStore } from "@/store/library";
 
 /** Frame minimums in px (D56): three Columns frames fit the 320 px Library minimum (D33). */
@@ -87,17 +88,17 @@ export function FrameSplit({
     }
   };
 
-  // The container size drives the layout, so the saved fractions hold at every size.
+  // The container size drives the layout, so the saved fractions hold at every size. The
+  // layout runs once per frame of resizes (PF-2, UD24).
   useEffect(() => {
     const element = containerRef.current;
-    const observer = new ResizeObserver(() => {
+    if (!element) return;
+    return observeSize(element, () => {
       const api = apiRef.current;
-      if (!api || !element) return;
+      if (!api) return;
       api.layout(element.clientWidth, element.clientHeight);
       applyFractions(api, horizontal, currentFractions(group));
     });
-    if (element) observer.observe(element);
-    return () => observer.disconnect();
   }, [horizontal, group]);
 
   // A reset or a loaded layout changes the fractions from outside.

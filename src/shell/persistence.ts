@@ -2,13 +2,13 @@ import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { commands } from "@/lib/ipc/commands";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, LIBRARY_MODES, type LibraryFrames, type LibraryMode, useLibraryStore } from "@/store/library";
-import { barViolations, isBarWidget } from "./bar-rules";
-import { type Orientation, applyClamp, toNode } from "./clamp";
-import { RESET_LAYOUT, applyLayout, repairBars, replaceArrangement } from "./layouts";
+import { type TransportPosition, useUiStore } from "@/store/ui";
+import { applyClamp } from "./clamp";
+import { replaceArrangement, resetLayout } from "./layouts";
 import { isWidgetId } from "./widgets";
 
-/** The `layout.json` version (P9.3, R29). */
-export const LAYOUT_VERSION = 1;
+/** The `layout.json` version (UD5). Version 1 (P9 to P23) held a `transport` dock panel. */
+export const LAYOUT_VERSION = 2;
 /** A layout or mode change is saved this long after it (P9.3). */
 export const SAVE_DELAY_MS = 500;
 /** The placeholder component for widget ids this version does not know (P9.4). */
@@ -17,6 +17,10 @@ export const UNKNOWN_COMPONENT = "unknown";
 /** The saved object: no window size (P9-AC8). */
 export interface SavedLayout {
   version: number;
+  /** The transport band position (SH-6, UD5). */
+  transport: TransportPosition;
+  /** Lock layout (DK-5, UD5). */
+  locked: boolean;
   libraryMode: LibraryMode;
   /** Optional in the file (D55): a file without it loads with the default sizes. */
   libraryFrames: LibraryFrames;
@@ -70,12 +74,13 @@ export function parseFrames(value: unknown): { frames: LibraryFrames; warnings: 
   return { frames: { columns, topBottom }, warnings };
 }
 
-/** Why a saved layout was not used. */
-export type Rejected = { reason: string };
+/** Why a saved layout was not used, with the file's version when it had a number. */
+export type Rejected = { reason: string; version?: number };
 
 /**
- * Checks a saved layout (P9.4 step 1): it must parse, have version 1, a `dock` object and a
- * known `libraryMode`. Unknown widget ids become the placeholder; their ids are returned.
+ * Checks a saved layout (P9.4 step 1, UD5): it must parse, have version 2, a `dock` object and
+ * a known `libraryMode`. A bad `transport` or `locked` value takes its default with a warning.
+ * Unknown widget ids become the placeholder; their ids are returned.
  */
 export function parseLayout(
   text: string,
@@ -88,7 +93,10 @@ export function parseLayout(
   }
   if (typeof value !== "object" || value === null) return { reason: "the layout file is not an object" };
   const object = value as Record<string, unknown>;
-  if (object.version !== LAYOUT_VERSION) return { reason: `unknown layout version ${String(object.version)}` };
+  if (object.version !== LAYOUT_VERSION) {
+    const reason = `unknown layout version ${String(object.version)}`;
+    return typeof object.version === "number" ? { reason, version: object.version } : { reason };
+  }
   const dock = object.dock;
   if (typeof dock !== "object" || dock === null || Array.isArray(dock)) return { reason: "the layout has no dock" };
   const mode = object.libraryMode;
@@ -105,26 +113,51 @@ export function parseLayout(
     }
   }
   const { frames, warnings } = parseFrames(object.libraryFrames);
+  let transport: TransportPosition = "top";
+  if (object.transport === "top" || object.transport === "bottom") transport = object.transport;
+  else warnings.push(`invalid transport ${JSON.stringify(object.transport)}; using top`);
+  let locked = false;
+  if (typeof object.locked === "boolean") locked = object.locked;
+  else warnings.push(`invalid locked ${JSON.stringify(object.locked)}; using unlocked`);
   return {
-    layout: { version: LAYOUT_VERSION, libraryMode: mode as LibraryMode, libraryFrames: frames, dock: serialized },
+    layout: {
+      version: LAYOUT_VERSION,
+      transport,
+      locked,
+      libraryMode: mode as LibraryMode,
+      libraryFrames: frames,
+      dock: serialized,
+    },
     unknown,
     frameWarnings: warnings,
   };
 }
 
 /**
- * Applies a saved layout by the P9.4 order. Any failure logs one line and applies the
- * Columns layout. Returns true when the saved layout was used.
+ * Applies a saved layout by the P9.4 order. A file that fails (PS-4, UD5) is backed up as
+ * `layout.json.bak` with one log line, and the default preset loads (Reset layout). Returns
+ * true when the saved layout was used.
  */
-export function restoreLayout(api: DockviewApi, text: string | null, size: { width: number; height: number }): boolean {
+export function restoreLayout(
+  api: DockviewApi,
+  text: string | null,
+  size: { width: number; height: number },
+  backup: () => Promise<void> = () => commands.layoutBackup(),
+): boolean {
   if (text === null) return false;
-  const fallback = (reason: string) => {
-    log.warn(`layout: ${reason}; using Columns`);
-    applyLayout(RESET_LAYOUT, api);
+  const reset = (line: string) => {
+    log.warn(line);
+    backup().catch((error: unknown) => log.warn(`layout: cannot back up: ${String(error)}`));
+    resetLayout(api);
     return false;
   };
+  const fallback = (reason: string) =>
+    reset(`layout: ${reason}; backed up as layout.json.bak; using the default preset`);
   const parsed = parseLayout(text);
-  if ("reason" in parsed) return fallback(parsed.reason);
+  if ("reason" in parsed) {
+    // A P9 to P23 file holds a transport dock panel; it is not migrated (UD5).
+    return parsed.version === 1 ? reset("layout: version 1 backed up as layout.json.bak") : fallback(parsed.reason);
+  }
   const { layout, unknown, frameWarnings } = parsed;
   try {
     replaceArrangement(api, (target) => {
@@ -140,11 +173,8 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
   }
   if (unknown.length > 0) log.warn(`layout: unknown widget ids removed: ${unknown.join(", ")}`);
   if (!api.getPanel("library")) return fallback("the layout has no Library widget");
-  // Step 4b (P23.3, R29.1): a bar widget in a tab group or beside a non-bar widget moves to the bottom bar.
-  const { grid } = api.toJSON();
-  const misplaced = barViolations(toNode(grid.root), grid.orientation as Orientation).filter(isBarWidget);
-  repairBars(api, misplaced);
-  for (const id of misplaced) log.warn(`layout: moved ${id} to the bottom bar (R29.1)`);
+  useUiStore.getState().setTransportPosition(layout.transport);
+  useUiStore.getState().setLocked(layout.locked);
   useLibraryStore.getState().setMode(layout.libraryMode);
   for (const warning of frameWarnings) log.warn(`layout: ${warning}`);
   useLibraryStore.getState().setAllFrames(layout.libraryFrames);
@@ -157,7 +187,15 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
 /** The object to save now. */
 export function currentLayout(api: DockviewApi): SavedLayout {
   const library = useLibraryStore.getState();
-  return { version: LAYOUT_VERSION, libraryMode: library.mode, libraryFrames: library.frames, dock: api.toJSON() };
+  const ui = useUiStore.getState();
+  return {
+    version: LAYOUT_VERSION,
+    transport: ui.transportPosition,
+    locked: ui.locked,
+    libraryMode: library.mode,
+    libraryFrames: library.frames,
+    dock: api.toJSON(),
+  };
 }
 
 /**
@@ -191,12 +229,16 @@ export function watchLayout(
   const modeChange = useLibraryStore.subscribe((state, previous) => {
     if (state.mode !== previous.mode || state.frames !== previous.frames) schedule();
   });
+  const uiChange = useUiStore.subscribe((state, previous) => {
+    if (state.transportPosition !== previous.transportPosition || state.locked !== previous.locked) schedule();
+  });
   return {
     flush: () => write(true),
     dispose: () => {
       clearTimeout(timer);
       layoutChange.dispose();
       modeChange();
+      uiChange();
     },
   };
 }

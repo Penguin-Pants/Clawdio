@@ -4,6 +4,10 @@
 // - No product name (same letter case) under src/, crates/ or src-tauri/src/.
 // - No IPC mock under src/: no import of @tauri-apps/api/mocks and no file named *mock* or
 //   *fixture* (P2.15, AGENTS.md Edits rule 9). E2E mocks live in tests/e2e/.
+// - No HTML5 drag event under src/: no dragstart, onDragStart, onDragOver, onDrop and no
+//   draggable other than false (UC13, TA-1). Every drag uses pointer events.
+// - No arbitrary px spacing under src/ (p-[6px], gap-[3px]): spacing comes from the spacing token
+//   (UD1, TH-1).
 // Usage: node scripts/check-sources.mjs [--root <dir>]
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -16,6 +20,13 @@ const HEX_EXEMPT = new Set(["src/styles/tokens.generated.css"]);
 const HEX_ROOTS = ["src"];
 const NAME_ROOTS = ["src", "crates", "src-tauri/src"];
 const MOCK_ROOTS = ["src"];
+const UI_ROOTS = ["src"];
+// HTML5 drag events and a draggable attribute that is not false.
+const DRAG_EVENT =
+  /\b(?:dragstart|onDragStart|onDragOver|onDrop)\b|\bdraggable\b(?!\s*=\s*(?:\{false\}|"false"|'false'))/g;
+// A spacing utility (padding, margin, gap, space, inset) with an arbitrary px value.
+const PX_SPACING =
+  /(?<![\w-])-?(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|start|end)-\[-?\d*\.?\d+px\]/g;
 const MOCK_IMPORT = "@tauri-apps/api/mocks";
 const MOCK_FILE_NAME = /mock|fixture/i;
 // 3, 4, 6 or 8 hex digits after "#", not part of a longer word or an HTML entity ("&#123;").
@@ -46,7 +57,7 @@ const COLOR_UTILITIES = [
 ].join("|");
 
 /**
- * @typedef {{ file: string, line: number, rule: "hex-color" | "palette-color" | "product-name" | "mock-import" | "mock-file", text: string }} Violation
+ * @typedef {{ file: string, line: number, rule: "hex-color" | "palette-color" | "product-name" | "mock-import" | "mock-file" | "drag-event" | "px-spacing", text: string }} Violation
  */
 
 /**
@@ -124,6 +135,7 @@ export function checkText(file, text, { productName, palette }) {
   const checkHex = HEX_ROOTS.some((dir) => file.startsWith(`${dir}/`)) && !HEX_EXEMPT.has(file);
   const checkName = NAME_ROOTS.some((dir) => file.startsWith(`${dir}/`));
   const checkMocks = MOCK_ROOTS.some((dir) => file.startsWith(`${dir}/`));
+  const checkUi = UI_ROOTS.some((dir) => file.startsWith(`${dir}/`));
   /** @type {Violation[]} */
   const violations = [];
   const fileName = file.slice(file.lastIndexOf("/") + 1);
@@ -145,6 +157,12 @@ export function checkText(file, text, { productName, palette }) {
     }
     if (checkMocks && content.includes(MOCK_IMPORT)) {
       violations.push({ file, line, rule: "mock-import", text: MOCK_IMPORT });
+    }
+    if (checkUi) {
+      for (const match of content.matchAll(DRAG_EVENT))
+        violations.push({ file, line, rule: "drag-event", text: match[0] });
+      for (const match of content.matchAll(PX_SPACING))
+        violations.push({ file, line, rule: "px-spacing", text: match[0] });
     }
   });
   return violations;
@@ -168,6 +186,8 @@ export function formatViolation({ file, line, rule, text }) {
     "product-name": `product name "${text}": read it from the build config (tauri.conf.json productName)`,
     "mock-import": `${text} import: IPC mocks belong in tests/e2e/`,
     "mock-file": `file name "${text}": mock and fixture files belong in tests/e2e/`,
+    "drag-event": `HTML5 drag ${text}: use pointer events (UC13, TA-1 would need dragDropEnabled: false)`,
+    "px-spacing": `px spacing ${text}: use the spacing scale, which comes from the spacing token (UD1)`,
   };
   const reason = reasons[rule];
   return `${file}:${line}: ${reason}`;

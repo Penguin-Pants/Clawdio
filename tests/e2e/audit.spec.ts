@@ -43,7 +43,7 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await page.getByRole("dialog", { name: "Online lookups" }).getByRole("button", { name: "Keep off" }).click();
     await expect(widget(page, "library").getByRole("heading", { name: "Choose your music folder" })).toBeVisible();
     // Disabled: Transport with no folder.
-    await expect(widget(page, "transport").getByRole("button", { name: "Play" })).toBeDisabled();
+    await expect(widget(page, "transport").getByRole("button", { name: "Play", exact: true })).toBeDisabled();
     await check(page);
   });
 
@@ -72,7 +72,7 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await widget(page, "queue").getByRole("option").first().click();
     await check(page);
     await songs(page).getByRole("option").first().dblclick();
-    await expect(widget(page, "transport").getByRole("button", { name: "Pause" })).toBeVisible();
+    await expect(widget(page, "transport").getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await check(page);
     // Disabled: "Fetch lyrics" with Online lookups off.
     await page.evaluate(() => window.e2e.setLyrics(null));
@@ -146,6 +146,8 @@ async function controlBoxes(page: Page) {
       .filter((element) => {
         const style = getComputedStyle(element);
         const box = element.getBoundingClientRect();
+        // A hidden form input (the Select's value) is not a control.
+        if (element.closest("[aria-hidden='true']")) return false;
         return style.visibility !== "hidden" && style.display !== "none" && box.width > 0 && box.height > 0;
       })
       .filter((element, _, all) => !all.some((other) => other !== element && other.contains(element)))
@@ -219,44 +221,10 @@ test("P17-AC4: at 800 x 560 no control is clipped or overlaps another", async ({
     await applyLayout(page, layout);
     await expectNoClipOrOverlap(page, testInfo, `${layout} layout`);
   }
-  // A tabbed layout: Play queue and Lyrics as tabs in the Now playing group.
-  await page.evaluate(() => {
-    window.e2e.addAsTab("queue", "nowPlaying");
-    window.e2e.addAsTab("lyrics", "nowPlaying");
-  });
-  await expect(widget(page, "lyrics")).toBeVisible();
+  // A tabbed layout: Now playing as a tab in the Playlists group, beside Play queue and Lyrics.
+  await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "playlists"));
+  await expect(widget(page, "nowPlaying")).toBeVisible();
   await expectNoClipOrOverlap(page, testInfo, "tabbed layout");
-});
-
-test("P17-AC5: Transport controls and Now playing fit their content at their minimum height", async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 560 });
-  await page.goto("/?data=library");
-  await expect(widget(page, "transport")).toBeVisible();
-  // Push the bottom row down as far as the dock allows.
-  const sash = await page
-    .locator(".dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash")
-    .first()
-    .boundingBox();
-  if (!sash) throw new Error("no splitter");
-  const from = { x: sash.x + 100, y: sash.y + sash.height / 2 };
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move(from.x, from.y + 10, { steps: 5 });
-  await page.mouse.move(from.x, from.y + 200, { steps: 20 });
-  await page.mouse.up();
-  // The row is at its minimum now, not at a larger default.
-  const minimums = await page.evaluate(() => window.e2e.groupMinimums());
-  const height = await page
-    .locator(".dv-groupview", { has: page.locator('[data-widget="transport"]') })
-    .evaluate((element) => element.getBoundingClientRect().height);
-  expect(Math.round(height)).toBe(minimums.transport.height);
-  for (const id of ["transport", "nowPlaying"]) {
-    const fit = await widget(page, id).evaluate((element) => ({
-      content: element.scrollHeight,
-      box: element.clientHeight,
-    }));
-    expect(fit.content, id).toBeLessThanOrEqual(fit.box);
-  }
 });
 
 test("P17-AC6: in forced colors the focus ring and the toggle, switch and slider states show", async ({
@@ -311,8 +279,9 @@ test("P17-AC9: menus and dialogs accept keys and clicks while they open", async 
   await expect(page.locator("body")).toHaveAttribute("data-rescans", "1");
   // A click on a menu item and typing into a dialog while they open.
   await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("menuitemcheckbox", { name: "Playlists", exact: true }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Now playing", exact: true }).click();
   await page.keyboard.press("Escape");
+  await expect(widget(page, "nowPlaying")).toBeVisible();
   await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).waitFor({ state: "attached" });
   await page.keyboard.type("Quick");

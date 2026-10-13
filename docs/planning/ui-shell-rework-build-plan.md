@@ -37,7 +37,7 @@
 | Phase | Name | Dependencies | Status |
 |---|---|---|---|
 | U0 | Audit and source alignment | none | Done |
-| U1 | Shell zones and transport band | U0 | Not started |
+| U1 | Shell zones and transport band | U0 | Done |
 | U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Not started |
 | U3 | Splitters and sidebar rail | U2 | Not started |
 | U4 | Library table | U1 | Not started |
@@ -637,21 +637,21 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 
 | Requirement | Planned phase | Verification | Status |
 |---|---|---|---|
-| SH-1 three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Planned |
-| SH-2 bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Planned |
-| SH-3 dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Planned |
-| SH-4 no page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Passes today |
-| SH-5 minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Passes today (Rust) |
+| SH-1 three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Done (U1) |
+| SH-2 bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Done (U1) |
+| SH-3 dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
+| SH-4 no page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |
+| SH-5 minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Done (U1, UC7, UC8) |
 | SH-6 transport top or bottom | U2 | E2E `persistence.spec.ts` | Planned |
 | SH-7 drag region (MAY) | none | Not applicable: native title bar | Not applicable |
-| TR-1 height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Planned |
-| TR-2 size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Planned |
-| TR-3 play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Planned |
-| TR-4 seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Passes today (widget) |
-| TR-5 art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Planned |
-| TR-6 never overlays the list | U1 | E2E (band box and dock box do not intersect) | Planned |
-| TR-7 opaque background | U1 | E2E (alpha 1) | Passes today |
-| TR-8 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Planned (28 px today) |
+| TR-1 height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Done (U1) |
+| TR-2 size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Done (U1) |
+| TR-3 play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Done (U1) |
+| TR-4 seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Done (U1) |
+| TR-5 art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Done (U1) |
+| TR-6 never overlays the list | U1 | E2E (band box and dock box do not intersect) | Done (U1) |
+| TR-7 opaque background | U1 | E2E (alpha 1) | Done (U1) |
+| TR-8 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
 | TR-9 mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
 | TR-10 customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
 | TR-11 Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
@@ -686,25 +686,25 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TB-12 row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
 | TB-13 secondary sort (SHOULD) | U6 | UT, E2E | Planned |
 | TB-14 density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
-| PS-1 JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Passes today (v1); v2 planned |
-| PS-2 config directory through Rust | U1 (re-verify) | UT `layout.rs` | Passes today |
+| PS-1 JSON with a schema version | U1, U2 | UT `persistence.test.ts` | In progress (v2 in U1; U2 re-verifies) |
+| PS-2 config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Passes today |
-| PS-4 validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Planned (backup) |
+| PS-4 validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
 | PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Planned (position, transport) |
 | PS-6 column state apart from the layout | U4 | UT; E2E | Planned |
-| TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Planned (sizes and spacing unit) |
-| TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Passes today |
+| TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
+| TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
-| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Planned |
+| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1 paths done; rail U3, card U5) |
 | PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
-| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Planned |
-| AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Passes today |
-| TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag |
+| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band) |
+| AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
+| TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
 | TA-3 WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
-| TA-4 not only `localStorage` | U1 (re-verify) | REV | Passes today |
+| TA-4 not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
-| Rework 8 Phase 1 accept | U1 | E2E | Planned |
+| Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
 | Rework 8 Phase 4 accept | U3 | E2E | Planned |
@@ -772,7 +772,43 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: renumbering the traceability sections breaks no reference (grep: no other file cites traceability section 7 or 8).
 - F4: v1.8 goes beyond owner wording. It is a change list for the owner's approval (UQ4), as U0 requires.
 
-### U1 to U7
+### U1. Shell zones and transport band (October 13, 2026)
+
+**Status:** Done. **Commit:** `U1: shell zones and transport band`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U1-AC1 | Pass | `src/App.tsx` and `.app-shell` in `src/styles/globals.css`: header, band, dock (`minmax(0, 1fr)`), status; `widgets.test.ts` (no `transport` id); `transport-band.spec.ts` (band outside `.dv-dockview`, dock height equals the window less the bands); `audit.spec.ts` P17-AC4 at 800 x 560; `window.rs` minimum unchanged (UC7). |
+| U1-AC2 | Pass | `transport-band.spec.ts`: XL at 1280, LG at 1100, MD at 800 with the same height and one row; 800 to 2560 px sweep (rework Phase 1 accept); SM and XS at 600 and 400 px with the progress line and the overflow items; seek by click, drag and keyboard (also from the overflow popover); ellipsis, no overlap, alpha 1, 32 x 32 px named buttons, "Play (Space)" tooltip. `slots.test.ts`, `use-size-class.test.tsx`. |
+| U1-AC3 | Pass | grep: no `bar-rules`, `BarContent`, `TransportWidget` or `repairBars` under `src/`. |
+| U1-AC4 | Pass | `theme/tokens.json` `sizes` and `spacing` in rem; `build-tokens.test.ts`; `tokens.test.tsx`; `rows.test.tsx`; no `ROW_HEIGHT` under `src/`; the 100%, 125% and 140% cases in `transport-band.spec.ts`; `npm run check:sources` with the drag and spacing guards (`check-sources.test.ts`). |
+| U1-AC6 | Pass | `docking.spec.ts` DK-8 case: Playlists left, Library center, Play queue and Lyrics tabbed right, Now playing hidden; `layouts.test.ts`. |
+| U1-AC5 | Pass (Chromium) | Validation command set passes; Chromium e2e 116 of 116, including the default-preset F6 order (`keyboard.spec.ts`). WebKit runs in CI only (see below). |
+
+**Notes**
+
+- `src/shell/transport/use-current-song.ts` holds the one song lookup that the band and the Now playing widget share (UD2, rework 5.10).
+- The band draws its separator as an inset shadow, not a border, so the token height holds the content exactly (TH-1).
+- `applyClamp` now also grows a group that sits below its minimum: Dockview caches a column's minimum width, so Now playing below Playlists stayed at 200 px (found by P2-AC6).
+- `scripts/check-sources.mjs` guards: HTML5 drag events (UC13, TA-1) and arbitrary px spacing (UD1).
+- Unit tests: 283 (282 pass, 1 skipped by design). New helper `src/test/resize.ts` drives `ResizeObserver` and animation frames in jsdom.
+
+**Rule 10 (real app):** Linux, WebKitGTK 2.52 under Xvfb 1280 x 800, `npm run tauri dev`. The window shows the four zones, the band (XL slots, "Nothing playing"), the default preset and the first-run notice. A version 1 `layout.json` in the config folder became `layout.json.bak` at start, and `app.log` has both lines (`layout: version 1 backed up as layout.json.bak` from the webview, `layout: layout.json backed up as layout.json.bak` from the core). Media controls could not attach (no D-Bus session in the container); not related to U1. Windows (WebView2) not run: no Windows machine here; the owner runs it before U2 (rule 10).
+
+**Checks that could not run:** WebKit e2e (no Playwright WebKit build; `playwright install` is not allowed here). CI runs it.
+
+**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 5.
+
+- F2 (fixed): the band border took 1 px of the token height, so the art overflowed (TH-1 case).
+- F2 (fixed): a widget that joins a narrower column stayed below its minimum width (DK-2); `applyClamp` enforces it.
+- F2 (fixed): the P17-AC4 control sweep counted Base UI's hidden Select input as a clipped control once the Library is narrow at 800 px; the sweep skips `aria-hidden` elements.
+- F4: `src/test/resize.ts` lives in `src/` but only tests import it; the mock-file guard does not apply (no "mock" or "fixture" in the name) and Vite does not bundle it.
+- F4: `useTokenPx` reads computed style on each render of a list component; the lists do not re-render on scroll (the virtualizer state is inside `VirtualList`).
+- F4: the overflow popover has no trigger of its own; Base UI anchors it to the More button and axe finds no violation.
+- F4: the drag guard can flag the word "draggable" in a comment; no such comment exists, and the strict rule is intended.
+- F4: `layout_backup` runs before the default preset loads; a save happens only 500 ms after a later change, so the rename and the next save do not race.
+
+### U2 to U7
 
 Not started.
 

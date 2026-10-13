@@ -66,6 +66,19 @@ export async function closeMenu(page: Page): Promise<void> {
   await expect(page.getByRole("menu")).toHaveCount(0);
 }
 
+/** Shows or hides a widget from the menu; does nothing when it already is that way. */
+export async function setWidgetShown(page: Page, name: string, shown: boolean): Promise<void> {
+  await openMenu(page);
+  const item = page.getByRole("menuitemcheckbox", { name, exact: true });
+  if ((await item.getAttribute("aria-checked")) !== String(shown)) await item.click();
+  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
+}
+
+/** The transport band (SH-2): the fixed band outside the dock. */
+export function band(page: Page): Locator {
+  return page.locator('[data-widget="transport"]');
+}
+
 /** Drags with the pointer from one point to another in small steps (the dock uses pointer drag). */
 export async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
   await page.mouse.move(from.x, from.y);

@@ -3,14 +3,22 @@ import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
 import { Icon } from "@/components/icons";
 import type { RowFrame } from "@/components/virtual-list";
 import { useAlbumArt } from "@/lib/art";
+import { useTokenPx } from "@/lib/tokens";
 import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 
-export const ROW_HEIGHT = 28;
-export const ALBUM_ROW_HEIGHT = 48;
+/** The height of a list row in px, from the `sizes.rowRegular` token (TH-1, UD1). */
+export function useRowHeight(): number {
+  return useTokenPx("--size-row-regular");
+}
+
+/** The height of an Album row in px, from the `sizes.rowAlbum` token (UD1). */
+export function useAlbumRowHeight(): number {
+  return useTokenPx("--size-row-album");
+}
 
 interface RowProps {
   frame: RowFrame;

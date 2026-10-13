@@ -166,6 +166,7 @@ pub fn run() -> tauri::Result<()> {
         .invoke_handler(tauri::generate_handler![
             commands::layout::layout_load,
             commands::layout::layout_save,
+            commands::layout::layout_backup,
             commands::library::library_artists,
             commands::library::library_artist_rows,
             commands::library::library_albums,

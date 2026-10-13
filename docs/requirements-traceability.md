@@ -713,21 +713,21 @@ One row per rework requirement and per rework section that the plan `docs/planni
 
 | ID | Requirement | Phase | Verify | Status |
 |---|---|---|---|---|
-| SH-1 | Three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Planned |
-| SH-2 | Bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Planned |
-| SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Planned |
-| SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Passes today |
-| SH-5 | Minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Passes today (Rust) |
+| SH-1 | Three zones | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Done (U1) |
+| SH-2 | Bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Done (U1) |
+| SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
+| SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |
+| SH-5 | Minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Done (U1, UC7, UC8) |
 | SH-6 | Transport top or bottom | U2 | E2E `persistence.spec.ts` | Planned |
 | SH-7 | Drag region (MAY) | none | Not applicable: native title bar | Not applicable |
-| TR-1 | Height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Planned |
-| TR-2 | Size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Planned |
-| TR-3 | Play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Planned |
-| TR-4 | Seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Passes today (widget) |
-| TR-5 | Art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Planned |
-| TR-6 | Never overlays the list | U1 | E2E (band box and dock box do not intersect) | Planned |
-| TR-7 | Opaque background | U1 | E2E (alpha 1) | Passes today |
-| TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Planned (28 px today) |
+| TR-1 | Height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Done (U1) |
+| TR-2 | Size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Done (U1) |
+| TR-3 | Play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Done (U1) |
+| TR-4 | Seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Done (U1) |
+| TR-5 | Art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Done (U1) |
+| TR-6 | Never overlays the list | U1 | E2E (band box and dock box do not intersect) | Done (U1) |
+| TR-7 | Opaque background | U1 | E2E (alpha 1) | Done (U1) |
+| TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
 | TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
 | TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
 | TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
@@ -762,25 +762,25 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
 | TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Planned |
 | TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
-| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Passes today (v1); v2 planned |
-| PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Passes today |
+| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | In progress (v2 in U1; U2 re-verifies) |
+| PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Passes today |
-| PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Planned (backup) |
+| PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
 | PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Planned (position, transport) |
 | PS-6 | Column state apart from the layout | U4 | UT; E2E | Planned |
-| TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Planned (sizes and spacing unit) |
-| TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Passes today |
+| TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
+| TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 | Resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
-| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Planned |
+| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1 paths done; rail U3, card U5) |
 | PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
-| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Planned |
-| AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Passes today |
-| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag |
+| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band) |
+| AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
+| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
 | TA-3 | WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | Planned |
-| TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Passes today |
+| TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
 | RW-8-P0 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
-| RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Planned |
+| RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
 | RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Planned |
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
 | RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Planned |

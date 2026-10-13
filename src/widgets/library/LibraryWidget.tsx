@@ -4,6 +4,7 @@ import { Icon, type IconName } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chooseMusicFolder } from "@/dialogs/SettingsDialog";
+import { observeSize } from "@/lib/resize";
 import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -235,11 +236,8 @@ export function LibraryWidget() {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setNarrow(entry.contentRect.width < NARROW_WIDTH);
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
+    // Once per frame of resizes (PF-2, UD24).
+    return observeSize(element, (entry) => setNarrow(entry.contentRect.width < NARROW_WIDTH));
   }, []);
   return (
     <div ref={ref} className="flex size-full flex-col">

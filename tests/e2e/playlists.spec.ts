@@ -1,14 +1,13 @@
 // P11-AC4, P11-AC5, P11-AC8 and P11-AC10 (browser part): the Playlists widget, Add to
 // playlist, the hearts and the error dialog, on the mocked playlists.
 import type { Page } from "@playwright/test";
-import { closeMenu, expect, openMenu, test, widget } from "./test-base";
+import { expect, test, widget } from "./test-base";
 
 async function openPlaylists(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  await openMenu(page);
-  await page.getByRole("menuitemcheckbox", { name: "Playlists", exact: true }).click();
-  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
+  // The default preset shows Playlists; Now playing (the heart) is hidden (UD6).
+  await page.evaluate(() => window.e2e.show("nowPlaying"));
   await expect(tree(page).getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
 }
 

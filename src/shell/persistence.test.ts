@@ -1,8 +1,9 @@
-// P9-AC4 and P9-AC8: restore rules with fixture files, and the saved object.
+// P9-AC4, P9-AC8 and U1 (UD5, PS-4): restore rules with fixture files, the backup and the saved object.
 import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
+import { useUiStore } from "@/store/ui";
 import {
   SAVE_DELAY_MS,
   UNKNOWN_COMPONENT,
@@ -47,7 +48,8 @@ function dockStandIn() {
       panels.push(id);
       added.push({ id, position });
     },
-    getPanel: (id: string) => (panels.includes(id) ? { id } : undefined),
+    getPanel: (id: string) =>
+      panels.includes(id) ? { id, api: { setActive: () => {} }, group: { api: { setSize: () => {} } } } : undefined,
     removePanel: ({ id }: { id: string }) => panels.splice(panels.indexOf(id), 1),
     clear: () => panels.splice(0),
     fromJSON: (dock: SerializedDockview) => {
@@ -80,25 +82,31 @@ function dockStandIn() {
   return { api: api as unknown as DockviewApi, panels, added, layout: api.layout, fireLayoutChange };
 }
 
-/** The Columns default: Library, Now playing and Transport controls (R29). */
-const COLUMNS_DEFAULT = ["library", "nowPlaying", "transport"];
+/** The default preset (UD6): Library, Playlists, Play queue and Lyrics. */
+const PRESET_DEFAULT = ["library", "playlists", "queue", "lyrics"];
 const SIZE = { width: 800, height: 560 };
 
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
   useLibraryStore.setState({ mode: "columns", frames: DEFAULT_FRAMES });
+  useUiStore.setState({ transportPosition: "top", locked: false });
 });
+
+const noBackup = () => Promise.resolve();
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
 describe("restoreLayout (P9.4, P9-AC4)", () => {
-  it("applies a valid layout, its Library mode and fits it to the window", () => {
+  it("applies a valid layout, its Library mode, band position and lock, and fits it to the window", () => {
     const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("valid.json"), SIZE)).toBe(true);
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture("valid.json"), SIZE, backup)).toBe(true);
     expect(dock.panels).toEqual(["library", "queue"]);
     expect(useLibraryStore.getState().mode).toBe("tree");
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "bottom", locked: true });
+    expect(backup).not.toHaveBeenCalled();
     expect(dock.layout).toHaveBeenCalledWith(800, 560, true);
     expect(log.warn).not.toHaveBeenCalled();
   });
@@ -111,19 +119,45 @@ describe("restoreLayout (P9.4, P9-AC4)", () => {
 
   it.each([
     ["corrupt.json", "not valid JSON"],
-    ["version-2.json", "unknown layout version 2"],
+    ["version-3.json", "unknown layout version 3"],
     ["unknown-mode.json", "unknown Library mode grid"],
     ["missing-mode.json", "unknown Library mode undefined"],
     ["no-library.json", "no Library widget"],
     ["broken-dock.json", "the dock cannot load"],
-  ])("%s applies Columns with one log line", (name, reason) => {
+  ])("%s is backed up and the default preset loads, with one log line (PS-4)", (name, reason) => {
     useLibraryStore.setState({ mode: "tree" });
+    useUiStore.setState({ transportPosition: "bottom", locked: true });
     const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture(name), SIZE)).toBe(false);
-    expect(dock.panels).toEqual(COLUMNS_DEFAULT);
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture(name), SIZE, backup)).toBe(false);
+    expect(dock.panels).toEqual(PRESET_DEFAULT);
     expect(useLibraryStore.getState().mode).toBe("columns");
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "top", locked: false });
+    expect(backup).toHaveBeenCalledTimes(1);
     expect(log.warn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain(reason);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("backed up as layout.json.bak");
+  });
+
+  it("backs up a version 1 file and loads the default preset, with one log line (UD5)", () => {
+    const dock = dockStandIn();
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture("version-1.json"), SIZE, backup)).toBe(false);
+    expect(dock.panels).toEqual(PRESET_DEFAULT);
+    expect(backup).toHaveBeenCalledTimes(1);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toBe("layout: version 1 backed up as layout.json.bak");
+  });
+
+  it.each([
+    ["transport", "left", { transportPosition: "top" }],
+    ["locked", "yes", { locked: false }],
+  ])("a bad %s value takes its default with one log line", (key, value, expected) => {
+    const text = JSON.stringify({ ...JSON.parse(fixture("valid.json")), [key]: value });
+    expect(restoreLayout(dockStandIn().api, text, SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState()).toMatchObject(expected);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain(key);
   });
 
   it("removes a panel of an unknown widget and keeps the rest, with one log line", () => {
@@ -149,9 +183,9 @@ function withFrames(frames: unknown): string {
 describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
   const CUSTOM = { columns: [0.2, 0.3, 0.5], topBottom: { top: [0.6, 0.4], rows: [0.3, 0.7] } };
 
-  it("loads a version 1 file without libraryFrames with the default sizes", () => {
+  it("loads a file without libraryFrames with the default sizes", () => {
     useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
-    expect(restoreLayout(dockStandIn().api, fixture("valid.json"), SIZE)).toBe(true);
+    expect(restoreLayout(dockStandIn().api, fixture("valid.json"), SIZE, noBackup)).toBe(true);
     expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
     expect(log.warn).not.toHaveBeenCalled();
   });
@@ -210,42 +244,30 @@ describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
   });
 });
 
-describe("bar repair at start (P23.3, R29.1, P23-AC2)", () => {
-  it("moves Transport controls out of the Library tab group to the bottom bar, with one log line", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-in-tabs.json"), SIZE)).toBe(true);
-    expect(dock.panels).toEqual(["library", "nowPlaying", "transport"]);
-    expect(dock.added.at(-1)).toEqual({
-      id: "transport",
-      position: { referencePanel: "nowPlaying", direction: "right" },
-    });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("moved transport to the bottom bar");
-  });
-
-  it("moves a misplaced bar to a new bottom row when its partner is in a top row", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-partner-top.json"), SIZE)).toBe(true);
-    expect(dock.added.at(-1)).toEqual({ id: "transport", position: { direction: "below" } });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps a valid top bar as saved, with no log line", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-top.json"), SIZE)).toBe(true);
-    expect(dock.panels).toEqual(["library", "transport"]);
-    expect(dock.added).toEqual([]);
-    expect(log.warn).not.toHaveBeenCalled();
-  });
-});
-
 describe("saving (P9.3, P9-AC8)", () => {
-  it("saves the version, the Library mode and the dock, and no window size", () => {
+  it("saves the version, band position, lock, Library mode and dock, and no window size", () => {
     const dock = dockStandIn();
     dock.api.addPanel({ id: "library", component: "library" });
     const saved = currentLayout(dock.api);
-    expect(Object.keys(saved).sort()).toEqual(["dock", "libraryFrames", "libraryMode", "version"]);
-    expect(saved.version).toBe(1);
+    expect(Object.keys(saved).sort()).toEqual([
+      "dock",
+      "libraryFrames",
+      "libraryMode",
+      "locked",
+      "transport",
+      "version",
+    ]);
+    expect(saved.version).toBe(2);
+  });
+
+  it("round-trips transport and locked through version 2", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    useUiStore.setState({ transportPosition: "bottom", locked: true });
+    const text = JSON.stringify(currentLayout(dock.api));
+    useUiStore.setState({ transportPosition: "top", locked: false });
+    expect(restoreLayout(dockStandIn().api, text, SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "bottom", locked: true });
   });
 
   it("saves 500 ms after a layout or mode change, and flush writes at once", async () => {

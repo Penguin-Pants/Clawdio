@@ -48,6 +48,8 @@ export const commands = {
   /** The saved `layout.json` text, or null (P9.2). */
   layoutLoad: () => invoke<string | null>("layout_load"),
   layoutSave: (json: string) => invoke<void>("layout_save", { json }),
+  /** Backs up a `layout.json` that failed validation as `layout.json.bak` (PS-4, UD5). */
+  layoutBackup: () => invoke<void>("layout_backup"),
   playerState: () => invoke<PlayerSnapshot>("player_state"),
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),

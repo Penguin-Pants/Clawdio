@@ -6,6 +6,8 @@ import { expect, test, widget } from "./test-base";
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  // Now playing is hidden in the default preset (UD6).
+  await page.evaluate(() => window.e2e.show("nowPlaying"));
 }
 
 const albums = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Albums" });

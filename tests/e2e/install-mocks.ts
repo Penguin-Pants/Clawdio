@@ -99,6 +99,14 @@ function settingsCommand(command: string, args: Args): unknown {
       sessionStorage.setItem(LAYOUT_KEY, args.json as string);
       document.body.dataset.layoutSaves = String(Number(document.body.dataset.layoutSaves ?? 0) + 1);
       return null;
+    case "layout_backup": {
+      // Like the Rust rename (UD5): the bad file moves to the backup key.
+      const text = sessionStorage.getItem(LAYOUT_KEY);
+      if (text !== null) sessionStorage.setItem(`${LAYOUT_KEY}.bak`, text);
+      sessionStorage.removeItem(LAYOUT_KEY);
+      document.body.dataset.layoutBackups = String(Number(document.body.dataset.layoutBackups ?? 0) + 1);
+      return null;
+    }
     case "plugin:window|destroy":
       document.body.dataset.destroyed = "true";
       return null;

@@ -286,7 +286,7 @@ test("P6: right-click on a Tree row opens the menu without opening or closing th
 
 test("P6-AC5: Ctrl+F reaches the search field when Library is a hidden tab", async ({ page }) => {
   await openLibrary(page);
-  await page.evaluate(() => window.e2e.addAsTab("queue", "library"));
+  await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "library"));
   await expect(widget(page, "library")).toBeHidden();
   await page.keyboard.press("Control+f");
   const field = widget(page, "library").getByRole("searchbox", { name: "Search" });

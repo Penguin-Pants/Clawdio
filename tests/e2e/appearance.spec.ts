@@ -181,9 +181,9 @@ test("P2-AC15: the pressed mode, the active tab and the highlighted menu item sh
   const unpressed = await grayProfile(page, library.getByRole("button", { name: "Tree" }));
   expect(pressed.bottom - unpressed.bottom).toBeGreaterThan(100);
 
-  await page.evaluate(() => window.e2e.addAsTab("queue", "transport"));
+  // The default preset has Lyrics as the inactive tab beside Play queue.
   const active = await grayProfile(page, tab(page, "Play queue"));
-  const inactive = await grayProfile(page, tab(page, "Transport controls"));
+  const inactive = await grayProfile(page, tab(page, "Lyrics"));
   expect(active.bottom - inactive.bottom).toBeGreaterThan(100);
 
   await page.getByRole("button", { name: "Menu" }).focus();

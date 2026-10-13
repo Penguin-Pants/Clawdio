@@ -1,4 +1,4 @@
-/** The six widgets that the measurement arrangement mounts (P3.1). */
+/** The transport band and the five dock widgets that the measurement arrangement mounts (P3.1). */
 const WIDGETS = ["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"];
 
 /** Library rows beyond the "All" rows: the library has loaded. */
@@ -6,7 +6,7 @@ const LIBRARY_ROWS =
   '[data-widget="library"] [role="option"]:not(:first-child), [data-widget="library"] [role="treeitem"]';
 
 /**
- * True when all six widgets are in the page and the Library shows the library. With the
+ * True when the band and all five dock widgets are in the page and the Library shows the library. With the
  * production setup (P6.7) only the Library has data: the queue, playlists and lyrics fill in
  * later phases, and D28 measures with no playback.
  */

@@ -11,12 +11,20 @@ import { startPerfProbe } from "@/lib/perf";
 import { AppHeader } from "@/shell/AppHeader";
 import { DockShell } from "@/shell/DockShell";
 import { StatusLine } from "@/shell/StatusLine";
+import { TransportBand } from "@/shell/TransportBand";
 import { usePlayerStore } from "@/store/player";
 import { usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
+import { useUiStore } from "@/store/ui";
 
-/** The app shell: header strip, dock and status line. No layout hides the header or the status line (R29). */
+/**
+ * The app shell: four fixed zones in a grid (plan section 5.1, SH-1): header strip, transport
+ * band, dock and status line. The dock row is `minmax(0, 1fr)` (SH-3), so no list pushes the
+ * band off screen, and the page never scrolls (SH-4). `data-transport` swaps the band and the
+ * dock rows (SH-6). No layout hides the header, the band or the status line (R29).
+ */
 export function App() {
+  const transportPosition = useUiStore((state) => state.transportPosition);
   useEffect(() => installKeyboard(), []);
   // CLAWDIO_PERF=1 logs input-to-paint times (P6.8, AC-2).
   useEffect(() => {
@@ -42,9 +50,10 @@ export function App() {
   }, []);
   return (
     <TooltipProvider delay={500}>
-      <div className="flex h-screen flex-col overflow-hidden bg-bg-canvas">
+      <div data-shell="" data-transport={transportPosition} className="app-shell h-screen overflow-hidden bg-bg-canvas">
         <AppHeader />
-        <main className="flex min-h-0 flex-1 flex-col border-y">
+        <TransportBand />
+        <main className="relative flex min-h-0 min-w-0 flex-col [grid-area:dock]">
           <DockShell />
         </main>
         <StatusLine />

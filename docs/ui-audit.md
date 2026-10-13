@@ -95,3 +95,9 @@ Each phase adds its acceptance check here (rework section 14).
 - Sections 1 to 4 of this file.
 - Before screenshots: `docs/ui-reference/before/800x560.png`, `1280x720.png`, `1920x1080.png`, written by `npm run shots -- before` (`scripts/ui-shots.mjs`) in Chromium with the mocked app and a loaded library. `scripts/ui-shots.test.ts` checks the pixel sizes.
 - Requirements v1.8 change list and design.md sections 5 and 6 updated.
+
+### U1: Shell zones and transport band
+
+- Four fixed zones (header, band, dock, status); the band is not a dock panel; the bar-widget code is gone.
+- `tests/e2e/transport-band.spec.ts` checks the rework Phase 1 accept: from 800 to 2560 px the band never wraps, never changes height and keeps Play. SM and XS at a narrowed band, the overflow menu, seek by click, drag and keyboard, the 32 px buttons, text scaling at 100%, 125% and 140%.
+- Real app on Linux (WebKitGTK, Xvfb): the band and the default preset show; a version 1 layout is backed up.

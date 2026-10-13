@@ -83,9 +83,13 @@ Location: the config folder. Source: `src/shell/persistence.ts` (content) and `c
 
 The app writes the file atomically. It refuses text that is not one JSON object or is larger than 1 MB.
 
+On load, a file that fails validation (not JSON, an unknown `version`, no `dock`, an unknown `libraryMode`, a dock that cannot load, or no Library widget) is renamed to `layout.json.bak` (an older backup is replaced), one line goes to the log, and the default preset loads (PS-4). A version 1 file (the app before the UI shell rework, with a `transport` dock panel) is not migrated: it is backed up the same way, with the log line `layout: version 1 backed up as layout.json.bak`.
+
 | Key | Type | Meaning |
 |---|---|---|
-| `version` | integer | Schema version, `1`. |
+| `version` | integer | Schema version, `2` (UI shell rework UD5). |
+| `transport` | string | Transport band position: `top` (default) or `bottom` (SH-6). Another value loads as `top` with a log line. |
+| `locked` | boolean | Lock layout (DK-5). Another value loads as `false` with a log line. |
 | `libraryMode` | string | `tree`, `columns` or `topBottom`. |
 | `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
 | `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, and the active group. |
@@ -96,7 +100,9 @@ Example (shortened):
 
 ```json
 {
-  "version": 1,
+  "version": 2,
+  "transport": "top",
+  "locked": false,
   "libraryMode": "tree",
   "libraryFrames": { "columns": [0.25, 0.25, 0.5], "topBottom": { "top": [0.5, 0.5], "rows": [0.5, 0.5] } },
   "dock": {
@@ -126,16 +132,16 @@ Example (shortened):
 
 Rules (P9.4), each with one warning in `app.log`:
 
-1. Not JSON, another `version`, no `dock` object, or a missing or unknown `libraryMode`: the Columns layout applies.
-2. A widget id this version does not know: its panel is removed; the rest stays.
-3. No Library panel: the Columns layout applies.
-4. Any error while the dock loads: the Columns layout applies.
-5. A bar widget (Transport controls or Now playing) in a tab group with another widget, or in a row with a widget other than the other bar widget, moves to the bottom bar; the rest stays (P23.3, R29.1). The warning names the widget id.
+1. Not JSON, another `version`, no `dock` object, or a missing or unknown `libraryMode`: the file is backed up and the default preset applies (Reset layout: Columns mode, the band at the top, unlocked).
+2. A widget id this version does not know: its panel is removed; the rest stays. (Version 2 has no `transport` widget: the transport band is not a dock panel.)
+3. No Library panel: the file is backed up and the default preset applies.
+4. Any error while the dock loads: the file is backed up and the default preset applies.
+5. A bad `transport` or `locked` value: that key takes its default; the rest loads.
 6. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
 
 Reset layout and each built-in layout restore the default frame sizes of all modes (R28.1).
 
-Saving: 500 ms after a layout, Library mode or frame size change, and at once when the window closes. The measurement layout (P3.1) is not saved.
+Saving: 500 ms after a layout, Library mode, frame size, band position or lock change, and at once when the window closes. The measurement layout (P3.1) is not saved.
 
 ## Playlists (`.m3u8`)
 

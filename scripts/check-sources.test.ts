@@ -125,4 +125,36 @@ describe("check-sources", () => {
     expect(run.status).toBe(1);
     expect(run.stderr).toContain("has no productName");
   });
+
+  // UC13, TA-1: every drag uses pointer events, so the webview needs no dragDropEnabled change.
+  it.each([
+    ["src/a.tsx", "<div onDragStart={start} />", "onDragStart"],
+    ["src/a.tsx", "<div onDragOver={over} />", "onDragOver"],
+    ["src/a.tsx", "<div onDrop={drop} />", "onDrop"],
+    ["src/a.ts", 'element.addEventListener("dragstart", start);', "dragstart"],
+    ["src/a.tsx", "<div draggable />", "draggable"],
+    ["src/a.tsx", "<div draggable={true} />", "draggable"],
+  ])("flags an HTML5 drag event in %s: %s", (file, text, name) => {
+    const violations = checkText(file, text, { productName });
+    expect(violations.map((violation) => [violation.rule, violation.text])).toEqual([["drag-event", name]]);
+  });
+
+  it("accepts draggable={false} on images", () => {
+    expect(checkText("src/a.tsx", '<img draggable={false} /><img draggable="false" />', { productName })).toEqual([]);
+  });
+
+  // UD1, TH-1: spacing comes from the spacing token, not arbitrary px values.
+  it.each(["p-[6px]", "gap-[3px]", "-mt-[2px]", "px-[1.5px]", "top-[10px]"])(
+    "flags arbitrary px spacing %s",
+    (name) => {
+      const violations = checkText("src/a.tsx", `<div className="flex ${name}" />`, { productName });
+      expect(violations.map((violation) => [violation.rule, violation.text.trim()])).toEqual([["px-spacing", name]]);
+    },
+  );
+
+  it("accepts token spacing and non-spacing px values", () => {
+    expect(
+      checkText("src/a.tsx", '<div className="p-2 gap-1 w-24 text-[13px] rounded-[2px]" />', { productName }),
+    ).toEqual([]);
+  });
 });

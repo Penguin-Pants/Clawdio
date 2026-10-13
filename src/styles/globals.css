@@ -60,6 +60,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Every spacing utility (p-2, gap-1, w-24) derives from the spacing token in rem (UD1, TH-1). */
+  --spacing: var(--spacing-unit);
 }
 
 @layer base {
@@ -79,6 +81,22 @@
     outline: 2px solid var(--color-brand-red);
     outline-offset: 2px;
   }
+}
+
+/*
+ * The four shell zones (plan section 5.1, rework 6.5): header, transport band, dock and status.
+ * The dock row is minmax(0, 1fr), so a long list never pushes the band off screen (SH-3).
+ */
+.app-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "transport" "dock" "status";
+}
+
+.app-shell[data-transport="bottom"] {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "header" "dock" "transport" "status";
 }
 
 /* Tabular numerals for times (design.md section 4). */

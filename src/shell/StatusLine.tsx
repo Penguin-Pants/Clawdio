@@ -7,7 +7,7 @@ export function StatusLine() {
   const message = useUiStore((state) => state.message);
   const text = message ?? job?.text ?? "Ready";
   return (
-    <footer className="flex h-6 shrink-0 items-center gap-2 bg-bg-canvas px-3 text-[13px] text-text-secondary">
+    <footer className="flex h-6 shrink-0 border-t [grid-area:status] items-center gap-2 bg-bg-canvas px-3 text-[13px] text-text-secondary">
       <span role="status" className="truncate">
         {text}
       </span>
