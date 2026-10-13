@@ -1,7 +1,7 @@
 // U4: the Songs table (TB-2 to TB-11, PS-6, AX-1) on the mocked library. Top/bottom mode
 // shows every column; Columns mode starts with Album hidden (UD8).
 import type { Locator, Page } from "@playwright/test";
-import { drag, expect, openMenu, closeMenu, SONG_ROWS, songsGrid, test, widget } from "./test-base";
+import { band, drag, expect, openMenu, closeMenu, SONG_ROWS, songsGrid, test, widget } from "./test-base";
 
 async function openTable(page: Page, mode: "Columns" | "Top/bottom" = "Top/bottom") {
   await page.goto("/?data=library");
@@ -306,4 +306,21 @@ test("UD8: Tree mode shows no table header", async ({ page }) => {
   await closeMenu(page);
   await expect(widget(page, "library").getByRole("tree", { name: "Library" })).toBeVisible();
   await expect(widget(page, "library").getByRole("columnheader")).toHaveCount(0);
+});
+
+test("AX-1: Space on a header sorts, and Down then selects the first row of the new order", async ({ page }) => {
+  await openTable(page);
+  await songsGrid(page).focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("ArrowRight");
+  await expect(header(page, "Title")).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(header(page, "Title")).toHaveAttribute("aria-sort", "ascending");
+  await page.keyboard.press("Space");
+  await expect(header(page, "Title")).toHaveAttribute("aria-sort", "descending");
+  // Space sorted; it did not start playback.
+  await expect(band(page).getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(songsGrid(page)).toBeFocused();
+  await expect(songsGrid(page).locator(SONG_ROWS).first()).toHaveAttribute("aria-selected", "true");
 });

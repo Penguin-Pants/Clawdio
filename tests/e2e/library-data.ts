@@ -140,7 +140,9 @@ function sortSongs(list: SongRow[], sort: SortKey[]): SongRow[] {
         typeof left === "number" && typeof right === "number"
           ? left - right
           : collator.compare(String(left), String(right));
-      if (order !== 0) return key.descending ? -order : order;
+      // No track number sorts last in both directions, like the Rust index.
+      const missing = left === Number.MAX_SAFE_INTEGER || right === Number.MAX_SAFE_INTEGER;
+      if (order !== 0) return key.descending && !missing ? -order : order;
     }
     return 0;
   });

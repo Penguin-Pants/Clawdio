@@ -69,3 +69,21 @@ test("TR-10: a handle drag reorders the slots", async ({ page }) => {
   await page.mouse.up();
   await expect(rows.nth(4)).toHaveAttribute("data-slot", "queue");
 });
+
+test("TR-10: a downward handle drag drops the slot just above the line", async ({ page }) => {
+  await open(page);
+  const dialog = await customize(page);
+  const rows = dialog.getByRole("listitem");
+  // Seek (row 4) dropped on the top half of Shuffle (row 6) goes between Stop and Shuffle.
+  await expect(rows.nth(4)).toHaveAttribute("data-slot", "seek");
+  const handle = rows.nth(4).locator("[data-slot='slot-handle']");
+  const from = await handle.boundingBox();
+  const to = await rows.nth(6).boundingBox();
+  if (!from || !to) throw new Error("no rows");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, to.y + 2, { steps: 10 });
+  await page.mouse.up();
+  await expect(rows.nth(5)).toHaveAttribute("data-slot", "seek");
+  await expect(rows.nth(6)).toHaveAttribute("data-slot", "shuffle");
+});

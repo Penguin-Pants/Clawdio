@@ -51,6 +51,9 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
   await expect(grid.locator(SONG_ROWS).first()).toBeVisible();
   await expect(grid).toHaveAttribute("aria-rowcount", String(SIZE + 1));
   const title = grid.getByRole("columnheader", { name: "Title", exact: true });
+  // Inside the measured window the locators are plain CSS: role queries run in the page and
+  // would put the test's own work into the frame gaps.
+  const titleCss = grid.locator("[data-col-header='title']");
   // Warm the mock's sort for Title up and down, then go back to the default order.
   for (const sort of ["ascending", "descending", "none"]) {
     await title.click();
@@ -67,11 +70,9 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
     await page.waitForTimeout(16);
   }
   expect(await grid.evaluate((element) => element.scrollTop)).toBeGreaterThan(10_000);
-  await title.click();
-  await expect(title).toHaveAttribute("aria-sort", "ascending");
-  const divider = grid
-    .getByRole("columnheader", { name: "Artist", exact: true })
-    .locator("[data-slot='column-divider']");
+  await titleCss.click();
+  await expect(titleCss).toHaveAttribute("aria-sort", "ascending");
+  const divider = grid.locator("[data-col-header='artist'] [data-slot='column-divider']");
   const from = await center(divider);
   await drag(page, from, { x: from.x + 60, y: from.y });
   const sash = page.locator(DOCK_SASH).first();

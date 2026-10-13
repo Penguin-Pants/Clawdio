@@ -133,6 +133,13 @@ describe("applyPreset and resetLayout (P2.4, UD6)", () => {
     expect(() => resetLayout()).not.toThrow();
   });
 
+  it("a preset restores the frame sizes of all modes (R28.1 v1.8)", () => {
+    const { api } = dockStandIn();
+    useLibraryStore.getState().setFrames("columns", [0.6, 0.2, 0.2]);
+    applyPreset("musicBee", api);
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
+  });
+
   it("reset restores the frame sizes of all modes (P22-AC1)", () => {
     const { api } = dockStandIn();
     useLibraryStore.getState().setFrames("top", [0.9, 0.1]);

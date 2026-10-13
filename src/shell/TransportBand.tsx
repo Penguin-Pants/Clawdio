@@ -81,8 +81,10 @@ export function TransportBand() {
   const position = useUiStore((state) => state.transportPosition);
   const slots = useUiStore((state) => state.transportSlots);
   const mini = useUiStore((state) => state.mini);
-  // The user's order and hidden set first, then the size class rule (UD20, UD4).
-  const { band, overflow } = layoutSlots(size, slots.order, slots.hidden);
+  // The user's order and hidden set first, then the size class rule (UD20, UD4). In the mini
+  // player Now playing always shows: its art is the exit (UD19).
+  const hidden = mini ? slots.hidden.filter((id) => id !== "nowPlaying") : slots.hidden;
+  const { band, overflow } = layoutSlots(size, slots.order, hidden);
   const compact = !atLeast(size, "md");
   return (
     <section

@@ -15,7 +15,8 @@ use crate::fold::{fold, natural_cmp};
 /// At most a primary and a secondary sort key (TB-13).
 const MAX_SORT_KEYS: usize = 2;
 
-/// A sort value of one track: folded text or a number. A song with no number sorts last.
+/// A sort value of one track: folded text or a number. A song with no number sorts last, also in
+/// a descending sort.
 enum SortValue {
     Text(String),
     Number(Option<u32>),
@@ -278,11 +279,12 @@ impl LibraryIndex {
                 let (Some(left), Some(right)) = (a.get(index), b.get(index)) else {
                     continue;
                 };
-                let order = left.cmp_value(right);
-                let order = if key.descending {
-                    order.reverse()
-                } else {
-                    order
+                let order = match (left, right) {
+                    // A song with no number sorts last in both directions.
+                    (SortValue::Number(None), SortValue::Number(Some(_))) => Ordering::Greater,
+                    (SortValue::Number(Some(_)), SortValue::Number(None)) => Ordering::Less,
+                    _ if key.descending => left.cmp_value(right).reverse(),
+                    _ => left.cmp_value(right),
                 };
                 if order != Ordering::Equal {
                     return order;
@@ -685,6 +687,25 @@ mod tests {
         assert_eq!(
             sorted_titles(&index, &[key(SortColumn::Album, false)])[..3],
             ["When I Kissed the Teacher", "Dancing Queen", "Waterloo"]
+        );
+    }
+
+    #[test]
+    fn a_song_with_no_track_number_sorts_last_in_both_directions() {
+        let mut index = LibraryIndex::new();
+        index.insert(NewTrack {
+            track_no: None,
+            ..track("A", "X", "Loose", 9)
+        });
+        index.insert(track("A", "X", "One", 1));
+        index.insert(track("A", "X", "Two", 2));
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Track, false)]),
+            ["One", "Two", "Loose"]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Track, true)]),
+            ["Two", "One", "Loose"]
         );
     }
 

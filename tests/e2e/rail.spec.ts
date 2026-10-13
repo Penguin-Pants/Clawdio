@@ -51,3 +51,16 @@ test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it an
   await expect.poll(async () => Math.abs(((await playlists.boundingBox())?.width ?? 0) - 240)).toBeLessThanOrEqual(1);
   await expect(playlists.getByRole("treeitem", { name: /Mix 2/ })).toHaveAttribute("aria-selected", "true");
 });
+
+test("SP-5: a narrow Playlists widget with no playlists still shows the empty hint", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  const playlists = widget(page, "playlists");
+  await expect(playlists).toContainText("No playlists yet.");
+  const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
+  const box = await sash.boundingBox();
+  if (!box) throw new Error("no separator");
+  await drag(page, { x: box.x + box.width / 2, y: box.y + 200 }, { x: box.x - 120, y: box.y + 200 });
+  await expect.poll(async () => (await playlists.boundingBox())?.width ?? 0).toBeLessThan(140);
+  await expect(playlists).toContainText("No playlists yet.");
+});

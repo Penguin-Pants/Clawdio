@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.8, October 13, 2026.
+**Version:** 1.9, October 13, 2026.
 **Status:** Done with exceptions (October 13, 2026). U0 to U6 Done; U7 Done with exceptions (UQ3, UQ4, UQ5). See section 2.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -1011,6 +1011,39 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: the GTK dialog's typed-path completion stops an automated folder choice; the dialog itself opens. The completed choice is a manual row (UQ5).
 - F4: `container-type: inline-size` on every group could change a size that depends on content. Groups have fixed sizes from the dock; the dock, floating, frame and rail specs pass.
 
+**PR 23 review after U7 (Codex rounds on `1dd3548`, `2a4c911` and `490f74a`; CI on `490f74a`)**
+
+CI: the WebKit `table-perf.spec.ts` run on `490f74a` measured a 106 ms frame gap (budget 100 ms). Root cause, measured in Chromium at a 6x CPU slowdown: the sort click was the longest phase (283 ms). Two causes:
+
+- `useTokenPx` read `getComputedStyle` in its store snapshot. React reads a snapshot on every render and commit, and the read after a DOM change forced a style pass over the page. The hook now reads the style once per root font size; the 1 rem probe clears the cache (`src/lib/tokens.ts`, `tokens.test.tsx`).
+- The test's role locators ran Playwright's role engine in the page inside the measured window. The window now uses CSS locators.
+
+After both fixes the sort phase is 133 to 200 ms at 6x, the same as the other phases. Without the slowdown, the longest gap in Chromium is 16.8 ms.
+
+Eleven Codex findings were all checked against the code. Ten were F2 and fixed, each with a test that failed on an assertion before the fix:
+
+1. A preset now restores the default frame sizes (R28.1 v1.8; `applyPreset`).
+2. The Playlists rail shows "No playlists yet." when it has no rows.
+3. Down from the header selects the first row of the current sort, also when a sort keeps the row count (`focusBody` reads the latest ids).
+4. Space on a column header sorts. It no longer toggles playback there. This is the one exception to D17 and follows the U4 keyboard path (`isPlaybackSpace`).
+5. In the mini player, Now playing shows even when the user hid it, because its art is the only exit (UD19).
+6. Leaving the mini player maximizes the window again if it was maximized before (`exit_ops`).
+7. A downward slot drag in Customize transport bar drops the slot above the line. A drop below the last row moves the slot to the end (`moveSlotBefore`).
+8. A song with no track number sorts last in a descending `#` sort too (Rust index and mock).
+9. Rail playlist buttons take a row drop (`data-drop-target`).
+10. After Escape cancels a row drag, the click of the pointer up does not replace the selection.
+
+One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` value rules and the behavior for invalid entries.
+
+**TWO-PASS REVIEW (review fixes):** F1 0, F2 11, F3 0, F4 3.
+
+- F2 (fixed): the ten Codex defects above and the `useTokenPx` style read (PF-3).
+- F4: a cached token could go stale if a size token changed without a root font size change. The tokens are fixed rem values, so only the root font size changes them, and the probe watches it.
+- F4: a cached 0 before the CSS loads. The probe's first observation clears the cache, and the stylesheet loads before the script runs.
+- F4: a stale drag-click mark after an Escape with the pointer up off the row. The next pointer down clears it.
+
+**Validation:** the full set passed, with 179 Chromium e2e. WebKit e2e runs in CI on the pushed head.
+
 ---
 
 ## 11. Plan review record
@@ -1094,6 +1127,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.9 (October 13, 2026):** PR 23 review after U7: the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
 - **1.8 (October 13, 2026):** U0 to U7 executed. U7 Done with exceptions; UQ5 added (the U7 exceptions for the owner).
 - **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.
 - **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.

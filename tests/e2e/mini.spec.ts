@@ -83,3 +83,23 @@ test("TR-9: the Layout menu also enters the mini player", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Mini player" }).click();
   expect((await calls(page)).at(-1)).toEqual({ on: true, height: 40 });
 });
+
+test("TR-9: with Now playing hidden in the band, the mini player still shows the art exit", async ({ page }) => {
+  await open(page);
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("menuitem", { name: "Transport bar" }).click();
+  await page.getByRole("menuitem", { name: "Customize transport bar…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Customize transport bar" });
+  await dialog.getByRole("checkbox", { name: "Show Now playing" }).uncheck();
+  await dialog.getByRole("button", { name: "Done" }).click();
+  await expect(band(page).getByRole("button", { name: "Mini player" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("menuitem", { name: "Transport bar" }).click();
+  await page.getByRole("menuitem", { name: "Mini player" }).click();
+  const last = (await calls(page)).at(-1);
+  await page.setViewportSize({ width: 400, height: Math.round(last?.height ?? 40) });
+  const exit = band(page).getByRole("button", { name: "Exit mini player" });
+  await expect(exit).toBeInViewport({ ratio: 1 });
+  await exit.click();
+  expect((await calls(page)).at(-1)?.on).toBe(false);
+});

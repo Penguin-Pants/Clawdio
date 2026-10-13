@@ -42,7 +42,7 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 
 | Key | Action |
 |---|---|
-| Space | Play or pause (not while typing in a field) |
+| Space | Play or pause (not while typing in a field or on a column header) |
 | Up, Down | Move in lists and trees |
 | Right, Left | Expand or collapse in trees |
 | Enter | Play the selected song or album |

@@ -382,10 +382,11 @@ export function SongTable({ view }: { view: ViewId }) {
     if (!selectedSongs.has(ids[index])) select(index, "single");
     menu.open(anchor, items(index));
   });
-  const focusBody = useCallback(() => {
+  // Stable, so it reads the ids of the latest sort, also when the count did not change.
+  const focusBody = useStable(() => {
     listRef.current?.querySelector<HTMLElement>("[role='grid']")?.focus();
     if (active < 0 && ids.length > 0) select(0, "single");
-  }, [active, ids.length]); // eslint-disable-line react-hooks/exhaustive-deps -- select reads the latest ids.
+  });
 
   return (
     <div ref={listRef} data-songs-view={view} className="flex min-h-0 flex-1 flex-col">

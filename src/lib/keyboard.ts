@@ -35,9 +35,14 @@ function inTextField(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type);
 }
 
+/** A focused table column header sorts on Space (AX-1, U4 keyboard path). */
+function onColumnHeader(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest('[role="columnheader"]') !== null;
+}
+
 /**
- * Space toggles play and pause everywhere except in text fields and in open menus and dialogs
- * (D17, P7.11). On a focused button it does not press the button.
+ * Space toggles play and pause everywhere except in text fields, on a table column header and in
+ * open menus and dialogs (D17, P7.11, AX-1). On a focused button it does not press the button.
  */
 export function isPlaybackSpace(event: KeyboardEvent): boolean {
   return (
@@ -46,6 +51,7 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
     !event.altKey &&
     !event.metaKey &&
     !inTextField(event.target) &&
+    !onColumnHeader(event.target) &&
     !inMenuOrDialog(event.target)
   );
 }

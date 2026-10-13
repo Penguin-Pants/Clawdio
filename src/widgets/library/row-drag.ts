@@ -100,6 +100,8 @@ export function startRowDrag(
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
+    // A canceled drag keeps the selection: the click of the later pointer up is not a row click.
+    if (ghost) dragClick = true;
     end();
   };
   // The document follows the pointer: no pointer capture, so a click inside the row (the heart)

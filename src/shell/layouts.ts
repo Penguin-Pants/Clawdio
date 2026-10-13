@@ -75,12 +75,13 @@ export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) =
 }
 
 /**
- * Replaces the arrangement with a preset (DK-9, UD6). The Library mode, the frame sizes, the
- * band position and the lock stay.
+ * Replaces the arrangement with a preset (DK-9, UD6) and restores the default frame sizes of all
+ * modes (R28.1 v1.8). The Library mode, the band position and the lock stay.
  */
 export function applyPreset(id: PresetId, api: DockviewApi | null = dock): void {
   if (!api) return;
   replaceArrangement(api, (target) => buildPreset(id, target));
+  useLibraryStore.getState().resetFrames();
 }
 
 /**
@@ -106,9 +107,7 @@ export function applyMeasureLayout(mode: LibraryMode, api: DockviewApi | null = 
 export function resetLayout(api: DockviewApi | null = dock): void {
   if (!api) return;
   applyPreset(DEFAULT_PRESET, api);
-  const library = useLibraryStore.getState();
-  library.setMode(RESET_MODE);
-  library.resetFrames();
+  useLibraryStore.getState().setMode(RESET_MODE);
   useUiStore.getState().setTransportPosition("top");
   useUiStore.getState().setLocked(false);
   useUiStore.getState().setTransportSlots(DEFAULT_SLOTS);

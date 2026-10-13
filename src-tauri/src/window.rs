@@ -213,6 +213,7 @@ pub const MINI_HEIGHT_RANGE: std::ops::RangeInclusive<f64> = 32.0..=200.0;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum WindowOp {
     Unmaximize,
+    Maximize,
     /// The maximum inner size; `None` clears it.
     MaxSize(Option<(f64, f64)>),
     MinSize(f64, f64),
@@ -221,9 +222,10 @@ pub enum WindowOp {
     Position(i32, i32),
 }
 
-/// The normal window size and position, kept while the mini player shows.
+/// The normal window size and position, and whether it was maximized, kept while the mini
+/// player shows.
 #[derive(Default)]
-pub struct MiniState(pub Mutex<Option<WindowSize>>);
+pub struct MiniState(pub Mutex<Option<(WindowSize, bool)>>);
 
 /// The changes that enter the mini player for a band `height`, or `None` for a refused height.
 pub fn enter_ops(height: f64) -> Option<Vec<WindowOp>> {
@@ -240,8 +242,9 @@ pub fn enter_ops(height: f64) -> Option<Vec<WindowOp>> {
     ])
 }
 
-/// The changes that leave the mini player and return to `stored`.
-pub fn exit_ops(stored: Option<WindowSize>) -> Vec<WindowOp> {
+/// The changes that leave the mini player and return to `stored`, maximized again when the
+/// window was maximized before.
+pub fn exit_ops(stored: Option<WindowSize>, maximized: bool) -> Vec<WindowOp> {
     let size = start_size(stored);
     let mut ops = vec![
         WindowOp::MaxSize(None),
@@ -251,12 +254,16 @@ pub fn exit_ops(stored: Option<WindowSize>) -> Vec<WindowOp> {
     if let (Some(x), Some(y)) = (size.x, size.y) {
         ops.push(WindowOp::Position(x, y));
     }
+    if maximized {
+        ops.push(WindowOp::Maximize);
+    }
     ops
 }
 
 fn apply(window: &WebviewWindow, op: WindowOp) -> tauri::Result<()> {
     match op {
         WindowOp::Unmaximize => window.unmaximize(),
+        WindowOp::Maximize => window.maximize(),
         WindowOp::MaxSize(size) => {
             window.set_max_size(size.map(|(width, height)| LogicalSize::new(width, height)))
         }
@@ -284,11 +291,16 @@ pub fn set_mini(
         let ops = enter_ops(height)
             .ok_or_else(|| format!("the band height {height} is outside 32 to 200 px"))?;
         if stored.is_none() {
-            *stored = Some(current_window(window).unwrap_or(DEFAULT_SIZE));
+            let maximized = window.is_maximized().unwrap_or(false);
+            *stored = Some((current_window(window).unwrap_or(DEFAULT_SIZE), maximized));
         }
         ops
     } else {
-        exit_ops(stored.take())
+        let normal = stored.take();
+        exit_ops(
+            normal.map(|(size, _)| size),
+            normal.is_some_and(|(_, maximized)| maximized),
+        )
     };
     for op in ops {
         apply(window, op).map_err(|error| format!("cannot change the window: {error}"))?;
@@ -390,7 +402,7 @@ mod tests {
             ..WindowSize::new(1000.0, 700.0)
         };
         assert_eq!(
-            exit_ops(Some(stored)),
+            exit_ops(Some(stored), false),
             vec![
                 WindowOp::MaxSize(None),
                 WindowOp::MinSize(MIN_WIDTH, MIN_HEIGHT),
@@ -399,12 +411,21 @@ mod tests {
             ]
         );
         assert_eq!(
-            exit_ops(None),
+            exit_ops(None, false),
             vec![
                 WindowOp::MaxSize(None),
                 WindowOp::MinSize(MIN_WIDTH, MIN_HEIGHT),
                 WindowOp::Size(DEFAULT_SIZE.width, DEFAULT_SIZE.height),
             ]
+        );
+    }
+
+    #[test]
+    fn exit_maximizes_again_a_window_that_was_maximized() {
+        let ops = exit_ops(Some(WindowSize::new(1920.0, 1040.0)), true);
+        assert_eq!(ops.last(), Some(&WindowOp::Maximize));
+        assert!(
+            !exit_ops(Some(WindowSize::new(1920.0, 1040.0)), false).contains(&WindowOp::Maximize)
         );
     }
 

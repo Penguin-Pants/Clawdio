@@ -158,6 +158,16 @@ describe("handleSpace (D17, P7.11)", () => {
     expect(toggle).not.toHaveBeenCalled();
   });
 
+  it("leaves Space to a focused column header, which sorts (AX-1)", () => {
+    const toggle = vi.fn();
+    const header = document.createElement("div");
+    header.setAttribute("role", "columnheader");
+    const event = space(header);
+    expect(handleSpace(event, toggle)).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
+    expect(toggle).not.toHaveBeenCalled();
+  });
+
   it("toggles on a slider thumb, which is a range input", () => {
     const toggle = vi.fn();
     const range = document.createElement("input");

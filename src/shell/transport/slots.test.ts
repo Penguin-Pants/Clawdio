@@ -8,6 +8,7 @@ import {
   canHide,
   layoutSlots,
   moveSlot,
+  moveSlotBefore,
   moveSlotTo,
   parseSlots,
   setSlotHidden,
@@ -68,6 +69,17 @@ describe("custom transport slots (UD20, TR-10)", () => {
     expect(moveSlotTo(DEFAULT_SLOTS, "seek", 0).order.slice(0, 4)).toEqual(["previous", "playPause", "next", "seek"]);
     expect(moveSlot(DEFAULT_SLOTS, "seek", -1).order.slice(3, 5)).toEqual(["seek", "nowPlaying"]);
     expect(moveSlot(DEFAULT_SLOTS, "search", 1)).toBe(DEFAULT_SLOTS);
+  });
+
+  it("drops a dragged slot before the row under the pointer, down and up (UD20)", () => {
+    const order = DEFAULT_SLOTS.order;
+    const down = moveSlotBefore(DEFAULT_SLOTS, "seek", order.indexOf("shuffle")).order;
+    expect(down.indexOf("seek")).toBe(down.indexOf("shuffle") - 1);
+    const up = moveSlotBefore(DEFAULT_SLOTS, "volume", order.indexOf("seek")).order;
+    expect(up.indexOf("volume")).toBe(up.indexOf("seek") - 1);
+    const last = moveSlotBefore(DEFAULT_SLOTS, "seek", order.length).order;
+    expect(last.at(-1)).toBe("seek");
+    expect(moveSlotBefore(DEFAULT_SLOTS, "seek", order.indexOf("seek") + 1)).toBe(DEFAULT_SLOTS);
   });
 
   it("hides and shows optional slots, never play or pause", () => {

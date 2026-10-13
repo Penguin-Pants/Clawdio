@@ -114,6 +114,7 @@ function PlaylistRail({ rows, onPick }: { rows: PlaylistRow[]; onPick: (id: numb
           label={playlist.name}
           size="icon"
           tooltip={playlist.name}
+          data-drop-target={`playlist:${playlist.id}`}
           onClick={() => {
             onPick(playlist.id);
             leaveRail();
@@ -282,15 +283,16 @@ export function PlaylistsWidget() {
   );
   // One root element in every state, so the size observer keeps watching it.
   let body: ReactNode;
-  if (rail) {
-    body = <PlaylistRail rows={rows} onPick={(id) => setSelection({ playlist: id, entry: null })} />;
-  } else if (rows.length === 0) {
+  if (rows.length === 0) {
+    // The empty hint shows in the rail too, not a blank area (R5 empty widget rule).
     body = (
       <>
-        {header}
+        {!rail && header}
         <EmptyHint>No playlists yet.</EmptyHint>
       </>
     );
+  } else if (rail) {
+    body = <PlaylistRail rows={rows} onPick={(id) => setSelection({ playlist: id, entry: null })} />;
   } else {
     body = (
       <>

@@ -34,4 +34,15 @@ describe("useTokenPx (UD1)", () => {
     });
     expect(screen.getByTestId("value").textContent).toBe("70");
   });
+
+  it("does not read the computed style again on a render: a read forces a style pass (PF-3)", () => {
+    document.documentElement.style.fontSize = "16px";
+    const view = render(<Probe />);
+    const read = vi.spyOn(window, "getComputedStyle");
+    for (let index = 0; index < 5; index += 1) view.rerender(<Probe />);
+    expect(read).not.toHaveBeenCalled();
+    expect(screen.getByTestId("value").textContent).toBe("56");
+    read.mockRestore();
+    view.unmount();
+  });
 });

@@ -88,6 +88,15 @@ export function moveSlotTo(slots: TransportSlots, id: SlotId, index: number): Tr
   return { ...slots, order: [...rest.slice(0, target), id, ...rest.slice(target)] };
 }
 
+/**
+ * Moves a slot to just before the slot at `before` in the current order (`order.length` for the
+ * end): the drop line of a pointer drag (UD20).
+ */
+export function moveSlotBefore(slots: TransportSlots, id: SlotId, before: number): TransportSlots {
+  // The slot leaves its place first, so a drop below it lands one index lower.
+  return moveSlotTo(slots, id, before > slots.order.indexOf(id) ? before - 1 : before);
+}
+
 /** Moves a slot one place up (-1) or down (+1): Move up and Move down (AX-1). */
 export function moveSlot(slots: TransportSlots, id: SlotId, step: -1 | 1): TransportSlots {
   const target = slots.order.indexOf(id) + step;

@@ -27,6 +27,21 @@ export function tokenPx(name: SizeToken, root: HTMLElement = document.documentEl
 
 const listeners = new Set<() => void>();
 let stopProbe: (() => void) | undefined;
+/**
+ * The token values of the current root font size. React reads a snapshot on every render and
+ * commit, and a computed-style read after a DOM change forces a style pass over the whole page
+ * (PF-3), so the hook reads the style once per root font size.
+ */
+const cache = new Map<SizeToken, number>();
+
+function cachedPx(name: SizeToken): number {
+  let value = cache.get(name);
+  if (value === undefined) {
+    value = tokenPx(name);
+    cache.set(name, value);
+  }
+  return value;
+}
 
 /** One 1 rem probe for every reader: its size changes when the root font size does (UD24). */
 function startProbe(): void {
@@ -36,6 +51,7 @@ function startProbe(): void {
   probe.style.cssText = "position:absolute;top:0;left:0;width:1rem;height:0;visibility:hidden;pointer-events:none";
   document.body.append(probe);
   const stop = observeSize(probe, () => {
+    cache.clear();
     for (const listener of listeners) listener();
   });
   stopProbe = () => {
@@ -46,7 +62,11 @@ function startProbe(): void {
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
-  if (listeners.size === 1) startProbe();
+  if (listeners.size === 1) {
+    // The root font size can change while nothing watches it.
+    cache.clear();
+    startProbe();
+  }
   return () => {
     listeners.delete(listener);
     if (listeners.size === 0) {
@@ -58,5 +78,5 @@ function subscribe(listener: () => void): () => void {
 
 /** The px value of a size token, read again when the root font size changes (UD1). */
 export function useTokenPx(name: SizeToken): number {
-  return useSyncExternalStore(subscribe, () => tokenPx(name));
+  return useSyncExternalStore(subscribe, () => cachedPx(name));
 }

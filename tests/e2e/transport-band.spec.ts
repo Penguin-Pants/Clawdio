@@ -192,9 +192,10 @@ for (const percent of [100, 125, 140]) {
     const expected = await tokenPx(page, "--size-transport-bar");
     expect(expected).toBeCloseTo((56 * percent) / 100, 0);
     await expect.poll(async () => (await bandState(page)).height).toBeCloseTo(expected, 0);
+    // The size class follows the new rem width one frame after the height (UD4, observeSize).
+    await expect.poll(async () => (await bandState(page)).emptyY).toBeLessThanOrEqual(4);
     const state = await bandState(page);
     expect(state.overflowY).toBeLessThanOrEqual(0);
-    expect(state.emptyY).toBeLessThanOrEqual(4);
     expect(state.oneRow).toBe(true);
   });
 }

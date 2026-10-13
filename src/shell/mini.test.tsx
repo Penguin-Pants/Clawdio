@@ -1,6 +1,7 @@
 // UD19, TR-9: the mini player sends the compact band height and leaves with the normal window.
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { flushFrames, installControlledLayout, resize } from "@/test/resize";
 import { useUiStore } from "@/store/ui";
 import { setMiniPlayer, useMiniWindow } from "./mini";
 
@@ -11,12 +12,14 @@ vi.mock("@/lib/ipc/commands", () => ({
 vi.mock("@/lib/log", () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
 
 beforeEach(() => {
+  installControlledLayout();
   windowSetMini.mockClear();
   useUiStore.setState({ mini: false });
   document.documentElement.style.fontSize = "16px";
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   document.documentElement.style.fontSize = "";
 });
 
@@ -38,6 +41,13 @@ describe("mini player (UD19)", () => {
     const { rerender } = renderHook(() => useMiniWindow());
     act(() => setMiniPlayer(true));
     document.documentElement.style.fontSize = "20px";
+    // The 1 rem probe reports the new root font size (UD24).
+    const probe = document.querySelector("[data-token-probe]");
+    if (!probe) throw new Error("no probe");
+    act(() => {
+      resize(probe, 20, 0);
+      flushFrames();
+    });
     rerender();
     expect(windowSetMini).toHaveBeenLastCalledWith(true, 50);
   });

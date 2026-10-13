@@ -10,7 +10,7 @@ import {
   canHide,
   canMove,
   moveSlot,
-  moveSlotTo,
+  moveSlotBefore,
   setSlotHidden,
 } from "@/shell/transport/slots";
 import { useUiStore } from "@/store/ui";
@@ -40,7 +40,7 @@ export function CustomizeTransportDialog() {
   const setSlots = useUiStore((state) => state.setTransportSlots);
   const close = useUiStore((state) => state.closeDialog);
   const listRef = useRef<HTMLUListElement>(null);
-  /** The slot under a pointer drag and the index it would drop at. */
+  /** The slot under a pointer drag and the row it would drop before (the length for the end). */
   const [drag, setDrag] = useState<{ id: SlotId; index: number } | null>(null);
 
   /** Pointer drag of a handle (UD10, no HTML5 drag): the row under the pointer is the target. */
@@ -51,7 +51,7 @@ export function CustomizeTransportDialog() {
     const indexAt = (y: number) => {
       const rows = [...(listRef.current?.children ?? [])].map((row) => row.getBoundingClientRect());
       const index = rows.findIndex((box) => y < box.top + box.height / 2);
-      return index === -1 ? rows.length - 1 : index;
+      return index === -1 ? rows.length : index;
     };
     setDrag({ id, index: slots.order.indexOf(id) });
     const move = (moveEvent: PointerEvent) => setDrag({ id, index: indexAt(moveEvent.clientY) });
@@ -62,7 +62,7 @@ export function CustomizeTransportDialog() {
       setDrag(null);
       if (endEvent.type === "pointerup") {
         const current = useUiStore.getState().transportSlots;
-        setSlots(moveSlotTo(current, id, indexAt(endEvent.clientY)));
+        setSlots(moveSlotBefore(current, id, indexAt(endEvent.clientY)));
       }
     };
     handle.addEventListener("pointermove", move);
@@ -93,6 +93,11 @@ export function CustomizeTransportDialog() {
                   drag.id !== id &&
                   drag.index === index &&
                   "shadow-[inset_0_2px_0_var(--color-brand-red)]",
+                drag !== null &&
+                  drag.id !== id &&
+                  drag.index === slots.order.length &&
+                  index === slots.order.length - 1 &&
+                  "shadow-[inset_0_-2px_0_var(--color-brand-red)]",
               )}
             >
               {movable ? (

@@ -93,3 +93,39 @@ test("TB-12: Escape during a drag adds nothing; an unselected row drags itself",
   // The drag selected the dragged row.
   await expect(rows(page).nth(4)).toHaveAttribute("aria-selected", "true");
 });
+
+test("TB-12: Escape keeps a multi-selection when the pointer comes up on the source row", async ({ page }) => {
+  await open(page);
+  await rows(page).nth(0).click();
+  await rows(page)
+    .nth(2)
+    .click({ modifiers: ["Shift"] });
+  const start = await center(rows(page).nth(1));
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 8, start.y + 40, { steps: 6 });
+  await expect(page.locator("[data-slot='drag-ghost']")).toHaveText("3 songs");
+  await page.keyboard.press("Escape");
+  await page.mouse.move(start.x, start.y, { steps: 6 });
+  await page.mouse.up();
+  await expect(songsGrid(page).locator("[role='row'][aria-selected='true']")).toHaveCount(3);
+});
+
+test("TB-12: a rail playlist button takes a drop", async ({ page }) => {
+  await open(page);
+  const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
+  const box = await sash.boundingBox();
+  if (!box) throw new Error("no separator");
+  await page.mouse.move(box.x + box.width / 2, box.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 120, box.y + 200, { steps: 10 });
+  await page.mouse.up();
+  const rail = widget(page, "playlists").getByRole("navigation", { name: "Playlists" });
+  const mix = rail.getByRole("button", { name: "Mix 2" });
+  await expect(mix).toBeVisible();
+  await rows(page).nth(0).click();
+  await dragTo(page, rows(page).nth(0), mix, async () => {
+    await expect(mix).toHaveAttribute("data-drop-active", "");
+  });
+  await expect(page.locator("footer")).toContainText("Added to playlist");
+});
