@@ -46,6 +46,8 @@ const hooks = {
 declare global {
   interface Window {
     e2e: typeof hooks;
+    /** Messages the app sent to the log plugin (install-mocks.ts). */
+    e2eLog?: string[];
   }
 }
 window.e2e = hooks;

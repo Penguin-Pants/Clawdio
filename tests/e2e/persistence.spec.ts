@@ -70,7 +70,8 @@ for (const [mode, name] of [
 
 test("P9-AC3: a tabbed group survives a restart", async ({ page }) => {
   await openApp(page);
-  await page.evaluate(() => window.e2e.addAsTab("queue", "nowPlaying"));
+  // Bar widgets never join a tab group (R29.1), so Play queue joins Library.
+  await page.evaluate(() => window.e2e.addAsTab("queue", "library"));
   await savedWith(page, ["queue"]);
   await page.reload();
   await expect(tab(page, "Play queue")).toBeVisible();
@@ -81,7 +82,7 @@ test("P9-AC3: a tabbed group survives a restart", async ({ page }) => {
         .find((element) => element.textContent?.includes(title))
         ?.closest(".dv-groupview");
     const queue = groupOf("Play queue");
-    return queue !== undefined && queue !== null && queue === groupOf("Now playing");
+    return queue !== undefined && queue !== null && queue === groupOf("Library");
   });
   expect(sameGroup).toBe(true);
 });

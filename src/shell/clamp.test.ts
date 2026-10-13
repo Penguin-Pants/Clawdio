@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { barHeight, resetBarHeights, setBarContentHeight } from "./bar-rules";
 import { CLAMP_FLOOR, type DockNode, clampMinimums, groupMinimum, nodeMinimum } from "./clamp";
+
+afterEach(() => resetBarHeights());
 
 const leaf = (id: string, ...widgets: string[]): DockNode => ({ kind: "group", id, widgets });
 const split = (...children: DockNode[]): DockNode => ({ kind: "split", children });
@@ -39,15 +42,20 @@ describe("clampMinimums (D45)", () => {
   it("keeps the D33 minimums when the dock is large enough", () => {
     const result = clampMinimums(DEFAULT, "VERTICAL", { width: 800, height: 504 });
     expect(result.get("g1")).toEqual({ width: 320, height: 240 });
-    expect(result.get("g3")).toEqual({ width: 320, height: 112 });
+    expect(result.get("g3")).toEqual({ width: 320, height: 112, maxHeight: 112 });
   });
 
-  it("lowers minimums in proportion so six stacked widgets fit an 800 x 560 window", () => {
+  it("lowers the non-bar minimums so six stacked widgets fit an 800 x 560 window; bars keep their height (D59)", () => {
     const dock = { width: 800, height: 504 };
     const result = clampMinimums(STACK, "VERTICAL", dock);
     const total = [...result.values()].reduce((sum, size) => sum + size.height, 0);
     expect(total).toBeLessThanOrEqual(dock.height);
-    expect(result.get("a")?.height).toBe(Math.floor((240 * 504) / 944));
+    expect(result.get("b")).toMatchObject({ height: 112, maxHeight: 112 });
+    expect(result.get("c")).toMatchObject({ height: 112, maxHeight: 112 });
+    const library = result.get("a")?.height ?? 0;
+    // The bars keep 224 px, so the other groups shrink more than the plain D45 proportion.
+    expect(library).toBeLessThan(Math.floor((240 * 504) / 944));
+    expect(Math.abs(library - (240 * (504 - 224)) / 720)).toBeLessThanOrEqual(1);
     for (const size of result.values()) expect(size.height).toBeGreaterThanOrEqual(CLAMP_FLOOR);
   });
 
@@ -60,5 +68,51 @@ describe("clampMinimums (D45)", () => {
     const wide = split(leaf("x", "library"), leaf("y", "transport"), leaf("z", "queue"));
     const result = clampMinimums(wide, "HORIZONTAL", { width: 420, height: 600 });
     expect(result.get("x")).toEqual({ width: Math.floor((320 * 420) / 840), height: 240 });
+  });
+});
+
+describe("bar groups (D57, D59, P23-AC3)", () => {
+  it("locks a bar group's minimum and maximum to its bar height; other groups have no maximum", () => {
+    setBarContentHeight("transport", 70);
+    const result = clampMinimums(split(leaf("g1", "transport"), leaf("g2", "library")), "VERTICAL", {
+      width: 1200,
+      height: 800,
+    });
+    expect(result.get("g1")).toEqual({ width: 320, height: 102, maxHeight: 102 });
+    expect(result.get("g2")?.maxHeight).toBeUndefined();
+  });
+
+  it("gives both groups of a shared bar row the larger bar height", () => {
+    setBarContentHeight("transport", 100);
+    const result = clampMinimums(DEFAULT, "VERTICAL", { width: 1200, height: 800 });
+    expect(result.get("g2")).toMatchObject({ height: 132, maxHeight: 132 });
+    expect(result.get("g3")).toMatchObject({ height: 132, maxHeight: 132 });
+  });
+
+  it("follows a new measured height (text scaling)", () => {
+    setBarContentHeight("nowPlaying", 112);
+    expect(barHeight("nowPlaying")).toBe(144);
+    const result = clampMinimums(DEFAULT, "VERTICAL", { width: 1200, height: 800 });
+    expect(result.get("g2")).toMatchObject({ height: 144, maxHeight: 144 });
+  });
+
+  it("at the D45 floor, lowers the minimum and maximum of each bar together, never below 32 px", () => {
+    const dock = { width: 800, height: 6 * CLAMP_FLOOR + 40 };
+    const result = clampMinimums(STACK, "VERTICAL", dock);
+    for (const id of ["a", "d", "e", "f"]) expect(result.get(id)?.height).toBe(CLAMP_FLOOR);
+    for (const id of ["b", "c"]) {
+      const bar = result.get(id);
+      expect(bar?.height).toBeLessThan(112);
+      expect(bar?.height).toBeGreaterThanOrEqual(CLAMP_FLOOR);
+      expect(bar?.maxHeight).toBe(bar?.height);
+    }
+    const total = [...result.values()].reduce((sum, size) => sum + size.height, 0);
+    expect(total).toBeLessThanOrEqual(dock.height);
+  });
+
+  it("restores both limits to the bar height when space returns", () => {
+    clampMinimums(STACK, "VERTICAL", { width: 800, height: 220 });
+    const result = clampMinimums(STACK, "VERTICAL", { width: 800, height: 1200 });
+    expect(result.get("b")).toMatchObject({ height: 112, maxHeight: 112 });
   });
 });

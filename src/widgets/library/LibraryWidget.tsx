@@ -1,3 +1,4 @@
+import { Orientation } from "dockview-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import { FrameSplit } from "./FrameSplit";
 import { AlbumList, ArtistList, SongList, TreeList } from "./lists";
 
 /** Below this widget width the mode switch becomes a dropdown (R28). */
@@ -127,9 +129,9 @@ function SearchField() {
 }
 
 /** A labeled list column. */
-function ListFrame({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+function ListFrame({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={`flex min-h-0 min-w-0 flex-col border-border ${className ?? ""}`}>
+    <div className="flex size-full min-h-0 min-w-0 flex-col">
       <div aria-hidden="true" className="px-2 py-1 text-[13px] text-text-secondary">
         {label}
       </div>
@@ -138,7 +140,40 @@ function ListFrame({ label, className, children }: { label: string; className?: 
   );
 }
 
-/** The mode-specific body (R28). */
+const ARTIST_FRAME = {
+  id: "artist",
+  content: (
+    <ListFrame label="Artist">
+      <ArtistList />
+    </ListFrame>
+  ),
+};
+const ALBUM_FRAME = {
+  id: "album",
+  content: (
+    <ListFrame label="Album">
+      <AlbumList />
+    </ListFrame>
+  ),
+};
+const SONGS_FRAME = {
+  id: "songs",
+  content: (
+    <ListFrame label="Songs">
+      <SongList showAlbum />
+    </ListFrame>
+  ),
+};
+const TOP_ROW_FRAME = {
+  id: "top",
+  content: (
+    <div className="flex size-full">
+      <FrameSplit group="top" orientation={Orientation.HORIZONTAL} views={[ARTIST_FRAME, ALBUM_FRAME]} />
+    </div>
+  ),
+};
+
+/** The mode-specific body (R28). Columns and Top/bottom frames have splitters (R28.1). */
 function LibraryBody({ mode }: { mode: LibraryMode }) {
   if (mode === "tree") {
     return (
@@ -147,32 +182,21 @@ function LibraryBody({ mode }: { mode: LibraryMode }) {
       </div>
     );
   }
-  const artistAndAlbum = (
-    <>
-      <ListFrame label="Artist" className="flex-1 border-r">
-        <ArtistList />
-      </ListFrame>
-      <ListFrame label="Album" className={mode === "columns" ? "flex-1 border-r" : "flex-1"}>
-        <AlbumList />
-      </ListFrame>
-    </>
-  );
   if (mode === "columns") {
     return (
-      <div data-library-body="columns" className="flex min-h-0 flex-1">
-        {artistAndAlbum}
-        <ListFrame label="Songs" className="flex-[2]">
-          <SongList showAlbum />
-        </ListFrame>
+      // Each mode keys its body, so a mode switch builds a new splitview (R28.1).
+      <div key="columns" data-library-body="columns" className="flex min-h-0 flex-1">
+        <FrameSplit
+          group="columns"
+          orientation={Orientation.HORIZONTAL}
+          views={[ARTIST_FRAME, ALBUM_FRAME, SONGS_FRAME]}
+        />
       </div>
     );
   }
   return (
-    <div data-library-body="topBottom" className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 border-b">{artistAndAlbum}</div>
-      <ListFrame label="Songs" className="flex-1">
-        <SongList showAlbum />
-      </ListFrame>
+    <div key="topBottom" data-library-body="topBottom" className="flex min-h-0 flex-1 flex-col">
+      <FrameSplit group="rows" orientation={Orientation.VERTICAL} views={[TOP_ROW_FRAME, SONGS_FRAME]} />
     </div>
   );
 }

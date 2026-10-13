@@ -1,6 +1,6 @@
 import type { DockviewApi } from "dockview-react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { useLibraryStore } from "@/store/library";
+import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
 import {
   LAYOUTS,
   applyLayout,
@@ -116,6 +116,21 @@ describe("applyLayout and resetLayout (P2.4)", () => {
 
   it("does nothing without a dock", () => {
     expect(() => resetLayout()).not.toThrow();
+  });
+
+  it.each(LAYOUTS)("applying %s restores the frame sizes of all modes (P22-AC1, R28.1)", (id) => {
+    const { api } = dockStandIn();
+    useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
+    useLibraryStore.getState().setFrames("rows", [0.8, 0.2]);
+    applyLayout(id, api);
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
+  });
+
+  it("reset restores the frame sizes of all modes (P22-AC1)", () => {
+    const { api } = dockStandIn();
+    useLibraryStore.getState().setFrames("top", [0.9, 0.1]);
+    resetLayout(api);
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
   });
 });
 

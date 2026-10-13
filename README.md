@@ -12,6 +12,7 @@ Minimalist local music player
 - Plays MP3, WAV and OGG Vorbis files from one music folder, organized by artist and album folders.
 - A Library with three modes: Tree, Columns and Top/bottom, with search that ignores case and accents.
 - Dockable widgets: Library, Transport controls, Now playing, Playlists, Play queue and Lyrics. The arrangement is saved and restored.
+- Splitters between the Artist, Album and Songs frames, with sizes kept per Library mode. Transport controls and Now playing stay thin bars: drop one on the top or bottom of a widget, or beside the other bar.
 - Playlists as `.m3u8` files in the music folder, a Favorites heart, and import of M3U, M3U8 and Apple Music XML playlists: several files or a whole folder at once. "Find missing songs" fixes entries whose song moved or is stored in another format.
 - Album art from cover files or embedded pictures, lyrics from `.lrc` and `.txt` files or tags.
 - Optional online lookups for album art, lyrics and missing titles (see below).

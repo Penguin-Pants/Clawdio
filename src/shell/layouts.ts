@@ -1,5 +1,7 @@
 import type { AddPanelPositionOptions, DockviewApi } from "dockview-react";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import { type BarWidgetId, inBottomBar } from "./bar-rules";
+import { type Orientation, toNode } from "./clamp";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
 /** Built-in layouts (R29). Each one sets the default arrangement and its Library mode. */
@@ -76,11 +78,16 @@ export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) =
   }
 }
 
-/** Replaces the arrangement with the default one and sets the layout's Library mode. */
+/**
+ * Replaces the arrangement with the default one and sets the layout's Library mode. The frame
+ * sizes of all modes go back to their defaults (R28.1).
+ */
 export function applyLayout(id: LayoutId, api: DockviewApi | null = dock): void {
   if (!api) return;
   replaceArrangement(api, defaultArrangement);
-  useLibraryStore.getState().setMode(id);
+  const library = useLibraryStore.getState();
+  library.setMode(id);
+  library.resetFrames();
 }
 
 /**
@@ -119,6 +126,25 @@ export function setWidgetVisible(id: WidgetId, visible: boolean, api: DockviewAp
     addWidget(api, id, position, id === "nowPlaying" || id === "transport" ? BOTTOM_ROW_HEIGHT : undefined);
   } else if (!visible && panel) {
     api.removePanel(panel);
+  }
+}
+
+/**
+ * Moves the bar widgets that break R29.1 to the bottom bar (P23.3). All of them leave first.
+ * Each comes back beside the other bar widget when that one is in the bottom bar, else as a new
+ * full-width row at the bottom of the dock.
+ */
+export function repairBars(api: DockviewApi, ids: BarWidgetId[]): void {
+  for (const id of ids) setWidgetVisible(id, false, api);
+  for (const id of ids) {
+    const partner = id === "nowPlaying" ? "transport" : "nowPlaying";
+    const { grid } = api.toJSON();
+    const besidePartner =
+      api.getPanel(partner) && inBottomBar(toNode(grid.root), grid.orientation as Orientation, partner);
+    const position: AddPanelPositionOptions = besidePartner
+      ? { referencePanel: partner, direction: id === "nowPlaying" ? "left" : "right" }
+      : { direction: "below" };
+    addWidget(api, id, position, BOTTOM_ROW_HEIGHT);
   }
 }
 

@@ -328,7 +328,7 @@ mod tests {
         let music = tempfile::tempdir().unwrap();
         let (app, events) = app(music.path());
         let server = httpmock::MockServer::start();
-        server.mock(|when, then| {
+        let slow = server.mock(|when, then| {
             when.path("/api/get");
             then.status(200)
                 .delay(std::time::Duration::from_secs(10))
@@ -339,7 +339,11 @@ mod tests {
         let started = std::time::Instant::now();
         let fetching =
             std::thread::spawn(move || tauri::async_runtime::block_on(fetch(&handle, 0)));
-        std::thread::sleep(std::time::Duration::from_millis(300));
+        // Cancel once the request is out: a cancel before the fetch starts has nothing to stop.
+        while slow.calls() == 0 {
+            assert!(started.elapsed() < std::time::Duration::from_secs(5));
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
         cancel(app.handle());
         assert_eq!(fetching.join().unwrap(), Ok(false));
         assert!(started.elapsed() < std::time::Duration::from_secs(5));

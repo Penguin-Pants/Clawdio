@@ -221,6 +221,8 @@ mockIPC(
         document.body.dataset.measureReady = "true";
         return null;
       case "plugin:log|log":
+        // Kept for the checks that read the app log (P23-AC5).
+        (window.e2eLog ??= []).push(String((args as { message?: unknown } | undefined)?.message ?? ""));
         return 0;
       default: {
         // A settings command that returns null is handled; only undefined falls through.

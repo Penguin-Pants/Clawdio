@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { EMPTY_SELECTION, useLibraryStore } from "./library";
+import { DEFAULT_FRAMES, EMPTY_SELECTION, useLibraryStore } from "./library";
 
 beforeEach(() => useLibraryStore.setState({ mode: "columns", search: "", selection: EMPTY_SELECTION }));
 
@@ -25,5 +25,30 @@ describe("library store (P2.8, R28)", () => {
     useLibraryStore.getState().setSelection({ song: 7 });
     useLibraryStore.getState().setSelection({ artist: 1 });
     expect(useLibraryStore.getState().selection).toEqual({ artist: 1, album: null, song: 7 });
+  });
+});
+
+describe("Library frame sizes (P22.2, R28.1)", () => {
+  beforeEach(() => useLibraryStore.getState().resetFrames());
+
+  it("keeps each mode's fractions across a mode switch (P22-AC1)", () => {
+    const store = useLibraryStore.getState();
+    store.setFrames("columns", [0.2, 0.3, 0.5]);
+    store.setFrames("top", [0.6, 0.4]);
+    store.setFrames("rows", [0.3, 0.7]);
+    store.setMode("tree");
+    store.setMode("columns");
+    expect(useLibraryStore.getState().frames).toEqual({
+      columns: [0.2, 0.3, 0.5],
+      topBottom: { top: [0.6, 0.4], rows: [0.3, 0.7] },
+    });
+  });
+
+  it("resetFrames restores the defaults of all modes", () => {
+    const store = useLibraryStore.getState();
+    store.setFrames("columns", [0.1, 0.1, 0.8]);
+    store.setFrames("rows", [0.9, 0.1]);
+    store.resetFrames();
+    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
   });
 });
