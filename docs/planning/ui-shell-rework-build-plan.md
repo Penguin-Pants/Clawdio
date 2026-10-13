@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.1, October 13, 2026.
+**Version:** 1.2, October 13, 2026.
 **Status:** Ready for implementation. No phase has started.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -200,7 +200,7 @@ Rework section 8 Phase 0, section 12 (`before/*.png`), section 14 (every phase r
 - Create `scripts/ui-shots.mjs` (UD23) and add `npm run shots -- before` to `package.json`. Capture `docs/ui-reference/before/800x560.png`, `1280x720.png` and `1920x1080.png` from the mocked app (`tests/e2e` harness, default arrangement, a loaded library).
 - Update `docs/MusicPlayer_REQUIREMENTS.md` to v1.8: a change log entry and a section 8 entry that record the October 13 owner decision; rewrite R5 (Transport controls is a fixed band, Now playing is a card widget), R29 (presets, Lock layout, floating groups, keyboard splitters), delete R29.1, move "keyboard resize of splitters" and "density" out of section 7, delete the section 4 non-goals "floating panels" and "an edit lock", add TB sorting and multi-select to R28, and add the rework's MUST list as section 2 items or a reference to the rework file. Keep the `[D]` marks.
 - Update `docs/design.md` section 5 and 6: four fixed zones, the band, presets, the table, the card. Mark the bar-widget paragraph as superseded.
-- `docs/build-plan.md`: mark D57, D58 and D59 as superseded by UD2 in section 5.2. (The pointer row in section 2, the section 13 entry and the copy of the rework document at `docs/planning/ui-shell-rework.md` ship with this plan, so U0 can read the governing source from the repository.)
+- No parent-plan work: the pointer row in section 2, the section 13 entry, the superseded marks on D57 to D59 and P23, and the copy of the rework document at `docs/planning/ui-shell-rework.md` (with a note that names this plan as authoritative on conflicts) ship with this plan.
 
 **Implementation notes**
 
@@ -217,7 +217,7 @@ Rework section 8 Phase 0, section 12 (`before/*.png`), section 14 (every phase r
 
 - U0-AC1: `docs/ui-audit.md` exists with the four sections named above and names each rework requirement that passes today, with the file evidence.
 - U0-AC2: the three "before" screenshots exist in `docs/ui-reference/before/` at 800 x 560, 1280 x 720 and 1920 x 1080.
-- U0-AC3: `docs/MusicPlayer_REQUIREMENTS.md` is v1.8 with the change list; `docs/design.md` section 5 names the four zones; `docs/build-plan.md` section 5.2 marks D57 to D59 as superseded.
+- U0-AC3: `docs/MusicPlayer_REQUIREMENTS.md` is v1.8 with the change list; `docs/design.md` section 5 names the four zones.
 
 **Dependencies**
 
@@ -785,5 +785,6 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.2 (October 13, 2026):** PR 21 review, CodeRabbit round 2: D57 to D59 and P23 carry superseded marks in `docs/build-plan.md`; `docs/planning/ui-shell-rework.md` carries a note that names this plan as authoritative on conflicts (UC7, UC8, UC10, UC13). U0 loses both tasks.
 - **1.1 (October 13, 2026):** PR 21 review. CodeRabbit: UD19 restores the window limits on mini player exit. Codex: ten findings fixed (section 11, Codex round): rework source and pointer committed, UD3 ranges, UD7 frame fallback, default preset in U1, `rem` size tokens (UD1), grid roles (UD8), physical window position (UD14), stable row props (U4), Playlists minimum 56 px (UD18), drag guard in `check-sources` (U1, UC13).
 - **1.0 (October 13, 2026):** first version. Owner decision of the same day: the rework wins over requirements v1.7 where they conflict; widget names and Library modes stay.

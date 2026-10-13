@@ -1,3 +1,5 @@
+> **Repository note (October 13, 2026).** This is the owner's source document, as received. It is kept unchanged. Where it conflicts with the repository, `docs/planning/ui-shell-rework-build-plan.md` is authoritative: its section 4.2 records each resolution (UC1 to UC13). In particular: the window minimum lives in `src-tauri/src/window.rs`, not `tauri.conf.json` (UC7); at the 800 px minimum the band shows the MD class (UC8); screenshots use 800 x 560, not 800 x 500 (UC10); `dragDropEnabled` stays unchanged because every drag uses pointer events (UC13); the stack notes in section 2.1 are superseded by the plan's section 3.
+
 # UI Shell Rework: Transport Bar, Panes, Docking and Columns
 
 **Audience:** Claude Code
