@@ -33,25 +33,41 @@ function fixture(name: string): string {
  */
 function dockStandIn() {
   const panels: string[] = [];
+  // The grid of the last load; else one group per panel, stacked.
+  let loaded: SerializedDockview | null = null;
   const layoutListeners: (() => void)[] = [];
   const registered = new Set<string>([...WIDGET_IDS, UNKNOWN_COMPONENT]);
+  const added: { id: string; position?: unknown }[] = [];
   const api = {
     width: 1200,
     height: 800,
     // No groups: the D45 clamp has its own tests (clamp.test.ts).
     groups: [],
-    addPanel: ({ id }: { id: string }) => panels.push(id),
+    addPanel: ({ id, position }: { id: string; position?: unknown }) => {
+      panels.push(id);
+      added.push({ id, position });
+    },
     getPanel: (id: string) => (panels.includes(id) ? { id } : undefined),
     removePanel: ({ id }: { id: string }) => panels.splice(panels.indexOf(id), 1),
     clear: () => panels.splice(0),
     fromJSON: (dock: SerializedDockview) => {
       if (!dock.grid) throw new Error("no grid");
+      loaded = dock;
       for (const [id, panel] of Object.entries(dock.panels)) {
         if (!registered.has(panel.contentComponent ?? id)) throw new Error(`unknown component ${id}`);
         panels.push(id);
       }
     },
-    toJSON: () => ({ grid: {}, panels: Object.fromEntries(panels.map((id) => [id, { id }])) }),
+    toJSON: () => ({
+      grid: loaded?.grid ?? {
+        root: {
+          type: "branch",
+          data: panels.map((id, index) => ({ type: "leaf", data: { views: [id], id: String(index) } })),
+        },
+        orientation: "VERTICAL",
+      },
+      panels: Object.fromEntries(panels.map((id) => [id, { id }])),
+    }),
     layout: vi.fn(),
     onDidLayoutChange: (listener: () => void) => {
       layoutListeners.push(listener);
@@ -61,7 +77,7 @@ function dockStandIn() {
     getGroupPanels: () => [],
   };
   const fireLayoutChange = () => layoutListeners.forEach((listener) => listener());
-  return { api: api as unknown as DockviewApi, panels, layout: api.layout, fireLayoutChange };
+  return { api: api as unknown as DockviewApi, panels, added, layout: api.layout, fireLayoutChange };
 }
 
 /** The Columns default: Library, Now playing and Transport controls (R29). */
@@ -184,6 +200,28 @@ describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
     expect(restoreLayout(dockStandIn().api, withFrames([1, 2]), SIZE)).toBe(true);
     expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
     expect(log.warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("bar repair at start (P23.3, R29.1, P23-AC2)", () => {
+  it("moves Transport controls out of the Library tab group to the bottom bar, with one log line", () => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, fixture("bar-in-tabs.json"), SIZE)).toBe(true);
+    expect(dock.panels).toEqual(["library", "nowPlaying", "transport"]);
+    expect(dock.added.at(-1)).toEqual({
+      id: "transport",
+      position: { referencePanel: expect.objectContaining({ id: "nowPlaying" }), direction: "right" },
+    });
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("moved transport to the bottom bar");
+  });
+
+  it("keeps a valid top bar as saved, with no log line", () => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, fixture("bar-top.json"), SIZE)).toBe(true);
+    expect(dock.panels).toEqual(["library", "transport"]);
+    expect(dock.added).toEqual([]);
+    expect(log.warn).not.toHaveBeenCalled();
   });
 });
 

@@ -1,13 +1,13 @@
 # Clawdio Build Plan
 
-**Version:** 1.20, October 13, 2026 (P22 done).
+**Version:** 1.21, October 13, 2026 (P23 code done; Windows build pending).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
-- Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets).
+- Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets, In progress: the Windows build and the owner's Windows check remain).
 - The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
@@ -88,7 +88,7 @@ A phase is Done when all of these are true:
 | P20 | Microphone ducking (Windows) | P19 | Done with exceptions |
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
-| P23 | Bar widgets and Windows build | P22 | Not started |
+| P23 | Bar widgets and Windows build | P22 | In progress |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1304,6 +1304,51 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** none new.
 
+#### P23. Bar widgets and Windows build (October 13, 2026)
+
+- **Status:** In progress. P23.1 to P23.4 are done; P23.5 (Windows build) and P23-AC7 (owner check on Windows) remain.
+- **Commits:** branch `clawd/zen-hopper-rszalw`, after the P22 commit `15e2035`. Messages start with `P23:`.
+- **Packages:** none new.
+- **K23:** closed before P23.1 (section 9): Dockview 8.5.1 has `preventDefault()` on `onWillShowOverlay` and `onWillDrop`, and group `maximumHeight`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P23-AC1 | Pass | `src/shell/bar-rules.test.ts`: both bar widgets on every position of a non-bar group, of the other bar group and of the window; a non-bar widget on each position of a bar group (alone and in a shared row) and of a non-bar group; `sharesRow`. |
+| P23-AC2 | Pass | `bar-rules.test.ts` (`barViolations`): Transport controls in the Library tab group, beside Library, Now playing in the Play queue tab group, and three valid arrangements. `src/shell/persistence.test.ts`: the repair with one log line, a valid top bar with none. |
+| P23-AC3 | Pass | `src/shell/clamp.test.ts`: bar groups locked at the bar height, a shared row at the larger height, a new measured height, non-bar groups shrink first (six widgets in 504 px), at the floor both bar limits fall together, a taller dock restores them. |
+| P23-AC4 | Pass (Chromium) (E1) | `tests/e2e/bars.spec.ts`: Transport controls dropped on the top zone of Library is one full-width row at its content height plus the header, and Library is below it; a splitter drag does not change the bar height; a drop on the left of Library shows no overlay and moves nothing; a drop into the Library tab bar is refused; the default bar row has both bars at the larger height; Play queue cannot join the Transport controls group or split the bar row. |
+| P23-AC5 | Pass (Chromium) (E1) | `bars.spec.ts`: a saved layout with Transport controls in the Library tab group starts with it in the bottom bar beside Now playing, and the log has the repair line; a top bar survives a reload with no repair line. |
+| P23-AC6 | Pass (Chromium) (E1) | `bars.spec.ts` at root font size 100%, 125% and 140%: the content never overflows its bar and leaves at most 4 px empty; the bar follows the change without a reload. |
+| P23-AC7 | Not run | The owner checks AC-25 to AC-27 on Windows with the P23.5 package. |
+
+**Notes**
+
+- N1: Dockview offers no separate window-edge drop zone in this dock (no `edge` event in a drag across the dock top). The tab bar at the very top is a tab drop, so the bar widgets refuse it. The top zone of a group that spans the window (Library in the default arrangement) gives the full-width row. D58 records this.
+- N2: D58 gained a case found in P23: a non-bar widget dropped on the top or bottom of a bar group in a shared row would split the row, so it is refused (`sharesRow`).
+- N3: the bar content sits in a block with auto height (`BarContent` in `DockShell.tsx`), so the widgets' own `h-full` falls back to the content height. A `ResizeObserver` reports it; a change runs the clamp again.
+- N4: six P2 and P9 tests dragged or tabbed the bar widgets as ordinary widgets. R29.1 now refuses those drops, so the tests use Play queue, Playlists and Library; each keeps its original check (edge dock, tabbed group, splitter, one Library, overlay style, tabbed group restart).
+- N5: the e2e mock now records log lines (`window.e2eLog`) for P23-AC5.
+
+**Exceptions**
+
+- E1: WebKit is not installed in this environment. The Playwright suite ran in Chromium (113 passed); CI runs WebKit.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 4. Source: own audit and the full e2e run.
+
+- F2:
+  - The planned "window top edge" drop does not exist in this dock (N1). The test and D58 now use the top zone of Library.
+  - A non-bar widget could split a shared bar row (N2). Refused now.
+  - Six earlier tests used bar widgets as ordinary drag targets (N4). Updated.
+- F4:
+  - A mixed group from an old file locks its height until the repair a moment later: the repair runs in the same start step.
+  - `dropAllowed` serializes the dock on each overlay event: six widgets, small next to the drag itself.
+  - The first frame uses the 80 px content default until the measurement arrives: the P17 value, so no visible jump in the default arrangement.
+  - A drag from outside the dock (no panel data) passes the rule: it is not a widget, and the app accepts no external drops.
+
+**Follow-ups:** none new.
+
 ## 3. Source documents and precedence
 
 | Source | Role | Authority |
@@ -1439,7 +1484,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D55 | Library frame sizes (R28.1) are an optional `libraryFrames` field in `layout.json`: `columns` holds three fractions (Artist, Album, Songs) and `topBottom` holds `top` (Artist, Album) and `rows` (top row, Songs). Fractions, not pixels, so a window change keeps the proportions. The version stays 1: a file without the field loads with the default sizes, and an older app ignores the field. An invalid entry for one mode, or an unknown property inside it, gives that mode its defaults and one log line. An unknown mode key is ignored with one log line. The other mode and the dock still load (requirements section 5). Defaults are the old fixed ratios: Columns 1:1:2, Top/bottom top row 1:1 and rows 1:1. | R28.1 says frame sizes are part of the arrangement. A version change would make an older app drop the whole arrangement. |
 | D56 | Frame splitters use `SplitviewReact` from `dockview-react`, which is already a dependency. Its sashes take the dock splitter styles (P2.10), so no new component and no new dependency. Frame minimums: 96 px wide, 64 px tall (three Columns frames fit the 320 px Library minimum of D33). When the Library is smaller than the sum, the frame minimums scale in proportion, as in D45. Sashes are not in the Tab order (R28.1 mouse only, K5). | Edits rules 4 and 5: reuse the existing splitter code. |
 | D57 | Bar height (R29.1): each bar widget's height is its measured content height plus the 32 px header. A `ResizeObserver` on the content measures it, so text scaling (Windows display scale, GNOME Large text, P17.5) changes it. The bar group's minimum and maximum height both equal it. When the two bar widgets share a row, both groups take the larger value. P23-AC6 fails when the content overflows or leaves more than 4 px empty, at the default font and at the P17.5 scales. | "Natural content height" needs a testable value. A fixed constant clips under large text (P17 note N2), and design.md §9 requires text scaling. |
-| D58 | Bar drop rules (R29.1) live in one pure function, `allowDrop(source, target, position)` in `src/shell/bar-rules.ts`. A bar widget may drop on a top or bottom edge of a group or of the window, and on the left or right of a group that holds only the other bar widget. It may never drop into the center (tab). A non-bar widget may not drop into the center of a bar group or on its left or right, so a bar row holds bar widgets only. All other drops are unchanged. A refused drop shows no overlay and writes no log line. | R29.1 makes bar rows full width at a fixed height. A non-bar widget in the row would take the fixed height too. |
+| D58 | Bar drop rules (R29.1) live in one pure function, `allowDrop(source, target, position)` in `src/shell/bar-rules.ts`. A bar widget may drop on a top or bottom edge of a group or of the window, and on the left or right of a group that holds only the other bar widget. It may never drop into the center (tab) or a tab bar. A non-bar widget may not drop into the center of a bar group or on its left or right, and not on its top or bottom while the bar group shares a row (that would split the row), so a bar row holds bar widgets only. All other drops are unchanged. A refused drop shows no overlay and writes no log line. Dockview 8.5.1 offers no separate window-edge zone in this dock; the top or bottom zone of a group that spans the window gives the full-width row. | R29.1 makes bar rows full width at a fixed height. A non-bar widget in the row would take the fixed height too. The shared-row case was found in P23. |
 | D59 | Clamp with bar widgets (requirements section 5, v1.7): the D45 clamp lowers the minimums of non-bar groups first. Bar group heights fall only when the non-bar groups are at their D45 floor, and never below 32 px. The clamp then lowers both the minimum and the maximum of each bar group (D57 locks both), and restores both to the D57 height when space returns. | Section 5 says bar widgets keep their heights and the other widgets shrink first. |
 
 ### 5.3 Owner confirmations
@@ -2801,7 +2846,7 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K20 | The agent environment lacks native build packages | Validation cannot run locally | P0.0; section 1.2 fallback | P0 |
 | K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | Closed October 12, 2026: the P20.0 probe found two working signals; D54 | P20 |
 | K22 | A tool that keeps the microphone open (Handy "Always-On Microphone") holds the duck | Music stays quiet | Settings help text (P20.4); requirements section 5 | P20 |
-| K23 | Dockview 8.5.1 may not refuse a drop overlay for each widget or lock a group height (unverified assumption; the owner skipped the check on October 13, 2026) | R29.1 cannot ship as specified | P23.1 and P23.2 stop and ask the owner on failure (section 1.1 rule 9). Check: the 8.5.1 typings for the overlay event and the group `maximumHeight` constraint | P23 |
+| K23 | Dockview 8.5.1 may not refuse a drop overlay for each widget or lock a group height | R29.1 cannot ship as specified | Closed October 13, 2026: `onWillShowOverlay` and `onWillDrop` take `preventDefault()`, and group constraints take `maximumHeight` (8.5.1 typings; P23-AC4 passes) | P23 |
 
 ---
 
@@ -2988,6 +3033,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.21 (October 13, 2026):** P23.1 to P23.4 done. K23 closed. D58 gained the shared-row case and the note that Dockview has no window-edge zone here.
 - **1.20 (October 13, 2026):** P22 Done with exceptions (WebKit e2e runs in CI only).
 - **1.19 (October 13, 2026):** requirements v1.7 (R28.1, R29.1, AC-25 to AC-27). Added phases P22 and P23, D55 to D59 and K23. F-22 left section 11 (done). The owner skipped the Dockview check before planning; K23 records it.
 - **1.18 (October 12, 2026):** owner allowed `measure/p21`. F-21 done (run 38297586103 on `5625ff9`): Linux CI VM 293 MB, Windows 144 MB, NSIS 5.18 MiB. The 17 MB Linux container growth does not show on the CI VM. F-21 left section 11.

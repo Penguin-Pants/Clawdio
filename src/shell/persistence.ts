@@ -2,8 +2,9 @@ import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { commands } from "@/lib/ipc/commands";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, LIBRARY_MODES, type LibraryFrames, type LibraryMode, useLibraryStore } from "@/store/library";
-import { applyClamp } from "./clamp";
-import { RESET_LAYOUT, applyLayout, replaceArrangement } from "./layouts";
+import { barViolations, isBarWidget } from "./bar-rules";
+import { type Orientation, applyClamp, toNode } from "./clamp";
+import { RESET_LAYOUT, applyLayout, repairBars, replaceArrangement } from "./layouts";
 import { isWidgetId } from "./widgets";
 
 /** The `layout.json` version (P9.3, R29). */
@@ -137,6 +138,11 @@ export function restoreLayout(api: DockviewApi, text: string | null, size: { wid
   }
   if (unknown.length > 0) log.warn(`layout: unknown widget ids removed: ${unknown.join(", ")}`);
   if (!api.getPanel("library")) return fallback("the layout has no Library widget");
+  // Step 4b (P23.3, R29.1): a bar widget in a tab group or beside a non-bar widget moves to the bottom bar.
+  const { grid } = api.toJSON();
+  const misplaced = barViolations(toNode(grid.root), grid.orientation as Orientation).filter(isBarWidget);
+  repairBars(api, misplaced);
+  for (const id of misplaced) log.warn(`layout: moved ${id} to the bottom bar (R29.1)`);
   useLibraryStore.getState().setMode(layout.libraryMode);
   for (const warning of frameWarnings) log.warn(`layout: ${warning}`);
   useLibraryStore.getState().setAllFrames(layout.libraryFrames);

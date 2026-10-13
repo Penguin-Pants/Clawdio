@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.14, October 13, 2026.
-**Plan:** `docs/build-plan.md` v1.20. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.15, October 13, 2026.
+**Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -24,8 +24,8 @@
 
 | Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
 |---|---|---|---|---|---|---|---|---|
-| Requirements | 400 | 223 | 102 | 8 | 5 | 5 | 57 | 0 |
-| design.md | 78 | 59 | 7 | 1 | 10 | 0 | 1 | 0 |
+| Requirements | 400 | 240 | 85 | 8 | 5 | 5 | 57 | 0 |
+| design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -50,7 +50,7 @@
 | S1-7 | Music folder holds music data; per-machine data in OS folders or next to the executable in portable mode | §1 | P4.1 | P4-AC4, P9-AC7 | IT, MAN-L, MAN-W | Planned |
 | S1-8 | Imports many playlists at once; finds songs also in another format | §1 | P19.1, P19.3 | P19-AC1, P19-AC3 | UT, IT | Done (P19) |
 | S1-9 | Lowers or pauses music while another app uses the microphone (Windows) | §1 | P20.2, P20.3 | P20-AC1, P20-AC4 | UT, MAN-W | Done (P20); MAN-W open |
-| S1-10 | Resizable Library frames; Transport controls and Now playing stay thin bars | §1 | P22.1, P23.1 | P22-AC3, P23-AC4 | E2E | Planned |
+| S1-10 | Resizable Library frames; Transport controls and Now playing stay thin bars | §1 | P22.1, P23.1 | P22-AC3, P23-AC4 | E2E | Done (P23) |
 
 ### 1.2 Section 2: library (R1 to R4)
 
@@ -95,7 +95,7 @@
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
-| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Planned (D57) |
+| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
 | R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
@@ -122,14 +122,14 @@
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
-| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Planned (D57, K23) |
-| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Planned (D58) |
-| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Planned (D58, K23) |
-| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Planned (D58, K23) |
-| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Planned (D58, K23) |
-| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Planned (D58) |
-| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Planned (D58) |
-| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Planned |
+| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
+| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
+| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
+| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
+| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
+| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
+| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Done (P23, D58) |
+| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Done (P23) |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
@@ -374,8 +374,8 @@
 | E-37 | Setting changed to Off during a duck: volume returns or the duck-paused track resumes | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
 | E-38 | Stop during a Pause duck: no resume when the microphone is free | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
 | E-39 | Mode changed during a duck applies at once | §5 | P20.3 | P20-AC1 | UT | Done (P20) |
-| E-40 | Window too short for bar widgets: other widgets and frames shrink first, then the clamp | §5 | P23.4, P22.4 | P23-AC3, P22-AC4 | UT, E2E | Planned (D59) |
-| E-41 | One bar widget shown: own row; showing the other joins that row | §5 | P23.1 | P23-AC4 | E2E | Planned |
+| E-40 | Window too short for bar widgets: other widgets and frames shrink first, then the clamp | §5 | P23.4, P22.4 | P23-AC3, P22-AC4 | UT, E2E | Done (P23, D59) |
+| E-41 | One bar widget shown: own row; showing the other joins that row | §5 | P23.1 | P23-AC4 | E2E | Done (P23) |
 | E-42 | Corrupt or unknown frame-size data: defaults for that mode, logged; rest loads | §5 | P22.3 | P22-AC2 | UT | Done (P22, D55) |
 
 ### 1.11 Section 6: constraints
@@ -462,12 +462,12 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-28 | Bare entries fixed by a new import; new imports write unmatched relative entries relative to the new file | §8.28 | P19.3 | P19-AC9 | IT | Done (P19) |
 | DEC-29 | Component size means frame splitters; content scale deferred | §8.29 | P22.1 | P22-AC3 | E2E | Done (P22) |
 | DEC-30 | No layout mode; arrangement keeps saving automatically | §8.30 | P22.3 | P22-AC3 | E2E | Done (P22) |
-| DEC-31 | Transport controls get a fixed natural height | §8.31 | P23.1 | P23-AC6 | E2E | Planned (D57) |
-| DEC-32 | Side drops refused for bar widgets | §8.32 | P23.2 | P23-AC4 | E2E | Planned (D58) |
-| DEC-33 | Tabbing refused both ways for bar widgets | §8.33 | P23.2 | P23-AC4 | E2E | Planned (D58) |
-| DEC-34 | Now playing is a bar widget; the two can share a row | §8.34 | P23.1 | P23-AC4 | E2E | Planned |
+| DEC-31 | Transport controls get a fixed natural height | §8.31 | P23.1 | P23-AC6 | E2E | Done (P23, D57) |
+| DEC-32 | Side drops refused for bar widgets | §8.32 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
+| DEC-33 | Tabbing refused both ways for bar widgets | §8.33 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
+| DEC-34 | Now playing is a bar widget; the two can share a row | §8.34 | P23.1 | P23-AC4 | E2E | Done (P23) |
 | DEC-35 | Frame sizes kept per Library mode | §8.35 | P22.2 | P22-AC1 | UT | Done (P22) |
-| DEC-36 | Old arrangements: repair only the widget that breaks the rules | §8.36 | P23.3 | P23-AC2 | UT | Planned |
+| DEC-36 | Old arrangements: repair only the widget that breaks the rules | §8.36 | P23.3 | P23-AC2 | UT | Done (P23) |
 | DEC-37 | Frame splitters mouse only | §8.37 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
@@ -505,9 +505,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-22 | Several files in one picker action and the owner's playlist folder import; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5, P21.2 | P19-AC8, P21-AC2 | MAN-W | Auto pass (P19, P21); manual Windows not run (P19-AC8) |
 | AC-23 | Ducking with Handy and one call app, both modes | §9.23 | P20.2, P20.3 | P20-AC4 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
 | AC-24 | No microphone use by the app in Windows privacy settings | §9.24 | P20.2 | P20-AC5 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
-| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Planned |
-| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Planned (K23) |
-| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Planned |
+| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
+| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
+| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); manual Windows open (P23-AC7) |
 
 ---
 
@@ -550,7 +550,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DES-5.8 | Small windows: minimum window and widget sizes; clamping | §5 | P2.11, P9.4 | P2-AC6, P9-AC9, P17-AC4 | E2E, MAN-L | Done (P17, D45) |
 | DES-5.9 | Empty widgets show hints; missing art uses a quiet placeholder | §5 | P2.9, P1.8, P10.3 | P2-AC12, P10-AC4 | E2E | Done (P10) |
 | DES-5.10 | Lyrics only as the requirements support; no invented fetching | §5 | P13.1, P15.1 | P13-AC5, P15-AC1 | IT, E2E | Done (P15) |
-| DES-5.11 | Bar widgets: fixed height, top and bottom edges only, shared row, no tab group | §5 | P23.1, P23.2 | P23-AC4 | E2E | Planned (D57, D58) |
+| DES-5.11 | Bar widgets: fixed height, top and bottom edges only, shared row, no tab group | §5 | P23.1, P23.2 | P23-AC4 | E2E | Done (P23, D57, D58) |
 | DES-5.12 | Library frame splitters in Columns and Top/bottom, styled like dock splitters | §5 | P22.1 | P22-AC3, P22-AC4 | E2E | Done (P22, D56) |
 | DES-6.1 | App shell: matte canvas, subtle boundaries, stable resizing | §6 | P0.7, P2.10 | P2-AC6, P2-AC7 | E2E | Done (P2) |
 | DES-6.2 | Widget header flat; drop zones and splitters on border and hover surfaces; red only on the active drop target | §6 | P2.3, P2.10 | P2-AC7, P2-AC17 | E2E | Done (P2) |
@@ -731,4 +731,4 @@ These are not gaps in the plan. Each has a task, a criterion and a path to closu
 | B5 Test machines | All MAN-W and MAN-L rows | The owner has a Windows 10 or 11 machine only. MAN-L rows stay "not verified" and P18 records them as exceptions. | Owner runs the MAN-W checks by P18 |
 | K21 Microphone API | R34-2, VER-4, AC-23, AC-24 | P20.0 spike result on Windows with Handy and one call app | Closed October 12, 2026 (D54) |
 | Real playlists | AC-22 | The owner's playlist folder for the P19-AC8 manual check. The files are never committed. | Owner runs P19-AC8 on Windows |
-| K23 Dockview capability | R29.1-1, R29.1-3 to R29.1-5, AC-26 | Dockview 8.5.1 must refuse a drop overlay per widget and lock a group height. The owner skipped the check before planning (October 13, 2026). | Agent checks at P23.1 and P23.2; the owner decides if it fails |
+| K23 Dockview capability | R29.1-1, R29.1-3 to R29.1-5, AC-26 | Closed October 13, 2026: the 8.5.1 typings and P23-AC4 show overlay refusal and the group height lock work. | Closed |

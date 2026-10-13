@@ -1,5 +1,6 @@
 import type { AddPanelPositionOptions, DockviewApi } from "dockview-react";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import type { BarWidgetId } from "./bar-rules";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
 /** Built-in layouts (R29). Each one sets the default arrangement and its Library mode. */
@@ -125,6 +126,15 @@ export function setWidgetVisible(id: WidgetId, visible: boolean, api: DockviewAp
   } else if (!visible && panel) {
     api.removePanel(panel);
   }
+}
+
+/**
+ * Moves the bar widgets that break R29.1 to their default places (P23.3): all of them leave
+ * first, then each comes back at its `showPosition`, so a bar never lands beside a misplaced one.
+ */
+export function repairBars(api: DockviewApi, ids: BarWidgetId[]): void {
+  for (const id of ids) setWidgetVisible(id, false, api);
+  for (const id of ids) setWidgetVisible(id, true, api);
 }
 
 /** The widgets in the dock, in registry order. */

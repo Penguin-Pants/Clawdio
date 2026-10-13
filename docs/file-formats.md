@@ -129,7 +129,8 @@ Rules (P9.4), each with one warning in `app.log`:
 2. A widget id this version does not know: its panel is removed; the rest stays.
 3. No Library panel: the Columns layout applies.
 4. Any error while the dock loads: the Columns layout applies.
-5. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
+5. A bar widget (Transport controls or Now playing) in a tab group with another widget, or in a row with a widget other than the other bar widget, moves to the bottom bar; the rest stays (P23.3, R29.1). The warning names the widget id.
+6. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
 
 Reset layout and each built-in layout restore the default frame sizes of all modes (R28.1).
 

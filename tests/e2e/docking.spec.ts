@@ -1,15 +1,26 @@
 // P2-AC1, P2-AC2, P2-AC3, P2-AC17: default arrangement, drag docking, splitters, Library guard.
+// The bar widgets keep a fixed height and refuse side and tab drops (R29.1), so these tests
+// drag Play queue and Playlists.
 import type { Page } from "@playwright/test";
-import { center, drag, expect, group, openApp, openMenu, tab, test, tokenRgb, widget } from "./test-base";
+import { center, closeMenu, drag, expect, group, openApp, openMenu, tab, test, tokenRgb, widget } from "./test-base";
 
-/** A point on the splitter above the bottom row, away from the bottom row's own splitter. */
+/** The dock splitter between Library and the widget to its right (not a Library frame splitter). */
+const dockSash = (page: Page) =>
+  page
+    .locator(".dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash:not([data-frame-group] *)")
+    .first();
+
+/** A point on that splitter, away from its ends. */
 async function sashPoint(page: Page): Promise<{ x: number; y: number }> {
-  const box = await page
-    .locator(".dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash")
-    .first()
-    .boundingBox();
+  const box = await dockSash(page).boundingBox();
   if (!box) throw new Error("no splitter");
-  return { x: box.x + 100, y: box.y + box.height / 2 };
+  return { x: box.x + box.width / 2, y: box.y + 100 };
+}
+
+async function showWidget(page: Page, name: string): Promise<void> {
+  await openMenu(page);
+  await page.getByRole("menuitemcheckbox", { name, exact: true }).click();
+  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
 }
 
 test("P2-AC1: first start shows Library above Now playing beside Transport controls", async ({ page }) => {
@@ -33,37 +44,38 @@ test("P2-AC1: first start shows Library above Now playing beside Transport contr
 
 test("P2-AC2: a header dragged to a widget edge docks there", async ({ page }) => {
   await openApp(page);
+  await showWidget(page, "Play queue");
   const target = await widget(page, "library").boundingBox();
   if (!target) throw new Error("no library");
-  await drag(page, await center(tab(page, "Transport controls")), {
-    x: target.x + target.width - 15,
-    y: target.y + target.height / 2,
-  });
+  await drag(page, await center(tab(page, "Play queue")), { x: target.x + 15, y: target.y + target.height / 2 });
   const library = await widget(page, "library").boundingBox();
-  const transport = await widget(page, "transport").boundingBox();
-  if (!library || !transport) throw new Error("missing widget");
-  expect(transport.x).toBeGreaterThanOrEqual(library.x + library.width - 1);
-  expect(Math.abs(transport.y - library.y)).toBeLessThan(1);
+  const queue = await widget(page, "queue").boundingBox();
+  if (!library || !queue) throw new Error("missing widget");
+  expect(queue.x + queue.width).toBeLessThanOrEqual(library.x + 1);
+  expect(Math.abs(queue.y - library.y)).toBeLessThan(1);
 });
 
 test("P2-AC2: a header dropped on another tab bar forms a tabbed group", async ({ page }) => {
   await openApp(page);
-  const bar = await group(page, "transport").locator(".dv-tabs-and-actions-container").boundingBox();
+  await showWidget(page, "Play queue");
+  await showWidget(page, "Playlists");
+  const bar = await group(page, "queue").locator(".dv-tabs-and-actions-container").boundingBox();
   if (!bar) throw new Error("no tab bar");
-  await drag(page, await center(tab(page, "Now playing")), { x: bar.x + bar.width - 20, y: bar.y + bar.height / 2 });
-  const tabs = page.locator(".dv-tabs-container", { has: tab(page, "Transport controls") }).locator(".dv-tab");
+  await drag(page, await center(tab(page, "Playlists")), { x: bar.x + bar.width - 20, y: bar.y + bar.height / 2 });
+  const tabs = page.locator(".dv-tabs-container", { has: tab(page, "Play queue") }).locator(".dv-tab");
   await expect(tabs).toHaveCount(2);
-  await expect(tabs.filter({ hasText: "Now playing" })).toHaveCount(1);
+  await expect(tabs.filter({ hasText: "Playlists" })).toHaveCount(1);
 });
 
 test("P2-AC2: splitters resize and no float or pop-out command exists", async ({ page }) => {
   await openApp(page);
+  await showWidget(page, "Play queue");
   const before = await widget(page, "library").boundingBox();
   const point = await sashPoint(page);
-  await drag(page, point, { x: point.x, y: point.y - 120 });
+  await drag(page, point, { x: point.x - 120, y: point.y });
   const after = await widget(page, "library").boundingBox();
   if (!before || !after) throw new Error("no library");
-  expect(after.height).toBeLessThan(before.height - 100);
+  expect(after.width).toBeLessThan(before.width - 100);
 
   await tab(page, "Library").click({ button: "right" });
   await expect(page.locator(".dv-context-menu")).toHaveCount(0);
@@ -89,18 +101,19 @@ test("P2-AC3: Library cannot be closed or hidden", async ({ page }) => {
 
 test("P2-AC3: moving Library to an edge or into a tabbed group keeps exactly one Library", async ({ page }) => {
   await openApp(page);
-  const transport = await widget(page, "transport").boundingBox();
-  if (!transport) throw new Error("no transport");
+  await showWidget(page, "Play queue");
+  const queue = await widget(page, "queue").boundingBox();
+  if (!queue) throw new Error("no queue");
   await drag(page, await center(tab(page, "Library")), {
-    x: transport.x + transport.width - 15,
-    y: transport.y + transport.height / 2,
+    x: queue.x + queue.width - 15,
+    y: queue.y + queue.height / 2,
   });
   await expect(widget(page, "library")).toHaveCount(1);
-  const bar = await group(page, "nowPlaying").locator(".dv-tabs-and-actions-container").boundingBox();
+  const bar = await group(page, "queue").locator(".dv-tabs-and-actions-container").boundingBox();
   if (!bar) throw new Error("no tab bar");
   await drag(page, await center(tab(page, "Library")), { x: bar.x + bar.width - 20, y: bar.y + bar.height / 2 });
   await expect(tab(page, "Library")).toHaveCount(1);
-  await expect(page.locator(".dv-tabs-container", { has: tab(page, "Now playing") }).locator(".dv-tab")).toHaveCount(2);
+  await expect(page.locator(".dv-tabs-container", { has: tab(page, "Play queue") }).locator(".dv-tab")).toHaveCount(2);
   await page.waitForTimeout(100);
   await expect(tab(page, "Library")).toHaveCount(1);
 });
@@ -109,24 +122,27 @@ test("P2-AC17: splitter line on hover and drag, drop overlay with a red border o
   page,
 }) => {
   await openApp(page);
+  await showWidget(page, "Play queue");
   const strong = await tokenRgb(page, "--color-border-strong");
   const red = await tokenRgb(page, "--color-brand-red");
-  const sash = page.locator(".dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash").first();
+  const sash = dockSash(page);
   const line = (property: string) =>
     sash.evaluate((element, name) => getComputedStyle(element, "::after").getPropertyValue(name), property);
-  // "n-resize" when the row below is at its minimum and the splitter can only move up.
-  expect(["ns-resize", "n-resize"]).toContain(await sash.evaluate((element) => getComputedStyle(element).cursor));
+  // "e-resize" or "w-resize" when a neighbor is at its minimum and the splitter moves one way.
+  expect(["ew-resize", "e-resize", "w-resize"]).toContain(
+    await sash.evaluate((element) => getComputedStyle(element).cursor),
+  );
   const point = await sashPoint(page);
   await page.mouse.move(point.x, point.y);
   expect(await line("background-color")).toBe(strong);
-  expect(await line("height")).toBe("1px");
+  expect(await line("width")).toBe("1px");
   await page.mouse.down();
-  await page.mouse.move(point.x, point.y - 5, { steps: 2 });
-  expect(await line("height")).toBe("2px");
+  await page.mouse.move(point.x - 5, point.y, { steps: 2 });
+  expect(await line("width")).toBe("2px");
   expect(await line("background-color")).toBe(strong);
   await page.mouse.up();
 
-  const from = await center(tab(page, "Transport controls"));
+  const from = await center(tab(page, "Play queue"));
   const target = await widget(page, "library").boundingBox();
   if (!target) throw new Error("no library");
   await page.mouse.move(from.x, from.y);
