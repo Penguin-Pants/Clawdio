@@ -245,8 +245,10 @@ test("P19-AC7: Find missing songs on one playlist, then on all playlists", async
   await expect(page.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Find missing songs" })).toHaveCount(0);
   await page.keyboard.press("Escape");
-  // The context menu must be gone, or WebKit can take the next click as an outside click.
+  // The context menu must be gone and its focus return done (WebKit returns focus a moment
+  // after the close), or the focus return closes the next menu as soon as it opens.
   await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(tree(page)).toBeFocused();
 
   await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
   await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();

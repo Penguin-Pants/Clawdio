@@ -885,7 +885,7 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 | U4-AC1 | Pass (Chromium) | `table.spec.ts`: divider drag and the minimum (TB-2); divider double-click, menu auto size and Reset columns (TB-3); header drag reorder, `#` fixed (TB-4); hide and show, `#` and Title not hideable (TB-5); Title spare width, Time right aligned (TB-6); horizontal scroll with the header aligned and sticky (TB-7); sort cycle with `aria-sort` and the arrow, "2" before "10" (TB-8); state per view over a mode switch and a reload (TB-9); click, Shift and Ctrl select, Shift+Down, Enter plays (TB-10); the playing icon in `#` (TB-11); the keyboard-only header path (AX-1); no header in Tree mode. `table-perf.spec.ts` (TB-1, rework Phase 3 accept): 50,000 rows. `cargo test` sort cases; `columns.test.ts`; `library.test.ts` (UD12). |
 | U4-AC2 | Pass | `table.spec.ts`: `columns.json` apart from `layout.json`, Reset layout keeps the columns, a bad file goes to `columns.json.bak` with one log line and the defaults load. `columns-persistence.test.ts`; `cargo test` file round trip and backup. |
 | U4-AC3 | Pass in CI (Chromium); reference machine in U7 | PF-1: `table.test.tsx` mounts `SongTable`, fires a container width change through the mocked `ResizeObserver` and counts `SongTableRow` renders with the React Profiler (0 rows render again; with an unstable callback prop the same test counts 22). PF-3: the longest frame gap was 16.8 ms in four runs (budget 100 ms) while the table scrolled for 3 s, sorted, resized a column and resized a dock sash. |
-| U4-AC4 | Pass (Chromium) | Validation command set; bindings `SongRow`, `SortColumn` and `SortKey` committed; Chromium e2e E2E_COUNT. |
+| U4-AC4 | Pass (Chromium) | Validation command set; bindings `SongRow`, `SortColumn` and `SortKey` committed; Chromium e2e 151 of 151. |
 
 **Notes**
 
@@ -899,6 +899,8 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 **Rule 10 (real app):** Linux, WebKitGTK under Xvfb with `xdotool`, a 12-song generated folder: the Songs table shows in Columns mode with the `#` numbers; a Title click sorts in Rust with the arrow ("Track 1 by Émile Duval" between Alpha and Zed Band, track 10 after track 3); Shift+F10 opens the header menu with `#` and Title disabled; four Ctrl+Right presses widen Title from 240 to 272 px; Shift+Down selects a range; `columns.json` holds the new width and sort apart from `layout.json`.
 
 **Checks that could not run:** WebKit e2e (no WebKit build here; CI runs it). The PF-3 reference-machine number (U7, UQ3).
+
+**CI (U3 head):** WebKit failed P19-AC7 "Find missing songs on one playlist, then on all playlists": the second menu closed as it opened. WebKit returns focus from the closed context menu a moment later, and that focus move closed the new menu. The test now waits for the focus return (the tree has focus) before it opens the next menu.
 
 **TWO-PASS REVIEW:** F1 1, F2 4, F3 0, F4 5.
 
