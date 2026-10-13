@@ -3,6 +3,7 @@ import { type LibraryMode, useLibraryStore } from "@/store/library";
 import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
 import { DEFAULT_PRESET, type PresetId, buildPreset } from "./presets";
+import { DEFAULT_SLOTS } from "./transport/slots";
 import { WIDGET_IDS, WIDGETS, type WidgetId, isWidgetId } from "./widgets";
 
 /** Reset layout sets this Library mode (UD6). */
@@ -100,7 +101,7 @@ export function applyMeasureLayout(mode: LibraryMode, api: DockviewApi | null = 
 
 /**
  * Reset layout (DK-7, UD6): the default preset, Columns mode, the default frame sizes, the band
- * at the top and unlocked.
+ * at the top, unlocked and the default band slots (UD20).
  */
 export function resetLayout(api: DockviewApi | null = dock): void {
   if (!api) return;
@@ -110,6 +111,7 @@ export function resetLayout(api: DockviewApi | null = dock): void {
   library.resetFrames();
   useUiStore.getState().setTransportPosition("top");
   useUiStore.getState().setLocked(false);
+  useUiStore.getState().setTransportSlots(DEFAULT_SLOTS);
 }
 
 /**

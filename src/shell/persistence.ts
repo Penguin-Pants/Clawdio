@@ -7,6 +7,7 @@ import { type TransportPosition, useUiStore } from "@/store/ui";
 import { applyClamp } from "./clamp";
 import { replaceArrangement, resetLayout } from "./layouts";
 import { collapsedSizes, restoreCollapsed } from "./splitters";
+import { type TransportSlots, parseSlots } from "./transport/slots";
 import { isWidgetId } from "./widgets";
 
 /** The `layout.json` version (UD5). Version 1 (P9 to P23) held a `transport` dock panel. */
@@ -23,6 +24,8 @@ export interface SavedLayout {
   transport: TransportPosition;
   /** Lock layout (DK-5, UD5). */
   locked: boolean;
+  /** The band slot order and hidden set (UD20). Optional in the file: none gives the defaults. */
+  transportSlots: TransportSlots;
   libraryMode: LibraryMode;
   /** Optional in the file (D55): a file without it loads with the default sizes. */
   libraryFrames: LibraryFrames;
@@ -126,11 +129,14 @@ export function parseLayout(
   let locked = false;
   if (typeof object.locked === "boolean") locked = object.locked;
   else warnings.push(`invalid locked ${JSON.stringify(object.locked)}; using unlocked`);
+  const slots = parseSlots(object.transportSlots);
+  warnings.push(...slots.warnings);
   return {
     layout: {
       version: LAYOUT_VERSION,
       transport,
       locked,
+      transportSlots: slots.slots,
       libraryMode: mode as LibraryMode,
       libraryFrames: frames,
       collapsed: object.collapsed,
@@ -183,6 +189,7 @@ export function restoreLayout(
   if (!api.getPanel("library")) return fallback("the layout has no Library widget");
   useUiStore.getState().setTransportPosition(layout.transport);
   useUiStore.getState().setLocked(layout.locked);
+  useUiStore.getState().setTransportSlots(layout.transportSlots);
   useLibraryStore.getState().setMode(layout.libraryMode);
   for (const warning of frameWarnings) log.warn(`layout: ${warning}`);
   useLibraryStore.getState().setAllFrames(layout.libraryFrames);
@@ -202,6 +209,7 @@ export function currentLayout(api: DockviewApi): SavedLayout {
     version: LAYOUT_VERSION,
     transport: ui.transportPosition,
     locked: ui.locked,
+    transportSlots: ui.transportSlots,
     libraryMode: library.mode,
     libraryFrames: library.frames,
     collapsed: collapsedSizes(),
@@ -241,7 +249,12 @@ export function watchLayout(
     if (state.mode !== previous.mode || state.frames !== previous.frames) schedule();
   });
   const uiChange = useUiStore.subscribe((state, previous) => {
-    if (state.transportPosition !== previous.transportPosition || state.locked !== previous.locked) schedule();
+    if (
+      state.transportPosition !== previous.transportPosition ||
+      state.locked !== previous.locked ||
+      state.transportSlots !== previous.transportSlots
+    )
+      schedule();
   });
   const collapseChange = useCollapseStore.subscribe(schedule);
   return {

@@ -34,7 +34,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
 | tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
 | AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
-| UI shell rework | 74 | 57 | 13 | 0 | 0 | 0 | 4 | 0 | 0 |
+| UI shell rework | 74 | 62 | 8 | 0 | 0 | 0 | 4 | 0 | 0 |
 
 **Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
@@ -734,9 +734,9 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TR-6 | Never overlays the list | U1 | E2E (band box and dock box do not intersect) | Done (U1) |
 | TR-7 | Opaque background | U1 | E2E (alpha 1) | Done (U1) |
 | TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
-| TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
-| TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
-| TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
+| TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Done (U5) |
+| TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5) |
+| TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Done (U5) |
 | DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
 | DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
 | DK-3 | Edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Done (U2) |
@@ -777,9 +777,9 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 | Resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
-| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1, U3 paths done; card U5) |
+| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Done (U5) |
 | PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U4 CI pass; reference machine in U7) |
-| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators, U4 table) |
+| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Done (U5) |
 | AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
 | TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
@@ -790,7 +790,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
-| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
+| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | In progress (U5 done; U6 next) |
 | RW-9 | Rework 9 checklist | U7 | MAN | Planned |
 | RW-14 | Rework 14 definition of done | U7 | REV | Planned |
 

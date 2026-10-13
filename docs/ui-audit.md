@@ -117,3 +117,10 @@ Each phase adds its acceptance check here (rework section 14).
 - The Songs list of Columns and Top/bottom modes is a `grid`: a sticky header row, `#`, Title, Artist, Album and Time columns, divider resize with minimums, double-click and menu auto size, pointer and keyboard reorder, show or hide in the header menu, sort in Rust with `aria-sort` and an arrow, multi-select (click, Shift, Ctrl), the playing icon in `#`, and Add to Favorites by keyboard. Column state per view in `columns.json`, apart from `layout.json`.
 - Rework Phase 3 accept: `tests/e2e/table-perf.spec.ts` with 50,000 rows: the DOM holds the rows in view plus the overscan, and the longest frame gap in Chromium CI is under the 100 ms budget while the table scrolls, sorts and resizes. The reference-machine number is for U7 (UQ3).
 - TB-2 to TB-11 and PS-6 in `tests/e2e/table.spec.ts`; PF-1 in `src/widgets/library/table.test.tsx` (a container resize renders no row again); grid roles and row indexes in `audit.spec.ts`.
+
+### U5: Transport extras
+
+- The Now playing card (art, title, artist and album, heart, seek bar with times, previous, play or pause and next; Stop, Shuffle and Repeat in a More menu below 320 px) uses the band's controls and the one player store.
+- Customize transport bar: a dialog with a checkbox per optional slot, Move up and Move down and drag handles; the order and hidden set save as `transportSlots` in `layout.json`.
+- Mini player: the art (or the menu) shrinks the window to the band at the compact token height; the dock stays mounted and inert; Exit mini player in the More menu returns the stored size and position.
+- Rework Phase 5 items 1, 2 and 4: `card.spec.ts`, `customize.spec.ts`, `mini.spec.ts`; `cargo test` for the window sizes.

@@ -110,4 +110,6 @@ export const commands = {
   measureReady: () => invoke<void>("measure_ready"),
   scanRunning: () => invoke<boolean>("scan_running"),
   perfMode: () => invoke<boolean>("perf_mode"),
+  /** Enters or leaves the mini player with the compact band height in logical px (UD19). */
+  windowSetMini: (on: boolean, height: number) => invoke<void>("window_set_mini", { on, height }),
 };

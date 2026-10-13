@@ -6,8 +6,8 @@ use std::time::{Duration, Instant};
 
 use clawdio_core::settings::{save, WindowSize};
 use tauri::{
-    AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
-    WindowEvent,
+    AppHandle, LogicalSize, Manager, PhysicalPosition, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder, WindowEvent,
 };
 
 use crate::state::AppState;
@@ -203,6 +203,99 @@ fn watch_size(app: &AppHandle, window: &WebviewWindow) {
     }
 }
 
+/// The mini player window width and minimum width in logical px (UD19).
+pub const MINI_WIDTH: f64 = 400.0;
+pub const MINI_MIN_WIDTH: f64 = 320.0;
+/// The band height the webview may send, in logical px (UD19).
+pub const MINI_HEIGHT_RANGE: std::ops::RangeInclusive<f64> = 32.0..=200.0;
+
+/// One window change of a mini player switch, in order (UD19).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum WindowOp {
+    Unmaximize,
+    /// The maximum inner size; `None` clears it.
+    MaxSize(Option<(f64, f64)>),
+    MinSize(f64, f64),
+    Size(f64, f64),
+    /// The physical outer position.
+    Position(i32, i32),
+}
+
+/// The normal window size and position, kept while the mini player shows.
+#[derive(Default)]
+pub struct MiniState(pub Mutex<Option<WindowSize>>);
+
+/// The changes that enter the mini player for a band `height`, or `None` for a refused height.
+pub fn enter_ops(height: f64) -> Option<Vec<WindowOp>> {
+    if !MINI_HEIGHT_RANGE.contains(&height) {
+        return None;
+    }
+    // The minimum goes first, so the smaller size is allowed; the maximum height holds the
+    // window to the band (any width up to the largest a window takes).
+    Some(vec![
+        WindowOp::Unmaximize,
+        WindowOp::MinSize(MINI_MIN_WIDTH, height),
+        WindowOp::MaxSize(Some((f64::from(u16::MAX), height))),
+        WindowOp::Size(MINI_WIDTH, height),
+    ])
+}
+
+/// The changes that leave the mini player and return to `stored`.
+pub fn exit_ops(stored: Option<WindowSize>) -> Vec<WindowOp> {
+    let size = start_size(stored);
+    let mut ops = vec![
+        WindowOp::MaxSize(None),
+        WindowOp::MinSize(MIN_WIDTH, MIN_HEIGHT),
+        WindowOp::Size(size.width, size.height),
+    ];
+    if let (Some(x), Some(y)) = (size.x, size.y) {
+        ops.push(WindowOp::Position(x, y));
+    }
+    ops
+}
+
+fn apply(window: &WebviewWindow, op: WindowOp) -> tauri::Result<()> {
+    match op {
+        WindowOp::Unmaximize => window.unmaximize(),
+        WindowOp::MaxSize(size) => {
+            window.set_max_size(size.map(|(width, height)| LogicalSize::new(width, height)))
+        }
+        WindowOp::MinSize(width, height) => {
+            window.set_min_size(Some(LogicalSize::new(width, height)))
+        }
+        WindowOp::Size(width, height) => window.set_size(LogicalSize::new(width, height)),
+        WindowOp::Position(x, y) => window.set_position(PhysicalPosition::new(x, y)),
+    }
+}
+
+/// Enters or leaves the mini player (UD19, TR-9). Entering keeps the normal size and position
+/// once; a second enter (a new band height after a text size change) keeps the first one.
+pub fn set_mini(
+    window: &WebviewWindow,
+    state: &MiniState,
+    on: bool,
+    height: f64,
+) -> Result<(), String> {
+    let mut stored = state
+        .0
+        .lock()
+        .map_err(|_| "the window state is not available".to_string())?;
+    let ops = if on {
+        let ops = enter_ops(height)
+            .ok_or_else(|| format!("the band height {height} is outside 32 to 200 px"))?;
+        if stored.is_none() {
+            *stored = Some(current_window(window).unwrap_or(DEFAULT_SIZE));
+        }
+        ops
+    } else {
+        exit_ops(stored.take())
+    };
+    for op in ops {
+        apply(window, op).map_err(|error| format!("cannot change the window: {error}"))?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -261,5 +354,64 @@ mod tests {
         let size = start_size(Some(saved));
         assert_eq!((size.x, size.y), (Some(50), Some(60)));
         assert_eq!((size.width, size.height), (MIN_WIDTH, MIN_HEIGHT));
+    }
+
+    #[test]
+    fn the_mini_size_follows_the_band_height() {
+        assert_eq!(
+            enter_ops(40.0),
+            Some(vec![
+                WindowOp::Unmaximize,
+                WindowOp::MinSize(MINI_MIN_WIDTH, 40.0),
+                WindowOp::MaxSize(Some((f64::from(u16::MAX), 40.0))),
+                WindowOp::Size(MINI_WIDTH, 40.0),
+            ])
+        );
+        // 140% text: a taller band.
+        assert!(enter_ops(56.0)
+            .unwrap()
+            .contains(&WindowOp::Size(MINI_WIDTH, 56.0)));
+    }
+
+    #[test]
+    fn a_band_height_outside_32_to_200_px_is_refused() {
+        assert_eq!(enter_ops(31.9), None);
+        assert_eq!(enter_ops(200.1), None);
+        assert_eq!(enter_ops(f64::NAN), None);
+        assert!(enter_ops(32.0).is_some());
+        assert!(enter_ops(200.0).is_some());
+    }
+
+    #[test]
+    fn exit_clears_the_maximum_then_restores_the_minimum_size_and_position() {
+        let stored = WindowSize {
+            x: Some(10),
+            y: Some(20),
+            ..WindowSize::new(1000.0, 700.0)
+        };
+        assert_eq!(
+            exit_ops(Some(stored)),
+            vec![
+                WindowOp::MaxSize(None),
+                WindowOp::MinSize(MIN_WIDTH, MIN_HEIGHT),
+                WindowOp::Size(1000.0, 700.0),
+                WindowOp::Position(10, 20),
+            ]
+        );
+        assert_eq!(
+            exit_ops(None),
+            vec![
+                WindowOp::MaxSize(None),
+                WindowOp::MinSize(MIN_WIDTH, MIN_HEIGHT),
+                WindowOp::Size(DEFAULT_SIZE.width, DEFAULT_SIZE.height),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_mini_size_is_never_worth_saving() {
+        for height in [32.0, 40.0, 200.0] {
+            assert!(!worth_saving(WindowSize::new(MINI_WIDTH, height), false));
+        }
     }
 }

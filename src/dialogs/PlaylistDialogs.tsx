@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { CustomizeTransportDialog } from "./CustomizeTransportDialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -382,6 +383,8 @@ function Body({ dialog }: { dialog: AppDialog }) {
       return <RepairReportDialog batch={dialog.batch} />;
     case "metadataPreview":
       return <MetadataDialog album={dialog.album} preview={dialog.preview} />;
+    case "customizeTransport":
+      return <CustomizeTransportDialog />;
   }
 }
 

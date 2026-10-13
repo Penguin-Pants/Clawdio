@@ -10,6 +10,7 @@ pub mod metadata;
 pub mod player;
 pub mod playlists;
 pub mod settings;
+pub mod window;
 
 use clawdio_core::api::IpcError;
 

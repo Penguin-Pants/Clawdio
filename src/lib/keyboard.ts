@@ -55,11 +55,14 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
  * in a hidden tab has no layout box, so it is skipped.
  */
 export function widgetRegions(root: ParentNode = document): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>("[data-widget]")]
-    .map((element) => ({ element, rect: element.getBoundingClientRect() }))
-    .filter(({ rect }) => rect.width > 0 && rect.height > 0)
-    .sort((a, b) => Math.round(a.rect.top) - Math.round(b.rect.top) || a.rect.left - b.rect.left)
-    .map(({ element }) => element);
+  return (
+    [...root.querySelectorAll<HTMLElement>("[data-widget]")]
+      .map((element) => ({ element, rect: element.getBoundingClientRect() }))
+      // A widget in an inert container (the dock while the mini player shows, UD19) is skipped.
+      .filter(({ element, rect }) => rect.width > 0 && rect.height > 0 && !element.closest("[inert]"))
+      .sort((a, b) => Math.round(a.rect.top) - Math.round(b.rect.top) || a.rect.left - b.rect.left)
+      .map(({ element }) => element)
+  );
 }
 
 /** The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. */

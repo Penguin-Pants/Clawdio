@@ -14,7 +14,7 @@ The app writes the file atomically: a temp file in the same folder, then a renam
 | `musicFolder` | string or `null` | `null` | The music folder, absolute. In portable mode (R18.1): relative to the executable folder when both are on the same volume, else absolute. |
 | `onlineLookups` | boolean | `false` | The Online lookups switch (R7). |
 | `onlineNoticeDone` | boolean | `false` | `true` after the user answers the first-run notice. |
-| `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers), and the optional outer position `x` and `y` in physical pixels (integers, PS-5, UD14). The position applies at start only when that point lies on an available monitor; else the OS places the window. A file without `x` and `y` loads with no position. |
+| `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers), and the optional outer position `x` and `y` in physical pixels (integers, PS-5, UD14). The position applies at start only when a 160 x 40 px title area at that point lies on one available monitor; else the OS places the window. A file without `x` and `y` loads with no position. Sizes below the 800 x 560 minimum are not saved, so the mini player (TR-9) never replaces the normal size. |
 | `lastScan` | object or `null` | `null` | Counts of the last scan (R2): `added`, `removed` and `skipped`. Settings shows them. A file without the key reads as `null`. |
 | `micDucking` | `"off"`, `"lower"` or `"pause"` | `"off"` | "When the microphone is in use" (R34.1). Windows only; other platforms keep the value and do not use it (D53). A file without the key reads as `"off"`. |
 | `micDuckPercent` | integer | `20` | The ducked volume for `"lower"`, as a percentage of the user volume (R34.3): 5 to 90 in steps of 5. A file without the key, or with another value, reads as `20`. |
@@ -92,6 +92,8 @@ On load, a file that fails validation (not JSON, an unknown `version`, no `dock`
 | `locked` | boolean | Lock layout (DK-5). Another value loads as `false` with a log line. |
 | `libraryMode` | string | `tree`, `columns` or `topBottom`. |
 | `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
+| `transportSlots` | object | Optional (TR-10, UD20). The band slot `order` (array of `previous`, `playPause`, `next`, `nowPlaying`, `seek`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) and the `hidden` slots. `previous`, `playPause` and `next` always come first; `playPause` cannot be hidden. A file without it loads the default order with `search` hidden. |
+| `collapsed` | object | Optional (PS-5, UD25). Collapsed groups by Dockview group id: `{ "axis": "width" or "height", "size": <px before the collapse> }`. Restore returns a group to that size after a restart. A file without it has no collapsed group. |
 | `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, the active group, and `floatingGroups` (DK-3): each floating group's panels and its position and size over the dock. A floating group outside a smaller window moves back inside. |
 
 The file holds no window size: that is in `settings.json` only (P9-AC8). The grid `width` and `height` are the dock size when saved; the app fits the grid to the current window at start.
@@ -103,6 +105,11 @@ Example (shortened):
   "version": 2,
   "transport": "top",
   "locked": false,
+  "transportSlots": {
+    "order": ["previous", "playPause", "next", "nowPlaying", "seek", "stop", "shuffle", "repeat", "volume", "queue", "search"],
+    "hidden": ["search"]
+  },
+  "collapsed": {},
   "libraryMode": "tree",
   "libraryFrames": { "columns": [0.25, 0.25, 0.5], "topBottom": { "top": [0.5, 0.5], "rows": [0.5, 0.5] } },
   "dock": {
@@ -132,16 +139,18 @@ Example (shortened):
 
 Rules (P9.4), each with one warning in `app.log`:
 
-1. Not JSON, another `version`, no `dock` object, or a missing or unknown `libraryMode`: the file is backed up and the default preset applies (Reset layout: Columns mode, the band at the top, unlocked).
+1. Not JSON, another `version`, no `dock` object, or a missing or unknown `libraryMode`: the file is backed up and the default preset applies (Reset layout: Columns mode, the band at the top, unlocked, the default band slots).
 2. A widget id this version does not know: its panel is removed; the rest stays. (Version 2 has no `transport` widget: the transport band is not a dock panel.)
 3. No Library panel: the file is backed up and the default preset applies.
 4. Any error while the dock loads: the file is backed up and the default preset applies.
 5. A bad `transport` or `locked` value: that key takes its default; the rest loads.
-6. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
+6. `transportSlots`: an unknown slot id is dropped with one warning and a missing slot goes at the end. A hidden `playPause`, or a value that is not an object with `order` and `hidden` arrays, gives the default slots with one warning. The rest loads.
+7. `collapsed`: an entry with a bad axis or size is ignored with one warning; an entry of a group the dock does not have is dropped. A value that is not an object gives no collapsed group with one warning.
+8. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
 
 Reset layout and each built-in layout restore the default frame sizes of all modes (R28.1).
 
-Saving: 500 ms after a layout, Library mode, frame size, band position or lock change, and at once when the window closes. The measurement layout (P3.1) is not saved.
+Saving: 500 ms after a layout, Library mode, frame size, band position, lock, band slot or collapse change, and at once when the window closes. The mini player (TR-9) is not saved: the app always starts in the normal window. The measurement layout (P3.1) is not saved.
 
 ## `columns.json`
 

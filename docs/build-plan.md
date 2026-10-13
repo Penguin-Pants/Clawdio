@@ -89,7 +89,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
-| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | In progress (U0 to U4 Done). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | In progress (U0 to U5 Done). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -2906,6 +2906,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |

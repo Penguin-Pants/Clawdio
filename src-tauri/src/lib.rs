@@ -149,6 +149,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
             app.manage(state::LyricsState::default());
+            app.manage(window::MiniState::default());
             app.manage(commands::metadata::MetadataFills::default());
             app.manage(state::Playlists::default());
             app.manage(player);
@@ -227,6 +228,7 @@ pub fn run() -> tauri::Result<()> {
             commands::measure::measure_ready,
             commands::measure::scan_running,
             commands::measure::perf_mode,
+            commands::window::window_set_mini,
         ])
         .build(tauri::generate_context!())?
         .run(|app, event| {

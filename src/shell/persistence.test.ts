@@ -13,6 +13,7 @@ import {
   restoreLayout,
   watchLayout,
 } from "./persistence";
+import { DEFAULT_SLOTS } from "./transport/slots";
 import { WIDGET_IDS } from "./widgets";
 
 vi.mock("@/lib/log", () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
@@ -92,7 +93,7 @@ const SIZE = { width: 800, height: 560 };
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
   useLibraryStore.setState({ mode: "columns", frames: DEFAULT_FRAMES });
-  useUiStore.setState({ transportPosition: "top", locked: false });
+  useUiStore.setState({ transportPosition: "top", locked: false, transportSlots: DEFAULT_SLOTS });
 });
 
 const noBackup = () => Promise.resolve();
@@ -269,6 +270,7 @@ describe("saving (P9.3, P9-AC8)", () => {
       "libraryMode",
       "locked",
       "transport",
+      "transportSlots",
       "version",
     ]);
     expect(saved.version).toBe(2);
@@ -304,6 +306,46 @@ describe("saving (P9.3, P9-AC8)", () => {
     const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
     const watcher = watchLayout(dockStandIn().api, save);
     useCollapseStore.setState({ sizes: { g1: { axis: "height", size: 200 } } });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(save).toHaveBeenCalledTimes(1);
+    watcher.dispose();
+  });
+
+  it("round-trips transportSlots and loads a file without it with the defaults (UD20)", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    const custom = { order: [...DEFAULT_SLOTS.order].reverse(), hidden: ["stop" as const] };
+    useUiStore.setState({ transportSlots: custom });
+    const saved = currentLayout(dock.api);
+    useUiStore.setState({ transportSlots: DEFAULT_SLOTS });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    const restored = useUiStore.getState().transportSlots;
+    expect(restored.hidden).toEqual(["stop"]);
+    expect(restored.order.slice(0, 4)).toEqual(["previous", "playPause", "next", "search"]);
+
+    const without: Partial<typeof saved> = { ...saved };
+    delete without.transportSlots;
+    useUiStore.setState({ transportSlots: custom });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(without), SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it("a hidden play or pause in transportSlots gives the default slots with one log line", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    const saved = { ...currentLayout(dock.api), transportSlots: { order: DEFAULT_SLOTS.order, hidden: ["playPause"] } };
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("hide play or pause");
+  });
+
+  it("saves 500 ms after a transport slots change", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
+    const watcher = watchLayout(dockStandIn().api, save);
+    useUiStore.setState({ transportSlots: { ...DEFAULT_SLOTS, hidden: [] } });
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
     expect(save).toHaveBeenCalledTimes(1);
     watcher.dispose();

@@ -183,6 +183,7 @@ test("U2-AC1, PS-4: a hand-corrupted layout.json starts with the default preset 
 test("SH-6, PS-5: Transport bar Bottom moves the band below the dock and survives a reload", async ({ page }) => {
   await openApp(page);
   await openMenu(page);
+  await page.getByRole("menuitem", { name: "Transport bar" }).click();
   await page.getByRole("menuitemradio", { name: "Bottom", exact: true }).click();
   await closeMenu(page);
   const below = async () => {

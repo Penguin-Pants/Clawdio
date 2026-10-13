@@ -59,6 +59,18 @@ describe("widgetRegions (P2.12)", () => {
     ]);
     expect(widgetRegions().map((element) => element.dataset.widget)).toEqual(["library", "nowPlaying", "transport"]);
   });
+
+  it("skips widgets inside an inert container: the mini player has one region, the band (UD19)", () => {
+    const [transport, library] = regions([
+      ["transport", 0, 0],
+      ["library", 50, 0],
+    ]);
+    const dock = document.createElement("main");
+    dock.setAttribute("inert", "");
+    dock.append(library);
+    document.body.append(dock);
+    expect(widgetRegions()).toEqual([transport]);
+  });
 });
 
 describe("nextRegion", () => {

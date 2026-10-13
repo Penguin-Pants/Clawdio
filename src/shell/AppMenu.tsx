@@ -13,6 +13,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
@@ -31,6 +34,7 @@ import {
   resetLayout,
   setWidgetVisible,
 } from "./layouts";
+import { setMiniPlayer } from "./mini";
 import { PRESETS, PRESET_IDS } from "./presets";
 import { collapseGroup, isCollapsed, restoreGroup } from "./splitters";
 import { WIDGET_IDS, WIDGETS } from "./widgets";
@@ -54,6 +58,7 @@ function activeWidgetState(open: boolean) {
 export function AppMenu() {
   const visible = useUiStore((state) => state.visibleWidgets);
   const setSettingsOpen = useUiStore((state) => state.setSettingsOpen);
+  const openDialog = useUiStore((state) => state.openDialog);
   const locked = useUiStore((state) => state.locked);
   const setLocked = useUiStore((state) => state.setLocked);
   const transportPosition = useUiStore((state) => state.transportPosition);
@@ -137,15 +142,25 @@ export function AppMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Transport bar</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={transportPosition}
-            onValueChange={(value: TransportPosition) => setTransportPosition(value)}
-          >
-            <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
+          {/* One submenu keeps the menu short enough for the 800 px window (no scrolling). */}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Transport bar</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={transportPosition}
+                onValueChange={(value: TransportPosition) => setTransportPosition(value)}
+              >
+                <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              {/* The dialog opens after the menu closed, so the menu returns focus first. */}
+              <DropdownMenuItem onClick={() => requestAnimationFrame(() => openDialog({ kind: "customizeTransport" }))}>
+                Customize transport bar…
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setMiniPlayer(true)}>Mini player</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuItem onClick={() => resetLayout()}>
             Reset layout
             <DropdownMenuShortcut>{RESET_SHORTCUT_LABEL}</DropdownMenuShortcut>

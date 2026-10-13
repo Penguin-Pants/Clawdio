@@ -41,7 +41,7 @@
 | U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Done |
 | U3 | Splitters and sidebar rail | U2 | Done |
 | U4 | Library table | U1 | Done |
-| U5 | Transport extras: card, customize, mini player | U2, U4 | Not started |
+| U5 | Transport extras: card, customize, mini player | U2, U4 | Done |
 | U6 | Table extras: row drag, secondary sort, density | U4, U5 | Not started |
 | U7 | Verification, screenshots and release notes | U6 | Not started |
 
@@ -652,9 +652,9 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TR-6 never overlays the list | U1 | E2E (band box and dock box do not intersect) | Done (U1) |
 | TR-7 opaque background | U1 | E2E (alpha 1) | Done (U1) |
 | TR-8 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
-| TR-9 mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Planned |
-| TR-10 customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Planned |
-| TR-11 Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Planned |
+| TR-9 mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Done (U5) |
+| TR-10 customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5) |
+| TR-11 Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Done (U5) |
 | DK-1 one docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
 | DK-2 minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
 | DK-3 edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Done (U2) |
@@ -695,9 +695,9 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
-| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1, U3 paths done; card U5) |
+| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Done (U5) |
 | PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U4 CI pass; reference machine in U7) |
-| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators, U4 table) |
+| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Done (U5) |
 | AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
 | TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
@@ -708,7 +708,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
-| Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
+| Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | In progress (U5 done; U6 next) |
 | Rework 9 checklist | U7 | MAN | Planned |
 | Rework 14 definition of done | U7 | REV | Planned |
 
@@ -915,7 +915,42 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: body before header in the Tab order. The plan sets two stops, not their order.
 - F4: `ids.indexOf` and `ids.filter` run over all ids per render. With 50,000 rows the perf spec stays at 16.8 ms frames.
 
-### U5 to U7
+### U5. Transport extras: card, customize, mini player (October 13, 2026)
+
+**Status:** Done. **Commit:** `U5: Now playing card, Customize transport bar and the mini player`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U5-AC1 | Pass (Chromium; WebKitGTK real app for TR-9) | TR-11 `card.spec.ts`: the card shows the song, heart, seek bar and play buttons; play in the band shows pause in the card; a seek in the card moves the band time; More below 320 px, inline Stop, Shuffle and Repeat above; the card docks with its minimum. TR-10 `customize.spec.ts`: hide Stop, move Volume before Shuffle, the band follows, a reload keeps it, Reset layout restores it, keyboard only, handle drag. `slots.test.ts`, `persistence.test.ts`, `CustomizeTransportDialog.test.tsx`. TR-9 `mini.spec.ts`: the art and the menu enter with the compact height (40 px; 50 px at 125 %, 56 px at 140 %); only the band shows at XS or SM and nothing clips; F6 has one region; the art and the More menu leave. `mini.test.tsx`; `cargo test` (`window.rs`: sizes, 32 to 200 px, exit order, no mini size saved). |
+| U5-AC2 | Pass | Only `src/store/player.ts` holds player state; the card uses the band's controls (`src/shell/transport/`). |
+| U5-AC3 | Pass (Chromium) | Validation command set; Chromium e2e 165 of 165. |
+
+**Notes**
+
+- The mini player keeps the dock mounted, `inert` and off screen at its last size (CSS variables from a size observer), so the arrangement and its saves do not change. F6 skips widgets inside an `inert` container.
+- In the mini player the band's art always shows: it is the exit button. A band menu cannot show inside a band-high window (F-21 proposes a fix); the More menu item stays for a taller window and for the tests.
+- Previous, play or pause and next stay first and do not move; previous and next can hide (UD20: play or pause does not leave the first group of three).
+- The app menu's Transport bar items (Top, Bottom, Customize transport bar, Mini player) are one submenu: the longer menu scrolled at the 800 px window and failed axe (`scrollable-region-focusable`). `closeMenu` in the e2e base closes one level per Escape.
+- The dialog uses native checkboxes; the global focus ring applies (P0.10).
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb with `xdotool`: a click on the band art sets the window from 1200 x 800 to 400 x 40 with only the band (play, the art, "Nothing playing", More); a click on the art returns the window to 1200 x 800. WebView2 on Windows is the owner's check.
+
+**Checks that could not run:** WebKit e2e (CI runs it). The mini player on Windows (no Windows machine).
+
+**TWO-PASS REVIEW:** F1 2, F2 4, F3 1, F4 3.
+
+- F1 (fixed): at XS and SM the band hides the art, and a menu does not fit a band-high window, so the real mini window had no visible exit. The art now always shows in the mini player.
+- F1 (fixed): the app menu grew past the 800 px window and scrolled; axe failed. The Transport bar items are one submenu.
+- F2 (fixed): the mini spec's status line check matched nothing (the `status` role is nested); it checks the footer.
+- F2 (fixed): the clip check read `scrollHeight`, which counts the 2 px progress line at the bottom edge; it checks each control box.
+- F2 (fixed): the mock `window_set_mini` case read untyped arguments.
+- F2 (fixed): six files were not Prettier formatted.
+- F3: F-21 (`docs/build-plan.md` section 11): band menus in the mini window.
+- F4: a native checkbox instead of a new shadcn checkbox: one fewer component; the global focus ring covers it.
+- F4: previous and next cannot move. UD20 keeps the three together; the fixed order is the smallest rule that does.
+- F4: the off-screen dock keeps its memory while the mini player shows. It is the same dock as before; nothing new is allocated.
+
+### U6 to U7
 
 Not started.
 

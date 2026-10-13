@@ -247,6 +247,10 @@ mockIPC(
       case "scan_running":
       case "perf_mode":
         return false;
+      case "window_set_mini":
+        // Tests read the calls and set the viewport themselves (UD19).
+        (window.e2eMini ??= []).push(args as { on: boolean; height: number });
+        return null;
       case "measure_ready":
         document.body.dataset.measureReady = "true";
         return null;

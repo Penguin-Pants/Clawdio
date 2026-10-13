@@ -5,6 +5,7 @@ import { DockShell } from "@/shell/DockShell";
 import { EMPTY_SELECTION, useLibraryStore } from "@/store/library";
 import { flushFrames, installControlledLayout, resize } from "@/test/resize";
 import { LibraryWidget } from "@/widgets/library/LibraryWidget";
+import { NowPlayingWidget } from "@/widgets/now-playing/NowPlayingWidget";
 import { PlaylistsWidget } from "@/widgets/playlists/PlaylistsWidget";
 
 const runs = vi.hoisted(() => new Map<Element, number>());
@@ -65,5 +66,15 @@ describe("size observers run their layout work once per frame (PF-2)", () => {
     const root = container.firstElementChild;
     if (!root) throw new Error("no root");
     expect(burst(root)).toBe(1);
+  });
+
+  it("NowPlayingWidget: the wide card switch (TR-11)", () => {
+    const { container, queryByRole } = render(<NowPlayingWidget />);
+    const root = container.firstElementChild;
+    if (!root) throw new Error("no root");
+    expect(queryByRole("button", { name: "Stop" })).toBeNull();
+    expect(burst(root)).toBe(1);
+    // The last size of the burst is 700 px: wider than 320, so Stop shows in the card.
+    expect(queryByRole("button", { name: "Stop" })).not.toBeNull();
   });
 });

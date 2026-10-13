@@ -102,6 +102,23 @@
   grid-template-areas: "header" "dock" "transport" "status";
 }
 
+/*
+ * Mini player (UD19, TR-9): the window shows the band only. The dock stays mounted, inert and
+ * off screen at its last size, so its layout and its saves do not change.
+ */
+.app-shell[data-mini] {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "transport";
+}
+
+.app-shell[data-mini] > main {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  width: var(--dock-width);
+  height: var(--dock-height);
+}
+
 /* Tabular numerals for times (design.md section 4). */
 @utility tabular {
   font-variant-numeric: tabular-nums;

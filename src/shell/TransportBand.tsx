@@ -32,7 +32,7 @@ function QueueToggle() {
   );
 }
 
-function Slot({ id, size }: { id: SlotId; size: SizeClass }) {
+function Slot({ id, size, mini }: { id: SlotId; size: SizeClass; mini: boolean }) {
   switch (id) {
     case "previous":
       return <PreviousButton />;
@@ -41,7 +41,8 @@ function Slot({ id, size }: { id: SlotId; size: SizeClass }) {
     case "next":
       return <NextButton />;
     case "nowPlaying":
-      return <NowPlayingDisplay art={atLeast(size, "md")} className="max-w-64 min-w-0 shrink" />;
+      // In the mini player the art is the exit button: a menu does not fit a band-high window (UD19).
+      return <NowPlayingDisplay art={mini || atLeast(size, "md")} className="max-w-64 min-w-0 shrink" />;
     case "seek":
       return <SeekBar className="min-w-32 flex-1" />;
     case "stop":
@@ -70,14 +71,18 @@ function Slot({ id, size }: { id: SlotId; size: SizeClass }) {
 /**
  * The transport band (SH-2, TR-1 to TR-8): a fixed band outside the dock, full width, with a
  * height from the size tokens (UD1, UD3). Its content follows its own width (UD4): slots that do
- * not fit move to the More menu, and play or pause always shows. `data-widget` makes it an F6
+ * not fit move to the More menu, and play or pause always shows. The user's slot order and hidden
+ * set (TR-10) apply first. `data-widget` makes it an F6
  * region (P2.12).
  */
 export function TransportBand() {
   const ref = useRef<HTMLElement>(null);
   const size = useSizeClass(ref);
   const position = useUiStore((state) => state.transportPosition);
-  const { band, overflow } = layoutSlots(size);
+  const slots = useUiStore((state) => state.transportSlots);
+  const mini = useUiStore((state) => state.mini);
+  // The user's order and hidden set first, then the size class rule (UD20, UD4).
+  const { band, overflow } = layoutSlots(size, slots.order, slots.hidden);
   const compact = !atLeast(size, "md");
   return (
     <section
@@ -96,7 +101,7 @@ export function TransportBand() {
       )}
     >
       {band.map((id) => (
-        <Slot key={id} id={id} size={size} />
+        <Slot key={id} id={id} size={size} mini={mini} />
       ))}
       {!band.includes("seek") && <div className="flex-1" />}
       {overflow.length > 0 && <OverflowMenu slots={overflow} />}

@@ -61,9 +61,13 @@ export async function settle(page: Page): Promise<void> {
   await page.evaluate(() => Promise.allSettled(document.getAnimations().map((animation) => animation.finished)));
 }
 
+/** Closes the open menu; Escape closes one level, so an open submenu takes a second press. */
 export async function closeMenu(page: Page): Promise<void> {
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menu")).toHaveCount(0);
+  const menus = page.getByRole("menu");
+  for (let open = await menus.count(); open > 0; open = await menus.count()) {
+    await page.keyboard.press("Escape");
+    await expect(menus).toHaveCount(open - 1);
+  }
 }
 
 /** Shows or hides a widget from the menu; does nothing when it already is that way. */

@@ -64,6 +64,11 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 
 Media keys (play, pause, next, previous, stop) work while the app runs in the background.
 
+## Transport bar
+
+- **Customize:** the menu, Layout, "Customize transport bar…" (or the More menu of the bar) shows or hides each control and changes their order. Play or pause always shows. Reset layout restores the default.
+- **Mini player:** click the album art in the bar, or choose "Mini player" in the menu. The window shrinks to the bar alone. Choose "Exit mini player" in the More menu, or click the art, to return to the normal window.
+
 ## Data locations
 
 The music folder holds your music, playlists (`Playlists/*.m3u8`), `cover.jpg` files, lyrics files and `sidecar.json` files. The app never changes audio files.
