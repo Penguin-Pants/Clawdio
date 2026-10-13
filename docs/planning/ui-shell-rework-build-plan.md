@@ -451,7 +451,7 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - Selection: UD12. The grid keeps `aria-activedescendant` on the active row; selected rows carry `aria-selected` (row-selection grid, UD8). Up and Down move rows; Left and Right scroll the grid horizontally when it overflows and are otherwise unused, because cells are not focus targets. Delete does nothing in the Library (R25 scopes it to the queue and playlists).
 - Per-view state (TB-9): the view id is `songs.columns` or `songs.topBottom`. A mode switch loads the other view's state. Reset layout does not touch column state (PS-6 keeps them apart); the header menu gets "Reset columns".
 - PF-1: a container resize re-renders the header and the grid template, not the rows. Verify through the real path: mount `SongTable` in Vitest with a mocked `ResizeObserver`, fire a width change on the container, and count `Row` renders with React Profiler `onRender`. A test that passes identical props by hand does not count.
-- PF-3: `table-perf.spec.ts` runs with `LIBRARY_SIZE=50000`, scrolls the table by wheel for 3 s, sorts by Title, resizes a column and resizes the dock sash, and records the longest frame gap through `requestAnimationFrame` timestamps. CI asserts no gap over 100 ms (the AC-2 budget). The reference-machine number is recorded manually in U7 (UQ3).
+- PF-3: `table-perf.spec.ts` runs with `LIBRARY_SIZE=50000`, scrolls the table by wheel for 3 s, sorts by Title, resizes a column and resizes the dock sash, and records the longest frame gap through `requestAnimationFrame` timestamps. CI asserts no gap over 100 ms (the AC-2 budget) in Chromium and over 150 ms in WebKit on the shared CI runners (owner decision, v1.9). The reference-machine number is recorded manually in U7 (UQ3).
 - Tree mode is unchanged: indented rows, no header, no columns (UD8).
 
 **Tests**
@@ -461,7 +461,7 @@ TB-1 to TB-11, PS-6, PF-1, PF-3, TH-1 (row height token), AX-1 (table). Rework s
 - Vitest `library.test.ts`: multi-select rules of UD12.
 - Vitest `table.test.tsx`: a container width change through the mocked `ResizeObserver` re-renders the header and no `Row` (PF-1, real path).
 - Playwright `table.spec.ts` (TB-2 to TB-11): drag a divider; a column never goes below its minimum; double-click a divider; the header menu items; drag a header to reorder; `#` has no drag handle and no hide item; hide Album and show it again; keyboard only: Tab to the header, Right to Artist, Enter sorts, Shift+Right moves it after Album, Ctrl+Right widens it by 8 px, Shift+F10 opens the header menu, Down returns to the body; Title takes the spare width; Time is right aligned; at a narrow Library the horizontal scrollbar appears and the header stays aligned with the body after scrolling; click Title to sort and the arrow and `aria-sort` show; Shift+click and Ctrl+click select ranges; Enter plays the active row; Shift+F10 on a row, then "Add to Favorites": the heart fills and the row is in Favorites; the playing row shows the icon in the `#` column; the state survives a mode switch and a reload per mode; Tree mode shows no header.
-- Playwright `table-perf.spec.ts` (TB-1, PF-3): 50,000 rows, the DOM holds at most the visible rows plus overscan, no frame gap over 100 ms.
+- Playwright `table-perf.spec.ts` (TB-1, PF-3): 50,000 rows, the DOM holds at most the visible rows plus overscan, no frame gap over 100 ms (Chromium) or 150 ms (WebKit CI, v1.9).
 - Playwright `audit.spec.ts`: axe with the table (`grid`, `row`, `columnheader` and `gridcell` roles, `aria-multiselectable`, `aria-sort`); no role-context violation; `aria-rowcount` equals the song count plus one; the header row carries `aria-rowindex="1"`; after a scroll, every rendered body row carries `aria-rowindex` equal to its list position plus two, with no gap and no repeat between consecutive rows.
 
 **Acceptance criteria**
@@ -1055,6 +1055,8 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 
 - F4: the restored column file is not applied when the user changed a column during the load. The user saw and chose that state, and the next change saves it.
 
+**PF-3 in WebKit CI:** the per-phase report named the dock sash drag (102 ms; scroll 70, sort 29, column 40). Most of that frame is a forced style pass in the Dockview 8.5.1 sash-end handler. `decorateSashes` now reads every separator before it writes, which removes the thrash in our code. The owner decided (October 13, 2026): the WebKit CI budget is 150 ms; Chromium CI keeps the 100 ms AC-2 budget; the reference-machine number (UQ3) stays the AC-2 check.
+
 **Rule 10 (real app, review fixes):** Linux, WebKitGTK under Xvfb: the mini player enters at 400 x 40 and leaves at 1200 x 800. The maximize restore could not run: Xvfb has no window manager, so the window cannot maximize. That is a manual row with the Windows rows (UQ5).
 
 ---
@@ -1140,7 +1142,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
-- **1.9 (October 13, 2026):** PR 23 review after U7 (two Codex rounds): the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
+- **1.9 (October 13, 2026):** PR 23 review after U7 (two Codex rounds); PF-3 WebKit CI budget 150 ms (owner decision): the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
 - **1.8 (October 13, 2026):** U0 to U7 executed. U7 Done with exceptions; UQ5 added (the U7 exceptions for the owner).
 - **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.
 - **1.6 (October 13, 2026):** PR 22 review, Codex round 5: the U4 axe test asserts `aria-rowindex` on the header and on every rendered body row.

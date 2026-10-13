@@ -6,8 +6,11 @@ import type { Page } from "@playwright/test";
 import { center, drag, expect, SONG_ROWS, songsGrid, test, widget } from "./test-base";
 
 const SIZE = 50_000;
-/** The AC-2 frame budget. */
-const MAX_GAP_MS = 100;
+/**
+ * The frame budget: AC-2 (100 ms) in Chromium. WebKit on the shared CI runners gets 150 ms
+ * (owner decision, plan v1.9); the reference machine number (UQ3) is the AC-2 check.
+ */
+const MAX_GAP_MS = { chromium: 100, webkit: 150 } as const;
 /** `VirtualList` overscan on each side, plus the kept active row. */
 const OVERSCAN_ROWS = 2 * 8 + 1;
 const DOCK_SASH = ".dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash:not([data-frame-group] *)";
@@ -53,7 +56,7 @@ async function stopFrames(page: Page): Promise<{ max: number; frames: number; ph
   });
 }
 
-test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", async ({ page }) => {
+test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", async ({ page, browserName }) => {
   test.setTimeout(120_000);
   await page.goto(`/?data=library&size=${SIZE}`);
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
@@ -100,7 +103,9 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
   console.log(`PF-3: longest frame gap ${frames.max.toFixed(1)} ms over ${frames.frames} frames (${phases})`);
 
   expect(frames.frames).toBeGreaterThan(60);
-  expect(frames.max, `longest frame gap per phase in ms: ${phases}`).toBeLessThanOrEqual(MAX_GAP_MS);
+  expect(frames.max, `longest frame gap per phase in ms: ${phases}`).toBeLessThanOrEqual(
+    browserName === "webkit" ? MAX_GAP_MS.webkit : MAX_GAP_MS.chromium,
+  );
   // Only the rows in view and the overscan are in the DOM.
   const { height, row } = await grid.evaluate((element) => ({
     height: element.clientHeight,
