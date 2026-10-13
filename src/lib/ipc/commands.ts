@@ -20,18 +20,22 @@ import type { RepeatMode } from "./bindings/RepeatMode";
 import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
 import type { SongScope } from "./bindings/SongScope";
+import type { SortColumn } from "./bindings/SortColumn";
+import type { SortKey } from "./bindings/SortKey";
 import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
-export type { ImportBatch, MetadataPreview, MicDucking, RepairBatch, RepairReport };
+export type { ImportBatch, MetadataPreview, MicDucking, RepairBatch, RepairReport, SortColumn, SortKey };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
   libraryArtistRows: (ids: number[]) => invoke<ArtistRow[]>("library_artist_rows", { ids }),
   libraryAlbums: (artist: number | null, query: string) => invoke<number[]>("library_albums", { artist, query }),
   libraryAlbumRows: (ids: number[]) => invoke<AlbumRow[]>("library_album_rows", { ids }),
-  librarySongIds: (scope: SongScope, query: string) => invoke<number[]>("library_song_ids", { scope, query }),
+  /** Song ids in the R4 order, or sorted by up to two keys in Rust (UD11, D14). */
+  librarySongIds: (scope: SongScope, query: string, sort: SortKey[] = []) =>
+    invoke<number[]>("library_song_ids", { scope, query, sort }),
   libraryRows: (ids: number[]) => invoke<SongRow[]>("library_rows", { ids }),
   libraryTree: (query: string) => invoke<TreeArtist[]>("library_tree", { query }),
   /** The art file name of an album at 96 or 512 px, or null while it is made (P10.2). */
@@ -50,6 +54,11 @@ export const commands = {
   layoutSave: (json: string) => invoke<void>("layout_save", { json }),
   /** Backs up a `layout.json` that failed validation as `layout.json.bak` (PS-4, UD5). */
   layoutBackup: () => invoke<void>("layout_backup"),
+  /** The saved `columns.json` text, or null (PS-6, UD13). */
+  columnsLoad: () => invoke<string | null>("columns_load"),
+  columnsSave: (json: string) => invoke<void>("columns_save", { json }),
+  /** Backs up a `columns.json` that failed validation as `columns.json.bak`. */
+  columnsBackup: () => invoke<void>("columns_backup"),
   playerState: () => invoke<PlayerSnapshot>("player_state"),
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),

@@ -50,7 +50,7 @@ test("DK-5: with Lock layout on, drags move and resize nothing, frames and scrol
   );
   expect((await artists.boundingBox())?.width ?? 0).toBeGreaterThan(artistsBefore + 30);
   // Lists still scroll.
-  const songs = widget(page, "library").getByRole("listbox", { name: "Songs" });
+  const songs = widget(page, "library").getByRole("grid", { name: "Songs" });
   await songs.evaluate((element) => element.scrollTo(0, element.scrollHeight));
   await expect.poll(() => songs.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   // The View menu still hides and shows widgets; the tab Float control is gone.

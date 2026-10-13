@@ -89,7 +89,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
-| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | In progress (U0 to U3 Done). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | In progress (U0 to U4 Done). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 

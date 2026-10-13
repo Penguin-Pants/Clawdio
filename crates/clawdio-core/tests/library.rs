@@ -67,7 +67,7 @@ fn the_tree_shows_a_whole_album_on_a_name_match_and_only_matching_songs_otherwis
 fn song_scopes_follow_the_selection() {
     let (_root, index) = scanned();
     let index = index.read().unwrap();
-    let all = index.song_ids(SongScope::default(), "").unwrap();
+    let all = index.song_ids(SongScope::default(), "", &[]).unwrap();
     let floyd = index.artist_ids("pink floyd")[0];
     let by_artist = index
         .song_ids(
@@ -76,6 +76,7 @@ fn song_scopes_follow_the_selection() {
                 album: None,
             },
             "",
+            &[],
         )
         .unwrap();
     assert!(by_artist.len() < all.len());
@@ -87,6 +88,7 @@ fn song_scopes_follow_the_selection() {
                 album: Some(wall),
             },
             "",
+            &[],
         )
         .unwrap();
     assert_eq!(by_album.len(), 4);

@@ -16,6 +16,7 @@ import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visib
 import { applySideWidths } from "./presets";
 import { keepSideWidths } from "./side-widths";
 import { installSplitters, scheduleSashRefresh } from "./splitters";
+import { restoreColumns, watchColumns } from "./columns-persistence";
 import { UNKNOWN_COMPONENT, restoreLayout, watchLayout } from "./persistence";
 import { GroupActions, LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
@@ -75,8 +76,13 @@ async function startArrangement(api: DockviewApi, container: HTMLElement | null)
     applySideWidths(api);
   }
   const watcher = watchLayout(api);
+  // The Songs column state is a file of its own (PS-6, UD13).
+  await restoreColumns();
+  const columns = watchColumns();
   try {
-    await getCurrentWindow().onCloseRequested(() => watcher.flush());
+    await getCurrentWindow().onCloseRequested(async () => {
+      await Promise.all([watcher.flush(), columns.flush()]);
+    });
   } catch {
     // No app window (tests outside the shell): nothing to flush on close.
   }

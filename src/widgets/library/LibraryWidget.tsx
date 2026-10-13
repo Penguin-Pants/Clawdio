@@ -9,8 +9,9 @@ import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import type { ViewId } from "./columns";
 import { FrameSplit } from "./FrameSplit";
-import { AlbumList, ArtistList, SongList, TreeList } from "./lists";
+import { AlbumList, ArtistList, SongTable, TreeList } from "./lists";
 
 /** Below this widget width the mode switch becomes a dropdown (R28). */
 export const NARROW_WIDTH = 360;
@@ -81,7 +82,9 @@ export const SEARCH_DEBOUNCE_MS = 120;
 function focusLibraryList(from: HTMLElement) {
   from
     .closest('[data-widget="library"]')
-    ?.querySelector<HTMLElement>('[data-library-body] [role="listbox"], [data-library-body] [role="tree"]')
+    ?.querySelector<HTMLElement>(
+      '[data-library-body] [role="listbox"], [data-library-body] [role="tree"], [data-library-body] [role="grid"]',
+    )
     ?.focus();
 }
 
@@ -157,14 +160,17 @@ const ALBUM_FRAME = {
     </ListFrame>
   ),
 };
-const SONGS_FRAME = {
+/** The Songs frame of a mode: the table with that mode's column state (TB-9, UD8). */
+const songsFrame = (view: ViewId) => ({
   id: "songs",
   content: (
     <ListFrame label="Songs">
-      <SongList showAlbum />
+      <SongTable view={view} />
     </ListFrame>
   ),
-};
+});
+const COLUMNS_SONGS = songsFrame("songs.columns");
+const TOP_BOTTOM_SONGS = songsFrame("songs.topBottom");
 const TOP_ROW_FRAME = {
   id: "top",
   content: (
@@ -190,14 +196,14 @@ function LibraryBody({ mode }: { mode: LibraryMode }) {
         <FrameSplit
           group="columns"
           orientation={Orientation.HORIZONTAL}
-          views={[ARTIST_FRAME, ALBUM_FRAME, SONGS_FRAME]}
+          views={[ARTIST_FRAME, ALBUM_FRAME, COLUMNS_SONGS]}
         />
       </div>
     );
   }
   return (
     <div key="topBottom" data-library-body="topBottom" className="flex min-h-0 flex-1 flex-col">
-      <FrameSplit group="rows" orientation={Orientation.VERTICAL} views={[TOP_ROW_FRAME, SONGS_FRAME]} />
+      <FrameSplit group="rows" orientation={Orientation.VERTICAL} views={[TOP_ROW_FRAME, TOP_BOTTOM_SONGS]} />
     </div>
   );
 }

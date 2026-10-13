@@ -12,6 +12,8 @@ const song = (id: number): SongRow => ({
   albumName: "B",
   tagArtist: null,
   durationMs: 1000,
+  trackNo: null,
+  disc: null,
 });
 
 describe("useCommand", () => {

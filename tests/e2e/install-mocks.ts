@@ -6,6 +6,7 @@ import app from "./data/app.json";
 import { library } from "./library-data";
 import { createPlayer } from "./mock-player";
 import { createPlaylists } from "./mock-playlists";
+import type { SortKey } from "../../src/lib/ipc/bindings/SortKey";
 
 const params = new URLSearchParams(window.location.search);
 const withLibrary = params.get("data") === "library";
@@ -67,6 +68,8 @@ export function retagSong(title: string, change: { title?: string; durationMs?: 
 
 /** The saved layout persists over reloads like `layout.json` (P9). */
 const LAYOUT_KEY = "e2e-layout";
+/** The saved column state persists over reloads like `columns.json` (U4). */
+const COLUMNS_KEY = "e2e-columns";
 
 function saveSettings(change: Record<string, unknown>) {
   Object.assign(settings, change);
@@ -99,6 +102,19 @@ function settingsCommand(command: string, args: Args): unknown {
       sessionStorage.setItem(LAYOUT_KEY, args.json as string);
       document.body.dataset.layoutSaves = String(Number(document.body.dataset.layoutSaves ?? 0) + 1);
       return null;
+    case "columns_load":
+      return sessionStorage.getItem(COLUMNS_KEY);
+    case "columns_save":
+      sessionStorage.setItem(COLUMNS_KEY, args.json as string);
+      document.body.dataset.columnsSaves = String(Number(document.body.dataset.columnsSaves ?? 0) + 1);
+      return null;
+    case "columns_backup": {
+      const text = sessionStorage.getItem(COLUMNS_KEY);
+      if (text !== null) sessionStorage.setItem(`${COLUMNS_KEY}.bak`, text);
+      sessionStorage.removeItem(COLUMNS_KEY);
+      document.body.dataset.columnsBackups = String(Number(document.body.dataset.columnsBackups ?? 0) + 1);
+      return null;
+    }
     case "layout_backup": {
       // Like the Rust rename (UD5): the bad file moves to the backup key.
       const text = sessionStorage.getItem(LAYOUT_KEY);
@@ -153,7 +169,13 @@ function libraryCommand(command: string, args: Args): unknown {
     case "library_album_rows":
       return library.albumRows(args.ids as number[]);
     case "library_song_ids":
-      return library.songIds(args.scope as { artist: number | null; album: number | null }, args.query as string);
+      // Tests read the last sort the table asked for (UD11).
+      document.body.dataset.lastSort = JSON.stringify(args.sort ?? []);
+      return library.songIds(
+        args.scope as { artist: number | null; album: number | null },
+        args.query as string,
+        (args.sort ?? []) as SortKey[],
+      );
     case "library_rows":
       return library.rows(args.ids as number[]);
     case "library_tree":

@@ -42,7 +42,11 @@ export function installControlledLayout(): void {
 export function resize(target: Element, width: number, height: number): void {
   for (const observer of [...observers]) {
     if (!observer.targets.has(target)) continue;
-    const entry = { target, contentRect: { width, height } as DOMRectReadOnly } as ResizeObserverEntry;
+    const entry = {
+      target,
+      contentRect: { width, height } as DOMRectReadOnly,
+      borderBoxSize: [{ inlineSize: width, blockSize: height }],
+    } as unknown as ResizeObserverEntry;
     observer.callback([entry], observer as unknown as ResizeObserver);
   }
 }

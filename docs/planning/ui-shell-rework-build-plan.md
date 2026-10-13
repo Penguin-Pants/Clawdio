@@ -40,7 +40,7 @@
 | U1 | Shell zones and transport band | U0 | Done |
 | U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Done |
 | U3 | Splitters and sidebar rail | U2 | Done |
-| U4 | Library table | U1 | Not started |
+| U4 | Library table | U1 | Done |
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Not started |
 | U6 | Table extras: row drag, secondary sort, density | U4, U5 | Not started |
 | U7 | Verification, screenshots and release notes | U6 | Not started |
@@ -672,17 +672,17 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | SP-5 icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
 | SP-6 no zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
 | SP-7 auto-hide with pin (MAY) | none | Not built | Not built |
-| TB-1 virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Passes today |
-| TB-2 divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Planned |
-| TB-3 auto size, header menu | U4 | E2E `table.spec.ts` | Planned |
-| TB-4 header drag reorder | U4 | E2E | Planned |
-| TB-5 right-click show or hide | U4 | E2E | Planned |
-| TB-6 Title flexible, numeric right | U4 | E2E (computed widths and `text-align`) | Planned |
-| TB-7 sticky header, shared horizontal scroll | U4 | E2E | Planned |
-| TB-8 click to sort with an arrow | U4 | UT `cargo test` sort; E2E | Planned |
-| TB-9 state per view | U4 | UT parse; E2E (per mode, reload) | Planned (two Songs views, UD8) |
-| TB-10 arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Partly today |
-| TB-11 playing indicator in the first column | U4 | E2E | Passes today (moves to `#`) |
+| TB-1 virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Done (U4) |
+| TB-2 divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Done (U4) |
+| TB-3 auto size, header menu | U4 | E2E `table.spec.ts` | Done (U4) |
+| TB-4 header drag reorder | U4 | E2E | Done (U4) |
+| TB-5 right-click show or hide | U4 | E2E | Done (U4) |
+| TB-6 Title flexible, numeric right | U4 | E2E (computed widths and `text-align`) | Done (U4) |
+| TB-7 sticky header, shared horizontal scroll | U4 | E2E | Done (U4) |
+| TB-8 click to sort with an arrow | U4 | UT `cargo test` sort; E2E | Done (U4) |
+| TB-9 state per view | U4 | UT parse; E2E (per mode, reload) | Done (U4) |
+| TB-10 arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Done (U4) |
+| TB-11 playing indicator in the first column | U4 | E2E | Done (U4) |
 | TB-12 row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Planned |
 | TB-13 secondary sort (SHOULD) | U6 | UT, E2E | Planned |
 | TB-14 density (SHOULD) | U6 | E2E `density.spec.ts` | Planned |
@@ -691,13 +691,13 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
 | PS-4 validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
 | PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Done (U3; real-app position check by the owner) |
-| PS-6 column state apart from the layout | U4 | UT; E2E | Planned |
+| PS-6 column state apart from the layout | U4 | UT; E2E | Done (U4) |
 | TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
-| PF-1 resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
+| PF-1 resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
 | PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1, U3 paths done; card U5) |
-| PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
-| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators) |
+| PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U4 CI pass; reference machine in U7) |
+| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators, U4 table) |
 | AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
 | TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
@@ -706,7 +706,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
-| Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
+| Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
 | Rework 9 checklist | U7 | MAN | Planned |
@@ -876,7 +876,44 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: a separator name lists every tab title of a side ("Resize Library and Play queue, Lyrics"). It names both sides, as UD7 asks.
 - F4: a decoration pass reads the layout of every sash; it runs once per frame after a layout change only.
 
-### U4 to U7
+### U4. Library table (October 13, 2026)
+
+**Status:** Done. **Commit:** `U4: Songs table with columns, Rust sort, multi-select and columns.json`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U4-AC1 | Pass (Chromium) | `table.spec.ts`: divider drag and the minimum (TB-2); divider double-click, menu auto size and Reset columns (TB-3); header drag reorder, `#` fixed (TB-4); hide and show, `#` and Title not hideable (TB-5); Title spare width, Time right aligned (TB-6); horizontal scroll with the header aligned and sticky (TB-7); sort cycle with `aria-sort` and the arrow, "2" before "10" (TB-8); state per view over a mode switch and a reload (TB-9); click, Shift and Ctrl select, Shift+Down, Enter plays (TB-10); the playing icon in `#` (TB-11); the keyboard-only header path (AX-1); no header in Tree mode. `table-perf.spec.ts` (TB-1, rework Phase 3 accept): 50,000 rows. `cargo test` sort cases; `columns.test.ts`; `library.test.ts` (UD12). |
+| U4-AC2 | Pass | `table.spec.ts`: `columns.json` apart from `layout.json`, Reset layout keeps the columns, a bad file goes to `columns.json.bak` with one log line and the defaults load. `columns-persistence.test.ts`; `cargo test` file round trip and backup. |
+| U4-AC3 | Pass in CI (Chromium); reference machine in U7 | PF-1: `table.test.tsx` mounts `SongTable`, fires a container width change through the mocked `ResizeObserver` and counts `SongTableRow` renders with the React Profiler (0 rows render again; with an unstable callback prop the same test counts 22). PF-3: the longest frame gap was 16.8 ms in four runs (budget 100 ms) while the table scrolled for 3 s, sorted, resized a column and resized a dock sash. |
+| U4-AC4 | Pass (Chromium) | Validation command set; bindings `SongRow`, `SortColumn` and `SortKey` committed; Chromium e2e E2E_COUNT. |
+
+**Notes**
+
+- Sorting is in Rust (UD11): `song_ids(scope, query, sort)` with up to two keys, the D4 fold, numeric text order and the R4 order for ties. The e2e mock sorts once per key set, so the perf spec measures the webview; the Rust time on the reference machine is a U7 item (UK4).
+- The header menu is part of `TableHeader.tsx`, not a separate `HeaderMenu.tsx`: one component owns the menu state and the focus return.
+- The divider is a pointer target with `aria-hidden`. Its keyboard path is Ctrl+Left and Ctrl+Right on the focused header cell (the plan's keyboard rule); a focusable separator would add a third Tab stop.
+- Tab order: the grid body is the first stop and the header row the second (the header is inside the scroll element, so it scrolls with the rows). Down from the header returns to the body.
+- `measure.ts` (P3.5) now counts Songs grid rows: the row wrappers of `VirtualList` broke its `:first-child` test.
+- Process: the `columns.ts`, `columns-persistence.ts` and selection tests were written with the code; `measure.test.ts` and the e2e specs were proved to fail first.
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb with `xdotool`, a 12-song generated folder: the Songs table shows in Columns mode with the `#` numbers; a Title click sorts in Rust with the arrow ("Track 1 by Émile Duval" between Alpha and Zed Band, track 10 after track 3); Shift+F10 opens the header menu with `#` and Title disabled; four Ctrl+Right presses widen Title from 240 to 272 px; Shift+Down selects a range; `columns.json` holds the new width and sort apart from `layout.json`.
+
+**Checks that could not run:** WebKit e2e (no WebKit build here; CI runs it). The PF-3 reference-machine number (U7, UQ3).
+
+**TWO-PASS REVIEW:** F1 1, F2 4, F3 0, F4 5.
+
+- F1 (fixed): the header menu did not open: `DropdownMenuLabel` (Base UI `GroupLabel`) outside a `DropdownMenuGroup` threw Base UI error 31.
+- F2 (fixed): a closed row menu did not give focus back to the Songs grid (`listElement` in `row-menu.tsx` knew `listbox` and `tree` only).
+- F2 (fixed): two fast arrow presses in the header moved one cell, and a frame-later focus took focus back from the body after Down. A plain move now focuses at once; only a reorder or a closed menu focuses on the next frame.
+- F2 (fixed): the measurement signal (`data-measure-ready`, P3.5) never fired, because the row wrappers broke its selector.
+- F2 (fixed): four files were not Prettier formatted.
+- F4: the divider has no `separator` role. The keyboard path is on the header cell (see the notes).
+- F4: one file for the header and its menu. The plan names two; one has fewer moving parts.
+- F4: the mock sort cache hides the Rust sort time. `cargo test` covers the order; the time is a U7 item.
+- F4: body before header in the Tab order. The plan sets two stops, not their order.
+- F4: `ids.indexOf` and `ids.filter` run over all ids per render. With 50,000 rows the perf spec stays at 16.8 ms frames.
+
+### U5 to U7
 
 Not started.
 

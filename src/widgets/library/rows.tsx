@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { ArtPlaceholder } from "@/components/brand/ArtPlaceholder";
 import { Icon } from "@/components/icons";
 import type { RowFrame } from "@/components/virtual-list";
@@ -8,6 +8,7 @@ import { thumbUrl } from "@/lib/thumbs";
 import type { AlbumRow, SongRow } from "@/lib/ipc/commands";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { COLUMNS, type ColumnId } from "./columns";
 import { toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 
 /** The height of a list row in px, from the `sizes.rowRegular` token (TH-1, UD1). */
@@ -67,7 +68,6 @@ export function Row({
       aria-setsize={frame.setsize}
       data-row=""
       data-active={frame.active ? "" : undefined}
-      style={frame.style}
       onClick={onSelect}
       onDoubleClick={onActivate}
       onContextMenu={(event) => {
@@ -77,9 +77,9 @@ export function Row({
         onMenu(event.currentTarget);
       }}
       className={cn(
-        "group/row flex cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap select-none hover:bg-bg-hover",
-        selected && "bg-state-selected shadow-[inset_2px_0_0_var(--color-text-primary)] hover:bg-state-selected",
-        "group-focus/list:data-active:outline-2 group-focus/list:data-active:-outline-offset-2 group-focus/list:data-active:outline-text-primary group-focus/list:data-active:outline-solid",
+        "group/row flex h-full cursor-default items-center gap-2 px-2 text-sm whitespace-nowrap select-none hover:bg-bg-hover",
+        selected && SELECTED,
+        ROW_STATE,
         className,
       )}
     >
@@ -124,10 +124,118 @@ export function SongCells({
   );
 }
 
+/** The modifier keys of a row click (UD12): Shift for a range, Ctrl (or Cmd) to toggle. */
+export interface ClickModifiers {
+  shift: boolean;
+  ctrl: boolean;
+}
+
+/** The selected and active row look, shared by `Row` and `SongTableRow` (D10, P6.6). */
+const ROW_STATE =
+  "group-focus/list:data-active:outline-2 group-focus/list:data-active:-outline-offset-2 group-focus/list:data-active:outline-text-primary group-focus/list:data-active:outline-solid";
+const SELECTED = "bg-state-selected shadow-[inset_2px_0_0_var(--color-text-primary)] hover:bg-state-selected";
+
+interface SongTableRowProps {
+  /** The element id for `aria-activedescendant`. */
+  rowId: string;
+  index: number;
+  active: boolean;
+  selected: boolean;
+  playing: boolean;
+  song: SongRow | undefined;
+  /** The visible column ids in order; the same array until the column state changes. */
+  columns: readonly ColumnId[];
+  /** `grid-template-columns`, shared with the header (UD9). */
+  template: string;
+  onSelect: (index: number, modifiers: ClickModifiers) => void;
+  onActivate: (index: number) => void;
+  onMenu: (index: number, row: HTMLElement) => void;
+}
+
+/** One cell's text per column (UD8): `#` shows the playing indicator for the playing row (TB-11). */
+function SongCell({ column, song, playing }: { column: ColumnId; song: SongRow; playing: boolean }) {
+  switch (column) {
+    case "track":
+      return playing ? (
+        <>
+          <Icon name="playing" className="ml-auto text-text-primary" />
+          <span className="sr-only">Playing</span>
+        </>
+      ) : (
+        <span className="tabular text-xs text-text-muted">{song.trackNo ?? ""}</span>
+      );
+    case "title":
+      return <span className="truncate">{song.title}</span>;
+    case "artist":
+      return <span className="truncate text-[13px] text-text-secondary">{song.tagArtist ?? song.artistName}</span>;
+    case "album":
+      return <span className="truncate text-[13px] text-text-secondary">{song.albumName}</span>;
+    case "duration":
+      return <span className="tabular text-xs text-text-muted">{formatDuration(song.durationMs)}</span>;
+  }
+}
+
+/**
+ * A Songs table row (UD8, UD9): a grid row of grid cells laid out by the shared template. It
+ * takes primitives and stable callbacks only, so a container resize does not render it again
+ * (PF-1). The heart is a trailing cell that is not a user column (D23).
+ */
+export const SongTableRow = memo(function SongTableRow({
+  rowId,
+  index,
+  active,
+  selected,
+  playing,
+  song,
+  columns,
+  template,
+  onSelect,
+  onActivate,
+  onMenu,
+}: SongTableRowProps) {
+  return (
+    <div
+      id={rowId}
+      role="row"
+      aria-rowindex={index + 2}
+      aria-selected={selected}
+      data-row=""
+      data-active={active ? "" : undefined}
+      onClick={(event) => onSelect(index, { shift: event.shiftKey, ctrl: event.ctrlKey || event.metaKey })}
+      onDoubleClick={() => onActivate(index)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onMenu(index, event.currentTarget);
+      }}
+      style={{ gridTemplateColumns: template }}
+      className={cn(
+        "group/row grid h-full cursor-default items-center text-sm whitespace-nowrap select-none hover:bg-bg-hover",
+        selected && SELECTED,
+        ROW_STATE,
+      )}
+    >
+      {columns.map((column) => (
+        <div
+          key={column}
+          role="gridcell"
+          data-col={column}
+          className={cn("flex min-w-0 items-center px-2", COLUMNS[column].align === "right" && "justify-end")}
+        >
+          {song ? <SongCell column={column} song={song} playing={playing} /> : column === "title" && "…"}
+        </div>
+      ))}
+      <div role="gridcell" className="flex items-center justify-center">
+        {song && <RowHeart track={song.id} />}
+      </div>
+    </div>
+  );
+});
+
 /**
  * The heart on a song row (R26, D23): a pointer target only. It is not a button in the
  * accessibility tree, because a control inside a list option breaks the listbox pattern;
- * keyboard and screen reader users use the Now playing heart. A filled heart marks a
+ * keyboard and screen reader users use the row menu (Add to Favorites, UD8) or the Now playing
+ * heart. A filled heart marks a
  * favorite; the empty one shows on row hover.
  */
 function RowHeart({ track }: { track: number }) {

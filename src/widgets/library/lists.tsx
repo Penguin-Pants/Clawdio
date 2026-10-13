@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
-import { useLibraryStore } from "@/store/library";
+import { selectSongs, useLibraryStore } from "@/store/library";
+import { useColumnsStore } from "@/store/columns";
 import { currentTrack, usePlayerStore } from "@/store/player";
-import { addToPlaylist, usePlaylistsStore } from "@/store/playlists";
+import { addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
-import { AlbumCells, Row, SongCells, useAlbumRowHeight, useRowHeight } from "./rows";
+import { type ViewId, contentWidth, gridTemplate, visibleColumns } from "./columns";
+import { AlbumCells, type ClickModifiers, Row, SongCells, SongTableRow, useAlbumRowHeight, useRowHeight } from "./rows";
+import { TableHeader } from "./TableHeader";
 
 const NO_IDS: number[] = [];
 const NO_TREE: TreeArtist[] = [];
@@ -276,65 +279,125 @@ export function AlbumList() {
   );
 }
 
-/** Songs of the selected artist and album, or all songs (R28). Rows load for the visible window. */
-export function SongList({ showAlbum }: { showAlbum: boolean }) {
+/** The callbacks of the latest render, behind functions that keep their identity (PF-1). */
+function useStable<T extends (...args: never[]) => void>(callback: T): T {
+  const ref = useRef(callback);
+  useLayoutEffect(() => {
+    ref.current = callback;
+  });
+  return useCallback((...args: Parameters<T>) => ref.current(...args), []) as unknown as T;
+}
+
+/**
+ * The Songs table (UD8, TB-1 to TB-11) of Columns and Top/bottom modes: a virtualized grid
+ * with a sticky header, per-view column state (`view`), sorting in Rust (UD11) and
+ * multi-select (UD12). Rows load for the visible window (D14). The queue rule plays the songs
+ * as shown (R6).
+ */
+export function SongTable({ view }: { view: ViewId }) {
   const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const album = useLibraryStore((state) => state.selection.album);
-  const selected = useLibraryStore((state) => state.selection.song);
-  const setSelection = useLibraryStore((state) => state.setSelection);
+  const activeSong = useLibraryStore((state) => state.selection.song);
+  const selectedSongs = useLibraryStore((state) => state.selectedSongs);
+  const setSongSelection = useLibraryStore((state) => state.setSongSelection);
   const version = useLibraryStore((state) => state.version);
+  const columnState = useColumnsStore((state) => state.views[view]);
   const playing = usePlayingTrack();
-  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search), NO_IDS, [
+  const sortKey = JSON.stringify(columnState.sort);
+  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search, columnState.sort), NO_IDS, [
     artist,
     album,
     search,
     version,
+    sortKey,
   ]);
   const { row, request } = useSongRows(version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const onRange = useCallback((start: number, end: number) => request(ids.slice(start, end + 1)), [ids, request]);
-  const active = selected === null ? -1 : ids.indexOf(selected);
-  // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
-  const play = (index: number) => () => playList(ids, index);
-  const items = (index: number) =>
-    rowItems(
-      play(index),
-      () => addToQueue([ids[index]]),
-      async () => [ids[index]],
-    );
+  const active = activeSong === null ? -1 : ids.indexOf(activeSong);
+  const columns = useMemo(() => visibleColumns(columnState), [columnState]);
+  const template = useMemo(() => gridTemplate(columnState), [columnState]);
+  const width = useMemo(() => contentWidth(columnState), [columnState]);
+
+  // The selected songs in the order shown, for Add to queue and Add to playlist (UD12).
+  const selection = (fallback: number) => {
+    const chosen = ids.filter((id) => selectedSongs.has(id));
+    return chosen.length > 0 && selectedSongs.has(ids[fallback]) ? chosen : [ids[fallback]];
+  };
+  const items = (index: number): RowMenuItem[] => {
+    const id = ids[index];
+    const favorite = usePlaylistsStore.getState().favorites.has(id);
+    return [
+      // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
+      { label: "Play", run: () => playList(ids, index) },
+      { label: "Add to queue", run: () => addToQueue(selection(index)) },
+      { label: "Add to playlist", items: playlistItems(async () => selection(index)) },
+      // The keyboard path to the heart (UD8): the row heart is a pointer target only (D23).
+      { label: favorite ? "Remove from Favorites" : "Add to Favorites", run: () => toggleFavorite(id) },
+    ];
+  };
+  const select = (index: number, mode: "single" | "toggle" | "range") => {
+    const id = ids[index];
+    if (id === undefined) return;
+    const { selectedSongs: current, anchor: from } = useLibraryStore.getState();
+    const { selected, anchor } = selectSongs(ids, { selected: current, anchor: from }, id, mode);
+    setSongSelection(selected, anchor, id);
+  };
+  const onSelect = useStable((index: number, modifiers: ClickModifiers) =>
+    select(index, modifiers.shift ? "range" : modifiers.ctrl ? "toggle" : "single"),
+  );
+  const onActivate = useStable((index: number) => playList(ids, index));
+  const onMenu = useStable((index: number, anchor: HTMLElement) => {
+    // A right-click on a row outside the selection selects that row first.
+    if (!selectedSongs.has(ids[index])) select(index, "single");
+    menu.open(anchor, items(index));
+  });
+  const focusBody = useCallback(() => {
+    listRef.current?.querySelector<HTMLElement>("[role='grid']")?.focus();
+    if (active < 0 && ids.length > 0) select(0, "single");
+  }, [active, ids.length]); // eslint-disable-line react-hooks/exhaustive-deps -- select reads the latest ids.
+
   return (
-    <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
+    <div ref={listRef} data-songs-view={view} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
         label="Songs"
-        role="listbox"
+        role="grid"
+        multiselectable
         count={ids.length}
         rowHeight={rowHeight}
         onRange={onRange}
+        contentWidth={width}
+        header={
+          <TableHeader view={view} state={columnState} columns={columns} template={template} onFocusBody={focusBody} />
+        }
         activeIndex={active >= 0 ? active : null}
-        onMove={(index) => setSelection({ song: ids[index] ?? null })}
+        onMove={(index, { shift }) => select(index, shift ? "range" : "single")}
         onKeyDown={(event) => {
           if (menu.fromKey(event, active >= 0 ? items(active) : null)) return;
           if (event.key === "Enter" && active >= 0) {
             event.preventDefault();
-            play(active)();
+            playList(ids, active);
           }
         }}
         renderRow={(index, frame) => {
           const id = ids[index];
           return (
-            <Row
-              key={id}
-              frame={frame}
-              selected={selected === id}
-              onSelect={() => setSelection({ song: id })}
-              onActivate={play(index)}
-              onMenu={(anchor) => menu.open(anchor, items(index) ?? [])}
-            >
-              <SongCells song={row(id)} showAlbum={showAlbum} playing={playing === id} heart />
-            </Row>
+            <SongTableRow
+              rowId={frame.id}
+              index={index}
+              active={frame.active}
+              selected={selectedSongs.has(id)}
+              playing={playing === id}
+              song={row(id)}
+              columns={columns}
+              template={template}
+              onSelect={onSelect}
+              onActivate={onActivate}
+              onMenu={onMenu}
+            />
           );
         }}
       />

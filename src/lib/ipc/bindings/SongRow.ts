@@ -4,4 +4,12 @@ export type SongRow = { id: number, artistId: number, albumId: number, title: st
 /**
  * The tag artist, when it differs from the folder artist (R5).
  */
-tagArtist: string | null, durationMs: number, };
+tagArtist: string | null, durationMs: number, 
+/**
+ * The track number tag, for the `#` column (UD8, UD11).
+ */
+trackNo: number | null, 
+/**
+ * The disc number tag.
+ */
+disc: number | null, };

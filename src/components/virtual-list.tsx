@@ -1,14 +1,23 @@
 import { defaultRangeExtractor, type Range, useVirtualizer } from "@tanstack/react-virtual";
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useId, useRef } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/utils";
 
-/** What a row needs from the list: position, id for `aria-activedescendant`, and its place. */
+/**
+ * What a row needs from the list: the id for `aria-activedescendant`, its index and place.
+ * Primitives only, so a memo row compares equal across a re-render of the list (PF-1). The list
+ * positions each row in a wrapper of its own.
+ */
 export interface RowFrame {
-  style: CSSProperties;
   id: string;
+  index: number;
   active: boolean;
   posinset: number;
   setsize: number;
+}
+
+/** The modifier keys of a move (UD12): Shift extends from the anchor. */
+export interface MoveModifiers {
+  shift: boolean;
 }
 
 interface VirtualListProps {
@@ -16,24 +25,33 @@ interface VirtualListProps {
   rowHeight: number;
   /** Accessible name of the list. */
   label: string;
-  role: "listbox" | "tree";
-  /** Renders row `index`. The row must apply the frame: style, id and ARIA place. */
+  /** `grid` for the Songs table (UD8): rows of grid cells under a header row. */
+  role: "listbox" | "tree" | "grid";
+  /** Renders row `index`. The row must apply the frame id and ARIA place. */
   renderRow: (index: number, frame: RowFrame) => ReactNode;
   /** The row that has keyboard focus inside the list, or null (the default). */
   activeIndex?: number | null;
-  /** Up, Down, Home, End, Page Up and Page Down move the active row (R25). */
-  onMove?: (index: number) => void;
+  /** Up, Down, Home, End, Page Up and Page Down move the active row (R25); Shift extends (TB-10). */
+  onMove?: (index: number, modifiers: MoveModifiers) => void;
   /** The ARIA place of a row; lists use their own index, trees their place among siblings. */
   place?: (index: number) => { posinset: number; setsize: number };
   /** Called with the rendered index range, so the caller can fetch rows for it (D14). */
   onRange?: (start: number, end: number) => void;
   /** Keys that the list does not use for moving (Enter, Left, Right, the context menu keys). */
   onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  /** A sticky header inside the scroll element (TB-7): it scrolls horizontally with the rows. */
+  header?: ReactNode;
+  /** The rows' minimum width; a narrower list scrolls horizontally (TB-7). */
+  contentWidth?: number;
+  /** `aria-multiselectable` (UD12). */
+  multiselectable?: boolean;
   className?: string;
 }
 
 /** Rows rendered above and below the view. */
 const OVERSCAN = 8;
+/** Left and Right scroll a wide grid by this much (UD8). */
+const SCROLL_STEP = 40;
 
 /** The index a navigation key moves to, or null for other keys. `page` is the rows in view. */
 export function moveTarget(key: string, active: number | null, count: number, page: number): number | null {
@@ -60,6 +78,7 @@ export function moveTarget(key: string, active: number | null, count: number, pa
 /**
  * A virtualized list: only the rows in view, a small overscan and the active row are in the
  * DOM. The list keeps focus and points at the active row with `aria-activedescendant` (P6.6).
+ * As a grid it carries `aria-rowcount` (the rows plus the header row, UD8).
  */
 export function VirtualList({
   count,
@@ -72,12 +91,18 @@ export function VirtualList({
   place,
   onRange,
   onKeyDown,
+  header,
+  contentWidth,
+  multiselectable,
   className,
 }: VirtualListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
   const rowId = (index: number) => `${baseId}-row-${index}`;
   const active = activeIndex !== null && activeIndex < count ? activeIndex : null;
+  const grid = role === "grid";
+  // The sticky header is one row high and sits above the rows in the scroll element.
+  const headerHeight = grid && header ? rowHeight : 0;
   // The active row stays rendered when it scrolls out of view, so the arrow keys move from it.
   const rangeExtractor = useCallback(
     (range: Range) => {
@@ -94,7 +119,11 @@ export function VirtualList({
     estimateSize: () => rowHeight,
     overscan: OVERSCAN,
     rangeExtractor,
+    scrollMargin: headerHeight,
+    scrollPaddingStart: headerHeight,
   });
+  // A new row height (a root font change) measures every row again.
+  useEffect(() => virtualizer.measure(), [rowHeight, virtualizer]);
   const items = virtualizer.getVirtualItems();
   // Rows to load: the range in view and the overscan, not the kept active row.
   const range = virtualizer.range;
@@ -103,12 +132,29 @@ export function VirtualList({
   useEffect(() => {
     if (end >= start) onRange?.(start, end);
   }, [start, end, onRange]);
+  const rows = items.map((item) => (
+    <div
+      key={item.key}
+      role="presentation"
+      className="absolute top-0 left-0 w-full"
+      style={{ height: rowHeight, transform: `translateY(${item.start - headerHeight}px)` }}
+    >
+      {renderRow(item.index, {
+        id: rowId(item.index),
+        index: item.index,
+        active: item.index === active,
+        ...(place?.(item.index) ?? { posinset: item.index + 1, setsize: count }),
+      })}
+    </div>
+  ));
   return (
     <div
       ref={scrollRef}
       role={role}
       aria-label={label}
       aria-activedescendant={active === null ? undefined : rowId(active)}
+      aria-multiselectable={multiselectable || undefined}
+      aria-rowcount={grid ? count + (header ? 1 : 0) : undefined}
       tabIndex={0}
       onKeyDown={(event) => {
         // A page is the rows in view, less one, so one row stays as context.
@@ -117,29 +163,30 @@ export function VirtualList({
         if (target !== null && !event.altKey && !event.ctrlKey && !event.metaKey) {
           event.preventDefault();
           virtualizer.scrollToIndex(target, { align: "auto" });
-          onMove?.(target);
+          onMove?.(target, { shift: event.shiftKey });
+          return;
+        }
+        // Cells are not focus targets: Left and Right scroll a grid that is wider than its box.
+        if (grid && (event.key === "ArrowLeft" || event.key === "ArrowRight") && !event.ctrlKey) {
+          event.preventDefault();
+          event.currentTarget.scrollLeft += event.key === "ArrowLeft" ? -SCROLL_STEP : SCROLL_STEP;
           return;
         }
         onKeyDown?.(event);
       }}
       className={cn("group/list min-h-0 flex-1 overflow-auto focus-visible:-outline-offset-2", className)}
     >
-      <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
-        {items.map((item) =>
-          renderRow(item.index, {
-            style: {
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: rowHeight,
-              transform: `translateY(${item.start}px)`,
-            },
-            id: rowId(item.index),
-            active: item.index === active,
-            ...(place?.(item.index) ?? { posinset: item.index + 1, setsize: count }),
-          }),
-        )}
+      {grid && header && (
+        <div role="rowgroup" className="sticky top-0 z-10" style={{ height: headerHeight, minWidth: contentWidth }}>
+          {header}
+        </div>
+      )}
+      <div
+        role={grid ? "rowgroup" : undefined}
+        className="relative w-full"
+        style={{ height: virtualizer.getTotalSize(), minWidth: contentWidth }}
+      >
+        {rows}
       </div>
     </div>
   );

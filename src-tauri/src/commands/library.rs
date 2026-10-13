@@ -1,7 +1,7 @@
 //! Library queries (section 6.7, D14). The UI asks for id lists and fetches rows for the
 //! visible window only.
 
-use clawdio_core::api::{AlbumRow, ArtistRow, SongRow, SongScope, TreeArtist};
+use clawdio_core::api::{AlbumRow, ArtistRow, SongRow, SongScope, SortKey, TreeArtist};
 use tauri::State;
 
 use super::{lock_error, CommandResult};
@@ -58,12 +58,13 @@ pub fn library_song_ids(
     library: State<'_, Library>,
     scope: SongScope,
     query: String,
+    sort: Vec<SortKey>,
 ) -> CommandResult<Vec<u32>> {
     Ok(library
         .0
         .read()
         .map_err(|_| lock_error())?
-        .song_ids(scope, &query)?)
+        .song_ids(scope, &query, &sort)?)
 }
 
 #[tauri::command]

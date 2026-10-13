@@ -38,7 +38,7 @@ function MenuItems({ items }: { items: RowMenuItem[] }) {
 
 /** The list element inside a list frame: menus return focus to it. */
 export function listElement(frame: RefObject<HTMLElement | null>): HTMLElement | null {
-  return frame.current?.querySelector<HTMLElement>('[role="listbox"], [role="tree"]') ?? null;
+  return frame.current?.querySelector<HTMLElement>('[role="listbox"], [role="tree"], [role="grid"]') ?? null;
 }
 
 /** True for the keys that open the context menu of the active row (R25, P6-AC10). */

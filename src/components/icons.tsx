@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
   AudioLines,
   Columns3,
   Ellipsis,
@@ -50,6 +52,8 @@ export const ICONS = {
   repeatOne: Repeat1,
   search: Search,
   shuffle: Shuffle,
+  sortDown: ArrowDown,
+  sortUp: ArrowUp,
   stop: Square,
   topBottom: Rows2,
   tree: ListTree,

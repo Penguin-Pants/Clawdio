@@ -143,6 +143,54 @@ Reset layout and each built-in layout restore the default frame sizes of all mod
 
 Saving: 500 ms after a layout, Library mode, frame size, band position or lock change, and at once when the window closes. The measurement layout (P3.1) is not saved.
 
+## `columns.json`
+
+Location: the config folder, next to `layout.json`. Source: `src/shell/columns-persistence.ts` (content) and `crates/clawdio-core/src/layout.rs` (storage) (UI shell rework UD13, PS-6).
+
+The Songs table column state, apart from the layout: Reset layout does not change it. The app writes the file atomically and refuses text that is not one JSON object or is larger than 1 MB, like `layout.json`.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `version` | integer | Schema version, `1`. |
+| `density` | string | Row density: `regular` (the only value until U6 adds `compact`). |
+| `views` | object | One entry per Songs view: `songs.columns` (Columns mode) and `songs.topBottom` (Top/bottom mode). Tree mode has no table. |
+| `views.*.order` | array of strings | Column ids in order: `track`, `title`, `artist`, `album`, `duration`. `track` (#) is always first. |
+| `views.*.widths` | object | Width in px per column id. Minimums: `track` 40, `title` 120, `artist` 80, `album` 80, `duration` 56. Title takes the spare width over its saved width. |
+| `views.*.hidden` | array of strings | Hidden column ids. `track` and `title` cannot hide. Default: `album` in `songs.columns`, none in `songs.topBottom`. |
+| `views.*.sort` | array | Up to two `{ "column": <id>, "descending": <boolean> }` keys. Empty: the R4 default order. |
+
+Example:
+
+```json
+{
+  "version": 1,
+  "density": "regular",
+  "views": {
+    "songs.columns": {
+      "order": ["track", "title", "artist", "album", "duration"],
+      "widths": { "track": 48, "title": 240, "artist": 160, "album": 160, "duration": 64 },
+      "hidden": ["album"],
+      "sort": []
+    },
+    "songs.topBottom": {
+      "order": ["track", "title", "album", "artist", "duration"],
+      "widths": { "track": 48, "title": 240, "artist": 200, "album": 160, "duration": 64 },
+      "hidden": [],
+      "sort": [{ "column": "title", "descending": false }]
+    }
+  }
+}
+```
+
+Rules, each with one warning in `app.log`:
+
+1. Not JSON, not an object, another `version`, or no `views` object: the file is renamed to `columns.json.bak` (an older backup is replaced) and the defaults apply.
+2. An unknown view key or column id: it is ignored; a missing column goes at the end of the order.
+3. A width that is not a number or is below the column minimum: that column takes its default width.
+4. A view that is not an object: that view takes its defaults. A bad `density`: `regular`.
+
+Saving: 500 ms after a column change, and at once when the window closes.
+
 ## Playlists (`.m3u8`)
 
 Location: anywhere in the music folder. New playlists and Favorites go to `Playlists/` at the folder root (R13). Source: `crates/clawdio-core/src/playlist/` (P11).

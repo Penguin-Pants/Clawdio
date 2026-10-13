@@ -83,6 +83,14 @@ export async function groupAction(page: Page, id: string, title: string, name: s
   await expect(page.getByRole("menu")).toHaveCount(0);
 }
 
+/** The body rows of the Songs table (UD8): the header row has no `aria-selected`. */
+export const SONG_ROWS = "[role='row'][aria-selected]";
+
+/** The Songs table of the Library (a grid since U4). */
+export function songsGrid(page: Page): Locator {
+  return page.locator('[data-widget="library"]').getByRole("grid", { name: "Songs" });
+}
+
 /** The transport band (SH-2): the fixed band outside the dock. */
 export function band(page: Page): Locator {
   return page.locator('[data-widget="transport"]');

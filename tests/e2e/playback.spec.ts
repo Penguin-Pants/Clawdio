@@ -2,7 +2,7 @@
 // menu and the Play queue on the mocked player.
 import type { Page } from "@playwright/test";
 import { grayProfile } from "./gray";
-import { expect, test, widget } from "./test-base";
+import { expect, SONG_ROWS, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
@@ -21,7 +21,7 @@ const slider = (page: Page, name: string) => transport(page).getByRole("slider",
 
 test("P7-AC5: Space toggles playback with focus in the Library", async ({ page }) => {
   await openLibrary(page);
-  await widget(page, "library").getByRole("listbox", { name: "Songs" }).focus();
+  await widget(page, "library").getByRole("grid", { name: "Songs" }).focus();
   await page.keyboard.press("Space");
   expect(await calls(page)).toEqual(["player_toggle"]);
   await page.keyboard.press("Space");
@@ -51,8 +51,8 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
   await openLibrary(page);
   const queue = widget(page, "queue");
   await expect(queue).toContainText("50 songs");
-  const songs = widget(page, "library").getByRole("listbox", { name: "Songs" });
-  await songs.getByRole("option", { name: /Song 2 of Album B0/ }).click({ button: "right" });
+  const songs = widget(page, "library").getByRole("grid", { name: "Songs" });
+  await songs.getByRole("row", { name: /Song 2 of Album B0/ }).click({ button: "right" });
   const menu = page.getByRole("menu");
   await expect(menu.getByRole("menuitem", { name: "Add to playlist" })).toHaveAttribute("aria-haspopup", "menu");
   await menu.getByRole("menuitem", { name: "Add to queue" }).click();
@@ -65,8 +65,8 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
     .getByRole("listbox", { name: "Albums" })
     .getByRole("option", { name: /Album A0/ })
     .click();
-  await expect(songs.getByRole("option")).toHaveCount(10);
-  await songs.getByRole("option", { name: /Song 3 of Album A0/ }).click({ button: "right" });
+  await expect(songs.locator(SONG_ROWS)).toHaveCount(10);
+  await songs.getByRole("row", { name: /Song 3 of Album A0/ }).click({ button: "right" });
   await menu.getByRole("menuitem", { name: "Play", exact: true }).click();
   await expect(queue).toContainText("10 songs");
   await expect(queue.getByRole("option", { name: /Playing.*Song 3 of Album A0/ })).toBeVisible();

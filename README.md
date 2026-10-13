@@ -50,7 +50,16 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 | Esc | Clear the search and return to the Library |
 | F6, Shift+F6 | Move focus to the next or previous widget |
 | Delete | Remove the selected entry from the Play queue or a playlist |
-| Shift+F10, Menu key | Open the menu of the selected row |
+| Shift+F10, Menu key | Open the menu of the selected row (in the Songs table: Add to Favorites too) |
+| Shift+click, Shift+Up, Shift+Down | Select a range of songs |
+| Ctrl+click | Add a song to the selection or remove it |
+| Tab (from the Songs table) | Move to the column headers |
+| Left, Right, Home, End (headers) | Move between column headers |
+| Enter, Space (headers) | Sort by the column: ascending, descending, then the default order |
+| Shift+Left, Shift+Right (headers) | Move the column |
+| Ctrl+Left, Ctrl+Right (headers) | Make the column narrower or wider |
+| Shift+F10, Menu key (headers) | Open the column menu: show or hide columns, auto size, reset |
+| Down (headers) | Return to the songs |
 | Ctrl+Shift+L | Reset the layout |
 
 Media keys (play, pause, next, previous, stop) work while the app runs in the background.

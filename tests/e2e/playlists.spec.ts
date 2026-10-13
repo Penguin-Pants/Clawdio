@@ -12,7 +12,7 @@ async function openPlaylists(page: Page) {
 }
 
 const tree = (page: Page) => widget(page, "playlists").getByRole("tree", { name: "Playlists" });
-const songs = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Songs" });
+const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 async function lastPlay(page: Page): Promise<{ ids: number[]; start: number }> {
   return JSON.parse((await page.locator("body").getAttribute("data-play-list")) ?? "null");
@@ -104,7 +104,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   await widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" }).click();
   await expect(tree(page).getByRole("treeitem", { name: /Favorites/ })).toBeVisible();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   const submenu = page.getByRole("menu").last();
@@ -115,7 +115,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   await expect(tree(page).getByRole("treeitem", { name: /Mix 3/ })).toContainText("7");
 
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   await page.getByRole("menu").last().getByRole("menuitem", { name: "New playlist…" }).click();
@@ -133,7 +133,7 @@ test("P11-AC5: the hearts add and remove the song in Favorites", async ({ page }
   const pressed = widget(page, "nowPlaying").getByRole("button", { name: "Remove from Favorites" });
   await expect(pressed).toHaveAttribute("aria-pressed", "true");
   // The playing song's row shows a filled heart.
-  const row = songs(page).getByRole("option", { name: /Song 4 of Album A0/ });
+  const row = songs(page).getByRole("row", { name: /Song 4 of Album A0/ });
   await expect(row.locator("[data-slot='row-heart']")).toHaveAttribute("data-favorite", "");
   await row.locator("[data-slot='row-heart']").click();
   await expect(widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" })).toHaveAttribute(
@@ -149,7 +149,7 @@ test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ pa
   await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).fill("Read only");
   await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   await page.getByRole("menu").last().getByRole("menuitem", { name: "Read only" }).click();
@@ -157,7 +157,7 @@ test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ pa
   await expect(dialog).toContainText("read-only");
   await dialog.getByRole("button", { name: "OK" }).click();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .dblclick();
   await expect(widget(page, "nowPlaying")).toContainText("Song 2 of Album A0");
 });
@@ -245,6 +245,8 @@ test("P19-AC7: Find missing songs on one playlist, then on all playlists", async
   await expect(page.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Find missing songs" })).toHaveCount(0);
   await page.keyboard.press("Escape");
+  // The context menu must be gone, or WebKit can take the next click as an outside click.
+  await expect(page.getByRole("menu")).toHaveCount(0);
 
   await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
   await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();

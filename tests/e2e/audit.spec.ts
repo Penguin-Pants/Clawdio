@@ -8,6 +8,7 @@ import {
   expectNoMotion,
   expectNoSeriousViolations,
   openMenu,
+  SONG_ROWS,
   test,
   tokenRgb,
   widget,
@@ -29,7 +30,7 @@ async function check(page: Page) {
 }
 
 const albums = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Albums" });
-const songs = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Songs" });
+const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
   test.beforeEach(async ({ page }) => {
@@ -67,11 +68,11 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await albums(page)
       .getByRole("option", { name: /Album B0/ })
       .click();
-    await songs(page).getByRole("option").first().click();
+    await songs(page).locator(SONG_ROWS).first().click();
     await widget(page, "playlists").getByRole("treeitem").first().click();
     await widget(page, "queue").getByRole("option").first().click();
     await check(page);
-    await songs(page).getByRole("option").first().dblclick();
+    await songs(page).locator(SONG_ROWS).first().dblclick();
     await expect(widget(page, "transport").getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await check(page);
     // Disabled: "Fetch lyrics" with Online lookups off.
@@ -122,7 +123,7 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
     await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).fill("Read only");
     await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
-    await songs(page).getByRole("option").first().click({ button: "right" });
+    await songs(page).locator(SONG_ROWS).first().click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to playlist" }).click();
     await page.getByRole("menu").last().getByRole("menuitem", { name: "Read only" }).click();
     await expect(page.getByRole("dialog", { name: "Cannot save the change" })).toBeVisible();
@@ -212,6 +213,41 @@ async function setMode(page: Page, name: string) {
   await page.getByRole("menuitemradio", { name, exact: true }).click();
   if (await page.getByRole("menu").isVisible()) await closeMenu(page);
 }
+
+test("U4 AX-1: the Songs grid carries the grid roles and row indexes", async ({ page }) => {
+  await page.goto("/?data=library");
+  await widget(page, "library").getByRole("button", { name: "Top/bottom" }).click();
+  const grid = songs(page);
+  await expect(grid.locator(SONG_ROWS).first()).toBeVisible();
+  await grid.getByRole("columnheader", { name: "Title", exact: true }).click();
+  await expect(grid).toHaveAttribute("aria-multiselectable", "true");
+  await expect(grid.getByRole("columnheader", { name: "Title", exact: true })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  // 20 artists of 30 songs and Beyoncé's 3: the rows plus the header row.
+  await expect(grid).toHaveAttribute("aria-rowcount", String(20 * 30 + 3 + 1));
+  await expect(grid.locator("[role='row']:not([aria-selected])")).toHaveAttribute("aria-rowindex", "1");
+  await expect(grid.locator(SONG_ROWS).first().getByRole("gridcell").first()).toBeVisible();
+  await expectNoSeriousViolations(page);
+  await grid.evaluate((element) => element.scrollTo(0, 5000));
+  await expect(grid.locator(SONG_ROWS).first()).not.toHaveAttribute("aria-rowindex", "2");
+  // Every rendered body row: its list place plus two, with no gap and no repeat.
+  const places = await grid.locator(SONG_ROWS).evaluateAll((rows) =>
+    rows.map((row) => {
+      // The wrapper's offset in rows is the list place (UD8).
+      const wrapper = row.parentElement as HTMLElement;
+      const place = Math.round(new DOMMatrix(getComputedStyle(wrapper).transform).f / wrapper.offsetHeight);
+      return [Number(row.getAttribute("aria-rowindex")), place];
+    }),
+  );
+  for (const [index, place] of places) expect(index).toBe(place + 2);
+  const indexes = places.map(([index]) => index);
+  expect(indexes.length).toBeGreaterThan(5);
+  indexes.forEach((index, place) => expect(index).toBe(indexes[0] + place));
+  expect(indexes[0]).toBeGreaterThan(2);
+  await expectNoSeriousViolations(page);
+});
 
 test("P17-AC4: at 800 x 560 no control is clipped or overlaps another", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 800, height: 560 });

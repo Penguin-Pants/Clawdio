@@ -1,9 +1,8 @@
 /** The transport band and the five dock widgets that the measurement arrangement mounts (P3.1). */
 const WIDGETS = ["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"];
 
-/** Library rows beyond the "All" rows: the library has loaded. */
-const LIBRARY_ROWS =
-  '[data-widget="library"] [role="option"]:not(:first-child), [data-widget="library"] [role="treeitem"]';
+/** A song row of the Songs grid, or a Tree item: the library has loaded (the "All" rows do not count). */
+const LIBRARY_ROWS = '[data-widget="library"] [role="row"][aria-selected], [data-widget="library"] [role="treeitem"]';
 
 /**
  * True when the band and all five dock widgets are in the page and the Library shows the library. With the

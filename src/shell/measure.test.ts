@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { measurementPopulated, waitForPopulated } from "./measure";
 
 const POPULATED_HTML = `
-  <section data-widget="library"><div role="option">All</div><div role="option">Artist</div></section>
+  <section data-widget="library">
+    <div role="listbox"><div role="presentation"><div role="option">All</div></div></div>
+    <div role="grid"><div role="presentation"><div role="row" aria-selected="false">Song</div></div></div>
+  </section>
   <section data-widget="transport"></section>
   <section data-widget="nowPlaying"></section>
   <section data-widget="playlists"></section>
@@ -27,7 +30,7 @@ describe("measurementPopulated (P3.5, P6.7)", () => {
 
   it("does not count the Library 'All' row alone", () => {
     document.body.innerHTML = POPULATED_HTML;
-    document.querySelectorAll('[data-widget="library"] [role="option"]')[1]?.remove();
+    document.querySelector('[data-widget="library"] [role="row"]')?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 });
