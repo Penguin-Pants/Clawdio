@@ -1,6 +1,6 @@
 // P22-AC3 and P22-AC4: Library frame splitters (R28.1, AC-25). The mock keeps `layout.json` in
 // session storage, so a reload is the restart.
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { closeMenu, expect, openApp, openMenu, test, tokenRgb, widget } from "./test-base";
 
 /** The direct splitview of a frame group, not a nested one. */
@@ -9,16 +9,30 @@ const splitview = (page: Page, group: string) =>
 
 const sashes = (page: Page, group: string) => splitview(page, group).locator(":scope > .dv-sash-container > .dv-sash");
 
-/** The frame sizes of a group along its axis, in px. */
-async function sizes(page: Page, group: string, axis: "width" | "height"): Promise<number[]> {
-  return splitview(page, group)
-    .locator(":scope > .dv-view-container > .dv-view")
-    .evaluateAll((views, key) => views.map((view) => view.getBoundingClientRect()[key as "width" | "height"]), axis);
+type Group = "columns" | "top" | "rows";
+const FRAMES: Record<Group, number> = { columns: 3, top: 2, rows: 2 };
+const AXIS: Record<Group, "width" | "height"> = { columns: "width", top: "width", rows: "height" };
+
+/**
+ * The frame sizes of a group along its axis, in px. A new splitview (mode switch, reload) gets
+ * its first layout from a ResizeObserver, so this waits until every frame has a size.
+ */
+async function sizes(page: Page, group: Group): Promise<number[]> {
+  const views = splitview(page, group).locator(":scope > .dv-view-container > .dv-view");
+  const read = () =>
+    views.evaluateAll(
+      (elements, key) => elements.map((view) => view.getBoundingClientRect()[key as "width" | "height"]),
+      AXIS[group],
+    );
+  await expect(views).toHaveCount(FRAMES[group]);
+  await expect.poll(async () => (await read()).every((size) => size > 0)).toBe(true);
+  return read();
 }
 
-/** Drags a sash by `dx`, `dy` px. */
-async function dragSash(page: Page, sash: Locator, dx: number, dy: number): Promise<void> {
-  const box = await sash.boundingBox();
+/** Drags sash `index` of a group by `dx`, `dy` px, once the group has its layout. */
+async function dragSash(page: Page, group: Group, index: number, dx: number, dy: number): Promise<void> {
+  await sizes(page, group);
+  const box = await sashes(page, group).nth(index).boundingBox();
   if (!box) throw new Error("no splitter");
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -47,39 +61,39 @@ test("P22-AC3: frame sizes per mode survive a mode switch and a restart; Reset r
 }) => {
   await openApp(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.e2e))).toBe(true);
-  const before = await sizes(page, "columns", "width");
-  await dragSash(page, sashes(page, "columns").nth(0), 80, 0);
-  await dragSash(page, sashes(page, "columns").nth(1), -40, 0);
-  const columns = await sizes(page, "columns", "width");
+  const before = await sizes(page, "columns");
+  await dragSash(page, "columns", 0, 80, 0);
+  await dragSash(page, "columns", 1, -40, 0);
+  const columns = await sizes(page, "columns");
   expect(columns[0]).toBeGreaterThan((before[0] ?? 0) + 60);
   expect(columns[2]).toBeGreaterThan((before[2] ?? 0) + 20);
 
   await modeButton(page, "Top/bottom").click();
-  await dragSash(page, sashes(page, "rows").nth(0), 0, 60);
-  await dragSash(page, sashes(page, "top").nth(0), 70, 0);
-  const rows = await sizes(page, "rows", "height");
-  const top = await sizes(page, "top", "width");
+  await dragSash(page, "rows", 0, 0, 60);
+  await dragSash(page, "top", 0, 70, 0);
+  const rows = await sizes(page, "rows");
+  const top = await sizes(page, "top");
   expect(rows[0]).toBeGreaterThan((rows[1] ?? 0) + 60);
   expect(top[0]).toBeGreaterThan((top[1] ?? 0) + 60);
 
   await modeButton(page, "Columns").click();
-  expectClose(await sizes(page, "columns", "width"), columns);
+  expectClose(await sizes(page, "columns"), columns);
 
   await expect.poll(async () => (await savedFrames(page))?.topBottom.top[0] ?? 0).toBeGreaterThan(0.55);
   await page.reload();
   await expect(page.locator("[data-library-body]")).toHaveAttribute("data-library-body", "columns");
-  expectClose(await sizes(page, "columns", "width"), columns);
+  expectClose(await sizes(page, "columns"), columns);
   await modeButton(page, "Top/bottom").click();
-  expectClose(await sizes(page, "rows", "height"), rows);
-  expectClose(await sizes(page, "top", "width"), top);
+  expectClose(await sizes(page, "rows"), rows);
+  expectClose(await sizes(page, "top"), top);
 
   await page.locator("body").press("Control+Shift+L");
   await expect(page.locator("[data-library-body]")).toHaveAttribute("data-library-body", "columns");
-  const reset = await sizes(page, "columns", "width");
+  const reset = await sizes(page, "columns");
   const total = reset.reduce((sum, size) => sum + size, 0);
   expectClose(reset, [total * 0.25, total * 0.25, total * 0.5]);
   await modeButton(page, "Top/bottom").click();
-  const resetRows = await sizes(page, "rows", "height");
+  const resetRows = await sizes(page, "rows");
   expectClose(resetRows, [resetRows[1] ?? 0, resetRows[0] ?? 0]);
 });
 
@@ -92,8 +106,8 @@ test("P22-AC3: Tree mode shows no frame splitter", async ({ page }) => {
 
 test("P22-AC4: frames keep their minimum, fit a small window and use the dock splitter style", async ({ page }) => {
   await openApp(page);
-  await dragSash(page, sashes(page, "columns").nth(0), -1000, 0);
-  expect((await sizes(page, "columns", "width"))[0]).toBeGreaterThanOrEqual(95);
+  await dragSash(page, "columns", 0, -1000, 0);
+  expect((await sizes(page, "columns"))[0]).toBeGreaterThanOrEqual(95);
 
   const sash = sashes(page, "columns").nth(1);
   expect(await sash.evaluate((element) => (element as HTMLElement).tabIndex)).toBeLessThan(0);
@@ -109,12 +123,12 @@ test("P22-AC4: frames keep their minimum, fit a small window and use the dock sp
     await page.getByRole("menuitemcheckbox", { name, exact: true }).click();
     if (await page.getByRole("menu").isVisible()) await closeMenu(page);
   }
-  for (const [group, axis] of [
-    ["columns", "width"],
-    ["columns", "height"],
-  ] as const) {
-    for (const size of await sizes(page, group, axis)) expect(size).toBeGreaterThan(0);
-  }
+  // `sizes` waits until every Columns frame has a width; each frame also keeps a height.
+  for (const size of await sizes(page, "columns")) expect(size).toBeGreaterThan(0);
+  const heights = await splitview(page, "columns")
+    .locator(":scope > .dv-view-container > .dv-view")
+    .evaluateAll((views) => views.map((view) => view.getBoundingClientRect().height));
+  for (const height of heights) expect(height).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 

@@ -181,6 +181,13 @@ describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("columns");
   });
 
+  it("accepts a sum exactly at the 0.01 tolerance (0.33 + 0.33 + 0.33)", () => {
+    const columns = [0.33, 0.33, 0.33];
+    expect(restoreLayout(dockStandIn().api, withFrames({ ...CUSTOM, columns }), SIZE)).toBe(true);
+    expect(useLibraryStore.getState().frames.columns).toEqual(columns);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
   it("an unknown property inside topBottom gives Top/bottom defaults and one log line", () => {
     const text = withFrames({ ...CUSTOM, topBottom: { ...CUSTOM.topBottom, middle: [1] } });
     expect(restoreLayout(dockStandIn().api, text, SIZE)).toBe(true);

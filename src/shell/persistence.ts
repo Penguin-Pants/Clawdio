@@ -25,13 +25,15 @@ export interface SavedLayout {
 
 /** A sum of fractions this close to 1 is accepted (D55). */
 const FRACTION_SUM_TOLERANCE = 0.01;
+/** Floating-point slack, so a sum exactly at the tolerance (0.33 + 0.33 + 0.33) passes. */
+const FLOAT_EPSILON = 1e-9;
 
 /** True for `length` finite positive numbers that add up to 1 (D55). */
 function isFractions(value: unknown, length: number): value is number[] {
   if (!Array.isArray(value) || value.length !== length) return false;
   if (!value.every((item) => typeof item === "number" && Number.isFinite(item) && item > 0)) return false;
   const sum = (value as number[]).reduce((total, item) => total + item, 0);
-  return Math.abs(sum - 1) <= FRACTION_SUM_TOLERANCE;
+  return Math.abs(sum - 1) <= FRACTION_SUM_TOLERANCE + FLOAT_EPSILON;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

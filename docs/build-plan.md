@@ -1291,14 +1291,19 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 2. Source: own audit and the full e2e run.
+**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 4. Source: own audit, the full e2e run, CI and the PR review (Codex, DeepSource).
 
 - F2:
   - A mode switch reused the splitview of the other mode, so Top/bottom showed three stacked frames. Each mode body now has its own key.
   - The new frames took focus at start, which broke the F6 order (P2-AC10). Fixed (N3).
   - The separator hid the selected-row marker (P6-AC9). Fixed (N4).
   - A doc comment in `persistence.ts` ran past the line width.
+  - CI: P22-AC3 measured and dragged before a new splitview had its first layout (empty sizes in Chromium, a missed drag in WebKit). `sizes` now waits until every frame has a size.
+  - Codex: a sum exactly at the 0.01 tolerance (0.33 + 0.33 + 0.33) failed by floating-point error. A 1e-9 slack fixes it, with a test.
+  - DeepSource: a one-child fragment in `FrameContent`. Removed.
 - F4:
+  - DeepSource: an empty async mock in `persistence.test.ts` follows the file's existing mock pattern (`vi.fn(async () => {})`).
+  - DeepSource: the early `return` in a `useEffect` callback is the React idiom; the cleanup return is the only value.
   - `applyMeasureLayout` does not reset frame sizes: the measurement layout is not saved (P3.1).
   - Sashes have no keyboard resize: R28.1 asks for mouse only (K5, section 7 of the requirements).
 

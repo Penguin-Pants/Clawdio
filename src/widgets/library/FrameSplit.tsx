@@ -21,7 +21,7 @@ export interface FrameView {
 }
 
 function FrameContent({ params }: ISplitviewPanelProps<{ content: ReactNode }>) {
-  return <>{params.content}</>;
+  return params.content;
 }
 
 const COMPONENTS = { frame: FrameContent };
