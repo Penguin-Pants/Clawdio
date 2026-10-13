@@ -1002,6 +1002,8 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 
 **Rule 10 (real app):** Linux, WebKitGTK under Xvfb: the four window sizes, 200 % (`GDK_SCALE=2`) and 150 % text (`GDK_DPI_SCALE=1.5`), the restart at 2560 x 1440 after the fix, and Settings, Change folder (the GTK dialog opens).
 
+**WebKit e2e (CI, `a9addba`):** 360 passed, 2 skipped (the same skips as Chromium). PF-3 in WebKit: longest frame gap 116 ms (dock 116, scroll 76, sort 52, column 43), budget 150 ms. Chromium: 16.8 ms, budget 100 ms. Every CI job on the head passed; DeepSource JavaScript stays red with Minor style findings only, which the owner set as non-blocking.
+
 **Checks that could not run:** WebKit e2e here (CI runs it on the pushed head). Every Windows row (no Windows machine). The 50,000-file real library, the audio-glitch row (no audio output) and the window position (no window manager). A Release workflow dispatch (an owner action; the checks used the dev build).
 
 **TWO-PASS REVIEW:** F1 0, F2 2, F3 0, F4 2.
