@@ -104,8 +104,9 @@ Example (shortened):
       "root": {
         "type": "branch",
         "data": [
-          { "type": "leaf", "data": { "views": ["library"], "activeView": "library", "id": "1" }, "size": 630 },
-          { "type": "leaf", "data": { "views": ["nowPlaying", "queue"], "activeView": "queue", "id": "2" }, "size": 112 }
+          { "type": "leaf", "data": { "views": ["library"], "activeView": "library", "id": "1" }, "size": 430 },
+          { "type": "leaf", "data": { "views": ["queue"], "activeView": "queue", "id": "2" }, "size": 200 },
+          { "type": "leaf", "data": { "views": ["nowPlaying"], "activeView": "nowPlaying", "id": "3" }, "size": 112 }
         ],
         "size": 1200
       },

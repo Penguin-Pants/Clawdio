@@ -1341,11 +1341,13 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 6, F3 0, F4 4. Source: own audit, the full e2e run and the PR review (Codex, CodeRabbit, DeepSource).
+**TWO-PASS REVIEW:** F1 0, F2 8, F3 0, F4 4. Source: own audit, the full e2e run and the PR review (Codex, CodeRabbit, DeepSource).
 
 - F2:
   - Codex: the window top edge drop had no test; the first notes said Dockview had no such zone. It does (N1). A test now drops Transport controls on it over a side-by-side layout. D58 is corrected.
   - Codex: a splitter drag under 0.2% of its group was not saved (`SAME_FRACTION` skip in `FrameSplit.tsx`). Every drag end is saved now, with a test. This is P22 code, fixed in this phase.
+  - Codex: the `layout.json` example in `docs/file-formats.md` had Now playing in the Play queue tab group, which rule 5 repairs. The example now gives Now playing its own bottom row.
+  - CI (rust, windows-latest): the P15 lyrics cancel test cancelled after a fixed 300 ms sleep, before the fetch had its cancel token on a slow runner. It now cancels once the mock server has the request (commit `99131c9`).
   - A non-bar widget could split a shared bar row (N2). Refused now.
   - Six earlier tests used bar widgets as ordinary drag targets (N4). Updated.
   - Codex and CodeRabbit: the repair re-added a misplaced bar beside its partner even when the partner sat in a top row, so it did not reach the bottom bar. `repairBars` now puts it beside the partner only when the partner is in the bottom bar (`inBottomBar`, which looks through the one-child root Dockview saves), else as a new bottom row. New unit and restore tests.
