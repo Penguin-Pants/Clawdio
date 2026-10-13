@@ -45,10 +45,10 @@ const THEME: DockviewTheme = {
 function BarContent({ id, children }: { id: BarWidgetId; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observer = new ResizeObserver(() => setBarContentHeight(id, element.getBoundingClientRect().height));
-    observer.observe(element);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setBarContentHeight(id, entry.target.getBoundingClientRect().height);
+    });
+    if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, [id]);
   return (
@@ -224,12 +224,11 @@ export function DockShell() {
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = containerRef.current;
-    if (!element) return;
     const observer = new ResizeObserver(() => {
       if (apiRef.current) applyClamp(apiRef.current);
       showActiveTabs(element);
     });
-    observer.observe(element);
+    if (element) observer.observe(element);
     // A new bar height (D57) changes the bar group limits.
     const stopBars = onBarHeightChange(() => {
       if (apiRef.current) applyClamp(apiRef.current);

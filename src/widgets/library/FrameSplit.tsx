@@ -93,14 +93,13 @@ export function FrameSplit({
   // The container size drives the layout, so the saved fractions hold at every size.
   useEffect(() => {
     const element = containerRef.current;
-    if (!element) return;
     const observer = new ResizeObserver(() => {
       const api = apiRef.current;
-      if (!api) return;
+      if (!api || !element) return;
       api.layout(element.clientWidth, element.clientHeight);
       applyFractions(api, horizontal, currentFractions(group));
     });
-    observer.observe(element);
+    if (element) observer.observe(element);
     return () => observer.disconnect();
   }, [horizontal, group]);
 

@@ -267,7 +267,7 @@ describe("saving (P9.3, P9-AC8)", () => {
 
   it("saves 500 ms after a frame size change (P22.3)", async () => {
     vi.useFakeTimers();
-    const save = vi.fn<(json: string) => Promise<void>>(async () => {});
+    const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
     const watcher = watchLayout(dockStandIn().api, save);
     useLibraryStore.getState().setFrames("columns", [0.3, 0.3, 0.4]);
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
