@@ -27,7 +27,7 @@ describe("groupMinimum", () => {
 
 describe("nodeMinimum", () => {
   it("adds widths in a horizontal split and takes the largest height", () => {
-    expect(nodeMinimum(DEFAULT, "HORIZONTAL")).toEqual({ width: 720, height: 240 });
+    expect(nodeMinimum(DEFAULT, "HORIZONTAL")).toEqual({ width: 576, height: 240 });
   });
 
   it("adds heights in a vertical split", () => {
@@ -38,7 +38,7 @@ describe("nodeMinimum", () => {
 describe("clampMinimums (D45)", () => {
   it("keeps the D33 minimums when the dock is large enough", () => {
     const result = clampMinimums(DEFAULT, "HORIZONTAL", { width: 1200, height: 600 });
-    expect(result.get("g1")).toEqual({ width: 200, height: 160 });
+    expect(result.get("g1")).toEqual({ width: 56, height: 160 });
     expect(result.get("g2")).toEqual({ width: 320, height: 240 });
   });
 
@@ -59,6 +59,6 @@ describe("clampMinimums (D45)", () => {
 
   it("clamps each axis on its own", () => {
     const result = clampMinimums(DEFAULT, "HORIZONTAL", { width: 360, height: 600 });
-    expect(result.get("g2")).toEqual({ width: Math.floor((320 * 360) / 720), height: 240 });
+    expect(result.get("g2")).toEqual({ width: Math.floor((320 * 360) / 576), height: 240 });
   });
 });

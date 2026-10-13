@@ -16,7 +16,7 @@ describe("widget registry (P2.2)", () => {
     expect(WIDGET_IDS.map((id) => [id, WIDGETS[id].minWidth, WIDGETS[id].minHeight])).toEqual([
       ["library", 320, 240],
       ["nowPlaying", 220, 240],
-      ["playlists", 200, 160],
+      ["playlists", 56, 160],
       ["queue", 200, 160],
       ["lyrics", 200, 160],
     ]);

@@ -32,13 +32,18 @@ import {
   setWidgetVisible,
 } from "./layouts";
 import { PRESETS, PRESET_IDS } from "./presets";
+import { collapseGroup, isCollapsed, restoreGroup } from "./splitters";
 import { WIDGET_IDS, WIDGETS } from "./widgets";
 
 /** The active widget and whether it floats, read when the menu opens (UD17). */
 function activeWidgetState(open: boolean) {
-  if (!open) return { id: null, floating: false };
+  if (!open) return { id: null, floating: false, collapsed: false };
   const id = activeWidget();
-  return { id, floating: id !== null && isFloating(getDock()?.getPanel(id)) };
+  return {
+    id,
+    floating: id !== null && isFloating(getDock()?.getPanel(id)),
+    collapsed: id !== null && isCollapsed(id),
+  };
 }
 
 /**
@@ -116,6 +121,18 @@ export function AppMenu() {
             onClick={() => active.id && dockWidget(active.id)}
           >
             Dock widget
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={active.id === null || active.floating || active.collapsed || locked}
+            onClick={() => active.id && collapseGroup(active.id)}
+          >
+            Collapse widget
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={active.id === null || !active.collapsed || locked}
+            onClick={() => active.id && restoreGroup(active.id)}
+          >
+            Restore widget
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

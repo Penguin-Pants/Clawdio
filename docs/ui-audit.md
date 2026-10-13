@@ -106,3 +106,8 @@ Each phase adds its acceptance check here (rework section 14).
 
 - Presets (Apple Music classic, MusicBee style, Compact), Lock layout, floating groups with Float and Dock (pointer and keyboard), the View menu, transport top or bottom, `layout.json` v2 with floating groups, the window position in `settings.json`.
 - Rework Phase 2 accept: a hand-corrupted `layout.json` starts the app with the default preset and leaves `layout.json.bak` (`persistence.spec.ts`; the real app backed up a version 1 file in U1).
+
+### U3: Splitters and rail
+
+- Every dock and Library frame splitter is a keyboard separator (W3C pattern) with a 6 px hit area and a double-click reset; Collapse and Restore through the "Widget options" button and the Layout menu; the Playlists icon rail below 140 px.
+- Rework Phase 4 accept: SP-1 to SP-4 pass in `splitters.spec.ts` and `resize.spec.ts`; the real WebKitGTK app moves a separator with the arrow keys.

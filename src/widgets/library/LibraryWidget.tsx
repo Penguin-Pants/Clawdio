@@ -133,7 +133,7 @@ function SearchField() {
 function ListFrame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex size-full min-h-0 min-w-0 flex-col">
-      <div aria-hidden="true" className="px-2 py-1 text-[13px] text-text-secondary">
+      <div aria-hidden="true" data-frame-label="" className="px-2 py-1 text-[13px] text-text-secondary">
         {label}
       </div>
       {children}

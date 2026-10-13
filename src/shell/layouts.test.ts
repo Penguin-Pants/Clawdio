@@ -76,7 +76,7 @@ describe("defaultArrangement: the default preset (DK-8, UD6)", () => {
     defaultArrangement(api);
     expect(panels.map((panel) => [panel.id, panel.tabComponent, panel.minimumWidth, panel.minimumHeight])).toEqual([
       ["library", "library", 320, 240],
-      ["playlists", "widget", 200, 160],
+      ["playlists", "widget", 56, 160],
       ["queue", "widget", 200, 160],
       ["lyrics", "widget", 200, 160],
     ]);

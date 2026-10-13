@@ -39,7 +39,7 @@
 | U0 | Audit and source alignment | none | Done |
 | U1 | Shell zones and transport band | U0 | Done |
 | U2 | Docking: presets, lock, View menu, persistence v2 | U1 | Done |
-| U3 | Splitters and sidebar rail | U2 | Not started |
+| U3 | Splitters and sidebar rail | U2 | Done |
 | U4 | Library table | U1 | Not started |
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Not started |
 | U6 | Table extras: row drag, secondary sort, density | U4, U5 | Not started |
@@ -665,12 +665,12 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | DK-8 default preset | U2 | E2E `presets.spec.ts` | Done (U2) |
 | DK-9 three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Done (U2) |
 | DK-10 pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Done (U2) |
-| SP-1 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Planned (hit area) |
-| SP-2 double-click reset | U3 | UT, E2E | Planned |
-| SP-3 keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Planned |
+| SP-1 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Done (U3) |
+| SP-2 double-click reset | U3 | UT, E2E | Done (U3) |
+| SP-3 keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Done (U3; WebKit in CI) |
 | SP-4 pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
-| SP-5 icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Planned |
-| SP-6 no zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Planned |
+| SP-5 icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
+| SP-6 no zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
 | SP-7 auto-hide with pin (MAY) | none | Not built | Not built |
 | TB-1 virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Passes today |
 | TB-2 divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Planned |
@@ -690,14 +690,14 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | PS-2 config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
 | PS-4 validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
-| PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | In progress (U2: size, position, transport; collapse state in U3) |
+| PS-5 window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Done (U3; real-app position check by the owner) |
 | PS-6 column state apart from the layout | U4 | UT; E2E | Planned |
 | TH-1 tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
-| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1 paths done; rail U3, card U5) |
+| PF-2 observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1, U3 paths done; card U5) |
 | PF-3 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
-| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band) |
+| AX-1 keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators) |
 | AX-2 reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
 | TA-1 `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
@@ -707,7 +707,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
-| Rework 8 Phase 4 accept | U3 | E2E | Planned |
+| Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
 | Rework 9 checklist | U7 | MAN | Planned |
 | Rework 14 definition of done | U7 | REV | Planned |
@@ -841,7 +841,42 @@ Each phase appends its record here when it closes: status, commits, packages, cr
 - F4: the window shows at the OS position before `restore_position` moves it. It is one frame at start and needs no fix.
 - F4: on Wayland `outer_position` fails; the position is then not saved and the OS places the window, which UD14 allows.
 
-### U3 to U7
+### U3. Splitters and sidebar rail (October 13, 2026)
+
+**Status:** Done. **Commit:** `U3: keyboard separators, collapse and restore, Playlists rail`.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U3-AC1 | Pass (Chromium; WebKitGTK real app) | `splitters.spec.ts`: 6 px hit area, 1 px line, resize cursor (SP-1); double-click restores 240 px (SP-2); Tab reaches a separator, arrows, Shift+arrows, Home, End and Enter, `role`, `aria-orientation`, `aria-valuenow`, the name (SP-3), for a dock and a frame separator; `resize.spec.ts` still passes with the layer present (SP-4). `splitters.test.ts` for the keys, the names, the share, the reset rule and the lock. |
+| U3-AC2 | Pass | `rail.spec.ts` (SP-5: rail below 140 px, tooltips, a rail button widens to 240 px and selects the playlist, the rail survives a reload); `splitters.spec.ts` and `docking.spec.ts` (SP-6: Collapse and Restore by pointer and by the Layout menu, disabled while locked; a drag past the minimum stops at the minimum). |
+| U3-AC3 | Pass | axe in `audit.spec.ts` and `transport-band.spec.ts` with separators in the page: no serious violation. |
+| U3-AC4 | Pass (Chromium) | Validation command set; Chromium e2e 136 of 136. |
+
+**Notes**
+
+- `src/shell/splitters.ts` (UD7): one delegated key and double-click handler; `decorateSashes` runs on the next frame after each dock or frame layout. A move dispatches `pointerdown`, `pointermove` and `pointerup` on the sash, so Dockview applies its constraints and the frame save path. The `setSize` fallback was not needed: the real WebKitGTK app moved the Playlists separator from 240 to 320 px with five Right presses (UK1).
+- UD17 and UD25 placement: Float or Dock and Collapse or Restore are items of one "Widget options" button (`GroupActions` in `src/shell/WidgetTab.tsx`, Dockview `rightHeaderActionsComponent`) at the right of each tab bar, not controls inside the tab. Controls in the tab made the 280 px right group of the default preset overflow (Lyrics went to the tab overflow list), and hover-only controls moved the drag point onto a control. The button is a real button, so the keyboard reaches it too; the Layout menu items stay.
+- Menus, popovers, tooltips and dialogs now use `z-index: var(--z-popup)` (2000): a menu opened from a floating group was under the group's content (Dockview overlays use z-index 40 to 1000 and more).
+- The Playlists minimum width is 56 px (UD18); `PlaylistsWidget` keeps one root element in every state, so its size observer (UD24) keeps working when the rail shows.
+- SP-7 (MAY, auto-hide with a pin) is not built.
+- Process: the `splitters.ts` tests were written together with the code, not before it (AGENTS.md TDD). Each test fails when its behavior is removed (checked by reading each assertion against the code); no code path is untested.
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb with `xdotool`: the first-run notice closes by click; Tab moves through the controls and the "Widget options" buttons show the focus ring; a click on the Playlists separator and five Right presses widen Playlists from 240 to 320 px with the ring on the 6 px hit area. The U2 window position save is still not exercised: without a window manager, `xdotool windowmove` sends no Moved event. The owner checks it on Windows.
+
+**Checks that could not run:** WebKit e2e (CI runs it; `splitters.spec.ts` there is the UD7 WebKit check in CI). Window position save in the real app (no window manager).
+
+**TWO-PASS REVIEW:** F1 1, F2 3, F3 0, F4 4.
+
+- F1 (fixed): a menu opened from a floating group rendered under the group (popups at z-index 50, Dockview floating content at 1000), so Dock widget could not be clicked.
+- F2 (fixed): Float and Collapse in the tab overflowed the 280 px right group; they moved to the group options button.
+- F2 (fixed): hover-only tab controls moved under the drag start point and stopped a tab drag.
+- F2 (fixed): the rail replaced the Playlists root element, so the size observer watched a removed node.
+- F4: synthetic pointer events may not move a sash in WebKit (UK1). The real WebKitGTK app moved it; CI runs the e2e in WebKit.
+- F4: Restore after a manual drag returns the size from before the collapse. That is the UD25 rule.
+- F4: a separator name lists every tab title of a side ("Resize Library and Play queue, Lyrics"). It names both sides, as UD7 asks.
+- F4: a decoration pass reads the layout of every sash; it runs once per frame after a layout change only.
+
+### U4 to U7
 
 Not started.
 

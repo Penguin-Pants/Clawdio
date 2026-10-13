@@ -44,7 +44,8 @@ export const WIDGETS: Record<WidgetId, WidgetDefinition> = {
     id: "playlists",
     title: "Playlists",
     hideable: true,
-    minWidth: 200,
+    // The rail width (UD18): a drag can reach the icon rail below 140 px.
+    minWidth: 56,
     minHeight: 160,
     component: PlaylistsWidget,
   },

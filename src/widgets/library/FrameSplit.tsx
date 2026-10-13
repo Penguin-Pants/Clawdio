@@ -7,6 +7,7 @@ import {
 } from "dockview-react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { observeSize } from "@/lib/resize";
+import { scheduleSashRefresh } from "@/shell/splitters";
 import { type FrameGroup, frameFractions, useLibraryStore } from "@/store/library";
 
 /** Frame minimums in px (D56): three Columns frames fit the 320 px Library minimum (D33). */
@@ -40,11 +41,14 @@ function applyFractions(api: SplitviewApi, horizontal: boolean, fractions: numbe
   const scale = Math.min(1, total / (minimum * api.panels.length));
   for (const panel of api.panels) panel.api.setConstraints({ minimumSize: minimum * scale });
   api.panels.slice(0, -1).forEach((panel, index) => panel.api.setSize({ size: (fractions[index] ?? 0) * total }));
+  // The separators carry their new value and stay keyboard reachable (UD7).
+  scheduleSashRefresh();
 }
 
 /**
  * Library frames with splitters (P22.1, R28.1, D56). The sizes come from the Library store, so
- * each mode keeps its own; a splitter drag writes them back. Sashes are not in the Tab order (K5).
+ * each mode keeps its own; a splitter drag or a separator key writes them back. The separators
+ * are in the Tab order with the W3C keys (UD7, `src/shell/splitters.ts`).
  */
 export function FrameSplit({
   group,

@@ -81,6 +81,31 @@
   content: none;
 }
 
+/*
+ * Splitter hit area (SP-1): 6 px. Dockview centers a 4 px sash on the edge, so the wider sash
+ * moves back by 1 px to stay centered; the visible line stays 1 px.
+ */
+.dockview-theme-app .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash {
+  width: 6px;
+  margin-left: -1px;
+}
+
+.dockview-theme-app .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash {
+  height: 6px;
+  margin-top: -1px;
+}
+
+/* A focused separator (UD7) shows the global ring around its hit area and a 2 px line. */
+.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash:focus-visible {
+  outline: 2px solid var(--color-brand-red);
+  outline-offset: 0;
+  z-index: 1;
+}
+
+.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash[aria-disabled="true"] {
+  cursor: default;
+}
+
 /* Splitter line: 1 px border.strong on hover, 2 px while dragging, with a resize cursor. */
 .dockview-theme-app
   .dv-split-view-container

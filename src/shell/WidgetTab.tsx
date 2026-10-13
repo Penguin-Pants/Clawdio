@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import type { DockviewPanelApi, IDockviewPanelHeaderProps } from "dockview-react";
+import type { DockviewGroupPanelApi, IDockviewHeaderActionsProps, IDockviewPanelHeaderProps } from "dockview-react";
+import { IconButton } from "@/components/icon-button";
 import { Icon, type IconName } from "@/components/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/ui";
 import { dockWidget, floatWidget } from "./layouts";
+import { collapseGroup, restoreGroup, useCollapseStore } from "./splitters";
 import { WIDGETS, isWidgetId } from "./widgets";
 
 function titleOf(id: string): string {
   return isWidgetId(id) ? WIDGETS[id].title : id;
 }
 
-/** True while the panel's group floats; follows moves between the grid and a floating group. */
-function useFloating(api: DockviewPanelApi): boolean {
+/** True while the group floats; follows moves between the grid and a floating group. */
+function useFloating(api: DockviewGroupPanelApi): boolean {
   const [floating, setFloating] = useState(api.location.type === "floating");
   useEffect(() => {
     const subscription = api.onDidLocationChange((event) => setFloating(event.location.type === "floating"));
@@ -30,13 +37,11 @@ function TabControl({
   label,
   slot,
   onPress,
-  className,
 }: {
   icon: IconName;
   label: string;
   slot: string;
   onPress: () => void;
-  className?: string;
 }) {
   return (
     <Tooltip>
@@ -45,10 +50,7 @@ function TabControl({
           <span
             aria-hidden="true"
             data-slot={slot}
-            className={cn(
-              "grid size-5 place-items-center rounded-[min(var(--radius-md),10px)] text-text-muted transition-colors hover:bg-accent hover:text-foreground",
-              className,
-            )}
+            className="grid size-5 place-items-center rounded-[min(var(--radius-md),10px)] text-text-muted transition-colors hover:bg-accent hover:text-foreground"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -64,32 +66,55 @@ function TabControl({
   );
 }
 
-/** Float or Dock (DK-3, UD17); hidden while the layout is locked (DK-5). */
-function FloatControl({ api }: { api: DockviewPanelApi }) {
-  const floating = useFloating(api);
+/**
+ * The group header action (DK-3, SP-6, UD17, UD25): one "Widget options" menu button at the right
+ * of the tab bar with Float or Dock and Collapse or Restore for the group's active widget. One
+ * small button keeps the tabs in view in a narrow tabbed group. Hidden while the layout is
+ * locked (DK-5).
+ */
+export function GroupActions({ activePanel, group }: IDockviewHeaderActionsProps) {
+  const floating = useFloating(group.api);
   const locked = useUiStore((state) => state.locked);
-  const id = api.id;
-  if (locked || !isWidgetId(id)) return null;
+  const collapsed = useCollapseStore((state) => state.sizes[group.id] !== undefined);
+  const id = activePanel?.id;
+  if (locked || id === undefined || !isWidgetId(id)) return null;
   const title = titleOf(id);
-  // Only the active tab of a group shows it, so narrow tabbed groups keep their tabs in view.
-  const hidden = "in-[.dv-inactive-tab]:hidden";
-  return floating ? (
-    <TabControl icon="dock" label={`Dock ${title}`} slot="tab-dock" className={hidden} onPress={() => dockWidget(id)} />
-  ) : (
-    <TabControl
-      icon="float"
-      label={`Float ${title}`}
-      slot="tab-float"
-      className={hidden}
-      onPress={() => floatWidget(id)}
-    />
+  return (
+    <div className="flex h-full items-center px-1" onPointerDown={(event) => event.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <IconButton
+              icon="more"
+              label={`${title} options`}
+              size="icon-xs"
+              data-slot="group-options"
+              className="text-text-muted"
+            />
+          }
+        />
+        <DropdownMenuContent align="end" className="w-44">
+          {floating ? (
+            <DropdownMenuItem onClick={() => dockWidget(id)}>Dock widget</DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => floatWidget(id)}>Float widget</DropdownMenuItem>
+          )}
+          {!floating &&
+            (collapsed ? (
+              <DropdownMenuItem onClick={() => restoreGroup(id)}>Restore widget</DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => collapseGroup(id)}>Collapse widget</DropdownMenuItem>
+            ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
 /**
- * Widget header tab (P2.3, design.md section 6): drag grip, title, the Float or Dock control and
- * a close control. Tab controls are for the pointer only; the menu shows, hides, floats and
- * docks widgets from the keyboard (R29 non-drag path).
+ * Widget header tab (P2.3, design.md section 6): drag grip, title and a close control. Tab
+ * controls are for the pointer only; the menu shows, hides, floats, docks, collapses and restores
+ * widgets from the keyboard (R29 non-drag path).
  */
 export function WidgetTab({ api }: IDockviewPanelHeaderProps) {
   const title = titleOf(api.id);
@@ -97,7 +122,6 @@ export function WidgetTab({ api }: IDockviewPanelHeaderProps) {
     <div className="flex h-full items-center gap-1 pr-1 pl-2">
       <Icon name="grip" className="size-3.5 text-text-muted" />
       <span className="truncate text-[13px]">{title}</span>
-      <FloatControl api={api} />
       <TabControl icon="close" label={`Hide ${title}`} slot="tab-close" onPress={() => api.close()} />
     </div>
   );
@@ -105,7 +129,8 @@ export function WidgetTab({ api }: IDockviewPanelHeaderProps) {
 
 /**
  * Library tab: no close button. The dock closes a focused tab on Delete or Backspace, so the
- * tab element stops those keys before they reach the dock (P2.3, R28). Library may float.
+ * tab element stops those keys before they reach the dock (P2.3, R28). Library may float (the
+ * group actions).
  */
 export function LibraryTab({ api }: IDockviewPanelHeaderProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -125,7 +150,6 @@ export function LibraryTab({ api }: IDockviewPanelHeaderProps) {
     <div ref={ref} className="flex h-full items-center gap-1 pr-1 pl-2">
       <Icon name="grip" className="size-3.5 text-text-muted" />
       <span className="truncate text-[13px]">{titleOf(api.id)}</span>
-      <FloatControl api={api} />
     </div>
   );
 }

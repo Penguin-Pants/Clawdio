@@ -74,6 +74,15 @@ export async function setWidgetShown(page: Page, name: string, shown: boolean): 
   if (await page.getByRole("menu").isVisible()) await closeMenu(page);
 }
 
+/** Runs an item of a group's "Widget options" menu (Float, Dock, Collapse, Restore; UD17, UD25). */
+export async function groupAction(page: Page, id: string, title: string, name: string): Promise<void> {
+  await group(page, id)
+    .getByRole("button", { name: `${title} options` })
+    .click();
+  await page.getByRole("menuitem", { name, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+
 /** The transport band (SH-2): the fixed band outside the dock. */
 export function band(page: Page): Locator {
   return page.locator('[data-widget="transport"]');

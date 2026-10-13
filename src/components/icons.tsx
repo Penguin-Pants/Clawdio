@@ -1,8 +1,6 @@
 import type { CSSProperties } from "react";
 import {
   AudioLines,
-  PanelTopClose,
-  PictureInPicture2,
   Columns3,
   Ellipsis,
   FileX,
@@ -10,6 +8,7 @@ import {
   Heart,
   ListMusic,
   ListTree,
+  Music,
   Menu,
   Pause,
   Play,
@@ -34,8 +33,6 @@ import { cn } from "@/lib/utils";
  */
 export const ICONS = {
   close: X,
-  dock: PanelTopClose,
-  float: PictureInPicture2,
   columns: Columns3,
   grip: GripVertical,
   heart: Heart,
@@ -45,6 +42,7 @@ export const ICONS = {
   next: SkipForward,
   pause: Pause,
   play: Play,
+  playlist: Music,
   playing: AudioLines,
   previous: SkipBack,
   queue: ListMusic,

@@ -15,8 +15,9 @@ import { observeSize } from "@/lib/resize";
 import { applyMeasureLayout, attachDock, defaultArrangement, guardLibrary, visibleWidgets } from "./layouts";
 import { applySideWidths } from "./presets";
 import { keepSideWidths } from "./side-widths";
+import { installSplitters, scheduleSashRefresh } from "./splitters";
 import { UNKNOWN_COMPONENT, restoreLayout, watchLayout } from "./persistence";
-import { LibraryTab, WidgetTab } from "./WidgetTab";
+import { GroupActions, LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
 
 /** Dock theme: every chrome color comes from token variables (P2.10, src/styles/dockview-theme.css). */
@@ -146,6 +147,8 @@ export function DockShell() {
         showActiveTabs(containerRef.current);
       };
       api.onDidActivePanelChange(() => showActiveTabs(containerRef.current));
+      // The separators get their keyboard semantics after each layout change (UD7).
+      api.onDidLayoutChange(scheduleSashRefresh);
       api.onDidAddPanel(sync);
       api.onDidRemovePanel(sync);
       api.onDidMovePanel(sync);
@@ -170,13 +173,16 @@ export function DockShell() {
           if (apiRef.current) applyClamp(apiRef.current);
           sideRef.current?.onDockResize();
           showActiveTabs(element);
+          scheduleSashRefresh();
         })
       : () => {};
+    const stopSplitters = installSplitters();
     const stopLock = useUiStore.subscribe((state, previous) => {
       if (apiRef.current && state.locked !== previous.locked) applyLock(apiRef.current, state.locked);
     });
     return () => {
       stop();
+      stopSplitters();
       stopLock();
       sideRef.current?.dispose();
       attachDock(null);
@@ -191,6 +197,7 @@ export function DockShell() {
         components={COMPONENTS}
         tabComponents={TAB_COMPONENTS}
         defaultTabComponent={WidgetTab}
+        rightHeaderActionsComponent={GroupActions}
         dndStrategy="pointer"
         proportionalLayout={false}
         floatingGroupBounds="boundedWithinViewport"

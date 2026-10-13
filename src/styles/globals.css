@@ -29,6 +29,9 @@
   --input: var(--color-border-strong);
   --ring: var(--color-brand-red);
   --radius: var(--radius-control);
+  /* Menus, popovers, tooltips and dialogs sit above the dock's floating groups (z-index 40 to
+     1000 and more, Dockview overlays). */
+  --z-popup: 2000;
 }
 
 @theme inline {

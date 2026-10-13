@@ -1,12 +1,12 @@
 // U2 (DK-3, AX-1, UD17): float a widget, move it, dock it again, by pointer and by keyboard.
 import type { Page } from "@playwright/test";
-import { closeMenu, drag, expect, openApp, openMenu, tab, test, widget } from "./test-base";
+import { closeMenu, drag, expect, groupAction, openApp, openMenu, test, widget } from "./test-base";
 
 const floating = (page: Page) => page.locator(".dv-groupview-floating, .dv-resize-container");
 
 test("DK-3: the tab Float control floats Play queue; the group moves; Dock puts it back", async ({ page }) => {
   await openApp(page);
-  await tab(page, "Play queue").locator("[data-slot='tab-float']").click();
+  await groupAction(page, "queue", "Play queue", "Float widget");
   await expect(floating(page).first()).toBeVisible();
   const container = page.locator(".dv-resize-container", { has: widget(page, "queue") });
   await expect(container).toBeVisible();
@@ -25,7 +25,7 @@ test("DK-3: the tab Float control floats Play queue; the group moves; Dock puts 
     );
   await expect.poll(savedLeft).toBeGreaterThanOrEqual(0);
   await expect.poll(savedLeft).toBeLessThan(before.x - 100);
-  await tab(page, "Play queue").locator("[data-slot='tab-dock']").click();
+  await groupAction(page, "queue", "Play queue", "Dock widget");
   await expect(page.locator(".dv-resize-container", { has: widget(page, "queue") })).toHaveCount(0);
   await expect(widget(page, "queue")).toBeVisible();
 });
@@ -51,7 +51,7 @@ test("DK-3, AX-1: by keyboard: F6 to a widget, Float widget, then Dock widget", 
 
 test("DK-3: a floating group survives a reload and stays inside the window", async ({ page }) => {
   await openApp(page);
-  await tab(page, "Play queue").locator("[data-slot='tab-float']").click();
+  await groupAction(page, "queue", "Play queue", "Float widget");
   await expect(page.locator(".dv-resize-container", { has: widget(page, "queue") })).toBeVisible();
   await expect
     .poll(() =>

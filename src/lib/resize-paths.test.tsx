@@ -5,6 +5,7 @@ import { DockShell } from "@/shell/DockShell";
 import { EMPTY_SELECTION, useLibraryStore } from "@/store/library";
 import { flushFrames, installControlledLayout, resize } from "@/test/resize";
 import { LibraryWidget } from "@/widgets/library/LibraryWidget";
+import { PlaylistsWidget } from "@/widgets/playlists/PlaylistsWidget";
 
 const runs = vi.hoisted(() => new Map<Element, number>());
 
@@ -50,6 +51,13 @@ describe("size observers run their layout work once per frame (PF-2)", () => {
     const frames = container.querySelector("[data-frame-group='columns']");
     if (!frames) throw new Error("no frames");
     expect(burst(frames)).toBe(1);
+  });
+
+  it("PlaylistsWidget: the icon rail switch (UD18)", () => {
+    const { container } = render(<PlaylistsWidget />);
+    const root = container.firstElementChild;
+    if (!root) throw new Error("no root");
+    expect(burst(root)).toBe(1);
   });
 
   it("LibraryWidget: the narrow mode switch", () => {

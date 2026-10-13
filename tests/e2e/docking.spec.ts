@@ -120,9 +120,10 @@ type Box = { x: number; y: number; width: number; height: number };
 
 test("P2-AC2: a header dropped on another tab bar forms a tabbed group", async ({ page }) => {
   await openApp(page);
-  const bar = await group(page, "queue").locator(".dv-tabs-and-actions-container").boundingBox();
+  // The tab strip: its right end is a tab, not the group options button.
+  const bar = await group(page, "queue").locator(".dv-tabs-container").boundingBox();
   if (!bar) throw new Error("no tab bar");
-  await drag(page, await center(tab(page, "Playlists")), { x: bar.x + bar.width - 20, y: bar.y + bar.height / 2 });
+  await drag(page, await center(tab(page, "Playlists")), { x: bar.x + bar.width - 12, y: bar.y + bar.height / 2 });
   const tabs = page.locator(".dv-tabs-container", { has: tab(page, "Play queue") }).locator(".dv-tab");
   await expect(tabs).toHaveCount(3);
   await expect(tabs.filter({ hasText: "Playlists" })).toHaveCount(1);
@@ -168,9 +169,10 @@ test("P2-AC3: moving Library to an edge or into a tabbed group keeps exactly one
     y: queue.y + queue.height / 2,
   });
   await expect(widget(page, "library")).toHaveCount(1);
-  const bar = await group(page, "queue").locator(".dv-tabs-and-actions-container").boundingBox();
+  // The tab strip: its right end is a tab, not the group options button.
+  const bar = await group(page, "queue").locator(".dv-tabs-container").boundingBox();
   if (!bar) throw new Error("no tab bar");
-  await drag(page, await center(tab(page, "Library")), { x: bar.x + bar.width - 20, y: bar.y + bar.height / 2 });
+  await drag(page, await center(tab(page, "Library")), { x: bar.x + bar.width - 12, y: bar.y + bar.height / 2 });
   await expect(tab(page, "Library")).toHaveCount(1);
   await expect(page.locator(".dv-tabs-container", { has: tab(page, "Play queue") }).locator(".dv-tab")).toHaveCount(3);
   await page.waitForTimeout(100);
@@ -224,4 +226,18 @@ test("P2-AC17: splitter line on hover and drag, drop overlay with a red border o
     expect(style.width).toBe("2px");
   }
   await page.mouse.up();
+});
+
+test("SP-6: a drag past the minimum leaves a group at its minimum, never 0", async ({ page }) => {
+  await openApp(page);
+  const point = await sashPoint(page);
+  await drag(page, point, { x: point.x + 2000, y: point.y });
+  const queue = await widget(page, "queue").boundingBox();
+  expect(queue?.width).toBeGreaterThanOrEqual(199);
+  const playlists = page.locator(".dv-groupview", { has: widget(page, "playlists") });
+  const left = await playlists.boundingBox();
+  if (!left) throw new Error("no playlists");
+  const sash = { x: left.x + left.width, y: left.y + 150 };
+  await drag(page, sash, { x: sash.x - 2000, y: sash.y });
+  expect((await playlists.boundingBox())?.width).toBeGreaterThanOrEqual(55);
 });

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { IconButton } from "@/components/icon-button";
 import { Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,10 @@ import {
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type ImportBatch, type PlaylistEntry, type PlaylistRow, type RepairBatch } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
+import { observeSize } from "@/lib/resize";
+import { getDock } from "@/shell/layouts";
+import { SIDEBAR_WIDTH } from "@/shell/presets";
+import { isCollapsed, restoreGroup } from "@/shell/splitters";
 import { useLibraryStore } from "@/store/library";
 import { playlistEdit, playlistTask, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
@@ -86,6 +91,39 @@ function removeEntry(id: number, index: number) {
 
 type Selection = { playlist: number; entry: number | null } | null;
 
+/** Below this width the widget shows the icon rail (SP-5, UD18). */
+export const RAIL_WIDTH = 140;
+
+/** Widens the Playlists group out of the rail: Restore after a collapse, else the preset width. */
+function leaveRail() {
+  if (isCollapsed("playlists")) restoreGroup("playlists");
+  else getDock()?.getPanel("playlists")?.group.api.setSize({ width: SIDEBAR_WIDTH });
+}
+
+/**
+ * The icon rail (SP-5, UD18): one button per playlist, the heart for Favorites, with the name as
+ * the tooltip and the accessible name. A button widens the group and selects the playlist.
+ */
+function PlaylistRail({ rows, onPick }: { rows: PlaylistRow[]; onPick: (id: number) => void }) {
+  return (
+    <nav aria-label="Playlists" className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-1">
+      {rows.map((playlist) => (
+        <IconButton
+          key={playlist.id}
+          icon={playlist.isFavorites ? "heart" : "playlist"}
+          label={playlist.name}
+          size="icon"
+          tooltip={playlist.name}
+          onClick={() => {
+            onPick(playlist.id);
+            leaveRail();
+          }}
+        />
+      ))}
+    </nav>
+  );
+}
+
 /**
  * Playlists widget (R12, P11.5): a tree of playlists in natural name order and their
  * entries. Up and Down move, Right opens, Left closes, Enter and double-click play, Delete
@@ -105,6 +143,14 @@ export function PlaylistsWidget() {
   const { row, request } = useSongRows(libraryVersion);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
+  // The rail shows below RAIL_WIDTH, measured once per frame of resizes (UD24).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [rail, setRail] = useState(false);
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) return;
+    return observeSize(element, (entry) => setRail(entry.contentRect.width < RAIL_WIDTH));
+  }, []);
 
   // Open playlists load their entries, and again after each change.
   useEffect(() => {
@@ -234,79 +280,89 @@ export function PlaylistsWidget() {
       </DropdownMenu>
     </div>
   );
-  if (rows.length === 0) {
-    return (
-      <div className="flex size-full flex-col">
+  // One root element in every state, so the size observer keeps watching it.
+  let body: ReactNode;
+  if (rail) {
+    body = <PlaylistRail rows={rows} onPick={(id) => setSelection({ playlist: id, entry: null })} />;
+  } else if (rows.length === 0) {
+    body = (
+      <>
         {header}
         <EmptyHint>No playlists yet.</EmptyHint>
-      </div>
+      </>
     );
-  }
-  return (
-    <div className="flex size-full flex-col">
-      {header}
-      <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
-        <VirtualList
-          label="Playlists"
-          role="tree"
-          count={lines.length}
-          rowHeight={rowHeight}
-          onRange={onRange}
-          activeIndex={active >= 0 ? active : null}
-          onMove={(index) => select(lines[index])}
-          place={(index) => ({ posinset: lines[index].posinset, setsize: lines[index].setsize })}
-          onKeyDown={onKeyDown}
-          renderRow={(index, frame) => {
-            const line = lines[index];
-            if (line.kind === "playlist") {
+  } else {
+    body = (
+      <>
+        {header}
+        <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
+          <VirtualList
+            label="Playlists"
+            role="tree"
+            count={lines.length}
+            rowHeight={rowHeight}
+            onRange={onRange}
+            activeIndex={active >= 0 ? active : null}
+            onMove={(index) => select(lines[index])}
+            place={(index) => ({ posinset: lines[index].posinset, setsize: lines[index].setsize })}
+            onKeyDown={onKeyDown}
+            renderRow={(index, frame) => {
+              const line = lines[index];
+              if (line.kind === "playlist") {
+                return (
+                  <Row
+                    key={`p${line.playlist.id}`}
+                    role="treeitem"
+                    level={1}
+                    expanded={line.expanded}
+                    frame={frame}
+                    selected={active === index}
+                    onSelect={() => {
+                      select(line);
+                      setExpanded(line.playlist.id, !line.expanded);
+                    }}
+                    onPick={() => select(line)}
+                    onActivate={() => playLine(line)}
+                    onMenu={(anchor) => menu.open(anchor, items(line))}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{line.playlist.name}</span>
+                    <span className="tabular text-xs text-text-muted">{line.playlist.entryCount}</span>
+                  </Row>
+                );
+              }
               return (
                 <Row
-                  key={`p${line.playlist.id}`}
+                  key={`e${line.playlist}-${line.index}`}
                   role="treeitem"
-                  level={1}
-                  expanded={line.expanded}
+                  level={2}
                   frame={frame}
+                  className="pl-7"
                   selected={active === index}
-                  onSelect={() => {
-                    select(line);
-                    setExpanded(line.playlist.id, !line.expanded);
-                  }}
-                  onPick={() => select(line)}
+                  onSelect={() => select(line)}
                   onActivate={() => playLine(line)}
                   onMenu={(anchor) => menu.open(anchor, items(line))}
                 >
-                  <span className="min-w-0 flex-1 truncate">{line.playlist.name}</span>
-                  <span className="tabular text-xs text-text-muted">{line.playlist.entryCount}</span>
+                  {line.entry.track === null ? (
+                    <>
+                      <Icon name="missing" className="text-text-muted" />
+                      <span className="min-w-0 flex-1 truncate text-text-muted">{line.entry.label}</span>
+                      <span className="text-xs text-text-muted">missing</span>
+                    </>
+                  ) : (
+                    <SongCells song={row(line.entry.track)} showAlbum={false} />
+                  )}
                 </Row>
               );
-            }
-            return (
-              <Row
-                key={`e${line.playlist}-${line.index}`}
-                role="treeitem"
-                level={2}
-                frame={frame}
-                className="pl-7"
-                selected={active === index}
-                onSelect={() => select(line)}
-                onActivate={() => playLine(line)}
-                onMenu={(anchor) => menu.open(anchor, items(line))}
-              >
-                {line.entry.track === null ? (
-                  <>
-                    <Icon name="missing" className="text-text-muted" />
-                    <span className="min-w-0 flex-1 truncate text-text-muted">{line.entry.label}</span>
-                    <span className="text-xs text-text-muted">missing</span>
-                  </>
-                ) : (
-                  <SongCells song={row(line.entry.track)} showAlbum={false} />
-                )}
-              </Row>
-            );
-          }}
-        />
-      </div>
-      {menu.element}
+            }}
+          />
+        </div>
+        {menu.element}
+      </>
+    );
+  }
+  return (
+    <div ref={rootRef} data-rail={rail ? "" : undefined} className="flex size-full flex-col">
+      {body}
     </div>
   );
 }

@@ -133,7 +133,9 @@ test("P22-AC4: frames keep their minimum, fit a small window and use the dock sp
   expect((await sizes(page, "columns"))[0]).toBeGreaterThanOrEqual(95);
 
   const sash = sashes(page, "columns").nth(1);
-  expect(await sash.evaluate((element) => (element as HTMLElement).tabIndex)).toBeLessThan(0);
+  // The separators are in the Tab order since U3 (SP-3, UD7).
+  await expect(sash).toHaveAttribute("role", "separator");
+  expect(await sash.evaluate((element) => (element as HTMLElement).tabIndex)).toBe(0);
   const box = await sash.boundingBox();
   if (!box) throw new Error("no splitter");
   await page.mouse.move(box.x + box.width / 2, box.y + 100);

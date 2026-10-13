@@ -58,7 +58,7 @@ test("DK-5: with Lock layout on, drags move and resize nothing, frames and scrol
   await expect(widget(page, "playlists")).toHaveCount(0);
   await setWidgetShown(page, "Playlists", true);
   await expect(widget(page, "playlists")).toBeVisible();
-  await expect(page.locator("[data-slot='tab-float']")).toHaveCount(0);
+  await expect(page.locator("[data-slot='group-options']")).toHaveCount(0);
 });
 
 test("DK-5: the lock state survives a reload, and unlocking restores drag", async ({ page }) => {

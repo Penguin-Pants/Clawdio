@@ -741,12 +741,12 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | DK-8 | Default preset | U2 | E2E `presets.spec.ts` | Done (U2) |
 | DK-9 | Three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Done (U2) |
 | DK-10 | Pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Done (U2) |
-| SP-1 | 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Planned (hit area) |
-| SP-2 | Double-click reset | U3 | UT, E2E | Planned |
-| SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Planned |
+| SP-1 | 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Done (U3) |
+| SP-2 | Double-click reset | U3 | UT, E2E | Done (U3) |
+| SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Done (U3; WebKit in CI) |
 | SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
-| SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Planned |
-| SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Planned |
+| SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
+| SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
 | SP-7 | Auto-hide with pin (MAY) | none | Not built | Not built |
 | TB-1 | Virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Passes today |
 | TB-2 | Divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Planned |
@@ -766,14 +766,14 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
 | PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
 | PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
-| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | In progress (U2: size, position, transport; collapse state in U3) |
+| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Done (U3; real-app position check by the owner) |
 | PS-6 | Column state apart from the layout | U4 | UT; E2E | Planned |
 | TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
 | TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
 | PF-1 | Resize does not re-render rows | U4 | UT `rows.test.tsx` | Planned |
-| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1 paths done; rail U3, card U5) |
+| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | In progress (U1, U3 paths done; card U5) |
 | PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | Planned |
-| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band) |
+| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | In progress (U1 band, U3 separators) |
 | AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
 | TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Not applicable while pointer drag (U1 guard in check:sources) |
 | TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | Passes today (code); manual rows planned |
@@ -783,7 +783,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
 | RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
 | RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Planned |
-| RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Planned |
+| RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
 | RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Planned |
 | RW-9 | Rework 9 checklist | U7 | MAN | Planned |
 | RW-14 | Rework 14 definition of done | U7 | REV | Planned |
