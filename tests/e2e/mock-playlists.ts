@@ -117,7 +117,25 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
       changed();
       return !had;
     },
-    favorites: () => favorites()?.entries.flatMap((entry) => (entry.track === null ? [] : [entry.track])) ?? [],
+    favorites_add: ({ tracks }) => {
+      let list = favorites();
+      if (!list) {
+        list = { id: nextId, name: FAVORITES, entries: [] };
+        nextId += 1;
+        lists.push(list);
+      }
+      const fresh = (tracks as number[]).filter(
+        (track, at, all) => all.indexOf(track) === at && !list.entries.some((entry) => entry.track === track),
+      );
+      list.entries = [...list.entries, ...fresh.map((track) => ({ track, label: "" }))];
+      if (fresh.length > 0) changed();
+      return fresh.length;
+    },
+    favorites: () => {
+      const tracks = favorites()?.entries.flatMap((entry) => (entry.track === null ? [] : [entry.track])) ?? [];
+      // A slow reload, so a test can drop again before the hearts update (TB-12).
+      return window.e2eSlowFavorites ? new Promise((resolve) => setTimeout(() => resolve(tracks), 1500)) : tracks;
+    },
     // The Rust pickers are not in the browser: the mock imports fixed playlists (P12.5, R32).
     playlist_import: () => {
       if (canceled()) return { canceled: true, reports: [] };

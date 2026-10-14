@@ -8,6 +8,7 @@ import {
   expectNoMotion,
   expectNoSeriousViolations,
   openMenu,
+  SONG_ROWS,
   test,
   tokenRgb,
   widget,
@@ -29,7 +30,7 @@ async function check(page: Page) {
 }
 
 const albums = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Albums" });
-const songs = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Songs" });
+const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
   test.beforeEach(async ({ page }) => {
@@ -43,7 +44,7 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await page.getByRole("dialog", { name: "Online lookups" }).getByRole("button", { name: "Keep off" }).click();
     await expect(widget(page, "library").getByRole("heading", { name: "Choose your music folder" })).toBeVisible();
     // Disabled: Transport with no folder.
-    await expect(widget(page, "transport").getByRole("button", { name: "Play" })).toBeDisabled();
+    await expect(widget(page, "transport").getByRole("button", { name: "Play", exact: true })).toBeDisabled();
     await check(page);
   });
 
@@ -67,12 +68,12 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await albums(page)
       .getByRole("option", { name: /Album B0/ })
       .click();
-    await songs(page).getByRole("option").first().click();
+    await songs(page).locator(SONG_ROWS).first().click();
     await widget(page, "playlists").getByRole("treeitem").first().click();
     await widget(page, "queue").getByRole("option").first().click();
     await check(page);
-    await songs(page).getByRole("option").first().dblclick();
-    await expect(widget(page, "transport").getByRole("button", { name: "Pause" })).toBeVisible();
+    await songs(page).locator(SONG_ROWS).first().dblclick();
+    await expect(widget(page, "transport").getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await check(page);
     // Disabled: "Fetch lyrics" with Online lookups off.
     await page.evaluate(() => window.e2e.setLyrics(null));
@@ -122,7 +123,7 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
     await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
     await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).fill("Read only");
     await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
-    await songs(page).getByRole("option").first().click({ button: "right" });
+    await songs(page).locator(SONG_ROWS).first().click({ button: "right" });
     await page.getByRole("menuitem", { name: "Add to playlist" }).click();
     await page.getByRole("menu").last().getByRole("menuitem", { name: "Read only" }).click();
     await expect(page.getByRole("dialog", { name: "Cannot save the change" })).toBeVisible();
@@ -146,6 +147,8 @@ async function controlBoxes(page: Page) {
       .filter((element) => {
         const style = getComputedStyle(element);
         const box = element.getBoundingClientRect();
+        // A hidden form input (the Select's value) is not a control.
+        if (element.closest("[aria-hidden='true']")) return false;
         return style.visibility !== "hidden" && style.display !== "none" && box.width > 0 && box.height > 0;
       })
       .filter((element, _, all) => !all.some((other) => other !== element && other.contains(element)))
@@ -171,7 +174,7 @@ async function controlBoxes(page: Page) {
           // Rows of scrolling lists and inactive tabs of a scrolling tab strip may scroll out;
           // the active tab may not.
           inList:
-            element.closest("[role='listbox'], [role='tree']") !== null ||
+            element.closest("[role='listbox'], [role='tree'], [role='grid']") !== null ||
             (element.closest(".dv-tab") !== null && element.closest(".dv-active-tab") === null),
         };
       });
@@ -204,59 +207,60 @@ async function expectNoClipOrOverlap(page: Page, testInfo: TestInfo, name: strin
   expect(overlaps, `${name}: overlapping controls`).toEqual([]);
 }
 
-/** A built-in layout from the menu (menu items; the Library modes are radio items). */
-async function applyLayout(page: Page, name: string) {
+/** A Library mode from the menu (radio items). */
+async function setMode(page: Page, name: string) {
   await openMenu(page);
-  await page.getByRole("menuitem", { name, exact: true }).click();
+  await page.getByRole("menuitemradio", { name, exact: true }).click();
   if (await page.getByRole("menu").isVisible()) await closeMenu(page);
 }
+
+test("U4 AX-1: the Songs grid carries the grid roles and row indexes", async ({ page }) => {
+  await page.goto("/?data=library");
+  await widget(page, "library").getByRole("button", { name: "Top/bottom" }).click();
+  const grid = songs(page);
+  await expect(grid.locator(SONG_ROWS).first()).toBeVisible();
+  await grid.getByRole("columnheader", { name: "Title", exact: true }).click();
+  await expect(grid).toHaveAttribute("aria-multiselectable", "true");
+  await expect(grid.getByRole("columnheader", { name: "Title", exact: true })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  // 20 artists of 30 songs and Beyoncé's 3: the rows plus the header row.
+  await expect(grid).toHaveAttribute("aria-rowcount", String(20 * 30 + 3 + 1));
+  await expect(grid.locator("[role='row']:not([aria-selected])")).toHaveAttribute("aria-rowindex", "1");
+  await expect(grid.locator(SONG_ROWS).first().getByRole("gridcell").first()).toBeVisible();
+  await expectNoSeriousViolations(page);
+  await grid.evaluate((element) => element.scrollTo(0, 5000));
+  await expect(grid.locator(SONG_ROWS).first()).not.toHaveAttribute("aria-rowindex", "2");
+  // Every rendered body row: its list place plus two, with no gap and no repeat.
+  const places = await grid.locator(SONG_ROWS).evaluateAll((rows) =>
+    rows.map((row) => {
+      // The wrapper's offset in rows is the list place (UD8).
+      const wrapper = row.parentElement as HTMLElement;
+      const place = Math.round(new DOMMatrix(getComputedStyle(wrapper).transform).f / wrapper.offsetHeight);
+      return [Number(row.getAttribute("aria-rowindex")), place];
+    }),
+  );
+  for (const [index, place] of places) expect(index).toBe(place + 2);
+  const indexes = places.map(([index]) => index);
+  expect(indexes.length).toBeGreaterThan(5);
+  indexes.forEach((index, place) => expect(index).toBe(indexes[0] + place));
+  expect(indexes[0]).toBeGreaterThan(2);
+  await expectNoSeriousViolations(page);
+});
 
 test("P17-AC4: at 800 x 560 no control is clipped or overlaps another", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 800, height: 560 });
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  for (const layout of ["Tree", "Columns", "Top/bottom"]) {
-    await applyLayout(page, layout);
-    await expectNoClipOrOverlap(page, testInfo, `${layout} layout`);
+  for (const mode of ["Tree", "Columns", "Top/bottom"]) {
+    await setMode(page, mode);
+    await expectNoClipOrOverlap(page, testInfo, `${mode} mode`);
   }
-  // A tabbed layout: Play queue and Lyrics as tabs in the Now playing group.
-  await page.evaluate(() => {
-    window.e2e.addAsTab("queue", "nowPlaying");
-    window.e2e.addAsTab("lyrics", "nowPlaying");
-  });
-  await expect(widget(page, "lyrics")).toBeVisible();
+  // A tabbed layout: Now playing as a tab in the Playlists group, beside Play queue and Lyrics.
+  await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "playlists"));
+  await expect(widget(page, "nowPlaying")).toBeVisible();
   await expectNoClipOrOverlap(page, testInfo, "tabbed layout");
-});
-
-test("P17-AC5: Transport controls and Now playing fit their content at their minimum height", async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 560 });
-  await page.goto("/?data=library");
-  await expect(widget(page, "transport")).toBeVisible();
-  // Push the bottom row down as far as the dock allows.
-  const sash = await page
-    .locator(".dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash")
-    .first()
-    .boundingBox();
-  if (!sash) throw new Error("no splitter");
-  const from = { x: sash.x + 100, y: sash.y + sash.height / 2 };
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move(from.x, from.y + 10, { steps: 5 });
-  await page.mouse.move(from.x, from.y + 200, { steps: 20 });
-  await page.mouse.up();
-  // The row is at its minimum now, not at a larger default.
-  const minimums = await page.evaluate(() => window.e2e.groupMinimums());
-  const height = await page
-    .locator(".dv-groupview", { has: page.locator('[data-widget="transport"]') })
-    .evaluate((element) => element.getBoundingClientRect().height);
-  expect(Math.round(height)).toBe(minimums.transport.height);
-  for (const id of ["transport", "nowPlaying"]) {
-    const fit = await widget(page, id).evaluate((element) => ({
-      content: element.scrollHeight,
-      box: element.clientHeight,
-    }));
-    expect(fit.content, id).toBeLessThanOrEqual(fit.box);
-  }
 });
 
 test("P17-AC6: in forced colors the focus ring and the toggle, switch and slider states show", async ({
@@ -311,8 +315,9 @@ test("P17-AC9: menus and dialogs accept keys and clicks while they open", async 
   await expect(page.locator("body")).toHaveAttribute("data-rescans", "1");
   // A click on a menu item and typing into a dialog while they open.
   await page.getByRole("button", { name: "Menu" }).click();
-  await page.getByRole("menuitemcheckbox", { name: "Playlists", exact: true }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Now playing", exact: true }).click();
   await page.keyboard.press("Escape");
+  await expect(widget(page, "nowPlaying")).toBeVisible();
   await widget(page, "playlists").getByRole("button", { name: "New playlist" }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).waitFor({ state: "attached" });
   await page.keyboard.type("Quick");

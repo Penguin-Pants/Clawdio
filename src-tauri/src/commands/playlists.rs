@@ -137,6 +137,16 @@ pub fn favorite_toggle(app: AppHandle, track: u32) -> CommandResult<bool> {
     })
 }
 
+/// A row drop on Favorites (TB-12): adds the tracks that are not favorites yet. Returns how
+/// many it added.
+#[tauri::command]
+pub fn favorites_add(app: AppHandle, tracks: Vec<u32>) -> CommandResult<u32> {
+    edit(&app, |set, root, index| {
+        set.add_favorites(root, &tracks, index)
+    })
+    .map(|added| u32::try_from(added).unwrap_or(u32::MAX))
+}
+
 /// The tracks in Favorites, for the hearts.
 #[tauri::command]
 pub fn favorites(

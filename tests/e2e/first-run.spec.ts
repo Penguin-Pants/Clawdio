@@ -38,11 +38,13 @@ test("P4-AC2: with no folder the Library asks for one, Transport is disabled and
   await expect(library.getByRole("heading", { name: "Choose your music folder" })).toBeVisible();
   const heading = await library.getByRole("heading").evaluate((element) => getComputedStyle(element).fontSize);
   expect(heading).toBe("24px");
-  for (const button of await widget(page, "transport").getByRole("button").all()) await expect(button).toBeDisabled();
-  await expect(widget(page, "nowPlaying")).toContainText("Nothing playing");
+  for (const name of ["Shuffle", "Previous", "Play", "Stop", "Next", "Repeat"]) {
+    await expect(widget(page, "transport").getByRole("button", { name, exact: true })).toBeDisabled();
+  }
+  await expect(widget(page, "transport")).toContainText("Nothing playing");
 
   await library.getByRole("button", { name: "Choose music folder" }).click();
   await expect(page.locator("[data-library-body]")).toBeVisible();
   // The queue is still empty, so Transport stays disabled (P7.7).
-  await expect(widget(page, "transport").getByRole("button", { name: "Play" })).toBeDisabled();
+  await expect(widget(page, "transport").getByRole("button", { name: "Play", exact: true })).toBeDisabled();
 });

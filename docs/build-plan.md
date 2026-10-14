@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.24, October 13, 2026 (UI shell rework plan added as phases U0 to U7 in `docs/planning/ui-shell-rework-build-plan.md`).
+**Version:** 1.25, October 13, 2026 (UI shell rework U0 to U7 executed: Done with exceptions).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -10,7 +10,8 @@
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
 - The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
-- Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, and the F-proposals in section 11.
+- The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
+- Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
 
 ---
 
@@ -89,7 +90,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
-| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | Not started. Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | Done with exceptions (U0 to U7; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1457,7 +1458,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D14 | The library index lives in Rust memory. SQLite is the rebuildable cache (R19). The UI asks for id lists and fetches row data for the visible window only. | Memory (R20) and responsiveness (AC-2). |
 | D15 | `ts-rs` generates TypeScript types for IPC structs into `src/lib/ipc/bindings/` during `cargo test`. CI fails if they are not committed. | One source of truth for IPC types. |
 | D16 | Scan classes: files with other extensions are ignored and not counted (R1). "Unsupported type": an audio extension with other content. "Unsupported codec": an Ogg stream that is not Vorbis, or a WAV encoding other than PCM integer, PCM float or ADPCM (for example A-law, mu-law or MP3 in WAV), or one of those three that Symphonia 0.5.5 cannot decode. "Corrupt file": a parse or probe failure. | R2 skip reasons. |
-| D17 | Reset layout is Ctrl+Shift+L. Space toggles play and pause everywhere except in text fields and inside open menus and dialogs. On a focused button outside a dialog, Space toggles playback and Enter activates the button. | R25 exempts only typing. Menus and dialogs keep Space for their own controls. |
+| D17 | Reset layout is Ctrl+Shift+L. Space toggles play and pause everywhere except in text fields and inside open menus and dialogs. On a focused button outside a dialog, Space toggles playback and Enter activates the button. UI shell rework (U4 keyboard path, AX-1): a focused table column header keeps Space, which sorts. | R25 exempts only typing. Menus and dialogs keep Space for their own controls. |
 | D18 | A transient status message shows for 5 s, then the line returns to "Ready" or the running job. | R5 status line. |
 | D19 | "Set cover" over an existing `cover.jpg` asks for confirmation, then replaces it atomically. | C17. R8's "never overwrites" applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | D20 | The "Add to playlist" submenu lists all playlists except Favorites, so only the heart adds to Favorites and Favorites never holds duplicates. "Remove from playlist" and Delete work on Favorites entries like on any playlist. The name "Favorites" is reserved in any letter case. | R12 (Favorites toggles), R25 (Delete in a playlist), R26 (a normal playlist). |
@@ -2906,6 +2907,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
 | F-04 | Remove the FUSE need of the AppImage | Users without FUSE 2 need a workaround (K11). | Planning |
@@ -3049,6 +3051,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.25 (October 13, 2026):** the UI shell rework ran U0 to U7 (Done with exceptions). F-21 (mini player menus) joins section 11. The pointer row in section 2 and the bottom line give the status.
 - **1.24 (October 13, 2026):** the owner's UI shell rework (October 13, 2026) gets its own plan, `docs/planning/ui-shell-rework-build-plan.md`, with phases U0 to U7. Owner decision of the same day: the rework wins over requirements v1.7 where they conflict; the widget names and the Library modes stay. D57 to D59 and P23 are marked superseded.
 - **1.23 (October 13, 2026):** P23 Done with exceptions. Windows build: Release run 38377951211 (`workflow_dispatch`, Windows only) on `8c78a44`: artifact `windows`, `Clawdio_0.1.0_x64-setup.exe` 5,433,981 bytes (5.18 MiB), under the 30 MB check. Later commits change only a Rust test and docs, so the app code is the same. P23-AC7 stays open for the owner.
 - **1.22 (October 13, 2026):** the window edge drop exists (Dockview root target): D58 and P23 note N1 corrected, with a test. Every frame splitter drag is saved.

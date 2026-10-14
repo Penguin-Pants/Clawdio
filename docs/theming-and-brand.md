@@ -47,11 +47,19 @@ Use token classes (`bg-bg-surface`, `text-text-muted`) or the shadcn/ui semantic
 | `radii.control` | `--radius-control` | Buttons, inputs, menu items |
 | `radii.card` | `--radius-card` | Widgets, album thumbnails, art |
 | `radii.dialog` | `--radius-dialog` | Dialogs |
+| `sizes.transportBar` | `--size-transport-bar` | Transport band height at the MD, LG and XL size classes (3.5rem, 56 px at the 16 px root) |
+| `sizes.transportBarCompact` | `--size-transport-bar-compact` | Transport band height at SM and XS (2.5rem, 40 px) |
+| `sizes.rowRegular` | `--size-row-regular` | Row height of the Library lists, the Tree, the Play queue and the Playlists tree (1.75rem, 28 px) |
+| `sizes.rowCompact` | `--size-row-compact` | Compact row height (1.5rem, 24 px) |
+| `sizes.rowAlbum` | `--size-row-album` | Album list row height (3rem, 48 px) |
+| `spacing.unit` | `--spacing-unit` | Tailwind's spacing scale (`--spacing`): every `p-*`, `m-*`, `gap-*`, `w-*` and `h-*` step is a multiple of it (0.25rem) |
 | `motion.fast` | `--clawdio-motion-fast` | Hover and focus transitions. Also Tailwind's default transition duration. |
 | `motion.panel` | `--clawdio-motion-panel` | Menu and dialog open and close |
 | `motion.reduced` | policy | The reduced-motion rule in `globals.css`: under `prefers-reduced-motion: reduce`, every transition and animation lasts 0s and scrolling is not smooth |
 
 `radii.control` also sets the shadcn/ui `--radius` variable.
+
+Size and spacing tokens take `rem` values (the `rem` kind of `scripts/build-tokens.mjs`; a `px` value fails the build). They follow the root font size, so Windows display scaling and the text scales grow the band and the rows instead of clipping them (UI shell rework UD1). A brand swap must keep every `sizes` and `spacing` key; the build names a missing key. `npm run check:sources` also refuses arbitrary px spacing such as `p-[6px]` under `src/`.
 
 ## shadcn/ui semantic variables
 

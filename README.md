@@ -42,7 +42,7 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 
 | Key | Action |
 |---|---|
-| Space | Play or pause (not while typing in a field) |
+| Space | Play or pause (not while typing in a field or on a column header) |
 | Up, Down | Move in lists and trees |
 | Right, Left | Expand or collapse in trees |
 | Enter | Play the selected song or album |
@@ -50,10 +50,33 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 | Esc | Clear the search and return to the Library |
 | F6, Shift+F6 | Move focus to the next or previous widget |
 | Delete | Remove the selected entry from the Play queue or a playlist |
-| Shift+F10, Menu key | Open the menu of the selected row |
+| Shift+F10, Menu key | Open the menu of the selected row (in the Songs table: Add to Favorites too) |
+| Shift+click, Shift+Up, Shift+Down | Select a range of songs |
+| Ctrl+click | Add a song to the selection or remove it |
+| Tab (from the Songs table) | Move to the column headers |
+| Left, Right, Home, End (headers) | Move between column headers |
+| Enter, Space (headers) | Sort by the column: ascending, descending, then the default order |
+| Shift+Enter, Shift+click (headers) | Add the column as the second sort, or flip a sort key |
+| Shift+Left, Shift+Right (headers) | Move the column |
+| Ctrl+Left, Ctrl+Right (headers) | Make the column narrower or wider |
+| Shift+F10, Menu key (headers) | Open the column menu: show or hide columns, auto size, reset |
+| Down (headers) | Return to the songs |
 | Ctrl+Shift+L | Reset the layout |
+| Left, Right or Up, Down (on a separator) | Move the separator; with Shift in bigger steps |
+| Home, End (on a separator) | Move the separator to its smallest or largest place |
+| Enter (on a separator) | Collapse the widget beside it, or put it back |
 
 Media keys (play, pause, next, previous, stop) work while the app runs in the background.
+
+## Songs table
+
+- **Drag to a playlist or the queue:** select songs, then drag them onto a playlist in Playlists or onto the Play queue. Escape cancels the drag. The row menu (Shift+F10) does the same by keyboard: Add to queue, Add to playlist.
+- **Compact rows:** the menu, View, "Compact rows".
+
+## Transport bar
+
+- **Customize:** the menu, Layout, "Customize transport bar…" (or the More menu of the bar) shows or hides each control and changes their order. Play or pause always shows. Reset layout restores the default.
+- **Mini player:** click the album art in the bar, or choose "Mini player" in the menu. The window shrinks to the bar alone. Choose "Exit mini player" in the More menu, or click the art, to return to the normal window.
 
 ## Data locations
 
@@ -61,7 +84,7 @@ The music folder holds your music, playlists (`Playlists/*.m3u8`), `cover.jpg` f
 
 | Data | Windows | Linux |
 |---|---|---|
-| Settings, arrangement, playback state | `%APPDATA%\io.github.penguinpants.clawdio` | `~/.config/io.github.penguinpants.clawdio` |
+| Settings (`settings.json`), arrangement (`layout.json` v2), Songs columns (`columns.json`), playback state | `%APPDATA%\io.github.penguinpants.clawdio` | `~/.config/io.github.penguinpants.clawdio` |
 | Library cache and thumbnails (rebuilt when deleted) | `%LOCALAPPDATA%\io.github.penguinpants.clawdio` | `~/.cache/io.github.penguinpants.clawdio` |
 | Logs (Settings, "Open log folder") | `%LOCALAPPDATA%\io.github.penguinpants.clawdio\logs` | `~/.local/share/io.github.penguinpants.clawdio/logs` |
 

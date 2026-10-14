@@ -1,12 +1,12 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.16, October 13, 2026.
+**Version:** 1.18, October 13, 2026 (section 1 rows that v1.8 replaces are Superseded; the summary is counted again from the rows).
 **Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
 - **One row per requirement.** Long source items are split into rows, one rule per row.
-- **Source** gives the document section. Section 1 of this file covers the requirements, section 2 `design.md`, section 3 the branding prompt, section 4 the asset manifest, section 5 `theme/tokens.json` and section 6 `AGENTS.md`.
+- **Source** gives the document section. Section 1 of this file covers the requirements, section 2 `design.md`, section 3 the branding prompt, section 4 the asset manifest, section 5 `theme/tokens.json`, section 6 `AGENTS.md` and section 7 the UI shell rework (its phase IDs `U0` to `U7` refer to `docs/planning/ui-shell-rework-build-plan.md`).
 - **Verify** codes: UT unit test, IT integration test, E2E Playwright with mocked IPC, CI pipeline job, MAN-L manual on Linux, MAN-W manual on Windows, MEAS measurement, REV review of code or docs.
 - **Status** values:
   - Planned: mapped to tasks and criteria. Not started.
@@ -18,24 +18,31 @@
   - Deferred: the source defers it. No task.
   - Non-goal: the source excludes it. No task. AGENTS.md scope rules and reviews keep it out.
   - Reference: not a requirement. No task.
+  - In progress (Un): some tasks of the row passed; phase Un of the UI shell rework is the last.
+  - Superseded (v1.8): requirements v1.8 replaced the rule. The status names the section 7 rows that replace it.
 - Phases update the Status column as work completes (AGENTS.md workflow rule).
 
 ## Coverage summary
 
-| Source | Rows | Done | Planned | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Open gap |
-|---|---|---|---|---|---|---|---|---|
-| Requirements | 400 | 240 | 85 | 8 | 5 | 5 | 57 | 0 |
-| design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 |
-| Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 |
-| Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 |
-| tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 |
-| AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 |
+Counted from the Status cells. Open: Planned, In progress, and an automatic pass that waits on a manual Windows check. With decision or owner input: Planned (Dn), Planned (Qn) and Changed (Dn).
 
-**Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 8.
+| Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
+|---|---|---|---|---|---|---|---|---|---|
+| Requirements | 376 | 270 | 42 | 6 | 5 | 5 | 33 | 15 | 0 |
+| design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
+| Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
+| Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
+| tokens.json | 20 | 18 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| AGENTS.md | 3 | 2 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| UI shell rework | 74 | 67 | 5 | 0 | 0 | 0 | 2 | 0 | 0 |
+
+**Unresolved gaps:** none. Every requirement maps to a task and a criterion, or to a recorded deferral, non-goal or reference. Items that need outside input are gates or owner questions, listed in section 9.
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.7)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.8)
+
+Rows that the UI shell rework replaces keep their v1.7 text with the status Superseded (v1.8); section 7 holds the rows that replace them.
 
 ### 1.1 Section 1: desired outcome
 
@@ -85,7 +92,7 @@
 |---|---|---|---|---|---|---|
 | R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
 | R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
-| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Done (P7) |
+| R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Superseded (v1.8: section 7 SH-2, TR-1 to TR-8) |
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Done (P11) |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Done (P11) |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
@@ -95,7 +102,7 @@
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
-| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
+| R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: section 7 SH-2, TR-11) |
 | R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
 | R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
@@ -108,28 +115,28 @@
 | R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
 | R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22) |
 | R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Done (P22, D56) |
-| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
+| R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Superseded (v1.8: section 7 SP-3) |
 | R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
 | R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Done (P22, D55) |
-| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
+| R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Superseded (v1.8: section 7 DK-9; presets restore the default sizes) |
 | R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
-| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Done (P9) |
-| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Done (P2) |
-| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Done (P2) |
+| R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Superseded (v1.8: section 7 DK-3, floating groups) |
+| R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Superseded (v1.8: section 7 DK-9, presets) |
+| R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Superseded (v1.8: section 7 DK-8, default preset) |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
 | R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9) |
 | R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9) |
 | R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
 | R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
 | R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
-| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Done (P23, D57) |
-| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
-| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Done (P23, D58) |
-| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Done (P23, D58) |
-| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Done (P23, D58) |
-| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Done (P23) |
+| R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-4 | No side drop zone for a bar widget, except on the other bar widget | §2 R29.1 | P23.2 | P23-AC4 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-5 | Tabbing refused both ways for bar widgets | §2 R29.1 | P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-6 | Refused drop: no overlay, widget stays, no log | §2 R29.1 | P23.2 | P23-AC4 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-7 | Other widgets keep their drop and splitter sizing | §2 R29.1 | P23.2 | P23-AC1 | UT | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
+| R29.1-8 | Saved arrangement that breaks the rules: move only that widget to the bottom bar; log each repair | §2 R29.1 | P23.3 | P23-AC2, P23-AC5 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
 | R30-1 | React, Tailwind CSS v4 and shadcn/ui | §2 R30 | P0.3, P0.10 | P0-AC1 | CI, REV | Done (P0) |
 | R30-2 | Magic UI only by named component with a function; docs list them; no Motion if the list is empty | §2 R30 | P2.16 | P18-AC13 | REV | Resolved (C8) |
 | R30-3 | Animations honor reduce motion and never block input | §2 R30 | P0.7, P2.10 | P2-AC8, P17-AC3, P17-AC9 | E2E, MAN-L, MAN-W | Planned |
@@ -706,7 +713,88 @@ Every token is read by `scripts/build-tokens.mjs` (P0.6). Section 6.12 of the pl
 
 ---
 
-## 7. Supporting tasks
+## 7. UI shell rework (`docs/planning/ui-shell-rework.md`)
+
+One row per rework requirement and per rework section that the plan `docs/planning/ui-shell-rework-build-plan.md` maps (its section 8). Phases U0 to U7 update the Status column in the same push as that plan's section 8. The rework wins over requirements v1.7 where they conflict (owner decision, October 13, 2026).
+
+| ID | Requirement | Phase | Verify | Status |
+|---|---|---|---|---|
+| SH-1 | Three zones (plus the header strip, `docs/design.md` section 5) | U1 | E2E `transport-band.spec.ts`; REV `App.tsx` | Done (U1) |
+| SH-2 | Bands are not dock panels | U1 | UT `widgets.test.ts` (no `transport` id); E2E (band is outside `.dv-dockview`) | Done (U1) |
+| SH-3 | Dock fills with `minmax(0, 1fr)` | U1 | REV grid CSS; E2E (dock height equals window minus bands) | Done (U1) |
+| SH-4 | No page scroll | U1 (re-verify) | E2E `audit.spec.ts` narrow window (P17-AC4 case) | Done (U1) |
+| SH-5 | Minimum window size | U1 (re-verify, UC7, UC8) | UT `window.rs`; E2E at 800 x 560 | Done (U1, UC7, UC8) |
+| SH-6 | Transport top or bottom | U2 | E2E `persistence.spec.ts` | Done (U2) |
+| SH-7 | Drag region (MAY) | none | Not applicable: native title bar | Not applicable |
+| TR-1 | Height from a token, not draggable | U1 | UT tokens script; E2E (no sash touches the band) | Done (U1) |
+| TR-2 | Size classes by bar width | U1 | UT `use-size-class.test.ts`; E2E | Done (U1) |
+| TR-3 | Play always visible, overflow menu | U1 | UT `slots.test.ts`; E2E | Done (U1) |
+| TR-4 | Seek click, drag, keyboard, times | U1 (re-verify at every class) | E2E `transport-band.spec.ts` | Done (U1) |
+| TR-5 | Art, title, artist with ellipsis | U1 | E2E (computed `text-overflow`) | Done (U1) |
+| TR-6 | Never overlays the list | U1 | E2E (band box and dock box do not intersect) | Done (U1) |
+| TR-7 | Opaque background | U1 | E2E (alpha 1) | Done (U1) |
+| TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
+| TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Done (U5) |
+| TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5) |
+| TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Done (U5) |
+| DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
+| DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
+| DK-3 | Edges, tab groups, float (pointer and keyboard) | U2 | E2E `docking.spec.ts`, `floating.spec.ts` | Done (U2) |
+| DK-4 | Drop preview | U2 (re-verify) | E2E `docking.spec.ts` | Done (U2) |
+| DK-5 | Lock layout | U2 | E2E `lock.spec.ts` | Done (U2) |
+| DK-6 | View menu with every widget | U2 | E2E `layouts.spec.ts` | Done (U2) |
+| DK-7 | Reset layout | U2 | UT `presets.test.ts`; E2E | Done (U2) |
+| DK-8 | Default preset | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-9 | Three presets (SHOULD) | U2 | E2E `presets.spec.ts` | Done (U2) |
+| DK-10 | Pop-out off | U2 (re-verify) | REV (no `addPopoutGroup`) | Done (U2) |
+| SP-1 | 1 px line, 6 px hit area, cursor | U3 | E2E `splitters.spec.ts` | Done (U3) |
+| SP-2 | Double-click reset | U3 | UT, E2E | Done (U3) |
+| SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Done (U3; WebKit in CI) |
+| SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
+| SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
+| SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
+| SP-7 | Auto-hide with pin (MAY) | none | Not built | Not built |
+| TB-1 | Virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Done (U4) |
+| TB-2 | Divider resize with minimums | U4 | UT `columns.test.ts`; E2E | Done (U4) |
+| TB-3 | Auto size, header menu | U4 | E2E `table.spec.ts` | Done (U4) |
+| TB-4 | Header drag reorder | U4 | E2E | Done (U4) |
+| TB-5 | Right-click show or hide | U4 | E2E | Done (U4) |
+| TB-6 | Title flexible, numeric right | U4 | E2E (computed widths and `text-align`) | Done (U4) |
+| TB-7 | Sticky header, shared horizontal scroll | U4 | E2E | Done (U4) |
+| TB-8 | Click to sort with an arrow | U4 | UT `cargo test` sort; E2E | Done (U4) |
+| TB-9 | State per view | U4 | UT parse; E2E (per mode, reload) | Done (U4) |
+| TB-10 | Arrows, Enter, Shift and Ctrl | U4 | UT `library.test.ts`; E2E | Done (U4) |
+| TB-11 | Playing indicator in the first column | U4 | E2E | Done (U4) |
+| TB-12 | Row drag to playlist or queue (SHOULD) | U6 | UT, E2E `row-drag.spec.ts` | Done (U6) |
+| TB-13 | Secondary sort (SHOULD) | U6 | UT, E2E | Done (U6) |
+| TB-14 | Density (SHOULD) | U6 | E2E `density.spec.ts` | Done (U6) |
+| PS-1 | JSON with a schema version | U1, U2 | UT `persistence.test.ts` | Done (U2) |
+| PS-2 | Config directory through Rust | U1 (re-verify) | UT `layout.rs` | Done (U1) |
+| PS-3 | 500 ms debounce and save on close | U2 (re-verify) | UT `watchLayout`; E2E | Done (U2) |
+| PS-4 | Validate, back up, default | U1 | UT; E2E `persistence.spec.ts`; `cargo test` backup | Done (U1) |
+| PS-5 | Window size and position, transport position, collapse state | U2 | `cargo test`; E2E | Done (U3; real-app position check by the owner) |
+| PS-6 | Column state apart from the layout | U4 | UT; E2E | Done (U4) |
+| TH-1 | Tokens for colors, spacing, row and bar height | U1 | UT tokens script; `check:sources` (colors, spacing guard); UT `rows.test.tsx` | Done (U1) |
+| TH-2 | Dark default | U1 (re-verify) | REV `index.html`, `globals.css` | Done (U1) |
+| PF-1 | Resize does not re-render rows | U4 | UT `table.test.tsx` | Done (U4) |
+| PF-2 | Observers on rAF | U1, U3, U5 | UT `resize.test.ts`; UT per observer path (`DockShell`, `FrameSplit`, `LibraryWidget`, `use-size-class`, `useTokenPx`, rail, card) | Done (U5) |
+| PF-3 | 50,000 rows without stutter | U4, U7 | E2E `table-perf.spec.ts`; MAN reference machine | In progress (U7: CI pass; reference machine with the owner, UQ3) |
+| AX-1 | Keyboard reach and names | U1, U3, U4, U5 | E2E axe in `audit.spec.ts`; keyboard specs | Done (U5) |
+| AX-2 | Reduced motion (SHOULD) | U1 (re-verify) | E2E `expectNoMotion` | Done (U1) |
+| TA-1 | `dragDropEnabled` only with HTML5 drag | U1, U7 | CI `check:sources` drag guard (UC13); REV in U7 | Done (U7: drag guard passes; pointer drag only) |
+| TA-2 | Folder selection by dialog | U7 | REV `SettingsDialog.tsx`, D13; MAN on Windows and Linux | In progress (U7: Linux dialog opens; a completed choice and Windows with the owner, UQ5) |
+| TA-3 | WebView2 and WebKitGTK | U7 | CI (Chromium, WebKit); MAN both platforms | In progress (U7: WebKitGTK real app pass; WebView2 with the owner, UQ5) |
+| TA-4 | Not only `localStorage` | U1 (re-verify) | REV | Done (U1) |
+| RW-8-P0 | Rework 8 Phase 0 accept | U0 | REV | Done (U0) |
+| RW-8-P1 | Rework 8 Phase 1 accept | U1 | E2E | Done (U1) |
+| RW-8-P2 | Rework 8 Phase 2 accept | U2 | E2E, MAN (hand-corrupted file) | Done (U2) |
+| RW-8-P3 | Rework 8 Phase 3 accept | U4 | E2E 50,000 rows | Done (U4) |
+| RW-8-P4 | Rework 8 Phase 4 accept | U3 | E2E | Done (U3) |
+| RW-8-P5 | Rework 8 Phase 5 accept | U5, U6 | E2E, or an owner deferral in writing | Done (U6) |
+| RW-9 | Rework 9 checklist | U7 | MAN | In progress (U7: Linux and CI rows recorded; Windows with the owner, UQ5) |
+| RW-14 | Rework 14 definition of done | U7 | REV | In progress (U7: the MUST rows pass or carry UQ3 and UQ5; decisions closed) |
+
+## 8. Supporting tasks
 
 These tasks have no single source requirement. They exist so that other rows can be built and verified. They are listed so that every plan task traces somewhere.
 
@@ -719,7 +807,7 @@ These tasks have no single source requirement. They exist so that other rows can
 | P6.7 | Remove Milestone 0 fixture code (D35) | CON-1 (no dead spike code) |
 | P6-AC8 | Confirms P6.7 | CON-1 |
 
-## 8. Open items that need outside input
+## 9. Open items that need outside input
 
 These are not gaps in the plan. Each has a task, a criterion and a path to closure. Closed questions leave this table. Their answers stay in section 5.3 of the plan.
 

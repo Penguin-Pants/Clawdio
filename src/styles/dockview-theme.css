@@ -42,6 +42,13 @@
   --dv-drag-over-border: 2px solid var(--color-brand-red);
   --dv-edge-dock-indicator-color: var(--color-brand-red);
 
+  /* Floating groups (DK-3): an elevated title bar and a border.strong frame over the dock. */
+  --dv-floating-border: 1px solid var(--color-border-strong);
+  --dv-floating-group-border: 1px solid var(--color-border-strong);
+  --dv-floating-box-shadow: 0 8px 32px color-mix(in srgb, var(--color-bg-canvas) 60%, transparent);
+  --dv-floating-titlebar-background-color: var(--color-bg-elevated);
+  --dv-floating-titlebar-border-bottom: 1px solid var(--color-border-default);
+
   /* Menus and dropdowns of the dock itself (tab overflow list). */
   --dv-context-menu-background-color: var(--color-bg-elevated);
   --dv-context-menu-color: var(--color-text-primary);
@@ -72,6 +79,31 @@
 .dockview-theme-app .dv-tab:focus-visible::after,
 .dockview-theme-app .dv-tab:has(:focus-visible)::after {
   content: none;
+}
+
+/*
+ * Splitter hit area (SP-1): 6 px. Dockview centers a 4 px sash on the edge, so the wider sash
+ * moves back by 1 px to stay centered; the visible line stays 1 px.
+ */
+.dockview-theme-app .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash {
+  width: 6px;
+  margin-left: -1px;
+}
+
+.dockview-theme-app .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash {
+  height: 6px;
+  margin-top: -1px;
+}
+
+/* A focused separator (UD7) shows the global ring around its hit area and a 2 px line. */
+.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash:focus-visible {
+  outline: 2px solid var(--color-brand-red);
+  outline-offset: 0;
+  z-index: 1;
+}
+
+.dockview-theme-app .dv-split-view-container > .dv-sash-container > .dv-sash[aria-disabled="true"] {
+  cursor: default;
 }
 
 /* Splitter line: 1 px border.strong on hover, 2 px while dragging, with a resize cursor. */
@@ -152,4 +184,20 @@
   > .dv-view-container
   > .dv-view:not(:first-child) {
   padding-top: 1px;
+}
+
+/*
+ * A group narrower than the Playlists rail threshold (140 px, UD18) shows its tab as the grip
+ * only, so the tab stays in the strip and does not move to the overflow list. The name is in the
+ * group options button and the View menu.
+ */
+.dv-groupview {
+  container-type: inline-size;
+}
+
+@container (max-width: 139px) {
+  .dv-tab [data-slot="tab-title"],
+  .dv-tab [data-slot="tab-close"] {
+    display: none;
+  }
 }

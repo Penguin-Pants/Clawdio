@@ -56,4 +56,11 @@ describe("ui store (P2.7, D18)", () => {
     store.endJob("artwork");
     expect(useUiStore.getState().job).toBeNull();
   });
+
+  it("sets the lock and the transport band position (DK-5, SH-6)", () => {
+    useUiStore.setState({ locked: false, transportPosition: "top" });
+    useUiStore.getState().setLocked(true);
+    useUiStore.getState().setTransportPosition("bottom");
+    expect(useUiStore.getState()).toMatchObject({ locked: true, transportPosition: "bottom" });
+  });
 });

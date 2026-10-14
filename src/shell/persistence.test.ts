@@ -1,16 +1,20 @@
-// P9-AC4 and P9-AC8: restore rules with fixture files, and the saved object.
+// P9-AC4, P9-AC8 and U1 (UD5, PS-4): restore rules with fixture files, the backup and the saved object.
 import type { DockviewApi, SerializedDockview } from "dockview-react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as log from "@/lib/log";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
+import { useUiStore } from "@/store/ui";
 import {
   SAVE_DELAY_MS,
   UNKNOWN_COMPONENT,
   currentLayout,
   parseLayout,
   restoreLayout,
+  restoreSideWidths,
   watchLayout,
 } from "./persistence";
+import { DEFAULT_SLOTS } from "./transport/slots";
 import { WIDGET_IDS } from "./widgets";
 
 vi.mock("@/lib/log", () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }));
@@ -47,7 +51,10 @@ function dockStandIn() {
       panels.push(id);
       added.push({ id, position });
     },
-    getPanel: (id: string) => (panels.includes(id) ? { id } : undefined),
+    getPanel: (id: string) =>
+      panels.includes(id) ? { id, api: { setActive: () => {} }, group: { api: { setSize: () => {} } } } : undefined,
+    // One grid group, "g1", for the collapse sizes (PS-5).
+    getGroup: (id: string) => (id === "g1" ? { id, api: { location: { type: "grid" } } } : undefined),
     removePanel: ({ id }: { id: string }) => panels.splice(panels.indexOf(id), 1),
     clear: () => panels.splice(0),
     fromJSON: (dock: SerializedDockview) => {
@@ -80,25 +87,31 @@ function dockStandIn() {
   return { api: api as unknown as DockviewApi, panels, added, layout: api.layout, fireLayoutChange };
 }
 
-/** The Columns default: Library, Now playing and Transport controls (R29). */
-const COLUMNS_DEFAULT = ["library", "nowPlaying", "transport"];
+/** The default preset (UD6): Library, Playlists, Play queue and Lyrics. */
+const PRESET_DEFAULT = ["library", "playlists", "queue", "lyrics"];
 const SIZE = { width: 800, height: 560 };
 
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
   useLibraryStore.setState({ mode: "columns", frames: DEFAULT_FRAMES });
+  useUiStore.setState({ transportPosition: "top", locked: false, transportSlots: DEFAULT_SLOTS });
 });
+
+const noBackup = () => Promise.resolve();
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
 describe("restoreLayout (P9.4, P9-AC4)", () => {
-  it("applies a valid layout, its Library mode and fits it to the window", () => {
+  it("applies a valid layout, its Library mode, band position and lock, and fits it to the window", () => {
     const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("valid.json"), SIZE)).toBe(true);
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture("valid.json"), SIZE, backup)).toBe(true);
     expect(dock.panels).toEqual(["library", "queue"]);
     expect(useLibraryStore.getState().mode).toBe("tree");
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "bottom", locked: true });
+    expect(backup).not.toHaveBeenCalled();
     expect(dock.layout).toHaveBeenCalledWith(800, 560, true);
     expect(log.warn).not.toHaveBeenCalled();
   });
@@ -111,19 +124,45 @@ describe("restoreLayout (P9.4, P9-AC4)", () => {
 
   it.each([
     ["corrupt.json", "not valid JSON"],
-    ["version-2.json", "unknown layout version 2"],
+    ["version-3.json", "unknown layout version 3"],
     ["unknown-mode.json", "unknown Library mode grid"],
     ["missing-mode.json", "unknown Library mode undefined"],
     ["no-library.json", "no Library widget"],
     ["broken-dock.json", "the dock cannot load"],
-  ])("%s applies Columns with one log line", (name, reason) => {
+  ])("%s is backed up and the default preset loads, with one log line (PS-4)", (name, reason) => {
     useLibraryStore.setState({ mode: "tree" });
+    useUiStore.setState({ transportPosition: "bottom", locked: true });
     const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture(name), SIZE)).toBe(false);
-    expect(dock.panels).toEqual(COLUMNS_DEFAULT);
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture(name), SIZE, backup)).toBe(false);
+    expect(dock.panels).toEqual(PRESET_DEFAULT);
     expect(useLibraryStore.getState().mode).toBe("columns");
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "top", locked: false });
+    expect(backup).toHaveBeenCalledTimes(1);
     expect(log.warn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain(reason);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("backed up as layout.json.bak");
+  });
+
+  it("backs up a version 1 file and loads the default preset, with one log line (UD5)", () => {
+    const dock = dockStandIn();
+    const backup = vi.fn(noBackup);
+    expect(restoreLayout(dock.api, fixture("version-1.json"), SIZE, backup)).toBe(false);
+    expect(dock.panels).toEqual(PRESET_DEFAULT);
+    expect(backup).toHaveBeenCalledTimes(1);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toBe("layout: version 1 backed up as layout.json.bak");
+  });
+
+  it.each([
+    ["transport", "left", { transportPosition: "top" }],
+    ["locked", "yes", { locked: false }],
+  ])("a bad %s value takes its default with one log line", (key, value, expected) => {
+    const text = JSON.stringify({ ...JSON.parse(fixture("valid.json")), [key]: value });
+    expect(restoreLayout(dockStandIn().api, text, SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState()).toMatchObject(expected);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain(key);
   });
 
   it("removes a panel of an unknown widget and keeps the rest, with one log line", () => {
@@ -132,6 +171,16 @@ describe("restoreLayout (P9.4, P9-AC4)", () => {
     expect(dock.panels).toEqual(["library"]);
     expect(log.warn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("visualizer");
+  });
+
+  it("keeps a floating group and removes an unknown widget in floatingGroups (DK-3, UD17)", () => {
+    const dock = dockStandIn();
+    expect(restoreLayout(dock.api, fixture("floating.json"), SIZE, noBackup)).toBe(true);
+    expect(dock.panels).toEqual(["library", "queue", "nowPlaying"]);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("visualizer");
+    const saved = JSON.parse(fixture("floating.json"));
+    expect(parseLayout(JSON.stringify(saved))).toMatchObject({ unknown: ["visualizer"] });
   });
 
   it("marks unknown widget ids before the dock sees them", () => {
@@ -149,9 +198,9 @@ function withFrames(frames: unknown): string {
 describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
   const CUSTOM = { columns: [0.2, 0.3, 0.5], topBottom: { top: [0.6, 0.4], rows: [0.3, 0.7] } };
 
-  it("loads a version 1 file without libraryFrames with the default sizes", () => {
+  it("loads a file without libraryFrames with the default sizes", () => {
     useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
-    expect(restoreLayout(dockStandIn().api, fixture("valid.json"), SIZE)).toBe(true);
+    expect(restoreLayout(dockStandIn().api, fixture("valid.json"), SIZE, noBackup)).toBe(true);
     expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
     expect(log.warn).not.toHaveBeenCalled();
   });
@@ -210,42 +259,97 @@ describe("frame sizes in layout.json (P22.3, D55, P22-AC2)", () => {
   });
 });
 
-describe("bar repair at start (P23.3, R29.1, P23-AC2)", () => {
-  it("moves Transport controls out of the Library tab group to the bottom bar, with one log line", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-in-tabs.json"), SIZE)).toBe(true);
-    expect(dock.panels).toEqual(["library", "nowPlaying", "transport"]);
-    expect(dock.added.at(-1)).toEqual({
-      id: "transport",
-      position: { referencePanel: "nowPlaying", direction: "right" },
-    });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("moved transport to the bottom bar");
-  });
-
-  it("moves a misplaced bar to a new bottom row when its partner is in a top row", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-partner-top.json"), SIZE)).toBe(true);
-    expect(dock.added.at(-1)).toEqual({ id: "transport", position: { direction: "below" } });
-    expect(log.warn).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps a valid top bar as saved, with no log line", () => {
-    const dock = dockStandIn();
-    expect(restoreLayout(dock.api, fixture("bar-top.json"), SIZE)).toBe(true);
-    expect(dock.panels).toEqual(["library", "transport"]);
-    expect(dock.added).toEqual([]);
-    expect(log.warn).not.toHaveBeenCalled();
-  });
-});
-
 describe("saving (P9.3, P9-AC8)", () => {
-  it("saves the version, the Library mode and the dock, and no window size", () => {
+  it("saves the version, band position, lock, Library mode and dock, and no window size", () => {
     const dock = dockStandIn();
     dock.api.addPanel({ id: "library", component: "library" });
     const saved = currentLayout(dock.api);
-    expect(Object.keys(saved).sort()).toEqual(["dock", "libraryFrames", "libraryMode", "version"]);
-    expect(saved.version).toBe(1);
+    expect(Object.keys(saved).sort()).toEqual([
+      "collapsed",
+      "dock",
+      "libraryFrames",
+      "libraryMode",
+      "locked",
+      "transport",
+      "transportSlots",
+      "version",
+    ]);
+    expect(saved.version).toBe(2);
+  });
+
+  it("round-trips transport and locked through version 2", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    useUiStore.setState({ transportPosition: "bottom", locked: true });
+    const text = JSON.stringify(currentLayout(dock.api));
+    useUiStore.setState({ transportPosition: "top", locked: false });
+    expect(restoreLayout(dockStandIn().api, text, SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "bottom", locked: true });
+  });
+
+  it("round-trips the collapse sizes, and a file without them loads none (PS-5)", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    useCollapseStore.setState({ sizes: { g1: { axis: "width", size: 320 } } });
+    const saved = currentLayout(dock.api);
+    useCollapseStore.setState({ sizes: {} });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    expect(useCollapseStore.getState().sizes).toEqual({ g1: { axis: "width", size: 320 } });
+    const without: Partial<typeof saved> = { ...saved };
+    delete without.collapsed;
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(without), SIZE, noBackup)).toBe(true);
+    expect(useCollapseStore.getState().sizes).toEqual({});
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it("saves 500 ms after a collapse change", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
+    const watcher = watchLayout(dockStandIn().api, save);
+    useCollapseStore.setState({ sizes: { g1: { axis: "height", size: 200 } } });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(save).toHaveBeenCalledTimes(1);
+    watcher.dispose();
+  });
+
+  it("round-trips transportSlots and loads a file without it with the defaults (UD20)", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    const custom = { order: [...DEFAULT_SLOTS.order].reverse(), hidden: ["stop" as const] };
+    useUiStore.setState({ transportSlots: custom });
+    const saved = currentLayout(dock.api);
+    useUiStore.setState({ transportSlots: DEFAULT_SLOTS });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    const restored = useUiStore.getState().transportSlots;
+    expect(restored.hidden).toEqual(["stop"]);
+    expect(restored.order.slice(0, 4)).toEqual(["previous", "playPause", "next", "search"]);
+
+    const without: Partial<typeof saved> = { ...saved };
+    delete without.transportSlots;
+    useUiStore.setState({ transportSlots: custom });
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(without), SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it("a hidden play or pause in transportSlots gives the default slots with one log line", () => {
+    const dock = dockStandIn();
+    dock.api.addPanel({ id: "library", component: "library" });
+    const saved = { ...currentLayout(dock.api), transportSlots: { order: DEFAULT_SLOTS.order, hidden: ["playPause"] } };
+    expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
+    expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(log.warn).mock.calls[0][0]).toContain("hide play or pause");
+  });
+
+  it("saves 500 ms after a transport slots change", async () => {
+    vi.useFakeTimers();
+    const save = vi.fn<(json: string) => Promise<void>>(() => Promise.resolve());
+    const watcher = watchLayout(dockStandIn().api, save);
+    useUiStore.setState({ transportSlots: { ...DEFAULT_SLOTS, hidden: [] } });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+    expect(save).toHaveBeenCalledTimes(1);
+    watcher.dispose();
   });
 
   it("saves 500 ms after a layout or mode change, and flush writes at once", async () => {
@@ -281,5 +385,44 @@ describe("saving (P9.3, P9-AC8)", () => {
     expect(save).toHaveBeenCalledTimes(1);
     expect(JSON.parse(save.mock.calls[0][0]).libraryFrames.columns).toEqual([0.3, 0.3, 0.4]);
     watcher.dispose();
+  });
+});
+
+describe("restoreSideWidths (SP-4)", () => {
+  const leaf = (id: string, views: string[], size: number) => ({ type: "leaf", data: { id, views }, size });
+  function dockWith(root: unknown, width = 1200) {
+    return {
+      grid: { root, width, height: 700, orientation: "HORIZONTAL" },
+      panels: {},
+    } as unknown as SerializedDockview;
+  }
+  function groups() {
+    const sizes = new Map<string, unknown>();
+    const api = {
+      getGroup: (id: string) => ({ api: { setSize: (size: unknown) => sizes.set(id, size) } }),
+    } as unknown as DockviewApi;
+    return { api, sizes };
+  }
+
+  it("gives the columns beside the Library their saved widths, not the Library column", () => {
+    const { api, sizes } = groups();
+    const root = {
+      type: "branch",
+      size: 700,
+      data: [
+        leaf("1", ["playlists"], 240),
+        leaf("2", ["library"], 680),
+        { type: "branch", size: 280, data: [leaf("3", ["queue"], 400), leaf("4", ["lyrics"], 300)] },
+      ],
+    };
+    restoreSideWidths(api, dockWith(root));
+    expect(Object.fromEntries(sizes)).toEqual({ "1": { width: 240 }, "3": { width: 280 } });
+  });
+
+  it("does nothing for a root split into rows", () => {
+    const { api, sizes } = groups();
+    const root = { type: "branch", size: 1200, data: [leaf("1", ["library"], 500), leaf("2", ["queue"], 200)] };
+    restoreSideWidths(api, dockWith(root));
+    expect(sizes.size).toBe(0);
   });
 });

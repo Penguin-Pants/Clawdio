@@ -1,11 +1,13 @@
 // P10-AC4, P10-AC5 (browser part) and P10-AC7: album art in rows and Now playing, the
 // placeholder, Set cover and art requests for the visible window only.
 import type { Page } from "@playwright/test";
-import { expect, test, widget } from "./test-base";
+import { expect, SONG_ROWS, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  // Now playing is hidden in the default preset (UD6).
+  await page.evaluate(() => window.e2e.show("nowPlaying"));
 }
 
 const albums = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Albums" });
@@ -24,7 +26,7 @@ test("P10-AC4: albums with art show it; an album with none shows the placeholder
   const none = albums(page).getByRole("option", { name: /Lemonade/ });
   await expect(none.locator("[data-slot='art-placeholder-mark']")).toBeVisible();
   await expect(none.locator("img")).toHaveCount(0);
-  await widget(page, "library").getByRole("listbox", { name: "Songs" }).getByRole("option").first().dblclick();
+  await widget(page, "library").getByRole("grid", { name: "Songs" }).locator(SONG_ROWS).first().dblclick();
   await expect(widget(page, "nowPlaying")).toContainText("Pray You Catch Me");
   await expect(widget(page, "nowPlaying").locator("[data-slot='art-placeholder-mark']")).toBeVisible();
 });

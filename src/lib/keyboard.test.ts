@@ -59,6 +59,18 @@ describe("widgetRegions (P2.12)", () => {
     ]);
     expect(widgetRegions().map((element) => element.dataset.widget)).toEqual(["library", "nowPlaying", "transport"]);
   });
+
+  it("skips widgets inside an inert container: the mini player has one region, the band (UD19)", () => {
+    const [transport, library] = regions([
+      ["transport", 0, 0],
+      ["library", 50, 0],
+    ]);
+    const dock = document.createElement("main");
+    dock.setAttribute("inert", "");
+    dock.append(library);
+    document.body.append(dock);
+    expect(widgetRegions()).toEqual([transport]);
+  });
 });
 
 describe("nextRegion", () => {
@@ -143,6 +155,16 @@ describe("handleSpace (D17, P7.11)", () => {
     expect(handleSpace(event, toggle)).toBe(false);
     expect(event.defaultPrevented).toBe(false);
     expect(handleSpace(space(document.createElement("textarea")), toggle)).toBe(false);
+    expect(toggle).not.toHaveBeenCalled();
+  });
+
+  it("leaves Space to a focused column header, which sorts (AX-1)", () => {
+    const toggle = vi.fn();
+    const header = document.createElement("div");
+    header.setAttribute("role", "columnheader");
+    const event = space(header);
+    expect(handleSpace(event, toggle)).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
     expect(toggle).not.toHaveBeenCalled();
   });
 

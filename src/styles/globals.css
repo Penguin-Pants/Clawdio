@@ -29,6 +29,9 @@
   --input: var(--color-border-strong);
   --ring: var(--color-brand-red);
   --radius: var(--radius-control);
+  /* Menus, popovers, tooltips and dialogs sit above the dock's floating groups (z-index 40 to
+     1000 and more, Dockview overlays). */
+  --z-popup: 2000;
 }
 
 @theme inline {
@@ -60,6 +63,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Every spacing utility (p-2, gap-1, w-24) derives from the spacing token in rem (UD1, TH-1). */
+  --spacing: var(--spacing-unit);
 }
 
 @layer base {
@@ -79,6 +84,44 @@
     outline: 2px solid var(--color-brand-red);
     outline-offset: 2px;
   }
+}
+
+/*
+ * The four shell zones (plan section 5.1, rework 6.5): header, transport band, dock and status.
+ * The dock row is minmax(0, 1fr), so a long list never pushes the band off screen (SH-3).
+ */
+.app-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "transport" "dock" "status";
+}
+
+.app-shell[data-transport="bottom"] {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "header" "dock" "transport" "status";
+}
+
+/*
+ * Mini player (UD19, TR-9): the window shows the band only. The dock stays mounted, inert and
+ * off screen at its last size, so its layout and its saves do not change.
+ */
+.app-shell[data-mini] {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "transport";
+}
+
+.app-shell[data-mini] > main {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  width: var(--dock-width);
+  height: var(--dock-height);
+}
+
+/* The drop target under a row drag (TB-12, UD21): an inset brand line, no layout change. */
+[data-drop-active] {
+  box-shadow: inset 0 0 0 2px var(--color-brand-red);
 }
 
 /* Tabular numerals for times (design.md section 4). */

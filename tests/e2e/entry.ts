@@ -2,7 +2,7 @@
 import { retagSong, setLyrics } from "./install-mocks";
 import { emit } from "@tauri-apps/api/event";
 import "../../src/main";
-import { addWidget, getDock, replaceArrangement } from "../../src/shell/layouts";
+import { addWidget, getDock, replaceArrangement, setWidgetVisible } from "../../src/shell/layouts";
 import { WIDGET_IDS, type WidgetId } from "../../src/shell/widgets";
 
 function dock() {
@@ -13,7 +13,11 @@ function dock() {
 
 /** Test hooks. They act on the real dock of the running app. */
 const hooks = {
-  /** Clears the dock and stacks all six widgets in one column (P2-AC6 clamp case). */
+  /** Shows a hideable widget where the default preset puts it (Now playing is hidden by default). */
+  show(id: WidgetId): void {
+    setWidgetVisible(id, true, dock());
+  },
+  /** Clears the dock and stacks all five dock widgets in one column (P2-AC6 clamp case). */
   stackAll(): void {
     replaceArrangement(dock(), (api) =>
       WIDGET_IDS.forEach((id, index) =>
@@ -48,6 +52,10 @@ declare global {
     e2e: typeof hooks;
     /** Messages the app sent to the log plugin (install-mocks.ts). */
     e2eLog?: string[];
+    /** Delays the mocked `favorites` reply (row-drag.spec.ts). */
+    e2eSlowFavorites?: boolean;
+    /** The mocked `window_set_mini` calls (UD19). */
+    e2eMini?: { on: boolean; height: number }[];
   }
 }
 window.e2e = hooks;

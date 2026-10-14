@@ -149,6 +149,7 @@ pub fn run() -> tauri::Result<()> {
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
             app.manage(state::LyricsState::default());
+            app.manage(window::MiniState::default());
             app.manage(commands::metadata::MetadataFills::default());
             app.manage(state::Playlists::default());
             app.manage(player);
@@ -166,6 +167,10 @@ pub fn run() -> tauri::Result<()> {
         .invoke_handler(tauri::generate_handler![
             commands::layout::layout_load,
             commands::layout::layout_save,
+            commands::layout::layout_backup,
+            commands::layout::columns_load,
+            commands::layout::columns_save,
+            commands::layout::columns_backup,
             commands::library::library_artists,
             commands::library::library_artist_rows,
             commands::library::library_albums,
@@ -212,6 +217,7 @@ pub fn run() -> tauri::Result<()> {
             commands::playlists::playlist_remove_entry,
             commands::playlists::playlist_delete,
             commands::playlists::favorite_toggle,
+            commands::playlists::favorites_add,
             commands::playlists::favorites,
             commands::playlists::playlist_import,
             commands::playlists::playlist_import_folder,
@@ -223,6 +229,7 @@ pub fn run() -> tauri::Result<()> {
             commands::measure::measure_ready,
             commands::measure::scan_running,
             commands::measure::perf_mode,
+            commands::window::window_set_mini,
         ])
         .build(tauri::generate_context!())?
         .run(|app, event| {

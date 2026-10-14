@@ -28,7 +28,7 @@ function DropdownMenuContent({
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
-        className="isolate z-50"
+        className="isolate z-(--z-popup)"
         anchor={anchor}
         align={align}
         alignOffset={alignOffset}

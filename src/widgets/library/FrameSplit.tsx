@@ -6,6 +6,8 @@ import {
   SplitviewReact,
 } from "dockview-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { observeSize } from "@/lib/resize";
+import { scheduleSashRefresh } from "@/shell/splitters";
 import { type FrameGroup, frameFractions, useLibraryStore } from "@/store/library";
 
 /** Frame minimums in px (D56): three Columns frames fit the 320 px Library minimum (D33). */
@@ -39,11 +41,14 @@ function applyFractions(api: SplitviewApi, horizontal: boolean, fractions: numbe
   const scale = Math.min(1, total / (minimum * api.panels.length));
   for (const panel of api.panels) panel.api.setConstraints({ minimumSize: minimum * scale });
   api.panels.slice(0, -1).forEach((panel, index) => panel.api.setSize({ size: (fractions[index] ?? 0) * total }));
+  // The separators carry their new value and stay keyboard reachable (UD7).
+  scheduleSashRefresh();
 }
 
 /**
  * Library frames with splitters (P22.1, R28.1, D56). The sizes come from the Library store, so
- * each mode keeps its own; a splitter drag writes them back. Sashes are not in the Tab order (K5).
+ * each mode keeps its own; a splitter drag or a separator key writes them back. The separators
+ * are in the Tab order with the W3C keys (UD7, `src/shell/splitters.ts`).
  */
 export function FrameSplit({
   group,
@@ -87,17 +92,17 @@ export function FrameSplit({
     }
   };
 
-  // The container size drives the layout, so the saved fractions hold at every size.
+  // The container size drives the layout, so the saved fractions hold at every size. The
+  // layout runs once per frame of resizes (PF-2, UD24).
   useEffect(() => {
     const element = containerRef.current;
-    const observer = new ResizeObserver(() => {
+    if (!element) return;
+    return observeSize(element, () => {
       const api = apiRef.current;
-      if (!api || !element) return;
+      if (!api) return;
       api.layout(element.clientWidth, element.clientHeight);
       applyFractions(api, horizontal, currentFractions(group));
     });
-    if (element) observer.observe(element);
-    return () => observer.disconnect();
   }, [horizontal, group]);
 
   // A reset or a loaded layout changes the fractions from outside.

@@ -1,19 +1,18 @@
 // P11-AC4, P11-AC5, P11-AC8 and P11-AC10 (browser part): the Playlists widget, Add to
 // playlist, the hearts and the error dialog, on the mocked playlists.
 import type { Page } from "@playwright/test";
-import { closeMenu, expect, openMenu, test, widget } from "./test-base";
+import { expect, test, widget } from "./test-base";
 
 async function openPlaylists(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  await openMenu(page);
-  await page.getByRole("menuitemcheckbox", { name: "Playlists", exact: true }).click();
-  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
+  // The default preset shows Playlists; Now playing (the heart) is hidden (UD6).
+  await page.evaluate(() => window.e2e.show("nowPlaying"));
   await expect(tree(page).getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
 }
 
 const tree = (page: Page) => widget(page, "playlists").getByRole("tree", { name: "Playlists" });
-const songs = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Songs" });
+const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 async function lastPlay(page: Page): Promise<{ ids: number[]; start: number }> {
   return JSON.parse((await page.locator("body").getAttribute("data-play-list")) ?? "null");
@@ -105,7 +104,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   await widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" }).click();
   await expect(tree(page).getByRole("treeitem", { name: /Favorites/ })).toBeVisible();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   const submenu = page.getByRole("menu").last();
@@ -116,7 +115,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   await expect(tree(page).getByRole("treeitem", { name: /Mix 3/ })).toContainText("7");
 
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   await page.getByRole("menu").last().getByRole("menuitem", { name: "New playlist…" }).click();
@@ -134,7 +133,7 @@ test("P11-AC5: the hearts add and remove the song in Favorites", async ({ page }
   const pressed = widget(page, "nowPlaying").getByRole("button", { name: "Remove from Favorites" });
   await expect(pressed).toHaveAttribute("aria-pressed", "true");
   // The playing song's row shows a filled heart.
-  const row = songs(page).getByRole("option", { name: /Song 4 of Album A0/ });
+  const row = songs(page).getByRole("row", { name: /Song 4 of Album A0/ });
   await expect(row.locator("[data-slot='row-heart']")).toHaveAttribute("data-favorite", "");
   await row.locator("[data-slot='row-heart']").click();
   await expect(widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" })).toHaveAttribute(
@@ -150,7 +149,7 @@ test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ pa
   await page.getByRole("dialog").getByRole("textbox", { name: "Name" }).fill("Read only");
   await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   await page.getByRole("menu").last().getByRole("menuitem", { name: "Read only" }).click();
@@ -158,7 +157,7 @@ test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ pa
   await expect(dialog).toContainText("read-only");
   await dialog.getByRole("button", { name: "OK" }).click();
   await songs(page)
-    .getByRole("option", { name: /Song 2 of Album A0/ })
+    .getByRole("row", { name: /Song 2 of Album A0/ })
     .dblclick();
   await expect(widget(page, "nowPlaying")).toContainText("Song 2 of Album A0");
 });
@@ -246,6 +245,10 @@ test("P19-AC7: Find missing songs on one playlist, then on all playlists", async
   await expect(page.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Find missing songs" })).toHaveCount(0);
   await page.keyboard.press("Escape");
+  // The context menu must be gone and its focus return done (WebKit returns focus a moment
+  // after the close), or the focus return closes the next menu as soon as it opens.
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(tree(page)).toBeFocused();
 
   await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
   await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();

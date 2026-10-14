@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { measurementPopulated, waitForPopulated } from "./measure";
 
 const POPULATED_HTML = `
-  <section data-widget="library"><div role="option">All</div><div role="option">Artist</div></section>
+  <section data-widget="library">
+    <div role="listbox"><div role="presentation"><div role="option">All</div></div></div>
+    <div role="grid"><div role="presentation"><div role="row" aria-selected="false">Song</div></div></div>
+  </section>
   <section data-widget="transport"></section>
   <section data-widget="nowPlaying"></section>
   <section data-widget="playlists"></section>
@@ -15,16 +18,19 @@ afterEach(() => {
 });
 
 describe("measurementPopulated (P3.5, P6.7)", () => {
-  it("is true when all six widgets are in the page and the Library shows rows", () => {
+  it("is true when the band and the five dock widgets are in the page and the Library shows rows", () => {
     document.body.innerHTML = POPULATED_HTML;
     expect(measurementPopulated()).toBe(true);
     document.querySelector('[data-widget="queue"]')?.remove();
+    expect(measurementPopulated()).toBe(false);
+    document.body.innerHTML = POPULATED_HTML;
+    document.querySelector('[data-widget="transport"]')?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 
   it("does not count the Library 'All' row alone", () => {
     document.body.innerHTML = POPULATED_HTML;
-    document.querySelectorAll('[data-widget="library"] [role="option"]')[1]?.remove();
+    document.querySelector('[data-widget="library"] [role="row"]')?.remove();
     expect(measurementPopulated()).toBe(false);
   });
 });

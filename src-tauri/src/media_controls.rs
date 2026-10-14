@@ -338,6 +338,8 @@ mod tests {
             album_name: "Album".into(),
             tag_artist: None,
             duration_ms: 1000,
+            track_no: None,
+            disc: None,
         })
     }
 

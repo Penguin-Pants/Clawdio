@@ -95,6 +95,7 @@ pub fn album_sources(index: &LibraryIndex, album: AlbumId) -> Option<AlbumSource
                 album: Some(album),
             },
             "",
+            &[],
         )
         .ok()?;
     let tracks: Vec<_> = ids.iter().filter_map(|id| index.track(*id)).collect();

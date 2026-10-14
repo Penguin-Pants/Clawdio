@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
-import { useLibraryStore } from "@/store/library";
+import { selectSongs, useLibraryStore } from "@/store/library";
+import { useColumnsStore } from "@/store/columns";
 import { currentTrack, usePlayerStore } from "@/store/player";
-import { addToPlaylist, usePlaylistsStore } from "@/store/playlists";
+import { addFavorites, addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
-import { ALBUM_ROW_HEIGHT, AlbumCells, ROW_HEIGHT, Row, SongCells } from "./rows";
+import { type ViewId, contentWidth, gridTemplate, visibleColumns } from "./columns";
+import { AlbumCells, type ClickModifiers, Row, SongCells, SongTableRow, useAlbumRowHeight, useRowHeight } from "./rows";
+import { type DropTarget, startRowDrag } from "./row-drag";
+import { TableHeader } from "./TableHeader";
 
 const NO_IDS: number[] = [];
 const NO_TREE: TreeArtist[] = [];
@@ -35,6 +39,23 @@ function usePlayingTrack(): number | null {
 }
 
 /** Appends `ids` to the queue and says so in the status line, which shows with the queue hidden (R6). */
+/**
+ * A row drag drop (TB-12): the queue appends; Favorites adds only songs that are not favorites
+ * yet (R12, D20: no duplicates); another playlist appends.
+ */
+function dropSongs(target: DropTarget, ids: number[]) {
+  if (target.kind === "queue") {
+    addToQueue(ids);
+    return;
+  }
+  // Favorites takes only new songs, in Rust, so a second drop before the reload removes nothing.
+  if (usePlaylistsStore.getState().rows.find((row) => row.id === target.id)?.isFavorites) {
+    addFavorites(ids);
+  } else {
+    addToPlaylist(target.id, ids);
+  }
+}
+
 function addToQueue(ids: number[]) {
   if (ids.length === 0) return;
   void commands.queueAppend(ids).then(
@@ -153,6 +174,7 @@ function albumItems(
 
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
 export function ArtistList() {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const selected = useLibraryStore((state) => state.selection.artist);
   const setSelection = useLibraryStore((state) => state.setSelection);
@@ -182,7 +204,7 @@ export function ArtistList() {
         label="Artists"
         role="listbox"
         count={ids.length + 1}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
@@ -210,6 +232,7 @@ export function ArtistList() {
 
 /** Album list of the selected artist with an "All" row first. Rows load for the visible window (D14). */
 export function AlbumList() {
+  const rowHeight = useAlbumRowHeight();
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const selected = useLibraryStore((state) => state.selection.album);
@@ -239,7 +262,7 @@ export function AlbumList() {
         label="Albums"
         role="listbox"
         count={ids.length + 1}
-        rowHeight={ALBUM_ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
         onMove={(index) => select(idAt(index))}
@@ -274,64 +297,136 @@ export function AlbumList() {
   );
 }
 
-/** Songs of the selected artist and album, or all songs (R28). Rows load for the visible window. */
-export function SongList({ showAlbum }: { showAlbum: boolean }) {
+/** The callbacks of the latest render, behind functions that keep their identity (PF-1). */
+function useStable<T extends (...args: never[]) => void>(callback: T): T {
+  const ref = useRef(callback);
+  useLayoutEffect(() => {
+    ref.current = callback;
+  });
+  return useCallback((...args: Parameters<T>) => ref.current(...args), []) as unknown as T;
+}
+
+/**
+ * The Songs table (UD8, TB-1 to TB-11) of Columns and Top/bottom modes: a virtualized grid
+ * with a sticky header, per-view column state (`view`), sorting in Rust (UD11) and
+ * multi-select (UD12). Rows load for the visible window (D14). The queue rule plays the songs
+ * as shown (R6).
+ */
+export function SongTable({ view }: { view: ViewId }) {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const artist = useLibraryStore((state) => state.selection.artist);
   const album = useLibraryStore((state) => state.selection.album);
-  const selected = useLibraryStore((state) => state.selection.song);
-  const setSelection = useLibraryStore((state) => state.setSelection);
+  const activeSong = useLibraryStore((state) => state.selection.song);
+  const selectedSongs = useLibraryStore((state) => state.selectedSongs);
+  const setSongSelection = useLibraryStore((state) => state.setSongSelection);
   const version = useLibraryStore((state) => state.version);
+  const columnState = useColumnsStore((state) => state.views[view]);
   const playing = usePlayingTrack();
-  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search), NO_IDS, [
+  const sortKey = JSON.stringify(columnState.sort);
+  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search, columnState.sort), NO_IDS, [
     artist,
     album,
     search,
     version,
+    sortKey,
   ]);
   const { row, request } = useSongRows(version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   const onRange = useCallback((start: number, end: number) => request(ids.slice(start, end + 1)), [ids, request]);
-  const active = selected === null ? -1 : ids.indexOf(selected);
-  // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
-  const play = (index: number) => () => playList(ids, index);
-  const items = (index: number) =>
-    rowItems(
-      play(index),
-      () => addToQueue([ids[index]]),
-      async () => [ids[index]],
-    );
+  const active = activeSong === null ? -1 : ids.indexOf(activeSong);
+  const columns = useMemo(() => visibleColumns(columnState), [columnState]);
+  const template = useMemo(() => gridTemplate(columnState), [columnState]);
+  const width = useMemo(() => contentWidth(columnState), [columnState]);
+
+  // The selected songs in the order shown, for Add to queue and Add to playlist (UD12).
+  const selection = (fallback: number) => {
+    const chosen = ids.filter((id) => selectedSongs.has(id));
+    return chosen.length > 0 && selectedSongs.has(ids[fallback]) ? chosen : [ids[fallback]];
+  };
+  const items = (index: number): RowMenuItem[] => {
+    const id = ids[index];
+    const favorite = usePlaylistsStore.getState().favorites.has(id);
+    return [
+      // Playing a song sets the queue to the Songs list as shown (R6 queue rule).
+      { label: "Play", run: () => playList(ids, index) },
+      { label: "Add to queue", run: () => addToQueue(selection(index)) },
+      { label: "Add to playlist", items: playlistItems(async () => selection(index)) },
+      // The keyboard path to the heart (UD8): the row heart is a pointer target only (D23).
+      { label: favorite ? "Remove from Favorites" : "Add to Favorites", run: () => toggleFavorite(id) },
+    ];
+  };
+  const select = (index: number, mode: "single" | "toggle" | "range") => {
+    const id = ids[index];
+    if (id === undefined) return;
+    const { selectedSongs: current, anchor: from } = useLibraryStore.getState();
+    const { selected, anchor } = selectSongs(ids, { selected: current, anchor: from }, id, mode);
+    setSongSelection(selected, anchor, id);
+  };
+  const onSelect = useStable((index: number, modifiers: ClickModifiers) =>
+    select(index, modifiers.shift ? "range" : modifiers.ctrl ? "toggle" : "single"),
+  );
+  const onActivate = useStable((index: number) => playList(ids, index));
+  // Row drag (TB-12, UD21): the selection, or the row itself when it is not selected.
+  const onRowPointerDown = useStable((index: number, event: PointerEvent) => {
+    const id = ids[index];
+    if (id === undefined) return;
+    const inSelection = selectedSongs.has(id);
+    startRowDrag(event, selection(index), dropSongs, () => {
+      if (!inSelection) select(index, "single");
+    });
+  });
+  const onMenu = useStable((index: number, anchor: HTMLElement) => {
+    // A right-click on a row outside the selection selects that row first.
+    if (!selectedSongs.has(ids[index])) select(index, "single");
+    menu.open(anchor, items(index));
+  });
+  // Stable, so it reads the ids of the latest sort, also when the count did not change.
+  const focusBody = useStable(() => {
+    listRef.current?.querySelector<HTMLElement>("[role='grid']")?.focus();
+    if (active < 0 && ids.length > 0) select(0, "single");
+  });
+
   return (
-    <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
+    <div ref={listRef} data-songs-view={view} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
         label="Songs"
-        role="listbox"
+        role="grid"
+        multiselectable
         count={ids.length}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
+        contentWidth={width}
+        header={
+          <TableHeader view={view} state={columnState} columns={columns} template={template} onFocusBody={focusBody} />
+        }
         activeIndex={active >= 0 ? active : null}
-        onMove={(index) => setSelection({ song: ids[index] ?? null })}
+        onMove={(index, { shift }) => select(index, shift ? "range" : "single")}
         onKeyDown={(event) => {
           if (menu.fromKey(event, active >= 0 ? items(active) : null)) return;
           if (event.key === "Enter" && active >= 0) {
             event.preventDefault();
-            play(active)();
+            playList(ids, active);
           }
         }}
         renderRow={(index, frame) => {
           const id = ids[index];
           return (
-            <Row
-              key={id}
-              frame={frame}
-              selected={selected === id}
-              onSelect={() => setSelection({ song: id })}
-              onActivate={play(index)}
-              onMenu={(anchor) => menu.open(anchor, items(index) ?? [])}
-            >
-              <SongCells song={row(id)} showAlbum={showAlbum} playing={playing === id} heart />
-            </Row>
+            <SongTableRow
+              rowId={frame.id}
+              index={index}
+              active={frame.active}
+              selected={selectedSongs.has(id)}
+              playing={playing === id}
+              song={row(id)}
+              columns={columns}
+              template={template}
+              onSelect={onSelect}
+              onActivate={onActivate}
+              onMenu={onMenu}
+              onRowPointerDown={onRowPointerDown}
+            />
           );
         }}
       />
@@ -391,6 +486,7 @@ export function treeLines(tree: TreeArtist[], openArtists: Set<number>, openAlbu
 
 /** One expandable artist, album and song tree (R28). Song rows load for the visible window. */
 export function TreeList() {
+  const rowHeight = useRowHeight();
   const search = useLibraryStore((state) => state.search);
   const selection = useLibraryStore((state) => state.selection);
   const setSelection = useLibraryStore((state) => state.setSelection);
@@ -507,7 +603,7 @@ export function TreeList() {
         label="Library"
         role="tree"
         count={lines.length}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={active >= 0 ? active : null}
         onMove={(index) => select(lines[index])}

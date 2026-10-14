@@ -52,6 +52,12 @@ export function toggleFavorite(track: number): void {
   void playlistEdit(() => commands.favoriteToggle(track), "Cannot change Favorites");
 }
 
+/** A row drop on Favorites (TB-12, UD21): adds the songs that are not favorites yet, never removes. */
+export function addFavorites(tracks: number[]): void {
+  if (tracks.length === 0) return;
+  void playlistEdit(() => commands.favoritesAdd(tracks), "Cannot change Favorites");
+}
+
 /** Add to playlist (R12): appends; duplicates are allowed. */
 export function addToPlaylist(id: number, tracks: number[]): void {
   if (tracks.length === 0) return;

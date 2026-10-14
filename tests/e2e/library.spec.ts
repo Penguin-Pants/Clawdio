@@ -1,7 +1,7 @@
 // P6-AC1 to P6-AC5, P6-AC7, P6-AC9 and P6-AC10: the Library widget on the mocked library.
 import type { Locator, Page } from "@playwright/test";
 import { grayProfile } from "./gray";
-import { expect, test, widget } from "./test-base";
+import { expect, SONG_ROWS, songsGrid, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
@@ -26,17 +26,17 @@ test("P6-AC1: each mode shows the library with All rows and filters", async ({ p
   await openLibrary(page);
   await expect(list(page, "Artists").getByRole("option").first()).toHaveText("All");
   await expect(list(page, "Albums").getByRole("option").first()).toHaveText("All");
-  await expect(list(page, "Songs").getByRole("option").first()).toContainText("Song 1 of Album A0");
+  await expect(songsGrid(page).locator(SONG_ROWS).first()).toContainText("Song 1 of Album A0");
   await list(page, "Artists").getByRole("option", { name: "Artist 01", exact: true }).click();
   await expect(list(page, "Albums").getByRole("option")).toHaveCount(4);
   await list(page, "Albums")
     .getByRole("option", { name: /Album B1/ })
     .click();
-  await expect(list(page, "Songs").getByRole("option")).toHaveCount(10);
-  await expect(list(page, "Songs").getByRole("option").first()).toContainText("Song 1 of Album B1");
+  await expect(songsGrid(page).locator(SONG_ROWS)).toHaveCount(10);
+  await expect(songsGrid(page).locator(SONG_ROWS).first()).toContainText("Song 1 of Album B1");
 
   await mode(page, "Top/bottom");
-  await expect(list(page, "Songs").getByRole("option")).toHaveCount(10);
+  await expect(songsGrid(page).locator(SONG_ROWS)).toHaveCount(10);
   await mode(page, "Tree");
   await expect(tree(page).getByRole("treeitem", { name: "Artist 00", exact: true })).toHaveAttribute("aria-level", "1");
 });
@@ -48,8 +48,8 @@ test("P6-AC2: a mode switch keeps the selection and the search", async ({ page }
   await list(page, "Albums")
     .getByRole("option", { name: /Album C2/ })
     .click();
-  await list(page, "Songs")
-    .getByRole("option", { name: /Song 4 of Album C2/ })
+  await songsGrid(page)
+    .getByRole("row", { name: /Song 4 of Album C2/ })
     .click();
   await mode(page, "Tree");
   await mode(page, "Columns");
@@ -59,7 +59,7 @@ test("P6-AC2: a mode switch keeps the selection and the search", async ({ page }
     "true",
   );
   await expect(list(page, "Albums").getByRole("option", { name: /Album C2/ })).toHaveAttribute("aria-selected", "true");
-  await expect(list(page, "Songs").getByRole("option", { name: /Song 4 of Album C2/ })).toHaveAttribute(
+  await expect(songsGrid(page).getByRole("row", { name: /Song 4 of Album C2/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -84,13 +84,13 @@ test("P6-AC3: search folds accents, and the Tree rule shows whole albums on a na
 test("P6-AC4: double-click and Enter play by the queue rule in each mode", async ({ page }) => {
   await openLibrary(page);
   await list(page, "Artists").getByRole("option", { name: "Artist 01", exact: true }).click();
-  const songs = list(page, "Songs");
-  await songs.getByRole("option", { name: /Song 3 of Album A1/ }).dblclick();
+  const songs = songsGrid(page);
+  await songs.getByRole("row", { name: /Song 3 of Album A1/ }).dblclick();
   let play = await lastPlay(page);
   expect(play.ids).toHaveLength(30);
   expect(play.ids[play.start]).toBe(32);
 
-  await songs.getByRole("option", { name: /Song 5 of Album A1/ }).click();
+  await songs.getByRole("row", { name: /Song 5 of Album A1/ }).click();
   await songs.press("Enter");
   play = await lastPlay(page);
   expect(play.ids[play.start]).toBe(34);
@@ -123,7 +123,7 @@ async function outlineOf(row: Locator): Promise<string> {
 
 test("P6-AC5: arrow keys, Enter, Ctrl+F and Esc, with the active row outlined", async ({ page }) => {
   await openLibrary(page);
-  const songs = list(page, "Songs");
+  const songs = songsGrid(page);
   await songs.focus();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowDown");
@@ -138,7 +138,7 @@ test("P6-AC5: arrow keys, Enter, Ctrl+F and Esc, with the active row outlined", 
   // Scrolled away with the wheel, the active row stays the starting point.
   await songs.hover();
   await page.mouse.wheel(0, 3_000);
-  await expect(songs.getByRole("option", { name: /Song 1 of Album A0/ })).toBeHidden();
+  await expect(songs.getByRole("row", { name: /Song 1 of Album A0/ })).toBeHidden();
   await page.keyboard.press("ArrowDown");
   await expect(songs.locator("[data-active]")).toContainText("Song 3 of Album A0");
 
@@ -180,7 +180,7 @@ test("P6-AC5: arrow keys, Enter, Ctrl+F and Esc, with the active row outlined", 
 
 test("P6-AC7: a song with another tag artist shows both names", async ({ page }) => {
   await openLibrary(page);
-  const row = list(page, "Songs").getByRole("option", { name: /Song 3 of Album A0/ });
+  const row = songsGrid(page).getByRole("row", { name: /Song 3 of Album A0/ });
   await expect(row).toContainText("Artist 00 feat. Guest");
   await expect(row).toContainText("Album A0");
 });
@@ -190,17 +190,17 @@ test("P6-AC9: the selected row is identifiable in grayscale", async ({ page }) =
   await page.evaluate(() => {
     document.documentElement.style.filter = "grayscale(1)";
   });
-  const songs = list(page, "Songs");
-  await songs.getByRole("option", { name: /Song 2 of Album A0/ }).click();
+  const songs = songsGrid(page);
+  await songs.getByRole("row", { name: /Song 2 of Album A0/ }).click();
   await page.mouse.move(0, 0);
-  const selected = await grayProfile(page, songs.getByRole("option", { name: /Song 2 of Album A0/ }));
-  const plain = await grayProfile(page, songs.getByRole("option", { name: /Song 4 of Album A0/ }));
+  const selected = await grayProfile(page, songs.getByRole("row", { name: /Song 2 of Album A0/ }));
+  const plain = await grayProfile(page, songs.getByRole("row", { name: /Song 4 of Album A0/ }));
   expect(selected.left - plain.left).toBeGreaterThan(100);
 });
 
 test("P6-AC10: Shift+F10 and the ContextMenu key open the menu of the active row", async ({ page }) => {
   await openLibrary(page);
-  const songs = list(page, "Songs");
+  const songs = songsGrid(page);
   await songs.focus();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Shift+F10");
@@ -219,15 +219,15 @@ test("P6-AC10: Shift+F10 and the ContextMenu key open the menu of the active row
 
 test("P6.4: the playing song shows the playing icon and label", async ({ page }) => {
   await openLibrary(page);
-  const songs = list(page, "Songs");
-  await expect(songs.getByRole("option", { name: /Playing.*Song 4 of Album A0/ })).toBeVisible();
-  await expect(songs.getByRole("option", { name: /Song 5 of Album A0/ })).not.toContainText("Playing");
+  const songs = songsGrid(page);
+  await expect(songs.getByRole("row", { name: /Playing.*Song 4 of Album A0/ })).toBeVisible();
+  await expect(songs.getByRole("row", { name: /Song 5 of Album A0/ })).not.toContainText("Playing");
 });
 
 test("P6-AC2: a song selected under All shows selected in Tree", async ({ page }) => {
   await openLibrary(page);
-  await list(page, "Songs")
-    .getByRole("option", { name: /Song 2 of Album B0/ })
+  await songsGrid(page)
+    .getByRole("row", { name: /Song 2 of Album B0/ })
     .click();
   await mode(page, "Tree");
   const song = tree(page).getByRole("treeitem", { name: /Song 2 of Album B0/ });
@@ -269,7 +269,7 @@ test("P6: a search that hides the selected artist selects All", async ({ page })
     "aria-selected",
     "true",
   );
-  await expect(list(page, "Songs").getByRole("option")).toHaveCount(3);
+  await expect(songsGrid(page).locator(SONG_ROWS)).toHaveCount(3);
 });
 
 test("P6: right-click on a Tree row opens the menu without opening or closing the row", async ({ page }) => {
@@ -286,7 +286,7 @@ test("P6: right-click on a Tree row opens the menu without opening or closing th
 
 test("P6-AC5: Ctrl+F reaches the search field when Library is a hidden tab", async ({ page }) => {
   await openLibrary(page);
-  await page.evaluate(() => window.e2e.addAsTab("queue", "library"));
+  await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "library"));
   await expect(widget(page, "library")).toBeHidden();
   await page.keyboard.press("Control+f");
   const field = widget(page, "library").getByRole("searchbox", { name: "Search" });

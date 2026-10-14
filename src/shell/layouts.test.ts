@@ -1,10 +1,11 @@
 import type { DockviewApi } from "dockview-react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
+import { useCollapseStore } from "@/store/collapse";
+import { useUiStore } from "@/store/ui";
 import {
-  LAYOUTS,
-  applyLayout,
   applyMeasureLayout,
+  applyPreset,
   attachDock,
   defaultArrangement,
   guardLibrary,
@@ -19,6 +20,8 @@ interface Added {
   tabComponent?: string;
   minimumWidth?: number;
   minimumHeight?: number;
+  initialWidth?: number;
+  inactive?: boolean;
   position?: unknown;
 }
 
@@ -37,7 +40,10 @@ function dockStandIn() {
       if (panels.some((panel) => panel.id === options.id)) throw new Error(`duplicate ${options.id}`);
       panels.push(options);
     },
-    getPanel: (id: string) => panels.find((panel) => panel.id === id),
+    getPanel: (id: string) => {
+      const panel = panels.find((added) => added.id === id);
+      return panel && { ...panel, api: { setActive: () => {} } };
+    },
     removePanel: (panel: { id: string }) => remove(panel.id),
     clear: () => [...panels].forEach((panel) => remove(panel.id)),
     onDidRemovePanel: (listener: (panel: { id: string }) => void) => {
@@ -53,15 +59,17 @@ beforeEach(() => {
   attachDock(null);
 });
 
-describe("defaultArrangement (P2.4)", () => {
-  it("adds Library, then Now playing below it and Transport controls beside Now playing", () => {
+describe("defaultArrangement: the default preset (DK-8, UD6)", () => {
+  it("adds Library, Playlists left at 240 px, Play queue right at 280 px and Lyrics as its inactive tab", () => {
     const { api, panels } = dockStandIn();
     defaultArrangement(api);
-    expect(panels.map((panel) => [panel.id, panel.position])).toEqual([
-      ["library", undefined],
-      ["nowPlaying", { referencePanel: "library", direction: "below" }],
-      ["transport", { referencePanel: "nowPlaying", direction: "right" }],
+    expect(panels.map((panel) => [panel.id, panel.position, panel.initialWidth, panel.inactive])).toEqual([
+      ["library", undefined, undefined, undefined],
+      ["playlists", { referencePanel: "library", direction: "left" }, 240, undefined],
+      ["queue", { referencePanel: "library", direction: "right" }, 280, undefined],
+      ["lyrics", { referencePanel: "queue", direction: "within" }, undefined, true],
     ]);
+    expect(api.getPanel("nowPlaying")).toBeUndefined();
   });
 
   it("gives each panel its registry minimum and the Library tab variant (D33, P2.3)", () => {
@@ -69,35 +77,42 @@ describe("defaultArrangement (P2.4)", () => {
     defaultArrangement(api);
     expect(panels.map((panel) => [panel.id, panel.tabComponent, panel.minimumWidth, panel.minimumHeight])).toEqual([
       ["library", "library", 320, 240],
-      ["nowPlaying", "widget", 240, 112],
-      ["transport", "widget", 320, 112],
+      ["playlists", "widget", 56, 160],
+      ["queue", "widget", 200, 160],
+      ["lyrics", "widget", 200, 160],
     ]);
   });
 });
 
-describe("applyLayout and resetLayout (P2.4)", () => {
-  it.each(LAYOUTS)("applies %s: the default arrangement and its Library mode", (id) => {
+describe("applyPreset and resetLayout (P2.4, UD6)", () => {
+  it("a preset replaces the arrangement and keeps the Library mode", () => {
     const { api } = dockStandIn();
     defaultArrangement(api);
-    setWidgetVisible("queue", true, api);
-    applyLayout(id, api);
-    expect(visibleWidgets(api)).toEqual(["library", "transport", "nowPlaying"]);
-    expect(useLibraryStore.getState().mode).toBe(id);
+    useLibraryStore.setState({ mode: "tree" });
+    useCollapseStore.setState({ sizes: { g1: { axis: "width", size: 320 } } });
+    applyPreset("compact", api);
+    expect(visibleWidgets(api)).toEqual(["library"]);
+    expect(useLibraryStore.getState().mode).toBe("tree");
+    // New groups can reuse ids: the old collapse sizes go with the old arrangement.
+    expect(useCollapseStore.getState().sizes).toEqual({});
   });
 
-  it("reset applies Columns", () => {
+  it("reset applies the default preset, Columns, the band at the top and unlocked (UD6)", () => {
     const { api } = dockStandIn();
     useLibraryStore.setState({ mode: "tree" });
+    useUiStore.setState({ transportPosition: "bottom", locked: true });
     resetLayout(api);
+    expect(useUiStore.getState()).toMatchObject({ transportPosition: "top", locked: false });
     expect(useLibraryStore.getState().mode).toBe("columns");
-    expect(visibleWidgets(api)).toEqual(["library", "transport", "nowPlaying"]);
+    expect(visibleWidgets(api)).toEqual(["library", "playlists", "queue", "lyrics"]);
   });
 
   it("keeps exactly one Library over 20 applications with the guard on", async () => {
     const { api, panels } = dockStandIn();
     guardLibrary(api);
     defaultArrangement(api);
-    for (let index = 0; index < 20; index += 1) applyLayout(LAYOUTS[index % 3], api);
+    const presets = ["appleMusicClassic", "musicBee", "compact"] as const;
+    for (let index = 0; index < 20; index += 1) applyPreset(presets[index % 3], api);
     await Promise.resolve();
     expect(panels.filter((panel) => panel.id === "library")).toHaveLength(1);
   });
@@ -110,7 +125,7 @@ describe("applyLayout and resetLayout (P2.4)", () => {
         throw new Error("boom");
       },
     } as unknown as DockviewApi;
-    expect(() => applyLayout("tree", failing)).toThrow("boom");
+    expect(() => applyPreset("compact", failing)).toThrow("boom");
     expect(isReplacing()).toBe(false);
   });
 
@@ -118,11 +133,10 @@ describe("applyLayout and resetLayout (P2.4)", () => {
     expect(() => resetLayout()).not.toThrow();
   });
 
-  it.each(LAYOUTS)("applying %s restores the frame sizes of all modes (P22-AC1, R28.1)", (id) => {
+  it("a preset restores the frame sizes of all modes (R28.1 v1.8)", () => {
     const { api } = dockStandIn();
-    useLibraryStore.getState().setFrames("columns", [0.1, 0.1, 0.8]);
-    useLibraryStore.getState().setFrames("rows", [0.8, 0.2]);
-    applyLayout(id, api);
+    useLibraryStore.getState().setFrames("columns", [0.6, 0.2, 0.2]);
+    applyPreset("musicBee", api);
     expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
   });
 
@@ -135,38 +149,40 @@ describe("applyLayout and resetLayout (P2.4)", () => {
 });
 
 describe("applyMeasureLayout (P3.1)", () => {
-  it("shows all six widgets in the given mode", () => {
-    const { api } = dockStandIn();
+  it("shows all five dock widgets in the given mode, Lyrics in its own group", () => {
+    const { api, panels } = dockStandIn();
     guardLibrary(api);
     defaultArrangement(api);
     applyMeasureLayout("topBottom", api);
-    expect(visibleWidgets(api)).toEqual(["library", "transport", "nowPlaying", "playlists", "queue", "lyrics"]);
+    expect(visibleWidgets(api)).toEqual(["library", "nowPlaying", "playlists", "queue", "lyrics"]);
+    expect(panels.find((panel) => panel.id === "lyrics")?.position).toEqual({
+      referencePanel: "queue",
+      direction: "below",
+    });
     expect(useLibraryStore.getState().mode).toBe("topBottom");
   });
 });
 
 describe("setWidgetVisible (R29 non-drag path)", () => {
-  it("shows Playlists, Play queue and Lyrics right of Library and hides them again", () => {
+  it("puts each widget back where the default preset has it, and hides it again", () => {
     const { api, panels } = dockStandIn();
     defaultArrangement(api);
-    for (const id of ["playlists", "queue", "lyrics"] as const) {
-      setWidgetVisible(id, true, api);
-      expect(panels.at(-1)).toMatchObject({ id, position: { referencePanel: "library", direction: "right" } });
+    const cases = [
+      ["queue", { referencePanel: "lyrics", direction: "within" }],
+      ["lyrics", { referencePanel: "queue", direction: "within" }],
+      ["playlists", { referencePanel: "library", direction: "left" }],
+      ["nowPlaying", { referencePanel: "playlists", direction: "below" }],
+    ] as const;
+    for (const [id, position] of cases) {
       setWidgetVisible(id, false, api);
-      expect(api.getPanel(id)).toBeUndefined();
+      setWidgetVisible(id, true, api);
+      expect(panels.at(-1)).toMatchObject({ id, position });
     }
-  });
-
-  it("puts Now playing back left of Transport controls, or below Library alone", () => {
-    const { api, panels } = dockStandIn();
-    defaultArrangement(api);
-    setWidgetVisible("nowPlaying", false, api);
+    for (const id of ["nowPlaying", "playlists", "queue", "lyrics"] as const) setWidgetVisible(id, false, api);
+    setWidgetVisible("queue", true, api);
+    expect(panels.at(-1)?.position).toEqual({ referencePanel: "library", direction: "right" });
     setWidgetVisible("nowPlaying", true, api);
-    expect(panels.at(-1)?.position).toMatchObject({ direction: "left" });
-    setWidgetVisible("nowPlaying", false, api);
-    setWidgetVisible("transport", false, api);
-    setWidgetVisible("transport", true, api);
-    expect(panels.at(-1)?.position).toEqual({ referencePanel: "library", direction: "below" });
+    expect(panels.at(-1)?.position).toEqual({ referencePanel: "library", direction: "left" });
   });
 
   it("never hides Library (R28)", () => {
@@ -205,7 +221,7 @@ describe("guardLibrary (P2.3)", () => {
     const tasks: (() => void)[] = [];
     guardLibrary(api, (task) => tasks.push(task));
     defaultArrangement(api);
-    applyLayout("tree", api);
+    applyPreset("musicBee", api);
     expect(tasks).toEqual([]);
   });
 });

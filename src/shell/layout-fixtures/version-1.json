@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 1,
   "libraryMode": "tree",
   "dock": {
     "grid": {
@@ -12,6 +12,15 @@
               "views": ["library"],
               "activeView": "library",
               "id": "0"
+            },
+            "size": 100
+          },
+          {
+            "type": "leaf",
+            "data": {
+              "views": ["queue"],
+              "activeView": "queue",
+              "id": "1"
             },
             "size": 100
           }
@@ -28,6 +37,12 @@
         "contentComponent": "library",
         "tabComponent": "library",
         "title": "library"
+      },
+      "queue": {
+        "id": "queue",
+        "contentComponent": "queue",
+        "tabComponent": "widget",
+        "title": "queue"
       }
     },
     "activeGroup": "0"

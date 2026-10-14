@@ -1,5 +1,5 @@
 import { commands } from "@/lib/ipc/commands";
-import { focusLibrarySearch, resetLayout } from "@/shell/layouts";
+import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
 
 /** Reset layout shortcut (D17, R29). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
@@ -35,9 +35,14 @@ function inTextField(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type);
 }
 
+/** A focused table column header sorts on Space (AX-1, U4 keyboard path). */
+function onColumnHeader(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest('[role="columnheader"]') !== null;
+}
+
 /**
- * Space toggles play and pause everywhere except in text fields and in open menus and dialogs
- * (D17, P7.11). On a focused button it does not press the button.
+ * Space toggles play and pause everywhere except in text fields, on a table column header and in
+ * open menus and dialogs (D17, P7.11, AX-1). On a focused button it does not press the button.
  */
 export function isPlaybackSpace(event: KeyboardEvent): boolean {
   return (
@@ -46,6 +51,7 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
     !event.altKey &&
     !event.metaKey &&
     !inTextField(event.target) &&
+    !onColumnHeader(event.target) &&
     !inMenuOrDialog(event.target)
   );
 }
@@ -55,11 +61,14 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
  * in a hidden tab has no layout box, so it is skipped.
  */
 export function widgetRegions(root: ParentNode = document): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>("[data-widget]")]
-    .map((element) => ({ element, rect: element.getBoundingClientRect() }))
-    .filter(({ rect }) => rect.width > 0 && rect.height > 0)
-    .sort((a, b) => Math.round(a.rect.top) - Math.round(b.rect.top) || a.rect.left - b.rect.left)
-    .map(({ element }) => element);
+  return (
+    [...root.querySelectorAll<HTMLElement>("[data-widget]")]
+      .map((element) => ({ element, rect: element.getBoundingClientRect() }))
+      // A widget in an inert container (the dock while the mini player shows, UD19) is skipped.
+      .filter(({ element, rect }) => rect.width > 0 && rect.height > 0 && !element.closest("[inert]"))
+      .sort((a, b) => Math.round(a.rect.top) - Math.round(b.rect.top) || a.rect.left - b.rect.left)
+      .map(({ element }) => element)
+  );
 }
 
 /** The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. */
@@ -81,7 +90,11 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
     return focusLibrarySearch(doc);
   }
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
-    nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey)?.focus();
+    const region = nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey);
+    // The widget becomes the active dock panel, so the Layout menu acts on it (UD17). Dockview
+    // can move focus while it activates a panel, so the region takes focus after it.
+    if (region?.dataset.widget) activateWidget(region.dataset.widget);
+    region?.focus();
     return true;
   }
   return false;

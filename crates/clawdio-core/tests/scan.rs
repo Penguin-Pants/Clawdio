@@ -39,7 +39,7 @@ fn library_json(index: &RwLock<LibraryIndex>) -> Value {
                     "artist": artist.name,
                     "albums": albums.into_iter().map(|album| {
                         let scope = SongScope { artist: None, album: Some(album.id) };
-                        let ids = index.song_ids(scope, "").unwrap();
+                        let ids = index.song_ids(scope, "", &[]).unwrap();
                         let songs: Vec<Value> = ids.iter().map(|id| {
                             let track = index.track(*id).unwrap();
                             json!([track.data.title, track.data.track_no])

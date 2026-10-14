@@ -61,9 +61,43 @@ export async function settle(page: Page): Promise<void> {
   await page.evaluate(() => Promise.allSettled(document.getAnimations().map((animation) => animation.finished)));
 }
 
+/** Closes the open menu; Escape closes one level, so an open submenu takes a second press. */
 export async function closeMenu(page: Page): Promise<void> {
-  await page.keyboard.press("Escape");
+  const menus = page.getByRole("menu");
+  for (let open = await menus.count(); open > 0; open = await menus.count()) {
+    await page.keyboard.press("Escape");
+    await expect(menus).toHaveCount(open - 1);
+  }
+}
+
+/** Shows or hides a widget from the menu; does nothing when it already is that way. */
+export async function setWidgetShown(page: Page, name: string, shown: boolean): Promise<void> {
+  await openMenu(page);
+  const item = page.getByRole("menuitemcheckbox", { name, exact: true });
+  if ((await item.getAttribute("aria-checked")) !== String(shown)) await item.click();
+  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
+}
+
+/** Runs an item of a group's "Widget options" menu (Float, Dock, Collapse, Restore; UD17, UD25). */
+export async function groupAction(page: Page, id: string, title: string, name: string): Promise<void> {
+  await group(page, id)
+    .getByRole("button", { name: `${title} options` })
+    .click();
+  await page.getByRole("menuitem", { name, exact: true }).click();
   await expect(page.getByRole("menu")).toHaveCount(0);
+}
+
+/** The body rows of the Songs table (UD8): the header row has no `aria-selected`. */
+export const SONG_ROWS = "[role='row'][aria-selected]";
+
+/** The Songs table of the Library (a grid since U4). */
+export function songsGrid(page: Page): Locator {
+  return page.locator('[data-widget="library"]').getByRole("grid", { name: "Songs" });
+}
+
+/** The transport band (SH-2): the fixed band outside the dock. */
+export function band(page: Page): Locator {
+  return page.locator('[data-widget="transport"]');
 }
 
 /** Drags with the pointer from one point to another in small steps (the dock uses pointer drag). */

@@ -81,6 +81,31 @@ pub struct SongRow {
     /// The tag artist, when it differs from the folder artist (R5).
     pub tag_artist: Option<String>,
     pub duration_ms: u32,
+    /// The track number tag, for the `#` column (UD8, UD11).
+    pub track_no: Option<u32>,
+    /// The disc number tag.
+    pub disc: Option<u32>,
+}
+
+/// A Songs table column that sorts (UD11).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum SortColumn {
+    Track,
+    Title,
+    Artist,
+    Album,
+    Duration,
+}
+
+/// One sort key of the Songs table: a column and its direction (TB-8, TB-13).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SortKey {
+    pub column: SortColumn,
+    pub descending: bool,
 }
 
 /// The Songs list scope: a selected artist and album, or none for "All" (R28).

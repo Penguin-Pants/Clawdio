@@ -123,6 +123,19 @@ Package sizes (`measure.yml` run 38204302435): NSIS installer 5.12 MiB (5,365,65
 | One tag builds all four packages (P18-AC1) | Not run: no release tag was pushed | Not run |
 | Licenses (P18.4): `cargo deny`, `NOTICE` and third-party files current | Pass: CI job `licenses` on `907a0e4` (run 38293560366). P20 adds no crate: `windows` 0.62.2 was already in `NOTICE`. | Same CI job |
 
+## UI shell rework manual rows (U7, October 13, 2026)
+
+The full checklist is in `docs/ui-audit.md` (U7). The manual rows:
+
+| Check | Linux (WebKitGTK, real app, Xvfb) | Windows 11 (WebView2) |
+|---|---|---|
+| TA-2: choose the music folder with the native dialog (Rust picker, D13) | Partly: Settings, Change folder opens the GTK "Select Folder" dialog. A completed choice was not automated: the dialog's location entry completes typed paths, so `xdotool` input lands on the wrong folder. | Not run (no Windows machine, B5) |
+| TA-3: the shell in the platform webview | Pass: each U phase ran the real app (band, presets, separators, table, mini player, row drag) | Not run |
+| Mini player window (TR-9) | Pass: 1200 x 800 to 400 x 40 and back | Not run |
+| Window position restore (PS-5, UD14) | Not run: no window manager, so no Moved event | Not run |
+| PF-3 on the reference machine (UQ3) | Not applicable (the reference machine is the owner's Windows machine) | Not run |
+| Release workflow packages (`release.yml`) for the checklist | Not run: the checks used the dev build; a release dispatch is an owner action | Not run |
+
 ## Licenses (P18.4)
 
 | Check | Result |

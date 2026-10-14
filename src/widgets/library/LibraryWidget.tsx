@@ -4,12 +4,14 @@ import { Icon, type IconName } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chooseMusicFolder } from "@/dialogs/SettingsDialog";
+import { observeSize } from "@/lib/resize";
 import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/library";
+import type { ViewId } from "./columns";
 import { FrameSplit } from "./FrameSplit";
-import { AlbumList, ArtistList, SongList, TreeList } from "./lists";
+import { AlbumList, ArtistList, SongTable, TreeList } from "./lists";
 
 /** Below this widget width the mode switch becomes a dropdown (R28). */
 export const NARROW_WIDTH = 360;
@@ -80,7 +82,9 @@ export const SEARCH_DEBOUNCE_MS = 120;
 function focusLibraryList(from: HTMLElement) {
   from
     .closest('[data-widget="library"]')
-    ?.querySelector<HTMLElement>('[data-library-body] [role="listbox"], [data-library-body] [role="tree"]')
+    ?.querySelector<HTMLElement>(
+      '[data-library-body] [role="listbox"], [data-library-body] [role="tree"], [data-library-body] [role="grid"]',
+    )
     ?.focus();
 }
 
@@ -132,7 +136,7 @@ function SearchField() {
 function ListFrame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex size-full min-h-0 min-w-0 flex-col">
-      <div aria-hidden="true" className="px-2 py-1 text-[13px] text-text-secondary">
+      <div aria-hidden="true" data-frame-label="" className="px-2 py-1 text-[13px] text-text-secondary">
         {label}
       </div>
       {children}
@@ -156,14 +160,17 @@ const ALBUM_FRAME = {
     </ListFrame>
   ),
 };
-const SONGS_FRAME = {
+/** The Songs frame of a mode: the table with that mode's column state (TB-9, UD8). */
+const songsFrame = (view: ViewId) => ({
   id: "songs",
   content: (
     <ListFrame label="Songs">
-      <SongList showAlbum />
+      <SongTable view={view} />
     </ListFrame>
   ),
-};
+});
+const COLUMNS_SONGS = songsFrame("songs.columns");
+const TOP_BOTTOM_SONGS = songsFrame("songs.topBottom");
 const TOP_ROW_FRAME = {
   id: "top",
   content: (
@@ -189,14 +196,14 @@ function LibraryBody({ mode }: { mode: LibraryMode }) {
         <FrameSplit
           group="columns"
           orientation={Orientation.HORIZONTAL}
-          views={[ARTIST_FRAME, ALBUM_FRAME, SONGS_FRAME]}
+          views={[ARTIST_FRAME, ALBUM_FRAME, COLUMNS_SONGS]}
         />
       </div>
     );
   }
   return (
     <div key="topBottom" data-library-body="topBottom" className="flex min-h-0 flex-1 flex-col">
-      <FrameSplit group="rows" orientation={Orientation.VERTICAL} views={[TOP_ROW_FRAME, SONGS_FRAME]} />
+      <FrameSplit group="rows" orientation={Orientation.VERTICAL} views={[TOP_ROW_FRAME, TOP_BOTTOM_SONGS]} />
     </div>
   );
 }
@@ -235,11 +242,8 @@ export function LibraryWidget() {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setNarrow(entry.contentRect.width < NARROW_WIDTH);
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
+    // Once per frame of resizes (PF-2, UD24).
+    return observeSize(element, (entry) => setNarrow(entry.contentRect.width < NARROW_WIDTH));
   }, []);
   return (
     <div ref={ref} className="flex size-full flex-col">

@@ -1,13 +1,41 @@
 //! Index queries behind the library commands (section 6.7). P6.1 finishes them.
 //! A query matches folded text (D4) against artist, album and song title (R6).
 
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
 use super::group::group_cmp;
 use super::{Album, AlbumId, Artist, ArtistId, LibraryIndex, Track, TrackId};
-use crate::api::{AlbumRow, ArtistRow, SongRow, SongScope, TreeAlbum, TreeArtist};
+use crate::api::{
+    AlbumRow, ArtistRow, SongRow, SongScope, SortColumn, SortKey, TreeAlbum, TreeArtist,
+};
 use crate::error::CoreError;
 use crate::fold::{fold, natural_cmp};
+
+/// At most a primary and a secondary sort key (TB-13).
+const MAX_SORT_KEYS: usize = 2;
+
+/// A sort value of one track: folded text or a number. A song with no number sorts last, also in
+/// a descending sort.
+enum SortValue {
+    Text(String),
+    Number(Option<u32>),
+}
+
+impl SortValue {
+    fn cmp_value(&self, other: &SortValue) -> Ordering {
+        match (self, other) {
+            (SortValue::Text(a), SortValue::Text(b)) => natural_cmp(a, b),
+            (SortValue::Number(a), SortValue::Number(b)) => match (a, b) {
+                (Some(a), Some(b)) => a.cmp(b),
+                (Some(_), None) => Ordering::Less,
+                (None, Some(_)) => Ordering::Greater,
+                (None, None) => Ordering::Equal,
+            },
+            _ => Ordering::Equal,
+        }
+    }
+}
 
 /// A folded search query. Empty matches everything.
 struct Query(String);
@@ -190,8 +218,85 @@ impl LibraryIndex {
             .collect()
     }
 
-    /// Ids of the matching songs in a scope, in artist, album and song order.
-    pub fn song_ids(&self, scope: SongScope, query: &str) -> Result<Vec<TrackId>, CoreError> {
+    /// Ids of the matching songs in a scope. With no sort keys: artist, album and song order
+    /// (R4). With one or two keys (UD11, TB-8, TB-13): sorted by them, ties in the R4 order.
+    pub fn song_ids(
+        &self,
+        scope: SongScope,
+        query: &str,
+        sort: &[SortKey],
+    ) -> Result<Vec<TrackId>, CoreError> {
+        if sort.len() > MAX_SORT_KEYS {
+            return Err(CoreError::Invalid("at most two sort keys".into()));
+        }
+        let ids = self.r4_song_ids(scope, query)?;
+        Ok(if sort.is_empty() {
+            ids
+        } else {
+            self.sorted(ids, sort)
+        })
+    }
+
+    /// The value of one sort column for a track: text is folded (D4), numbers stay numbers.
+    fn sort_value(&self, track: &Track, column: SortColumn) -> SortValue {
+        match column {
+            SortColumn::Track => SortValue::Number(track.data.track_no),
+            SortColumn::Duration => SortValue::Number(Some(track.data.duration_ms)),
+            SortColumn::Title => SortValue::Text(track.key.clone()),
+            SortColumn::Album => SortValue::Text(
+                self.album(track.album)
+                    .map(|album| album.key.clone())
+                    .unwrap_or_default(),
+            ),
+            // The Artist column shows the tag artist when there is one, else the folder artist.
+            SortColumn::Artist => SortValue::Text(match &track.data.tag_artist {
+                Some(tag) => fold(tag),
+                None => self
+                    .artist(track.artist)
+                    .map(|artist| artist.key.clone())
+                    .unwrap_or_default(),
+            }),
+        }
+    }
+
+    /// A stable sort by the keys: equal values keep their R4 order (UK4: each value is made once).
+    fn sorted(&self, ids: Vec<TrackId>, sort: &[SortKey]) -> Vec<TrackId> {
+        let mut rows: Vec<(TrackId, Vec<SortValue>)> = ids
+            .into_iter()
+            .map(|id| {
+                let values = match self.track(id) {
+                    Some(track) => sort
+                        .iter()
+                        .map(|key| self.sort_value(track, key.column))
+                        .collect(),
+                    None => Vec::new(),
+                };
+                (id, values)
+            })
+            .collect();
+        rows.sort_by(|(_, a), (_, b)| {
+            for (index, key) in sort.iter().enumerate() {
+                let (Some(left), Some(right)) = (a.get(index), b.get(index)) else {
+                    continue;
+                };
+                let order = match (left, right) {
+                    // A song with no number sorts last in both directions.
+                    (SortValue::Number(None), SortValue::Number(Some(_))) => Ordering::Greater,
+                    (SortValue::Number(Some(_)), SortValue::Number(None)) => Ordering::Less,
+                    _ if key.descending => left.cmp_value(right).reverse(),
+                    _ => left.cmp_value(right),
+                };
+                if order != Ordering::Equal {
+                    return order;
+                }
+            }
+            Ordering::Equal
+        });
+        rows.into_iter().map(|(id, _)| id).collect()
+    }
+
+    /// Ids of the matching songs in a scope, in artist, album and song order (R4).
+    fn r4_song_ids(&self, scope: SongScope, query: &str) -> Result<Vec<TrackId>, CoreError> {
         let query = Query::new(query);
         if let Some(id) = scope.album {
             let album = self
@@ -250,6 +355,8 @@ impl LibraryIndex {
                     artist_name,
                     album_name: album.map(|a| a.name.clone()).unwrap_or_default(),
                     duration_ms: track.data.duration_ms,
+                    track_no: track.data.track_no,
+                    disc: track.data.disc,
                 })
             })
             .collect()
@@ -374,7 +481,7 @@ mod tests {
                 .collect()
         };
         assert_eq!(
-            titles(index.song_ids(SongScope::default(), "").unwrap()),
+            titles(index.song_ids(SongScope::default(), "", &[]).unwrap()),
             [
                 "When I Kissed the Teacher",
                 "Dancing Queen",
@@ -389,11 +496,11 @@ mod tests {
             album: Some(lemonade),
         };
         assert_eq!(
-            titles(index.song_ids(scope, "").unwrap()),
+            titles(index.song_ids(scope, "", &[]).unwrap()),
             ["Pray You Catch Me", "Hold Up"]
         );
         assert_eq!(
-            titles(index.song_ids(SongScope::default(), "queen").unwrap()),
+            titles(index.song_ids(SongScope::default(), "queen", &[]).unwrap()),
             ["Dancing Queen"]
         );
     }
@@ -454,7 +561,7 @@ mod tests {
     }
 
     fn album_titles(index: &LibraryIndex) -> Vec<String> {
-        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        let ids = index.song_ids(SongScope::default(), "", &[]).unwrap();
         index
             .rows(&ids)
             .unwrap()
@@ -492,7 +599,7 @@ mod tests {
             album_titles(&index),
             ["A.mp3", "b.mp3", "intro.mp3", "1.mp3", "2.mp3", "1.mp3"]
         );
-        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        let ids = index.song_ids(SongScope::default(), "", &[]).unwrap();
         let paths: Vec<&str> = ids.iter().map(|id| index.rel_path(*id).unwrap()).collect();
         assert_eq!(
             &paths[3..],
@@ -504,7 +611,7 @@ mod tests {
         index.insert(disc_track("A/B/x/1.mp3", Some("x"), Some(2), Some(1)));
         index.insert(disc_track("A/B/y/2.mp3", Some("y"), Some(1), Some(2)));
         index.insert(disc_track("A/B/y/1.mp3", Some("y"), Some(1), Some(1)));
-        let ids = index.song_ids(SongScope::default(), "").unwrap();
+        let ids = index.song_ids(SongScope::default(), "", &[]).unwrap();
         let paths: Vec<&str> = ids.iter().map(|id| index.rel_path(*id).unwrap()).collect();
         assert_eq!(paths, ["A/B/y/1.mp3", "A/B/y/2.mp3", "A/B/x/1.mp3"]);
     }
@@ -519,5 +626,137 @@ mod tests {
         assert_eq!(index.track(first).unwrap().data.track_no, Some(7));
         assert!(index.remove_path("A/B/1.mp3"));
         assert!(index.is_empty());
+    }
+
+    fn sorted_titles(index: &LibraryIndex, sort: &[SortKey]) -> Vec<String> {
+        let ids = index.song_ids(SongScope::default(), "", sort).unwrap();
+        index
+            .rows(&ids)
+            .unwrap()
+            .into_iter()
+            .map(|row| row.title)
+            .collect()
+    }
+
+    fn key(column: SortColumn, descending: bool) -> SortKey {
+        SortKey { column, descending }
+    }
+
+    #[test]
+    fn sorts_by_each_column_in_both_directions() {
+        let index = sample();
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Title, false)]),
+            [
+                "Dancing Queen",
+                "Hold Up",
+                "Pray You Catch Me",
+                "Waterloo",
+                "When I Kissed the Teacher"
+            ]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Title, true)]),
+            [
+                "When I Kissed the Teacher",
+                "Waterloo",
+                "Pray You Catch Me",
+                "Hold Up",
+                "Dancing Queen"
+            ]
+        );
+        // Ties keep the R4 order: ABBA before Beyoncé, then album and track order.
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Track, false)]),
+            [
+                "When I Kissed the Teacher",
+                "Waterloo",
+                "Pray You Catch Me",
+                "Dancing Queen",
+                "Hold Up"
+            ]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Duration, true)])[..2],
+            ["Dancing Queen", "Hold Up"]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Artist, true)])[..2],
+            ["Pray You Catch Me", "Hold Up"]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Album, false)])[..3],
+            ["When I Kissed the Teacher", "Dancing Queen", "Waterloo"]
+        );
+    }
+
+    #[test]
+    fn a_song_with_no_track_number_sorts_last_in_both_directions() {
+        let mut index = LibraryIndex::new();
+        index.insert(NewTrack {
+            track_no: None,
+            ..track("A", "X", "Loose", 9)
+        });
+        index.insert(track("A", "X", "One", 1));
+        index.insert(track("A", "X", "Two", 2));
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Track, false)]),
+            ["One", "Two", "Loose"]
+        );
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Track, true)]),
+            ["Two", "One", "Loose"]
+        );
+    }
+
+    #[test]
+    fn text_sorts_fold_accents_and_numbers_sort_naturally() {
+        let mut index = LibraryIndex::new();
+        index.insert(track("A", "X", "Song 10", 1));
+        index.insert(track("A", "X", "Émile", 2));
+        index.insert(track("A", "X", "Song 2", 3));
+        index.insert(track("A", "X", "emile", 4));
+        index.insert(track("A", "X", "Zed", 5));
+        assert_eq!(
+            sorted_titles(&index, &[key(SortColumn::Title, false)]),
+            ["Émile", "emile", "Song 2", "Song 10", "Zed"]
+        );
+    }
+
+    #[test]
+    fn a_second_key_breaks_ties_of_the_first() {
+        let index = sample();
+        assert_eq!(
+            sorted_titles(
+                &index,
+                &[key(SortColumn::Artist, false), key(SortColumn::Title, true)]
+            ),
+            [
+                "When I Kissed the Teacher",
+                "Waterloo",
+                "Dancing Queen",
+                "Pray You Catch Me",
+                "Hold Up"
+            ]
+        );
+    }
+
+    #[test]
+    fn more_than_two_sort_keys_are_refused() {
+        let index = sample();
+        let three = [key(SortColumn::Title, false); 3];
+        assert!(index.song_ids(SongScope::default(), "", &three).is_err());
+    }
+
+    #[test]
+    fn rows_carry_the_track_and_disc_numbers() {
+        let mut index = LibraryIndex::new();
+        index.insert(NewTrack {
+            disc: Some(2),
+            ..track("A", "X", "One", 7)
+        });
+        let ids = index.song_ids(SongScope::default(), "", &[]).unwrap();
+        let row = &index.rows(&ids).unwrap()[0];
+        assert_eq!((row.track_no, row.disc), (Some(7), Some(2)));
     }
 }
