@@ -1091,7 +1091,7 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
 - F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
 
-**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 12, F3 1, F4 0.
+**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 12, F3 0, F4 1.
 
 - F1 (fixed): the P3-AC1 e2e test clicked a playlist before it waited for `data-measure-ready`; the playlist view replaces the Library rows that the signal reads, so on a slow runner the signal never fired. The test waits for the signal first (`milestone.spec.ts`).
 - F2 (fixed): a playlist pick did not show a Library tab that another tab hid. `revealLibrary` brings it to the front; the widget in another group stays active and keeps the focus (`layouts.test.ts`, `playlists.spec.ts`).
@@ -1106,7 +1106,7 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F2 (fixed): Enter and double-click on a rail button only showed the playlist. They also play it, as in the list (`rail.spec.ts`).
 - F2 (fixed): a second Delete while the entries reloaded sent an old index, so it could remove a different song. A removal now waits until the entries read after the last one arrive (`playlists.spec.ts`).
 - F2 (fixed): DeepSource style findings in `playlists.test.ts` (a redundant `undefined` argument).
-- F3: DeepSource "empty arrow function" on `.catch(() => {})` in the view. The codebase drops a failed play or queue call this way everywhere; the owner set DeepSource JavaScript as advisory. No change.
+- F4: DeepSource "empty arrow function" on `.catch(() => {})` in the view. The codebase drops a failed play or queue call this way everywhere; the owner set DeepSource JavaScript as advisory. No change.
 
 ## 11. Plan review record
 
