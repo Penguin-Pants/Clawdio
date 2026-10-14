@@ -19,11 +19,12 @@ test("P3-AC1: the measurement arrangement shows all six widgets with data", asyn
   await expect(widget(page, "nowPlaying")).toContainText("Song 4 of Album A0");
   await expect(widget(page, "transport")).toContainText("1:23");
   await expect(widget(page, "transport")).toContainText("2:04");
+  // The app signals the measurement scripts once every widget shows data (P3.5). The signal
+  // reads the library rows, so it comes before the playlist view replaces them.
+  await expect(page.locator("body")).toHaveAttribute("data-measure-ready", "true");
   // A playlist shows its songs, a missing one too, in the Library (R12 v1.9).
   await widget(page, "playlists").getByRole("option", { name: /Mix 1/ }).click();
   await expect(widget(page, "library")).toContainText("missing");
-  // The app signals the measurement scripts once every widget shows data (P3.5).
-  await expect(page.locator("body")).toHaveAttribute("data-measure-ready", "true");
 });
 
 test("P3-AC1: Columns filters by artist and album and scrolls the songs", async ({ page }) => {
