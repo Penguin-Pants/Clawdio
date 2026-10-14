@@ -11,6 +11,7 @@ import {
   guardLibrary,
   isReplacing,
   resetLayout,
+  revealLibrary,
   setWidgetVisible,
   visibleWidgets,
 } from "./layouts";
@@ -223,5 +224,35 @@ describe("guardLibrary (P2.3)", () => {
     defaultArrangement(api);
     applyPreset("musicBee", api);
     expect(tasks).toEqual([]);
+  });
+});
+
+describe("revealLibrary (R12 v1.9, UD17)", () => {
+  /** A dock with a Library panel and an active panel, each in a named group. */
+  function revealStandIn(libraryVisible: boolean, activeGroup: string) {
+    const calls: string[] = [];
+    const panel = (id: string, group: string) => ({ id, group, api: { setActive: () => calls.push(id) } });
+    const library = { ...panel("library", "a"), api: { ...panel("library", "a").api, isVisible: libraryVisible } };
+    const active = panel("playlists", activeGroup);
+    const api = { getPanel: (id: string) => (id === "library" ? library : undefined), activePanel: active };
+    return { api: api as unknown as DockviewApi, calls };
+  }
+
+  it("brings a hidden Library tab to the front and keeps the widget in another group active", () => {
+    const { api, calls } = revealStandIn(false, "b");
+    revealLibrary(api);
+    expect(calls).toEqual(["library", "playlists"]);
+  });
+
+  it("leaves Library active when the active widget is a tab of the same group", () => {
+    const { api, calls } = revealStandIn(false, "a");
+    revealLibrary(api);
+    expect(calls).toEqual(["library"]);
+  });
+
+  it("does nothing when Library already shows", () => {
+    const { api, calls } = revealStandIn(true, "b");
+    revealLibrary(api);
+    expect(calls).toEqual([]);
   });
 });

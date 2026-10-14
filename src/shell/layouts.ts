@@ -226,6 +226,24 @@ export function guardLibrary(
 }
 
 /**
+ * Brings a Library tab that another tab hides to the front of its group, so a picked playlist
+ * shows (R12 v1.9). A widget in another group stays the active one and keeps the focus, so its
+ * keys and the Layout menu still act on it (UD17).
+ */
+export function revealLibrary(api: DockviewApi | null = dock): void {
+  const panel = api?.getPanel("library");
+  if (!api || !panel || panel.api.isVisible) return;
+  const active = api.activePanel;
+  const focused = document.activeElement;
+  panel.api.setActive();
+  if (active && active.group !== panel.group) active.api.setActive();
+  // The tab switch can drop the focus; the keys stay where they were.
+  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) {
+    focused.focus({ preventScroll: true });
+  }
+}
+
+/**
  * Ctrl+F (R25): activates the Library tab when it shares a group, leaves a shown playlist for
  * the library (R12 v1.9), then focuses the search field. A tab that was hidden mounts its body after the switch, so the focus waits up to a
  * few frames for the field. Returns false when there is no Library.

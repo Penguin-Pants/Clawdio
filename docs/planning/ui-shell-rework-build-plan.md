@@ -1091,6 +1091,14 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
 - F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
 
+**PR 24 review (CI and Codex):** F1 1, F2 4, F3 0, F4 0.
+
+- F1 (fixed): the P3-AC1 e2e test clicked a playlist before it waited for `data-measure-ready`; the playlist view replaces the Library rows that the signal reads, so on a slow runner the signal never fired. The test waits for the signal first (`milestone.spec.ts`).
+- F2 (fixed): a playlist pick did not show a Library tab that another tab hid. `revealLibrary` brings it to the front; the widget in another group stays active and keeps the focus (`layouts.test.ts`, `playlists.spec.ts`).
+- F2 (fixed): a custom order with many slots on one side clipped controls in the three-zone grid at LG. A side zone now never gets less than its content (`minmax(min-content,1fr)`), so the play controls move off center and nothing clips (`customize.spec.ts` at 900 and 1200 px).
+- F2 (fixed): the "Library" button dropped the keyboard focus to the page. It now goes back with the focus in the search field (`playlists.spec.ts`).
+- F2 (fixed): the playlist view said "empty" while its entries loaded and after a failed read. It shows nothing while loading and "Cannot read this playlist." on a failure (`PlaylistView.test.tsx`).
+
 ## 11. Plan review record
 
 TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 tested each one against the rework, the requirements, the code and the Dockview 8.5.1 typings.

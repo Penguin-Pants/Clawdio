@@ -296,3 +296,28 @@ test("P19-AC7, R33.1: a canceled scan stops import and repair with nothing chang
   await expect(list(page).getByRole("option", { name: /Road Trip_ 2026/ })).toHaveCount(0);
   await expect(list(page).getByRole("option", { name: /Mix 1/ })).toContainText("6");
 });
+
+test("R12 v1.9: a playlist pick brings a Library tab to the front and keeps the keys in Playlists", async ({
+  page,
+}) => {
+  await page.goto("/?data=library");
+  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  // Now playing becomes the visible tab in the Library group.
+  await page.evaluate(() => window.e2e.addAsTab("nowPlaying", "library"));
+  await expect(widget(page, "library")).toBeHidden();
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  await expect(view(page, "Mix 1")).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(view(page, "Mix 2")).toBeVisible();
+  await expect(list(page)).toBeFocused();
+});
+
+test("R12 v1.9, AX-1: the Library button by keyboard puts the focus in the Library search", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const back = widget(page, "library").getByRole("button", { name: "Library" });
+  await back.focus();
+  await page.keyboard.press("Enter");
+  await expect(songs(page)).toBeVisible();
+  await expect(widget(page, "library").getByRole("searchbox")).toBeFocused();
+});

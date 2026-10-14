@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chooseMusicFolder } from "@/dialogs/SettingsDialog";
 import { observeSize } from "@/lib/resize";
+import { focusLibrarySearch } from "@/shell/layouts";
 import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -240,7 +241,6 @@ function FolderMissing({ name }: { name: string | null }) {
 export function LibraryWidget() {
   const mode = useLibraryStore((state) => state.mode);
   const playlist = useLibraryStore((state) => state.playlist);
-  const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   const folderState = useSettingsStore((state) => (state.loaded ? state.view.folderState : "ready"));
   const folderName = useSettingsStore((state) => state.view.folderName);
   const ref = useRef<HTMLDivElement>(null);
@@ -255,7 +255,8 @@ export function LibraryWidget() {
     <div ref={ref} className="flex size-full flex-col">
       <div className="flex items-center gap-2 border-b px-2 py-1.5">
         {playlist !== null && folderState === "ready" ? (
-          <Button variant="ghost" size="sm" onClick={() => showPlaylist(null)}>
+          // Back to the lists, with the focus in the search field (AX-1).
+          <Button variant="ghost" size="sm" onClick={() => focusLibrarySearch()}>
             <Icon name="back" />
             Library
           </Button>

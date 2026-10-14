@@ -100,8 +100,10 @@ export function TransportBand() {
       tabIndex={-1}
       className={cn(
         "relative min-w-0 items-center gap-2 overflow-hidden bg-bg-surface px-2 whitespace-nowrap text-text-primary [grid-area:transport] focus-visible:-outline-offset-2",
-        // Equal side zones put the play controls in the middle of the band.
-        centered ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] content-center" : "flex",
+        // Equal side zones put the play controls in the middle of the band. A side zone never
+        // gets less than its content, so a long custom side moves the controls off center and
+        // clips nothing.
+        centered ? "grid grid-cols-[minmax(min-content,1fr)_auto_minmax(min-content,1fr)] content-center" : "flex",
         compact ? "h-(--size-transport-bar-compact) py-1" : "h-(--size-transport-bar) py-2",
         // An inset line, not a border, so the token height holds the content exactly (TH-1).
         position === "top"

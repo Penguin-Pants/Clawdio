@@ -9,6 +9,8 @@ import { EmptyHint } from "../hint";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { Row, SongCells, useRowHeight } from "./rows";
 
+const NO_ENTRIES: PlaylistEntry[] = [];
+
 /**
  * The songs of one playlist in the Library, in playlist order (R12 v1.9): it takes the place of
  * the Artist, Album and Songs lists. Enter and double-click play from that entry, Delete removes
@@ -18,11 +20,13 @@ import { Row, SongCells, useRowHeight } from "./rows";
 export function PlaylistView({ id }: { id: number }) {
   const rowHeight = useRowHeight();
   const playlist = usePlaylistsStore((state) => state.rows.find((row) => row.id === id));
-  const loaded = usePlaylistsStore((state) => state.version > 0);
+  const listsLoaded = usePlaylistsStore((state) => state.version > 0);
   const version = usePlaylistsStore((state) => state.version);
   const libraryVersion = useLibraryStore((state) => state.version);
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
-  const [entries, setEntries] = useState<PlaylistEntry[]>([]);
+  // null while the first read runs; a failed read is not an empty playlist.
+  const [loaded, setLoaded] = useState<PlaylistEntry[] | "failed" | null>(null);
+  const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
   // After a removal the active row stays inside the shorter list.
@@ -35,16 +39,16 @@ export function PlaylistView({ id }: { id: number }) {
   useEffect(() => {
     let current = true;
     commands.playlistEntries(id).then(
-      (list) => current && setEntries(list),
-      () => current && setEntries([]),
+      (list) => current && setLoaded(list),
+      () => current && setLoaded("failed"),
     );
     return () => {
       current = false;
     };
   }, [id, version]);
   useEffect(() => {
-    if (loaded && !playlist) showPlaylist(null);
-  }, [loaded, playlist, showPlaylist]);
+    if (listsLoaded && !playlist) showPlaylist(null);
+  }, [listsLoaded, playlist, showPlaylist]);
 
   const onRange = useCallback(
     (start: number, end: number) =>
@@ -70,7 +74,9 @@ export function PlaylistView({ id }: { id: number }) {
       <div aria-hidden="true" data-frame-label="" className="px-2 py-1 text-[13px] text-text-secondary">
         {playlist.name} · {playlist.entryCount === 1 ? "1 song" : `${playlist.entryCount} songs`}
       </div>
-      {entries.length === 0 ? (
+      {loaded === null ? null : loaded === "failed" ? (
+        <EmptyHint>Cannot read this playlist.</EmptyHint>
+      ) : entries.length === 0 ? (
         <EmptyHint>This playlist is empty. Add songs from the Library.</EmptyHint>
       ) : (
         <VirtualList

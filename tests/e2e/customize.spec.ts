@@ -117,3 +117,36 @@ test("TR-10: the play controls sit in the middle of the band and move to the sta
   await expect(band(page).locator("[data-zone]")).toHaveCount(0);
   expect(await left(page, "button[aria-label='Previous']")).toBeLessThan(40);
 });
+
+for (const width of [900, 1200]) {
+  test(`TR-10, TR-2: at ${width} px with the play controls last, every band control stays inside the band`, async ({
+    page,
+  }) => {
+    await open(page);
+    const dialog = await customize(page);
+    const down = dialog.getByRole("button", { name: "Move Next down" });
+    while (await down.isEnabled()) await down.click();
+    await expect(dialog.getByRole("listitem").last()).toHaveAttribute("data-slot", "next");
+    await dialog.getByRole("button", { name: "Done" }).click();
+    await page.setViewportSize({ width, height: 800 });
+    const bandBox = await band(page).boundingBox();
+    if (!bandBox) throw new Error("no band");
+    await expect(band(page).getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    const boxes = await band(page)
+      .locator("button, [role='slider']")
+      .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().toJSON() as DOMRect));
+    for (const [index, box] of boxes.entries()) {
+      expect(box.x).toBeGreaterThanOrEqual(bandBox.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(bandBox.x + bandBox.width + 0.5);
+      // No control covers another one.
+      for (const other of boxes.slice(index + 1)) {
+        expect(box.x + box.width <= other.x + 0.5 || other.x + other.width <= box.x + 0.5).toBe(true);
+      }
+    }
+    // No zone has more content than room.
+    const clipped = await band(page)
+      .locator("[data-zone]")
+      .evaluateAll((zones) => zones.filter((zone) => zone.scrollWidth > zone.clientWidth + 1).length);
+    expect(clipped).toBe(0);
+  });
+}

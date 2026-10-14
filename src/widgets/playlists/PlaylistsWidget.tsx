@@ -11,6 +11,7 @@ import {
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type ImportBatch, type PlaylistRow, type RepairBatch } from "@/lib/ipc/commands";
 import { observeSize } from "@/lib/resize";
+import { revealLibrary } from "@/shell/layouts";
 import { useLibraryStore } from "@/store/library";
 import { playPlaylist, playlistTask, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
@@ -79,6 +80,10 @@ export function PlaylistsWidget() {
   const busyText = usePlaylistsStore((state) => state.busy);
   const shown = useLibraryStore((state) => state.playlist);
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
+  const show = (id: number) => {
+    showPlaylist(id);
+    revealLibrary();
+  };
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   // The rail shows below RAIL_WIDTH, measured once per frame of resizes (UD24).
@@ -157,7 +162,7 @@ export function PlaylistsWidget() {
       </>
     );
   } else if (rail) {
-    body = <PlaylistRail rows={rows} onPick={showPlaylist} />;
+    body = <PlaylistRail rows={rows} onPick={show} />;
   } else {
     body = (
       <>
@@ -169,7 +174,7 @@ export function PlaylistsWidget() {
             count={rows.length}
             rowHeight={rowHeight}
             activeIndex={active}
-            onMove={(index) => showPlaylist(rows[index].id)}
+            onMove={(index) => show(rows[index].id)}
             onKeyDown={onKeyDown}
             renderRow={(index, frame) => {
               const playlist = rows[index];
@@ -179,7 +184,7 @@ export function PlaylistsWidget() {
                   dropTarget={`playlist:${playlist.id}`}
                   frame={frame}
                   selected={shown === playlist.id}
-                  onSelect={() => showPlaylist(playlist.id)}
+                  onSelect={() => show(playlist.id)}
                   onActivate={() => play(playlist)}
                   onMenu={(anchor) => menu.open(anchor, items(playlist))}
                 >
