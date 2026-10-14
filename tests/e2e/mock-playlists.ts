@@ -71,6 +71,7 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
         missingCount: missingCount(list),
       })),
     playlist_entries: ({ id }) => {
+      if (window.e2eFailEntries) throw { code: "playlist", message: "Cannot read the playlist" };
       const entries = [...find(id).entries];
       return window.e2eSlowEntries ? new Promise((resolve) => setTimeout(() => resolve(entries), 800)) : entries;
     },

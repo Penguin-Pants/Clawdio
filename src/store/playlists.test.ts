@@ -103,3 +103,21 @@ describe("playPlaylist (R12)", () => {
     expect(play).toHaveBeenCalledWith([7, 8], 0);
   });
 });
+
+describe("usePlaylistsStore.load (R25 stale indices)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("counts a load in flight from its start until both reads land", async () => {
+    let finish: (rows: never[]) => void = () => undefined;
+    vi.spyOn(commands, "playlistsList").mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    vi.spyOn(commands, "favorites").mockResolvedValue([]);
+    const before = usePlaylistsStore.getState().version;
+    const run = usePlaylistsStore.getState().load();
+    expect(usePlaylistsStore.getState().reloading).toBe(1);
+    expect(usePlaylistsStore.getState().version).toBe(before);
+    finish([]);
+    await run;
+    expect(usePlaylistsStore.getState().reloading).toBe(0);
+    expect(usePlaylistsStore.getState().version).toBe(before + 1);
+  });
+});

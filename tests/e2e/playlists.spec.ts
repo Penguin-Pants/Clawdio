@@ -406,3 +406,23 @@ test("R25: a Delete while a change from elsewhere reloads the entries removes no
   // Only the change from elsewhere landed: the first song is still there.
   await expect(songsInMix.getByRole("option").first()).toContainText("Song 1 of Album A0");
 });
+
+test("AX-1: a failed reload of the shown playlist keeps the focus in the Library", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await songsInMix.getByRole("option").first().click();
+  await expect(songsInMix).toBeFocused();
+  await page.evaluate(async () => {
+    window.e2eFailEntries = true;
+    type Invoke = (command: string, args?: object) => Promise<unknown>;
+    const invoke = (window as unknown as { __TAURI_INTERNALS__: { invoke: Invoke } }).__TAURI_INTERNALS__.invoke;
+    const rows = (await invoke("playlists_list")) as { id: number; name: string }[];
+    await invoke("playlist_remove_entry", { id: rows.find((row) => row.name === "Mix 1")?.id, index: 5 });
+  });
+  await expect(widget(page, "library")).toContainText("Cannot read this playlist.");
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.closest("[data-widget]")?.getAttribute("data-widget")))
+    .toBe("library");
+  await page.evaluate(() => (window.e2eFailEntries = false));
+});

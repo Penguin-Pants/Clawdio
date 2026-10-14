@@ -10,6 +10,8 @@ interface PlaylistsState {
   favorites: Set<number>;
   /** Goes up on each `playlists-changed`, so open playlists load their entries again. */
   version: number;
+  /** Loads in flight. Above 0 a change has landed that `version` does not show yet. */
+  reloading: number;
   load: () => Promise<void>;
 }
 
@@ -18,12 +20,20 @@ export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   busy: null,
   favorites: new Set(),
   version: 0,
+  reloading: 0,
   load: async () => {
+    // Synchronous on `playlists-changed`: open views stop index edits before the reads finish.
+    set((state) => ({ reloading: state.reloading + 1 }));
     const [rows, favorites] = await Promise.all([
       commands.playlistsList().catch(() => [] as PlaylistRow[]),
       commands.favorites().catch(() => [] as number[]),
     ]);
-    set((state) => ({ rows, favorites: new Set(favorites), version: state.version + 1 }));
+    set((state) => ({
+      rows,
+      favorites: new Set(favorites),
+      version: state.version + 1,
+      reloading: state.reloading - 1,
+    }));
   },
 }));
 

@@ -22,6 +22,7 @@ export function PlaylistView({ id }: { id: number }) {
   const playlist = usePlaylistsStore((state) => state.rows.find((row) => row.id === id));
   const listsLoaded = usePlaylistsStore((state) => state.version > 0);
   const version = usePlaylistsStore((state) => state.version);
+  const reloading = usePlaylistsStore((state) => state.reloading > 0);
   const libraryVersion = useLibraryStore((state) => state.version);
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   // null while the first read runs; a failed read is not an empty playlist.
@@ -30,9 +31,9 @@ export function PlaylistView({ id }: { id: number }) {
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   // True from a removal until the entries read after it arrive.
   const [removing, setRemoving] = useState(false);
-  // Any playlist change, here or elsewhere, makes the shown indices stale until the new read
-  // lands: a removal by index waits (R25).
-  const stale = removing || loadedAt !== version;
+  // Any playlist change, here or elsewhere, makes the shown indices stale from its event until
+  // the new read lands: a removal by index waits (R25).
+  const stale = removing || reloading || loadedAt !== version;
   const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
@@ -66,15 +67,15 @@ export function PlaylistView({ id }: { id: number }) {
     [entries, request],
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
-  // The last removal takes the list with it, after the menu or the key put the focus back on
-  // it: the focus moves to the Library region instead of the page (AX-1).
-  const empty = Array.isArray(loaded) && loaded.length === 0;
+  // The list goes away when the last entry goes or a read fails, after the menu or the key put
+  // the focus back on it: the focus moves to the Library region instead of the page (AX-1).
+  const noList = loaded === "failed" || (Array.isArray(loaded) && loaded.length === 0);
   useEffect(() => {
     const focused = document.activeElement;
-    if (empty && (focused === null || focused === document.body)) {
+    if (noList && (focused === null || focused === document.body)) {
       listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
     }
-  }, [empty]);
+  }, [noList]);
   const remove = (index: number) => {
     if (stale) return;
     setRemoving(true);

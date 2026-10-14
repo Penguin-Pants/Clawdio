@@ -60,6 +60,8 @@ declare global {
     e2eSlowFavorites?: boolean;
     /** Delays the mocked `playlist_entries` reply (playlists.spec.ts). */
     e2eSlowEntries?: boolean;
+    /** Makes the mocked `playlist_entries` fail (playlists.spec.ts). */
+    e2eFailEntries?: boolean;
     /** The mocked `window_set_mini` calls (UD19). */
     e2eMini?: { on: boolean; height: number }[];
   }
