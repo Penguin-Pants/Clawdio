@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { playlistTask, usePlaylistsStore } from "./playlists";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { commands } from "@/lib/ipc/commands";
+import { playPlaylist, playlistQueue, playlistTask, usePlaylistsStore } from "./playlists";
 import { useUiStore } from "./ui";
 
 beforeEach(() => {
@@ -55,5 +56,68 @@ describe("playlistTask (R32 busy state)", () => {
     );
     expect(useUiStore.getState().dialog).toEqual({ kind: "error", text: "Choose a music folder first" });
     expect(usePlaylistsStore.getState().busy).toBeNull();
+  });
+});
+
+describe("playlistQueue (R6 queue rule)", () => {
+  const entries = [
+    { track: 4, label: "" },
+    { track: null, label: "../Missing.mp3" },
+    { track: 7, label: "" },
+  ];
+
+  it("queues the library tracks in order and skips missing entries", () => {
+    expect(playlistQueue(entries)).toEqual({ ids: [4, 7], start: 0 });
+  });
+
+  it("starts at the entry, or the next one that is not missing", () => {
+    expect(playlistQueue(entries, 2)).toEqual({ ids: [4, 7], start: 1 });
+    expect(playlistQueue(entries, 1)).toEqual({ ids: [4, 7], start: 1 });
+  });
+
+  it("gives null when nothing from the entry on can play", () => {
+    expect(playlistQueue([{ track: null, label: "x" }])).toBeNull();
+    expect(playlistQueue(entries, 3)).toBeNull();
+  });
+});
+
+describe("playPlaylist (R12)", () => {
+  afterEach(() => vi.restoreAllMocks());
+  const shown = [
+    { track: 7, label: "a" },
+    { track: 8, label: "b" },
+  ];
+
+  it("plays the entries the caller shows, with no second read", async () => {
+    const read = vi.spyOn(commands, "playlistEntries").mockResolvedValue([{ track: 9, label: "c" }]);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue();
+    await playPlaylist(1, 1, shown);
+    expect(read).not.toHaveBeenCalled();
+    expect(play).toHaveBeenCalledWith([7, 8], 1);
+  });
+
+  it("reads the entries when the caller has none", async () => {
+    vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue();
+    await playPlaylist(1);
+    expect(play).toHaveBeenCalledWith([7, 8], 0);
+  });
+});
+
+describe("usePlaylistsStore.load (R25 stale indices)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("counts a load in flight from its start until both reads land", async () => {
+    let finish: (rows: never[]) => void = () => undefined;
+    vi.spyOn(commands, "playlistsList").mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    vi.spyOn(commands, "favorites").mockResolvedValue([]);
+    const before = usePlaylistsStore.getState().version;
+    const run = usePlaylistsStore.getState().load();
+    expect(usePlaylistsStore.getState().reloading).toBe(1);
+    expect(usePlaylistsStore.getState().version).toBe(before);
+    finish([]);
+    await run;
+    expect(usePlaylistsStore.getState().reloading).toBe(0);
+    expect(usePlaylistsStore.getState().version).toBe(before + 1);
   });
 });

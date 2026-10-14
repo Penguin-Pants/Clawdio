@@ -56,7 +56,12 @@ export function useRowMenu(listRef: RefObject<HTMLElement | null>) {
   const [request, setRequest] = useState<MenuRequest | null>(null);
   const element = (
     <DropdownMenu open={request !== null} onOpenChange={(open) => !open && setRequest(null)}>
-      <DropdownMenuContent anchor={request?.anchor} side="bottom" align="start" finalFocus={() => listElement(listRef)}>
+      <DropdownMenuContent
+        anchor={request?.anchor}
+        side="bottom"
+        align="start"
+        finalFocus={() => listElement(listRef) ?? listRef.current?.closest<HTMLElement>("[data-widget]") ?? null}
+      >
         {request && <MenuItems items={request.items} />}
       </DropdownMenuContent>
     </DropdownMenu>

@@ -69,9 +69,11 @@ test.describe("P17-AC1, P17-AC3: state sweep with reduced motion", () => {
       .getByRole("option", { name: /Album B0/ })
       .click();
     await songs(page).locator(SONG_ROWS).first().click();
-    await widget(page, "playlists").getByRole("treeitem").first().click();
+    await widget(page, "playlists").getByRole("option").first().click();
     await widget(page, "queue").getByRole("option").first().click();
+    // The Library shows the playlist (R12 v1.9); the check covers that view, then it goes back.
     await check(page);
+    await widget(page, "library").getByRole("button", { name: "Library" }).click();
     await songs(page).locator(SONG_ROWS).first().dblclick();
     await expect(widget(page, "transport").getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await check(page);
@@ -323,5 +325,5 @@ test("P17-AC9: menus and dialogs accept keys and clicks while they open", async 
   await page.keyboard.type("Quick");
   await expect(page.getByRole("dialog").getByRole("textbox", { name: "Name" })).toHaveValue("Quick");
   await page.keyboard.press("Enter");
-  await expect(widget(page, "playlists").getByRole("treeitem", { name: /Quick/ })).toBeVisible();
+  await expect(widget(page, "playlists").getByRole("option", { name: /Quick/ })).toBeVisible();
 });

@@ -1,13 +1,13 @@
 // U3 (SP-5, UD18): the Playlists widget becomes an icon rail below 140 px.
-import { drag, expect, group, groupAction, test, widget } from "./test-base";
+import { drag, expect, group, test, widget } from "./test-base";
 
-test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it and selects the playlist", async ({
+test("SP-5: a narrow Playlists widget shows the rail; a rail button shows the playlist in the Library", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/?data=library");
   const playlists = widget(page, "playlists");
-  await expect(playlists.getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
+  await expect(playlists.getByRole("option", { name: /Mix 1/ })).toBeVisible();
   const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
   const box = await sash.boundingBox();
   if (!box) throw new Error("no separator");
@@ -47,9 +47,10 @@ test("SP-5: a narrow Playlists widget shows the rail; a rail button widens it an
   await page.reload();
   await expect(widget(page, "playlists").getByRole("navigation", { name: "Playlists" })).toBeVisible();
 
+  // A rail button shows the playlist in the Library and keeps the rail (R12 v1.9).
   await widget(page, "playlists").getByRole("button", { name: "Mix 2" }).click();
-  await expect.poll(async () => Math.abs(((await playlists.boundingBox())?.width ?? 0) - 240)).toBeLessThanOrEqual(1);
-  await expect(playlists.getByRole("treeitem", { name: /Mix 2/ })).toHaveAttribute("aria-selected", "true");
+  await expect(widget(page, "library").getByRole("listbox", { name: "Songs in Mix 2" })).toBeVisible();
+  await expect(widget(page, "playlists").getByRole("navigation", { name: "Playlists" })).toBeVisible();
 });
 
 test("SP-5: a narrow Playlists widget with no playlists still shows the empty hint", async ({ page }) => {
@@ -65,20 +66,21 @@ test("SP-5: a narrow Playlists widget with no playlists still shows the empty hi
   await expect(playlists).toContainText("No playlists yet.");
 });
 
-test("SP-5, UD18: a rail button widens a group that was collapsed while narrow", async ({ page }) => {
+test("SP-5, R12: Enter and double-click on a rail button play the playlist", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/?data=library");
   const playlists = widget(page, "playlists");
-  await expect(playlists.getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
+  await expect(playlists.getByRole("option", { name: /Mix 1/ })).toBeVisible();
   const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
   const box = await sash.boundingBox();
   if (!box) throw new Error("no separator");
-  // Narrow to the rail (about 100 px), then Collapse: Restore would give back the narrow width.
-  await drag(page, { x: box.x + box.width / 2, y: box.y + 200 }, { x: box.x - 140, y: box.y + 200 });
-  await expect.poll(async () => (await playlists.boundingBox())?.width ?? 0).toBeLessThan(140);
-  await groupAction(page, "playlists", "Playlists", "Collapse widget");
+  await drag(page, { x: box.x + box.width / 2, y: box.y + 200 }, { x: box.x - 120, y: box.y + 200 });
   const rail = playlists.getByRole("navigation", { name: "Playlists" });
-  await rail.getByRole("button", { name: "Mix 2" }).click();
-  await expect.poll(async () => (await playlists.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(140);
-  await expect(playlists.getByRole("treeitem", { name: /Mix 2/ })).toHaveAttribute("aria-selected", "true");
+  const lastPlay = async () => JSON.parse((await page.locator("body").getAttribute("data-play-list")) ?? "null");
+  await rail.getByRole("button", { name: "Mix 1" }).focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(lastPlay).toEqual({ ids: [0, 1, 2, 3, 4], start: 0 });
+  await expect(widget(page, "library").getByRole("listbox", { name: "Songs in Mix 1" })).toBeVisible();
+  await rail.getByRole("button", { name: "Mix 2" }).dblclick();
+  await expect.poll(lastPlay).toEqual({ ids: [10, 11, 12, 13, 14], start: 0 });
 });

@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.25, October 13, 2026 (UI shell rework U0 to U7 executed: Done with exceptions).
+**Version:** 1.26, October 14, 2026 (UI shell rework U0 to U8: Done with exceptions; U8 holds the owner follow-ups of requirements v1.9).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -90,7 +90,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
-| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | Done with exceptions (U0 to U7; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -847,7 +847,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - **Status:** Done.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `074034d`. Messages start with `P14:`.
-- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.45 with the `ring` provider, `tokio` 1.53.2, `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
+- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.46 (0.23.45 until RUSTSEC-2026-0349) with the `ring` provider, `tokio` 1.53.2, `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
 
 | Criterion | Result | Evidence |
 |---|---|---|
@@ -2907,6 +2907,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |

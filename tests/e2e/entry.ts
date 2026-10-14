@@ -17,6 +17,10 @@ const hooks = {
   show(id: WidgetId): void {
     setWidgetVisible(id, true, dock());
   },
+  /** Hides a hideable widget. */
+  hide(id: WidgetId): void {
+    setWidgetVisible(id, false, dock());
+  },
   /** Clears the dock and stacks all five dock widgets in one column (P2-AC6 clamp case). */
   stackAll(): void {
     replaceArrangement(dock(), (api) =>
@@ -54,6 +58,14 @@ declare global {
     e2eLog?: string[];
     /** Delays the mocked `favorites` reply (row-drag.spec.ts). */
     e2eSlowFavorites?: boolean;
+    /** Delays the mocked `playlist_entries` reply (playlists.spec.ts). */
+    e2eSlowEntries?: boolean;
+    /** Makes the mocked `playlist_entries` fail (playlists.spec.ts). */
+    e2eFailEntries?: boolean;
+    /** Holds the return of the mocked `playlist_remove_entry` until `e2eReleaseRemove` (playlists.spec.ts). */
+    e2eSlowRemove?: boolean;
+    /** Releases the held `playlist_remove_entry` reply. */
+    e2eReleaseRemove?: () => void;
     /** The mocked `window_set_mini` calls (UD19). */
     e2eMini?: { on: boolean; height: number }[];
   }

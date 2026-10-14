@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { chooseMusicFolder } from "@/dialogs/SettingsDialog";
 import { observeSize } from "@/lib/resize";
+import { focusLibrarySearch } from "@/shell/layouts";
 import { useSettingsStore } from "@/store/settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -12,6 +13,7 @@ import { LIBRARY_MODES, type LibraryMode, useLibraryStore } from "@/store/librar
 import type { ViewId } from "./columns";
 import { FrameSplit } from "./FrameSplit";
 import { AlbumList, ArtistList, SongTable, TreeList } from "./lists";
+import { PlaylistView } from "./PlaylistView";
 
 /** Below this widget width the mode switch becomes a dropdown (R28). */
 export const NARROW_WIDTH = 360;
@@ -232,9 +234,13 @@ function FolderMissing({ name }: { name: string | null }) {
   );
 }
 
-/** Library widget (P2.8, R28): mode switch and search in its header. It cannot be hidden. */
+/**
+ * Library widget (P2.8, R28): mode switch and search in its header. It cannot be hidden. A
+ * playlist picked in the Playlists widget takes the place of the lists, with a way back (R12 v1.9).
+ */
 export function LibraryWidget() {
   const mode = useLibraryStore((state) => state.mode);
+  const playlist = useLibraryStore((state) => state.playlist);
   const folderState = useSettingsStore((state) => (state.loaded ? state.view.folderState : "ready"));
   const folderName = useSettingsStore((state) => state.view.folderName);
   const ref = useRef<HTMLDivElement>(null);
@@ -248,13 +254,25 @@ export function LibraryWidget() {
   return (
     <div ref={ref} className="flex size-full flex-col">
       <div className="flex items-center gap-2 border-b px-2 py-1.5">
-        <ModeSwitch narrow={narrow} />
-        <SearchField />
+        {playlist !== null && folderState === "ready" ? (
+          // Back to the lists, with the focus in the search field (AX-1).
+          <Button variant="ghost" size="sm" onClick={() => focusLibrarySearch()}>
+            <Icon name="back" />
+            Library
+          </Button>
+        ) : (
+          <>
+            <ModeSwitch narrow={narrow} />
+            <SearchField />
+          </>
+        )}
       </div>
       {folderState === "none" ? (
         <ChooseFolder />
       ) : folderState === "missing" ? (
         <FolderMissing name={folderName} />
+      ) : playlist !== null ? (
+        <PlaylistView key={playlist} id={playlist} />
       ) : (
         <LibraryBody mode={mode} />
       )}

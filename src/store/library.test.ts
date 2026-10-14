@@ -85,3 +85,15 @@ describe("Songs multi-select (UD12, TB-10)", () => {
     expect(useLibraryStore.getState().selectedSongs.size).toBe(0);
   });
 });
+
+describe("playlist view (R12 v1.9)", () => {
+  it("shows a playlist in place of the lists and goes back, keeping the mode and selection", () => {
+    useLibraryStore.setState({ mode: "topBottom", playlist: null });
+    useLibraryStore.getState().setSelection({ artist: 3 });
+    useLibraryStore.getState().showPlaylist(5);
+    expect(useLibraryStore.getState().playlist).toBe(5);
+    useLibraryStore.getState().showPlaylist(null);
+    expect(useLibraryStore.getState()).toMatchObject({ playlist: null, mode: "topBottom" });
+    expect(useLibraryStore.getState().selection.artist).toBe(3);
+  });
+});

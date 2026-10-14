@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { commands, type PlaylistRow } from "@/lib/ipc/commands";
+import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
 import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
@@ -10,6 +10,8 @@ interface PlaylistsState {
   favorites: Set<number>;
   /** Goes up on each `playlists-changed`, so open playlists load their entries again. */
   version: number;
+  /** Loads in flight. Above 0 a change has landed that `version` does not show yet. */
+  reloading: number;
   load: () => Promise<void>;
 }
 
@@ -18,12 +20,20 @@ export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   busy: null,
   favorites: new Set(),
   version: 0,
+  reloading: 0,
   load: async () => {
+    // Synchronous on `playlists-changed`: open views stop index edits before the reads finish.
+    set((state) => ({ reloading: state.reloading + 1 }));
     const [rows, favorites] = await Promise.all([
       commands.playlistsList().catch(() => [] as PlaylistRow[]),
       commands.favorites().catch(() => [] as number[]),
     ]);
-    set((state) => ({ rows, favorites: new Set(favorites), version: state.version + 1 }));
+    set((state) => ({
+      rows,
+      favorites: new Set(favorites),
+      version: state.version + 1,
+      reloading: state.reloading - 1,
+    }));
   },
 }));
 
@@ -56,6 +66,38 @@ export function toggleFavorite(track: number): void {
 export function addFavorites(tracks: number[]): void {
   if (tracks.length === 0) return;
   void playlistEdit(() => commands.favoritesAdd(tracks), "Cannot change Favorites");
+}
+
+/**
+ * The queue for a playlist (R6 queue rule): its library tracks in order, from entry `from`
+ * (the next entry that is not missing). Missing entries are skipped.
+ */
+export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number[]; start: number } | null {
+  const ids: number[] = [];
+  let start = -1;
+  entries.forEach((entry, index) => {
+    if (entry.track === null) return;
+    if (start < 0 && index >= from) start = ids.length;
+    ids.push(entry.track);
+  });
+  return start < 0 ? null : { ids, start };
+}
+
+/**
+ * Plays a playlist from entry `from` (R12: double-click or Enter plays). A caller that shows the
+ * entries passes them, so `from` points into the list the user saw.
+ */
+export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry[]): Promise<void> {
+  const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
+  if (queue) await commands.playerPlayList(queue.ids, queue.start);
+}
+
+/**
+ * "Remove from playlist" and the Delete key (R12, R25): removes the entry at `index`. Resolves
+ * false when the write fails.
+ */
+export function removePlaylistEntry(id: number, index: number): Promise<boolean> {
+  return playlistEdit(() => commands.playlistRemoveEntry(id, index), "Cannot remove the entry");
 }
 
 /** Add to playlist (R12): appends; duplicates are allowed. */

@@ -92,7 +92,7 @@ On load, a file that fails validation (not JSON, an unknown `version`, no `dock`
 | `locked` | boolean | Lock layout (DK-5). Another value loads as `false` with a log line. |
 | `libraryMode` | string | `tree`, `columns` or `topBottom`. |
 | `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
-| `transportSlots` | object | Optional (TR-10, UD20). The band slot `order` (array of `previous`, `playPause`, `next`, `nowPlaying`, `seek`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) and the `hidden` slots. `previous`, `playPause` and `next` always come first; `playPause` cannot be hidden. A file without it loads the default order with `search` hidden. |
+| `transportSlots` | object | Optional (TR-10, UD20). The band slot `order` (array of `previous`, `playPause`, `next`, `nowPlaying`, `seek`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) and the `hidden` slots. `previous`, `playPause` and `next` stay together in that order (a split group joins at its first slot); `playPause` cannot be hidden. A file without it loads the default order (`nowPlaying`, `seek`, `previous`, `playPause`, `next`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) with `search` hidden. A file that holds the default order from before requirements v1.9 (`previous` first) loads the new default. |
 | `collapsed` | object | Optional (PS-5, UD25). Collapsed groups by Dockview group id: `{ "axis": "width" or "height", "size": <px before the collapse> }`. `size` is a positive number. Restore returns a group to that size after a restart. A file without it has no collapsed group. A value that is not an object restores nothing; a bad entry is ignored; both write a log line. An entry for a group that is not in the dock grid is dropped. |
 | `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, the active group, and `floatingGroups` (DK-3): each floating group's panels and its position and size over the dock. A floating group outside a smaller window moves back inside. |
 
@@ -106,7 +106,7 @@ Example (shortened):
   "transport": "top",
   "locked": false,
   "transportSlots": {
-    "order": ["previous", "playPause", "next", "nowPlaying", "seek", "stop", "shuffle", "repeat", "volume", "queue", "search"],
+    "order": ["nowPlaying", "seek", "previous", "playPause", "next", "stop", "shuffle", "repeat", "volume", "queue", "search"],
     "hidden": ["search"]
   },
   "collapsed": {},

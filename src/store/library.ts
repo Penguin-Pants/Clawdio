@@ -82,6 +82,9 @@ interface LibraryState {
   setSelection: (selection: Partial<LibrarySelection>) => void;
   /** Sets the Songs selection, its anchor and the active row together (UD12). */
   setSongSelection: (selected: ReadonlySet<number>, anchor: number | null, active: number | null) => void;
+  /** The playlist the Library shows in place of its lists (R12 v1.9), or null for the library. */
+  playlist: number | null;
+  showPlaylist: (id: number | null) => void;
   setFrames: (group: FrameGroup, fractions: number[]) => void;
   setAllFrames: (frames: LibraryFrames) => void;
   resetFrames: () => void;
@@ -109,6 +112,8 @@ export const useLibraryStore = create<LibraryState>()((set) => ({
     })),
   selectedSongs: new Set<number>(),
   anchor: null,
+  playlist: null,
+  showPlaylist: (playlist) => set({ playlist }),
   setSongSelection: (selectedSongs, anchor, active) =>
     set((state) => ({ selectedSongs, anchor, selection: { ...state.selection, song: active } })),
   frames: DEFAULT_FRAMES,

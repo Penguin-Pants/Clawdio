@@ -322,7 +322,20 @@ describe("saving (P9.3, P9-AC8)", () => {
     expect(restoreLayout(dockStandIn().api, JSON.stringify(saved), SIZE, noBackup)).toBe(true);
     const restored = useUiStore.getState().transportSlots;
     expect(restored.hidden).toEqual(["stop"]);
-    expect(restored.order.slice(0, 4)).toEqual(["previous", "playPause", "next", "search"]);
+    // The reversed order keeps its place; the play group joins in its own order.
+    expect(restored.order).toEqual([
+      "search",
+      "queue",
+      "volume",
+      "repeat",
+      "shuffle",
+      "stop",
+      "previous",
+      "playPause",
+      "next",
+      "seek",
+      "nowPlaying",
+    ]);
 
     const without: Partial<typeof saved> = { ...saved };
     delete without.transportSlots;

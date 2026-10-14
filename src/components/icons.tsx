@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowUp,
   AudioLines,
   ChevronDown,
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
  * `assets/branding/ui-icons/<name>.svg` replaces the icon of that name at build time (P2.13).
  */
 export const ICONS = {
+  back: ArrowLeft,
   chevronDown: ChevronDown,
   chevronUp: ChevronUp,
   close: X,

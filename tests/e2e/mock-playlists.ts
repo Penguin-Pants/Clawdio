@@ -70,7 +70,11 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
         isFavorites: list.name === FAVORITES,
         missingCount: missingCount(list),
       })),
-    playlist_entries: ({ id }) => find(id).entries,
+    playlist_entries: ({ id }) => {
+      if (window.e2eFailEntries) throw { code: "playlist", message: "Cannot read the playlist" };
+      const entries = [...find(id).entries];
+      return window.e2eSlowEntries ? new Promise((resolve) => setTimeout(() => resolve(entries), 800)) : entries;
+    },
     playlist_name_check: ({ name }) => nameProblem(name as string),
     playlist_create: ({ name }) => {
       const problem = nameProblem(name as string);
@@ -96,7 +100,9 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
       writable(list);
       list.entries.splice(index as number, 1);
       changed();
-      return null;
+      // Like the core: the change and its event come before the command returns.
+      // The test releases the reply with `e2eReleaseRemove`, so no timer races the test.
+      return window.e2eSlowRemove ? new Promise((resolve) => (window.e2eReleaseRemove = () => resolve(null))) : null;
     },
     playlist_delete: ({ id }) => {
       lists.splice(lists.indexOf(find(id)), 1);

@@ -24,7 +24,7 @@ encoding_rs = "=0.8.42"
 # Online lookups (P14, D29): rustls with the ring provider, which needs no C build tools
 # beyond a C compiler.
 reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-no-provider"] }
-rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 tokio = { version = "=1.53.2", features = ["time", "sync", "macros", "rt"] }
 tokio-util = "=0.7.20"
 
