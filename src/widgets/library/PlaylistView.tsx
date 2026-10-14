@@ -26,10 +26,19 @@ export function PlaylistView({ id }: { id: number }) {
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   // null while the first read runs; a failed read is not an empty playlist.
   const [loaded, setLoaded] = useState<PlaylistEntry[] | "failed" | null>(null);
-  // The playlists version the shown entries were read at, and whether a removal of this view is
-  // still on its way. They guard the removal only, so they are refs, read when it runs.
+  // The guard of the index actions. They are refs, read when an action runs:
+  // - `loadedAt`: the playlists version the shown entries were read at;
+  // - `started` and `landed`: the number of the last entry read started and landed;
+  // - `needRead`: a read with at least this number must land before the next index action
+  //   (set after a removal of this view);
+  // - `removing`: a removal of this view is on its way.
   const loadedAt = useRef<number | null>(null);
+  const started = useRef(0);
+  const landed = useRef(0);
+  const needRead = useRef(0);
   const removing = useRef(false);
+  // Goes up after a removal of this view, so the entries load again after it.
+  const [refresh, setRefresh] = useState(0);
   const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
@@ -42,17 +51,19 @@ export function PlaylistView({ id }: { id: number }) {
   // The entries load for this playlist, and again after each playlist change.
   useEffect(() => {
     let current = true;
+    started.current += 1;
+    const read = started.current;
     const land = (result: PlaylistEntry[] | "failed") => {
       if (!current) return;
       setLoaded(result);
       loadedAt.current = version;
-      removing.current = false;
+      landed.current = read;
     };
     commands.playlistEntries(id).then(land, () => land("failed"));
     return () => {
       current = false;
     };
-  }, [id, version]);
+  }, [id, version, refresh]);
   useEffect(() => {
     if (listsLoaded && !playlist) showPlaylist(null);
   }, [listsLoaded, playlist, showPlaylist]);
@@ -74,29 +85,41 @@ export function PlaylistView({ id }: { id: number }) {
   }, [noList]);
   /**
    * True while the shown indices may not match the playlist: from any `playlists-changed` until
-   * the entries read after it land, and from a removal of this view until its new entries land.
-   * It reads the live state, so a callback kept by an open menu checks it too (R25).
+   * the entries read after it land, and from a removal of this view until the entries read after
+   * it land. It reads the live state, so a callback kept by an open menu checks it too (R25).
    */
   const stale = () => {
     const { reloading, version: now } = usePlaylistsStore.getState();
-    return removing.current || reloading > 0 || loadedAt.current !== now;
+    return removing.current || landed.current < needRead.current || reloading > 0 || loadedAt.current !== now;
   };
   const remove = (index: number) => {
     if (stale()) return;
     removing.current = true;
     void removePlaylistEntry(id, index).then((done) => {
-      if (!done) removing.current = false;
+      removing.current = false;
+      if (!done) return;
+      // Only a read started after the removal shows it.
+      needRead.current = started.current + 1;
+      setRefresh((count) => count + 1);
     });
   };
+  /**
+   * The row menu keeps its items while it is open. Each item runs only when the entries it was
+   * made from are still the shown ones and not stale, so no item acts on another song (R25).
+   */
   const items = (index: number): RowMenuItem[] => {
     const track = entries[index]?.track ?? null;
+    const madeFrom = landed.current;
+    const fresh = (run: () => void) => () => {
+      if (landed.current === madeFrom && !stale()) run();
+    };
     return [
-      { label: "Play", run: () => play(index) },
+      { label: "Play", run: fresh(() => play(index)) },
       {
         label: "Add to queue",
-        run: track === null ? undefined : () => void commands.queueAppend([track]).catch(() => {}),
+        run: track === null ? undefined : fresh(() => void commands.queueAppend([track]).catch(() => {})),
       },
-      { label: "Remove from playlist", run: () => remove(index) },
+      { label: "Remove from playlist", run: fresh(() => remove(index)) },
     ];
   };
 

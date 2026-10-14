@@ -447,3 +447,51 @@ test("R25: Remove from playlist in a menu opened before a change from elsewhere 
   await page.evaluate(() => (window.e2eSlowEntries = false));
   await expect(songsInMix.getByRole("option").first()).toContainText("Song 1 of Album A0");
 });
+
+test("R25: a song menu kept open over a change from elsewhere does nothing", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await expect(songsInMix.getByRole("option")).toHaveCount(6);
+  await songsInMix.getByRole("option").first().click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Play", exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    type Invoke = (command: string, args?: object) => Promise<unknown>;
+    const invoke = (window as unknown as { __TAURI_INTERNALS__: { invoke: Invoke } }).__TAURI_INTERNALS__.invoke;
+    const rows = (await invoke("playlists_list")) as { id: number; name: string }[];
+    // Another widget removes the first entry, the one the menu was opened on.
+    await invoke("playlist_remove_entry", { id: rows.find((row) => row.name === "Mix 1")?.id, index: 0 });
+  });
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  const before = await lastPlay(page);
+  await page.getByRole("menuitem", { name: "Play", exact: true }).click();
+  await page.waitForTimeout(300);
+  expect(await lastPlay(page)).toEqual(before);
+});
+
+test("R25: a second Delete while a removal is on its way removes nothing", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await expect(songsInMix.getByRole("option")).toHaveCount(6);
+  await songsInMix.getByRole("option").first().click();
+  await page.evaluate(() => (window.e2eSlowRemove = true));
+  await page.keyboard.press("Delete");
+  // The change lands and the entries reload before the command returns.
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  await page.keyboard.press("Delete");
+  await page.evaluate(() => (window.e2eSlowRemove = false));
+  await page.waitForTimeout(1200);
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+});
+
+test("R12 v1.9: with Playlists a tab of the Library group, a right-click opens the playlist menu", async ({ page }) => {
+  await page.goto("/?data=library");
+  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    window.e2e.hide("playlists");
+    window.e2e.addAsTab("playlists", "library");
+  });
+  await list(page).getByRole("option", { name: /Mix 1/ }).click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Delete playlist" })).toBeVisible();
+});

@@ -100,7 +100,8 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
       writable(list);
       list.entries.splice(index as number, 1);
       changed();
-      return null;
+      // Like the core: the change and its event come before the command returns.
+      return window.e2eSlowRemove ? new Promise((resolve) => setTimeout(() => resolve(null), 800)) : null;
     },
     playlist_delete: ({ id }) => {
       lists.splice(lists.indexOf(find(id)), 1);

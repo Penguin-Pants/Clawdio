@@ -201,6 +201,8 @@ export function PlaylistsWidget() {
                   frame={frame}
                   selected={shown === playlist.id}
                   onSelect={() => show(playlist.id)}
+                  // A right-click selects without the tab switch, so the menu opens here.
+                  onPick={() => showPlaylist(playlist.id)}
                   onActivate={() => play(playlist)}
                   onMenu={(anchor) => menu.open(anchor, items(playlist))}
                 >

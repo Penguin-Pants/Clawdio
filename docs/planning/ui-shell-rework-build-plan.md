@@ -1091,7 +1091,7 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
 - F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
 
-**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 17, F3 1, F4 2.
+**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 20, F3 1, F4 2.
 
 - F1 (fixed): the P3-AC1 e2e test clicked a playlist before it waited for `data-measure-ready`; the playlist view replaces the Library rows that the signal reads, so on a slow runner the signal never fired. The test waits for the signal first (`milestone.spec.ts`).
 - F2 (fixed): a playlist pick did not show a Library tab that another tab hid. `revealLibrary` brings it to the front; the widget in another group stays active and keeps the focus (`layouts.test.ts`, `playlists.spec.ts`).
@@ -1112,6 +1112,9 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F2 (fixed): a failed reload of the shown playlist dropped the focus to the page. The focus moves to the Library when the list goes away for any reason (`playlists.spec.ts`).
 - F2 (fixed): a row menu opened before a change kept the removal guard of its render, so "Remove from playlist" could use an old index. The guard now reads the live store and refs when the removal runs (`playlists.spec.ts`).
 - F3: the core does not check that the index still holds the shown entry. Proposed as F-22 in `docs/build-plan.md` section 11.
+- F2 (fixed): a song menu kept open over a reload still ran Play, Add to queue and Remove on its old entries. Each menu item now runs only when the entries it was made from are still the shown ones (`playlists.spec.ts`).
+- F2 (fixed): a reload that landed while a removal was on its way cleared the removal lock, so a second Delete went through. The lock holds until the command returns and an entry read started after it lands (`playlists.spec.ts`).
+- F2 (fixed): with Playlists a tab of the Library group, a right-click on a playlist switched to the Library tab before the menu opened. A right-click now selects without the switch (`playlists.spec.ts`).
 - F4: DeepSource "empty arrow function" on `.catch(() => {})` in the view. The codebase drops a failed play or queue call this way everywhere; the owner set DeepSource JavaScript as advisory. No change.
 - F4 (owner decision, October 14): with Playlists and Library as tabs in one group (no preset makes it), the first click of a double-click shows the Library tab, so the double-click cannot play. Enter, the row menu Play and the playlist view still play. Holding each click for the double-click interval costs more than it buys. No change.
 
