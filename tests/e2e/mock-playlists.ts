@@ -101,7 +101,8 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
       list.entries.splice(index as number, 1);
       changed();
       // Like the core: the change and its event come before the command returns.
-      return window.e2eSlowRemove ? new Promise((resolve) => setTimeout(() => resolve(null), 800)) : null;
+      // The test releases the reply with `e2eReleaseRemove`, so no timer races the test.
+      return window.e2eSlowRemove ? new Promise((resolve) => (window.e2eReleaseRemove = () => resolve(null))) : null;
     },
     playlist_delete: ({ id }) => {
       lists.splice(lists.indexOf(find(id)), 1);

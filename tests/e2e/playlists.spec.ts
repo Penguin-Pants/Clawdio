@@ -480,9 +480,19 @@ test("R25: a second Delete while a removal is on its way removes nothing", async
   // The change lands and the entries reload before the command returns.
   await expect(songsInMix.getByRole("option")).toHaveCount(5);
   await page.keyboard.press("Delete");
-  await page.evaluate(() => (window.e2eSlowRemove = false));
-  await page.waitForTimeout(1200);
+  const entryReads = async () =>
+    (JSON.parse((await page.locator("body").getAttribute("data-playlist-calls")) ?? "[]") as [string][]).filter(
+      ([command]) => command === "playlist_entries",
+    ).length;
+  const before = await entryReads();
+  await page.evaluate(() => {
+    window.e2eSlowRemove = false;
+    window.e2eReleaseRemove?.();
+  });
+  // The view reads the entries again after the command returns; the second Delete did nothing.
+  await expect.poll(entryReads).toBeGreaterThan(before);
   await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  await expect(songsInMix.getByRole("option").first()).toContainText("Song 2 of Album A0");
 });
 
 test("R12 v1.9: with Playlists a tab of the Library group, a right-click opens the playlist menu", async ({ page }) => {
