@@ -26,6 +26,9 @@ export function PlaylistView({ id }: { id: number }) {
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   // null while the first read runs; a failed read is not an empty playlist.
   const [loaded, setLoaded] = useState<PlaylistEntry[] | "failed" | null>(null);
+  // True from a removal until the entries read after it arrive: the shown indices are stale, so
+  // a second removal waits (R25).
+  const [removing, setRemoving] = useState(false);
   const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
@@ -39,8 +42,16 @@ export function PlaylistView({ id }: { id: number }) {
   useEffect(() => {
     let current = true;
     commands.playlistEntries(id).then(
-      (list) => current && setLoaded(list),
-      () => current && setLoaded("failed"),
+      (list) => {
+        if (!current) return;
+        setLoaded(list);
+        setRemoving(false);
+      },
+      () => {
+        if (!current) return;
+        setLoaded("failed");
+        setRemoving(false);
+      },
     );
     return () => {
       current = false;
@@ -57,9 +68,13 @@ export function PlaylistView({ id }: { id: number }) {
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
   const remove = (index: number) => {
+    if (removing) return;
     // The last entry takes the list with it: the focus stays in the Library region (AX-1).
     if (entries.length === 1) listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
-    removePlaylistEntry(id, index);
+    setRemoving(true);
+    void removePlaylistEntry(id, index).then((done) => {
+      if (!done) setRemoving(false);
+    });
   };
   const items = (index: number): RowMenuItem[] => {
     const track = entries[index]?.track ?? null;

@@ -70,7 +70,10 @@ export function createPlaylists(start: [PlaylistRow, PlaylistEntry[]][]) {
         isFavorites: list.name === FAVORITES,
         missingCount: missingCount(list),
       })),
-    playlist_entries: ({ id }) => find(id).entries,
+    playlist_entries: ({ id }) => {
+      const entries = [...find(id).entries];
+      return window.e2eSlowEntries ? new Promise((resolve) => setTimeout(() => resolve(entries), 800)) : entries;
+    },
     playlist_name_check: ({ name }) => nameProblem(name as string),
     playlist_create: ({ name }) => {
       const problem = nameProblem(name as string);

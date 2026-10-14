@@ -58,6 +58,8 @@ declare global {
     e2eLog?: string[];
     /** Delays the mocked `favorites` reply (row-drag.spec.ts). */
     e2eSlowFavorites?: boolean;
+    /** Delays the mocked `playlist_entries` reply (playlists.spec.ts). */
+    e2eSlowEntries?: boolean;
     /** The mocked `window_set_mini` calls (UD19). */
     e2eMini?: { on: boolean; height: number }[];
   }

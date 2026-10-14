@@ -82,9 +82,12 @@ export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry
   if (queue) await commands.playerPlayList(queue.ids, queue.start);
 }
 
-/** "Remove from playlist" and the Delete key (R12, R25): removes the entry at `index`. */
-export function removePlaylistEntry(id: number, index: number): void {
-  void playlistEdit(() => commands.playlistRemoveEntry(id, index), "Cannot remove the entry");
+/**
+ * "Remove from playlist" and the Delete key (R12, R25): removes the entry at `index`. Resolves
+ * false when the write fails.
+ */
+export function removePlaylistEntry(id: number, index: number): Promise<boolean> {
+  return playlistEdit(() => commands.playlistRemoveEntry(id, index), "Cannot remove the entry");
 }
 
 /** Add to playlist (R12): appends; duplicates are allowed. */

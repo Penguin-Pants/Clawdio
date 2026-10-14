@@ -90,7 +90,7 @@ describe("playPlaylist (R12)", () => {
 
   it("plays the entries the caller shows, with no second read", async () => {
     const read = vi.spyOn(commands, "playlistEntries").mockResolvedValue([{ track: 9, label: "c" }]);
-    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue(undefined);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue();
     await playPlaylist(1, 1, shown);
     expect(read).not.toHaveBeenCalled();
     expect(play).toHaveBeenCalledWith([7, 8], 1);
@@ -98,7 +98,7 @@ describe("playPlaylist (R12)", () => {
 
   it("reads the entries when the caller has none", async () => {
     vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
-    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue(undefined);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue();
     await playPlaylist(1);
     expect(play).toHaveBeenCalledWith([7, 8], 0);
   });

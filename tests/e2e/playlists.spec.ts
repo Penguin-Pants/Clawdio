@@ -349,3 +349,18 @@ test("R25, AX-1: Delete on the last entry keeps the focus in the Library", async
   await expect(widget(page, "library")).toContainText("This playlist is empty.");
   await expect(widget(page, "library")).toBeFocused();
 });
+
+test("R25: a second Delete while the entries reload removes nothing", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await expect(songsInMix.getByRole("option")).toHaveCount(6);
+  await songsInMix.getByRole("option").first().click();
+  await page.evaluate(() => (window.e2eSlowEntries = true));
+  await page.keyboard.press("Delete");
+  await page.keyboard.press("Delete");
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  await page.evaluate(() => (window.e2eSlowEntries = false));
+  await expect(list(page).getByRole("option", { name: /Mix 1/ })).toContainText("5");
+  await expect(songsInMix.getByRole("option").first()).toContainText("Song 2 of Album A0");
+});
