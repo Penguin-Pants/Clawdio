@@ -76,6 +76,9 @@ export function layoutSlots(
   return { band, overflow };
 }
 
+/** Previous, play or pause and next: one group that moves together and keeps this order. */
+const GROUP: readonly SlotId[] = ["previous", "playPause", "next"];
+
 /** The band split around the play controls: the middle zone is centered when a left zone exists. */
 export function bandZones(band: readonly SlotId[]): { left: SlotId[]; center: SlotId[]; right: SlotId[] } {
   const first = band.findIndex((id) => GROUP.includes(id));
@@ -90,9 +93,6 @@ export interface TransportSlots {
 }
 
 export const DEFAULT_SLOTS: TransportSlots = { order: [...DEFAULT_ORDER], hidden: [...DEFAULT_HIDDEN] };
-
-/** Previous, play or pause and next: one group that moves together and keeps this order. */
-const GROUP: readonly SlotId[] = ["previous", "playPause", "next"];
 
 /** Every slot can hide but play or pause (TR-3). */
 export function canHide(id: SlotId): boolean {

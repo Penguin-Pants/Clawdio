@@ -3,6 +3,10 @@
 import type { Page } from "@playwright/test";
 import { expect, test, widget } from "./test-base";
 
+const list = (page: Page) => widget(page, "playlists").getByRole("listbox", { name: "Playlists" });
+/** The playlist the Library shows (R12 v1.9). */
+const view = (page: Page, name: string) => widget(page, "library").getByRole("listbox", { name: `Songs in ${name}` });
+
 async function openPlaylists(page: Page) {
   await page.goto("/?data=library");
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
@@ -11,9 +15,6 @@ async function openPlaylists(page: Page) {
   await expect(list(page).getByRole("option", { name: /Mix 1/ })).toBeVisible();
 }
 
-const list = (page: Page) => widget(page, "playlists").getByRole("listbox", { name: "Playlists" });
-/** The playlist the Library shows (R12 v1.9). */
-const view = (page: Page, name: string) => widget(page, "library").getByRole("listbox", { name: `Songs in ${name}` });
 const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 async function lastPlay(page: Page): Promise<{ ids: number[]; start: number }> {
