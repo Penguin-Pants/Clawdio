@@ -426,3 +426,24 @@ test("AX-1: a failed reload of the shown playlist keeps the focus in the Library
     .toBe("library");
   await page.evaluate(() => (window.e2eFailEntries = false));
 });
+
+test("R25: Remove from playlist in a menu opened before a change from elsewhere removes nothing", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await expect(songsInMix.getByRole("option")).toHaveCount(6);
+  await songsInMix.getByRole("option").first().click({ button: "right" });
+  const remove = page.getByRole("menuitem", { name: "Remove from playlist" });
+  await expect(remove).toBeVisible();
+  await page.evaluate(async () => {
+    window.e2eSlowEntries = true;
+    type Invoke = (command: string, args?: object) => Promise<unknown>;
+    const invoke = (window as unknown as { __TAURI_INTERNALS__: { invoke: Invoke } }).__TAURI_INTERNALS__.invoke;
+    const rows = (await invoke("playlists_list")) as { id: number; name: string }[];
+    await invoke("playlist_remove_entry", { id: rows.find((row) => row.name === "Mix 1")?.id, index: 5 });
+  });
+  await remove.click();
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  await page.evaluate(() => (window.e2eSlowEntries = false));
+  await expect(songsInMix.getByRole("option").first()).toContainText("Song 1 of Album A0");
+});

@@ -22,18 +22,14 @@ export function PlaylistView({ id }: { id: number }) {
   const playlist = usePlaylistsStore((state) => state.rows.find((row) => row.id === id));
   const listsLoaded = usePlaylistsStore((state) => state.version > 0);
   const version = usePlaylistsStore((state) => state.version);
-  const reloading = usePlaylistsStore((state) => state.reloading > 0);
   const libraryVersion = useLibraryStore((state) => state.version);
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   // null while the first read runs; a failed read is not an empty playlist.
   const [loaded, setLoaded] = useState<PlaylistEntry[] | "failed" | null>(null);
-  // The playlists version the shown entries were read at.
-  const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  // True from a removal until the entries read after it arrive.
-  const [removing, setRemoving] = useState(false);
-  // Any playlist change, here or elsewhere, makes the shown indices stale from its event until
-  // the new read lands: a removal by index waits (R25).
-  const stale = removing || reloading || loadedAt !== version;
+  // The playlists version the shown entries were read at, and whether a removal of this view is
+  // still on its way. They guard the removal only, so they are refs, read when it runs.
+  const loadedAt = useRef<number | null>(null);
+  const removing = useRef(false);
   const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
@@ -49,8 +45,8 @@ export function PlaylistView({ id }: { id: number }) {
     const land = (result: PlaylistEntry[] | "failed") => {
       if (!current) return;
       setLoaded(result);
-      setLoadedAt(version);
-      setRemoving(false);
+      loadedAt.current = version;
+      removing.current = false;
     };
     commands.playlistEntries(id).then(land, () => land("failed"));
     return () => {
@@ -76,11 +72,20 @@ export function PlaylistView({ id }: { id: number }) {
       listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
     }
   }, [noList]);
+  /**
+   * True while the shown indices may not match the playlist: from any `playlists-changed` until
+   * the entries read after it land, and from a removal of this view until its new entries land.
+   * It reads the live state, so a callback kept by an open menu checks it too (R25).
+   */
+  const stale = () => {
+    const { reloading, version: now } = usePlaylistsStore.getState();
+    return removing.current || reloading > 0 || loadedAt.current !== now;
+  };
   const remove = (index: number) => {
-    if (stale) return;
-    setRemoving(true);
+    if (stale()) return;
+    removing.current = true;
     void removePlaylistEntry(id, index).then((done) => {
-      if (!done) setRemoving(false);
+      if (!done) removing.current = false;
     });
   };
   const items = (index: number): RowMenuItem[] => {

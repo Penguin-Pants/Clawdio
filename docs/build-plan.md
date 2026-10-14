@@ -2907,6 +2907,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
 | F-02 | Keyboard resize and move of widgets | Dockview has no keyboard resize (K5). Requirements section 7 defers keyboard moves. | Planning |
