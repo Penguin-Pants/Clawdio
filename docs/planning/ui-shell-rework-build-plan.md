@@ -720,7 +720,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 |---|---|---|
 | SH-7 drag region | The app keeps the native title bar. | Rework (MAY) |
 | SP-7 sidebar auto-hide with a pin | MAY. Not built. | Rework (MAY) |
-| TB-9 column state for an Albums view and for each playlist | The Album list is a card list (R5, C11) and the Playlists widget is a tree, so neither has columns. The two Songs views carry the state (UD8). | Owner limit of October 13 (modes stay) |
+| TB-9 column state for an Albums view and for each playlist | The Album list is a card list (R5, C11) and the Playlists widget is a list (a listbox since U8), so neither has columns. The two Songs views carry the state (UD8). | Owner limit of October 13 (modes stay) |
 | A search field in the band | One field in the Library header (UC9). The band gets a focus button. | Owner decision 10 (v1.5) |
 | Bar height values, breakpoints and hit areas as final numbers | Rework 3.3 marks them as starting values. UD1, UD3 and UD4 fix them; U7 may tune after the checklist. | Implementer |
 | Pop-out windows | Off (DK-10, rework decision 5, D8). | Rework |
@@ -1091,13 +1091,16 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
 - F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
 
-**PR 24 review (CI and Codex):** F1 1, F2 4, F3 0, F4 0.
+**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 7, F3 0, F4 0.
 
 - F1 (fixed): the P3-AC1 e2e test clicked a playlist before it waited for `data-measure-ready`; the playlist view replaces the Library rows that the signal reads, so on a slow runner the signal never fired. The test waits for the signal first (`milestone.spec.ts`).
 - F2 (fixed): a playlist pick did not show a Library tab that another tab hid. `revealLibrary` brings it to the front; the widget in another group stays active and keeps the focus (`layouts.test.ts`, `playlists.spec.ts`).
 - F2 (fixed): a custom order with many slots on one side clipped controls in the three-zone grid at LG. A side zone now never gets less than its content (`minmax(min-content,1fr)`), so the play controls move off center and nothing clips (`customize.spec.ts` at 900 and 1200 px).
 - F2 (fixed): the "Library" button dropped the keyboard focus to the page. It now goes back with the focus in the search field (`playlists.spec.ts`).
 - F2 (fixed): the playlist view said "empty" while its entries loaded and after a failed read. It shows nothing while loading and "Cannot read this playlist." on a failure (`PlaylistView.test.tsx`).
+- F2 (fixed): `playPlaylist` read the entries again, so a change between the two reads could start a different song than the activated row. The view passes the entries it shows (`playlists.test.ts`).
+- F2 (fixed): the TB-9 reason in section 10 still called the Playlists widget a tree.
+- F2 (fixed): DeepSource style findings in the new `PlaylistView.test.tsx` mocks (`async` with no `await`, an empty function with no comment).
 
 ## 11. Plan review record
 

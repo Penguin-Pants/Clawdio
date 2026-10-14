@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { playlistQueue, playlistTask, usePlaylistsStore } from "./playlists";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { commands } from "@/lib/ipc/commands";
+import { playPlaylist, playlistQueue, playlistTask, usePlaylistsStore } from "./playlists";
 import { useUiStore } from "./ui";
 
 beforeEach(() => {
@@ -77,5 +78,28 @@ describe("playlistQueue (R6 queue rule)", () => {
   it("gives null when nothing from the entry on can play", () => {
     expect(playlistQueue([{ track: null, label: "x" }])).toBeNull();
     expect(playlistQueue(entries, 3)).toBeNull();
+  });
+});
+
+describe("playPlaylist (R12)", () => {
+  afterEach(() => vi.restoreAllMocks());
+  const shown = [
+    { track: 7, label: "a" },
+    { track: 8, label: "b" },
+  ];
+
+  it("plays the entries the caller shows, with no second read", async () => {
+    const read = vi.spyOn(commands, "playlistEntries").mockResolvedValue([{ track: 9, label: "c" }]);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue(undefined);
+    await playPlaylist(1, 1, shown);
+    expect(read).not.toHaveBeenCalled();
+    expect(play).toHaveBeenCalledWith([7, 8], 1);
+  });
+
+  it("reads the entries when the caller has none", async () => {
+    vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
+    const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue(undefined);
+    await playPlaylist(1);
+    expect(play).toHaveBeenCalledWith([7, 8], 0);
   });
 });

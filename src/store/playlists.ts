@@ -73,9 +73,12 @@ export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number
   return start < 0 ? null : { ids, start };
 }
 
-/** Plays a playlist from entry `from` (R12: double-click or Enter plays). */
-export async function playPlaylist(id: number, from = 0): Promise<void> {
-  const queue = playlistQueue(await commands.playlistEntries(id), from);
+/**
+ * Plays a playlist from entry `from` (R12: double-click or Enter plays). A caller that shows the
+ * entries passes them, so `from` points into the list the user saw.
+ */
+export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry[]): Promise<void> {
+  const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
   if (queue) await commands.playerPlayList(queue.ids, queue.start);
 }
 

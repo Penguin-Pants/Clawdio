@@ -55,7 +55,7 @@ export function PlaylistView({ id }: { id: number }) {
       request(entries.slice(start, end + 1).flatMap((entry) => (entry.track === null ? [] : [entry.track]))),
     [entries, request],
   );
-  const play = (index: number) => void playPlaylist(id, index).catch(() => {});
+  const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
   const items = (index: number): RowMenuItem[] => {
     const track = entries[index]?.track ?? null;
     return [

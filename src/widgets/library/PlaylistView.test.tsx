@@ -4,13 +4,13 @@ import type { PlaylistEntry } from "@/lib/ipc/commands";
 import { usePlaylistsStore } from "@/store/playlists";
 
 /** The reply of the next `playlist_entries` call. */
-let reply: () => Promise<PlaylistEntry[]> = async () => [];
+let reply: () => Promise<PlaylistEntry[]> = () => Promise.resolve([]);
 
 vi.mock("@/lib/ipc/commands", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/ipc/commands")>();
   return {
     ...real,
-    commands: { ...real.commands, playlistEntries: () => reply(), libraryRows: async () => [] },
+    commands: { ...real.commands, playlistEntries: () => reply(), libraryRows: () => Promise.resolve([]) },
   };
 });
 
@@ -27,7 +27,10 @@ beforeEach(() => {
 
 describe("PlaylistView (R12 v1.9)", () => {
   it("shows no empty hint while the entries load", () => {
-    reply = () => new Promise(() => {});
+    reply = () =>
+      new Promise(() => {
+        // Never settles: the read is still running.
+      });
     render(<PlaylistView id={1} />);
     expect(screen.queryByText(EMPTY_TEXT)).toBeNull();
     expect(screen.queryByRole("listbox")).toBeNull();
@@ -41,7 +44,7 @@ describe("PlaylistView (R12 v1.9)", () => {
   });
 
   it("shows the empty hint for a playlist with no entries", async () => {
-    reply = async () => [];
+    reply = () => Promise.resolve([]);
     render(<PlaylistView id={1} />);
     expect(await screen.findByText(EMPTY_TEXT)).toBeTruthy();
   });
