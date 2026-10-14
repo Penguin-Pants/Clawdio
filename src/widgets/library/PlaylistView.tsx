@@ -26,9 +26,13 @@ export function PlaylistView({ id }: { id: number }) {
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
   // null while the first read runs; a failed read is not an empty playlist.
   const [loaded, setLoaded] = useState<PlaylistEntry[] | "failed" | null>(null);
-  // True from a removal until the entries read after it arrive: the shown indices are stale, so
-  // a second removal waits (R25).
+  // The playlists version the shown entries were read at.
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
+  // True from a removal until the entries read after it arrive.
   const [removing, setRemoving] = useState(false);
+  // Any playlist change, here or elsewhere, makes the shown indices stale until the new read
+  // lands: a removal by index waits (R25).
+  const stale = removing || loadedAt !== version;
   const entries = Array.isArray(loaded) ? loaded : NO_ENTRIES;
   // The parent keys this view by playlist, so a new playlist starts with no active row.
   const [picked, setActive] = useState<number | null>(null);
@@ -41,18 +45,13 @@ export function PlaylistView({ id }: { id: number }) {
   // The entries load for this playlist, and again after each playlist change.
   useEffect(() => {
     let current = true;
-    commands.playlistEntries(id).then(
-      (list) => {
-        if (!current) return;
-        setLoaded(list);
-        setRemoving(false);
-      },
-      () => {
-        if (!current) return;
-        setLoaded("failed");
-        setRemoving(false);
-      },
-    );
+    const land = (result: PlaylistEntry[] | "failed") => {
+      if (!current) return;
+      setLoaded(result);
+      setLoadedAt(version);
+      setRemoving(false);
+    };
+    commands.playlistEntries(id).then(land, () => land("failed"));
     return () => {
       current = false;
     };
@@ -67,10 +66,17 @@ export function PlaylistView({ id }: { id: number }) {
     [entries, request],
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
+  // The last removal takes the list with it, after the menu or the key put the focus back on
+  // it: the focus moves to the Library region instead of the page (AX-1).
+  const empty = Array.isArray(loaded) && loaded.length === 0;
+  useEffect(() => {
+    const focused = document.activeElement;
+    if (empty && (focused === null || focused === document.body)) {
+      listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
+    }
+  }, [empty]);
   const remove = (index: number) => {
-    if (removing) return;
-    // The last entry takes the list with it: the focus stays in the Library region (AX-1).
-    if (entries.length === 1) listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
+    if (stale) return;
     setRemoving(true);
     void removePlaylistEntry(id, index).then((done) => {
       if (!done) setRemoving(false);

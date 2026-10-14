@@ -364,3 +364,45 @@ test("R25: a second Delete while the entries reload removes nothing", async ({ p
   await expect(list(page).getByRole("option", { name: /Mix 1/ })).toContainText("5");
   await expect(songsInMix.getByRole("option").first()).toContainText("Song 2 of Album A0");
 });
+
+test("R25, AX-1: Remove from playlist in the menu on the last entry keeps the focus in the Library", async ({
+  page,
+}) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await songsInMix.getByRole("option").first().click();
+  for (let left = 6; left > 1; left--) {
+    await expect(songsInMix.getByRole("option")).toHaveCount(left);
+    await page.keyboard.press("Delete");
+  }
+  await expect(songsInMix.getByRole("option")).toHaveCount(1);
+  await songsInMix.getByRole("option").first().click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Remove from playlist" }).click();
+  await expect(widget(page, "library")).toContainText("This playlist is empty.");
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.closest("[data-widget]")?.getAttribute("data-widget")))
+    .toBe("library");
+});
+
+test("R25: a Delete while a change from elsewhere reloads the entries removes nothing", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await expect(songsInMix.getByRole("option")).toHaveCount(6);
+  await songsInMix.getByRole("option").first().click();
+  await page.evaluate(async () => {
+    window.e2eSlowEntries = true;
+    type Invoke = (command: string, args?: object) => Promise<unknown>;
+    const invoke = (window as unknown as { __TAURI_INTERNALS__: { invoke: Invoke } }).__TAURI_INTERNALS__.invoke;
+    const rows = (await invoke("playlists_list")) as { id: number; name: string }[];
+    const mix = rows.find((row) => row.name === "Mix 1");
+    // Another widget removes the last entry (the missing one).
+    await invoke("playlist_remove_entry", { id: mix?.id, index: 5 });
+  });
+  await page.keyboard.press("Delete");
+  await expect(songsInMix.getByRole("option")).toHaveCount(5);
+  await page.evaluate(() => (window.e2eSlowEntries = false));
+  // Only the change from elsewhere landed: the first song is still there.
+  await expect(songsInMix.getByRole("option").first()).toContainText("Song 1 of Album A0");
+});
