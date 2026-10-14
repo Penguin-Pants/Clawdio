@@ -256,8 +256,8 @@ test("TB-10 and UD8: Shift+F10 on a row adds the song to Favorites", async ({ pa
   await expect(songsGrid(page)).toBeFocused();
   await expect(
     widget(page, "playlists")
-      .getByRole("tree")
-      .getByRole("treeitem", { name: /Favorites/ }),
+      .getByRole("listbox", { name: "Playlists" })
+      .getByRole("option", { name: /Favorites/ }),
   ).toContainText("1");
   await page.keyboard.press("Shift+F10");
   await expect(page.getByRole("menuitem", { name: "Remove from Favorites" })).toBeVisible();

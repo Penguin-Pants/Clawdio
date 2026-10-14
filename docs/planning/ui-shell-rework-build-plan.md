@@ -1,6 +1,6 @@
 # UI Shell Rework Build Plan
 
-**Version:** 1.9, October 13, 2026.
+**Version:** 1.10, October 14, 2026.
 **Status:** Done with exceptions (October 13, 2026). U0 to U6 Done; U7 Done with exceptions (UQ3, UQ4, UQ5). See section 2.
 **Source:** the owner's document "UI Shell Rework: Transport Bar, Panes, Docking and Columns" (October 13, 2026). This plan calls it "the rework" and cites its requirement IDs (SH, TR, DK, SP, TB, PS, TH, PF, AX, TA).
 **Parent plan:** `docs/build-plan.md` v1.23. Its decisions (`D`), conflicts (`C`), risks (`K`) and phases (`P`) keep their IDs. This plan adds `UD` decisions, `UC` conflicts, `UK` risks and `U` phases.
@@ -44,6 +44,7 @@
 | U5 | Transport extras: card, customize, mini player | U2, U4 | Done |
 | U6 | Table extras: row drag, secondary sort, density | U4, U5 | Done |
 | U7 | Verification, screenshots and release notes | U6 | Done with exceptions |
+| U8 | Owner follow-ups: playlist view, centered play controls | U7 | Done |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -131,9 +132,9 @@ The owner may change any of them. Section 11 records changes.
 | UD15 | Lock layout: `api.updateOptions({ locked: true, disableDnd: true })` (`DockviewComponentOptions.locked` and `disableDnd`, 8.5.1 typings). Locked separators get `aria-disabled` and ignore keys. Tab close controls, the Library frame splitters, column resizing and scrolling keep working. | DK-5. Verified names in `node_modules/dockview-core/dist/cjs/dockview/options.d.ts`. |
 | UD16 | Center absorbs resize: `proportionalLayout: false` on the dock and `LayoutPriority.High` on the Library group when the group exposes `priority` (`gridviewPanel.d.ts` has it). Fallback: after each dock resize the existing `ResizeObserver` in `DockShell.tsx` re-applies the pixel sizes of the non-Library groups. | SP-4. `proportionalLayout` and `LayoutPriority` exist in the 8.5.1 typings. |
 | UD17 | Floating: a Float control in the widget tab (`WidgetTab.tsx`, pointer target like the close control) calls `api.addFloatingGroup(panel)`; a floating group's tab shows Dock instead. Keyboard path (AX-1): the Layout menu has "Float widget" and "Dock widget" for the active widget (the Dockview active panel, which F6 and a click set); each is disabled when it does not apply. The Library may float but never closes (R28 guard stays). Floating groups serialize in `dock.floatingGroups`. A floating group outside the window after a resize is moved back inside on load. | DK-3. `addFloatingGroup` and `SerializedDockview.floatingGroups` exist in the typings. |
-| UD18 | Sidebar icon rail (SP-5): the Playlists widget below 140 px width shows one icon button per playlist (heart for Favorites) with the name as tooltip and accessible name. Activating one widens its group to the preset width and selects the playlist. The Playlists minimum width in `src/shell/widgets.ts` goes from 200 px to 56 px (the rail width), so a sash drag can reach the rail. | SP-5 on the existing Playlists widget, the stand-in for Navigator. A 200 px minimum would stop the drag before the rail threshold (DK-2 still holds with 56 px). |
+| UD18 | Sidebar icon rail (SP-5): the Playlists widget below 140 px width shows one icon button per playlist (heart for Favorites) with the name as tooltip and accessible name. Activating one widens its group to the preset width and selects the playlist. U8 (requirements v1.9): activating one shows the playlist in the Library and keeps the rail. The Playlists minimum width in `src/shell/widgets.ts` goes from 200 px to 56 px (the rail width), so a sash drag can reach the rail. | SP-5 on the existing Playlists widget, the stand-in for Navigator. A 200 px minimum would stop the drag before the rail threshold (DK-2 still holds with 56 px). |
 | UD19 | Mini player (TR-9): a Rust command `window_set_mini(on, height)` stores the normal size and position, takes the band height in logical px from the webview (`useTokenPx("--size-transport-bar-compact")`, UD1) and sets the window to 400 wide by that height, with a minimum of 320 by that height and a maximum height equal to it, so the 125%, 140%, 150% and 200% scales fit. On exit it first clears the maximum height and restores the 800 x 560 minimum (D33), then restores the stored size and position. A root font change while mini (text scaling) sends the new height. The shell renders only the band (SM or XS class) in mini mode. Click the art to enter; "Exit mini player" in the overflow menu and a click on the art to leave. The window size watcher never saves a mini size (`worth_saving` refuses sizes below the minimum). | TR-9. One player state (rework 5.10). |
-| UD20 | Customize transport (TR-10): a dialog with the slot list. Optional slots have a checkbox; play or pause has none. Pointer drag handles and Move up and Move down buttons reorder. Saved as `transportSlots` in `layout.json` v2. Reset layout restores the default. | TR-10 with a keyboard path (AX-1). |
+| UD20 | Customize transport (TR-10): a dialog with the slot list. Optional slots have a checkbox; play or pause has none. Pointer drag handles and Move up and Move down buttons reorder. Saved as `transportSlots` in `layout.json` v2. Reset layout restores the default. U8 (requirements v1.9): Previous, play or pause and next move together as one group anywhere in the order; the default order puts them in the middle (Now playing and the seek bar before them), and the band centers the group when slots come before it. | TR-10 with a keyboard path (AX-1). |
 | UD21 | Row drag (TB-12): pointer drag from the selected Songs rows to a playlist row in the Playlists widget or to the Play queue body. A ghost shows "N songs". Escape cancels. The drop calls `addToPlaylist` or `queueAppend`. | TB-12 with the existing store functions. |
 | UD22 | Band buttons use a 32 px size (`size-8`, a new `icon` variant of `Button` if the preset has none). Tooltips show the shortcut where one exists ("Play (Space)"). | TR-8. `icon-sm` is 28 px. |
 | UD24 | One size-observer helper, `observeSize(element, callback)` in `src/lib/resize.ts`: a `ResizeObserver` whose callback runs once per animation frame (the latest entry wins, a pending frame is cancelled on disconnect). Every observer of the rework and every existing one that does layout work use it: `DockShell.tsx` (clamp), `FrameSplit.tsx` (frame layout), `LibraryWidget.tsx` (narrow switch), `use-size-class.ts`, `useTokenPx`, the Playlists rail (U3) and the Now playing card (U5). | PF-2 covers every size observer. Today `DockShell.tsx` and `FrameSplit.tsx` lay out inside the observer callback. |
@@ -654,7 +655,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | TR-7 opaque background | U1 | E2E (alpha 1) | Done (U1) |
 | TR-8 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
 | TR-9 mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Done (U5) |
-| TR-10 customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5) |
+| TR-10 customize transport (SHOULD) | U5, U8 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5; U8: the play controls move as a group) |
 | TR-11 Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Done (U5) |
 | DK-1 one docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
 | DK-2 minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
@@ -670,7 +671,7 @@ Verification codes: UT Vitest or `cargo test`, E2E Playwright (Chromium and WebK
 | SP-2 double-click reset | U3 | UT, E2E | Done (U3) |
 | SP-3 keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Done (U3; WebKit in CI) |
 | SP-4 pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
-| SP-5 icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
+| SP-5 icon rail (SHOULD) | U3, U8 | E2E `rail.spec.ts` | Done (U3; U8: a rail button shows the playlist in the Library) |
 | SP-6 no zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
 | SP-7 auto-hide with pin (MAY) | none | Not built | Not built |
 | TB-1 virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Done (U4) |
@@ -1063,6 +1064,33 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 
 ---
 
+### U8. Owner follow-ups: playlist view and centered play controls (October 14, 2026)
+
+**Status:** Done. **Source:** owner decisions 39 and 40, requirements v1.9 (after PR 23 merged).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| U8-AC1 | Pass | A selected playlist shows its songs in the Library in playlist order, in place of Artist, Album and Songs; "Library" and Ctrl+F go back; a deleted playlist goes back; Enter, double-click and Delete work in the view (`playlists.spec.ts`, `library.test.ts`, `playlists.test.ts`). The Playlists widget is a list (`listbox`), not a tree. |
+| U8-AC2 | Pass | The default band puts Previous, play or pause and Next in the middle: the play button center is within 2 px of the band center at 1280 px (`customize.spec.ts`). The three move as one group; moved to the start, the band is left-aligned again. An untouched old default order loads the new default (`slots.test.ts`). |
+
+**Notes**
+
+- The playlist view is `src/widgets/library/PlaylistView.tsx`; `useLibraryStore.playlist` holds the shown playlist (not saved). The rail (UD18) shows the playlist in the Library and keeps the rail.
+- The band has three zones (`bandZones` in `slots.ts`) when slots come before the play group: equal side zones center the group.
+
+**Rule 10 (real app):** Linux, WebKitGTK under Xvfb at 1200 x 800: the play button sits at the band center; a click on a playlist shows its three songs in the Library, the missing one marked, with the "Library" button.
+
+**Checks that could not run:** WebKit e2e here (CI runs it). The Windows rows (no Windows machine).
+
+**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 2.
+
+- F2 (fixed): in the three-zone grid the 40 px mini player art overflowed the 32 px band content down only; `content-center` centers the row again (`mini.spec.ts`).
+- F2 (fixed): Ctrl+F found no search field while a playlist showed; it now goes back to the library first.
+- F2 (fixed): a deleted playlist left an empty view; the view goes back to the library.
+- F2 (fixed): the first draft set React state in effects (lint `set-state-in-effect`); the active rows are derived now.
+- F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
+- F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
+
 ## 11. Plan review record
 
 TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 tested each one against the rework, the requirements, the code and the Dockview 8.5.1 typings.
@@ -1144,6 +1172,7 @@ TWO-PASS REVIEW of this plan, October 13, 2026. Pass 1 listed the risks. Pass 2 
 
 ## 12. Change log
 
+- **1.10 (October 14, 2026):** U8: the owner follow-ups of requirements v1.9 (playlist view, centered play controls).
 - **1.9 (October 13, 2026):** PR 23 review after U7 (two Codex rounds); PF-3 WebKit CI budget 150 ms (owner decision): the WebKit PF-3 frame gap root-caused and fixed, ten Codex defects fixed, one docs fix (U7 record).
 - **1.8 (October 13, 2026):** U0 to U7 executed. U7 Done with exceptions; UQ5 added (the U7 exceptions for the owner).
 - **1.7 (October 13, 2026):** PR 22 review, CodeRabbit: the U1 tests assert the exact default-preset F6 order and U1-AC5 names it.

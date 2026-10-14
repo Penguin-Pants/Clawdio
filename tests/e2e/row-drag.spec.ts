@@ -11,7 +11,7 @@ async function open(page: Page) {
 
 const rows = (page: Page) => songsGrid(page).locator(SONG_ROWS);
 const playlist = (page: Page, name: string) =>
-  widget(page, "playlists").getByRole("treeitem", { name: new RegExp(name) });
+  widget(page, "playlists").getByRole("option", { name: new RegExp(name) });
 
 /** A pointer drag from a row to a target, in small steps. */
 async function dragTo(page: Page, from: Locator, to: Locator, before?: () => Promise<void>) {

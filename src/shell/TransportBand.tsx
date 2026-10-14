@@ -14,7 +14,7 @@ import {
   StopButton,
 } from "./transport/PlayControls";
 import { ProgressLine, SeekBar } from "./transport/SeekBar";
-import { type SlotId, layoutSlots } from "./transport/slots";
+import { type SlotId, bandZones, layoutSlots } from "./transport/slots";
 import { VolumePopover, VolumeSlider } from "./transport/VolumeControl";
 import { type SizeClass, atLeast, useSizeClass } from "./use-size-class";
 
@@ -72,8 +72,9 @@ function Slot({ id, size, mini }: { id: SlotId; size: SizeClass; mini: boolean }
  * The transport band (SH-2, TR-1 to TR-8): a fixed band outside the dock, full width, with a
  * height from the size tokens (UD1, UD3). Its content follows its own width (UD4): slots that do
  * not fit move to the More menu, and play or pause always shows. The user's slot order and hidden
- * set (TR-10) apply first. `data-widget` makes it an F6
- * region (P2.12).
+ * set (TR-10) apply first. With slots before the play controls, the band has three zones and the
+ * play controls sit in the middle (owner decision after U7). `data-widget` makes it an F6 region
+ * (P2.12).
  */
 export function TransportBand() {
   const ref = useRef<HTMLElement>(null);
@@ -86,6 +87,10 @@ export function TransportBand() {
   const hidden = mini ? slots.hidden.filter((id) => id !== "nowPlaying") : slots.hidden;
   const { band, overflow } = layoutSlots(size, slots.order, hidden);
   const compact = !atLeast(size, "md");
+  const zones = bandZones(band);
+  const centered = zones.left.length > 0;
+  const slot = (id: SlotId) => <Slot key={id} id={id} size={size} mini={mini} />;
+  const more = overflow.length > 0 && <OverflowMenu slots={overflow} />;
   return (
     <section
       ref={ref}
@@ -94,7 +99,9 @@ export function TransportBand() {
       data-size={size}
       tabIndex={-1}
       className={cn(
-        "relative flex min-w-0 items-center gap-2 overflow-hidden bg-bg-surface px-2 whitespace-nowrap text-text-primary [grid-area:transport] focus-visible:-outline-offset-2",
+        "relative min-w-0 items-center gap-2 overflow-hidden bg-bg-surface px-2 whitespace-nowrap text-text-primary [grid-area:transport] focus-visible:-outline-offset-2",
+        // Equal side zones put the play controls in the middle of the band.
+        centered ? "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] content-center" : "flex",
         compact ? "h-(--size-transport-bar-compact) py-1" : "h-(--size-transport-bar) py-2",
         // An inset line, not a border, so the token height holds the content exactly (TH-1).
         position === "top"
@@ -102,11 +109,26 @@ export function TransportBand() {
           : "shadow-[inset_0_1px_0_var(--color-border)]",
       )}
     >
-      {band.map((id) => (
-        <Slot key={id} id={id} size={size} mini={mini} />
-      ))}
-      {!band.includes("seek") && <div className="flex-1" />}
-      {overflow.length > 0 && <OverflowMenu slots={overflow} />}
+      {centered ? (
+        <>
+          <div data-zone="left" className="flex min-w-0 items-center gap-2">
+            {zones.left.map(slot)}
+          </div>
+          <div data-zone="center" className="flex items-center gap-2">
+            {zones.center.map(slot)}
+          </div>
+          <div data-zone="right" className="flex min-w-0 items-center justify-end gap-2">
+            {zones.right.map(slot)}
+            {more}
+          </div>
+        </>
+      ) : (
+        <>
+          {band.map(slot)}
+          {!band.includes("seek") && <div className="flex-1" />}
+          {more}
+        </>
+      )}
       {compact && <ProgressLine />}
     </section>
   );

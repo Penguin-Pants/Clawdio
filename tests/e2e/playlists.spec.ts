@@ -8,52 +8,56 @@ async function openPlaylists(page: Page) {
   await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   // The default preset shows Playlists; Now playing (the heart) is hidden (UD6).
   await page.evaluate(() => window.e2e.show("nowPlaying"));
-  await expect(tree(page).getByRole("treeitem", { name: /Mix 1/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Mix 1/ })).toBeVisible();
 }
 
-const tree = (page: Page) => widget(page, "playlists").getByRole("tree", { name: "Playlists" });
+const list = (page: Page) => widget(page, "playlists").getByRole("listbox", { name: "Playlists" });
+/** The playlist the Library shows (R12 v1.9). */
+const view = (page: Page, name: string) => widget(page, "library").getByRole("listbox", { name: `Songs in ${name}` });
 const songs = (page: Page) => widget(page, "library").getByRole("grid", { name: "Songs" });
 
 async function lastPlay(page: Page): Promise<{ ids: number[]; start: number }> {
   return JSON.parse((await page.locator("body").getAttribute("data-play-list")) ?? "null");
 }
 
-test("P11-AC8: keys move, open, close, delete and play in the Playlists tree", async ({ page }) => {
+test("P11-AC8, R12 v1.9: keys move through the playlists, show each in the Library and play", async ({ page }) => {
   await openPlaylists(page);
-  await tree(page).focus();
+  await list(page).focus();
   await page.keyboard.press("ArrowDown");
-  const mix = tree(page).getByRole("treeitem", { name: /Mix 1/ });
+  const mix = list(page).getByRole("option", { name: /Mix 1/ });
   await expect(mix).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowRight");
-  await expect(mix).toHaveAttribute("aria-expanded", "true");
-  await page.keyboard.press("ArrowRight");
-  const first = tree(page).getByRole("treeitem", { level: 2 }).first();
-  await expect(first).toHaveAttribute("aria-selected", "true");
-  await expect(first).toContainText("Song 1 of Album A0");
-  await page.keyboard.press("Delete");
-  await expect(mix).toContainText("5");
-  await expect(tree(page).getByRole("treeitem", { level: 2 }).first()).toContainText("Song 2 of Album A0");
-  await page.keyboard.press("ArrowLeft");
-  await expect(mix).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowLeft");
-  await expect(mix).toHaveAttribute("aria-expanded", "false");
+  // The Library shows the playlist's songs in order in place of Artist, Album and Songs.
+  await expect(view(page, "Mix 1").getByRole("option").first()).toContainText("Song 1 of Album A0");
+  await expect(widget(page, "library").getByRole("grid", { name: "Songs" })).toHaveCount(0);
+  await expect(widget(page, "library").getByRole("button", { name: "Library" })).toBeVisible();
   // Enter plays the playlist (D24); the missing entry is skipped (P11-AC4).
   await page.keyboard.press("Enter");
-  await expect.poll(() => lastPlay(page)).toEqual({ ids: [1, 2, 3, 4], start: 0 });
-  await tree(page).getByRole("treeitem", { name: /Mix 2/ }).dblclick();
+  await expect.poll(() => lastPlay(page)).toEqual({ ids: [0, 1, 2, 3, 4], start: 0 });
+  await page.keyboard.press("ArrowDown");
+  await expect(view(page, "Mix 2")).toBeVisible();
+  await list(page).getByRole("option", { name: /Mix 2/ }).dblclick();
   await expect.poll(() => lastPlay(page)).toEqual({ ids: [10, 11, 12, 13, 14], start: 0 });
+  // Library goes back to the Artist, Album and Songs lists.
+  await widget(page, "library").getByRole("button", { name: "Library" }).click();
+  await expect(songs(page)).toBeVisible();
+  await expect(list(page).getByRole("option", { selected: true })).toHaveCount(0);
 });
 
-test("P11-AC4: a missing entry shows as missing and an entry plays its playlist from there", async ({ page }) => {
+test("P11-AC4, R25: the playlist view shows a missing entry, plays from an entry and Delete removes one", async ({
+  page,
+}) => {
   await openPlaylists(page);
-  await tree(page).getByRole("treeitem", { name: /Mix 1/ }).click();
-  const missing = tree(page).getByRole("treeitem", { level: 2 }).last();
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  const missing = songsInMix.getByRole("option").last();
   await expect(missing).toContainText("missing");
   await expect(missing).toContainText("../Missing/Song 5.mp3");
-  await tree(page)
-    .getByRole("treeitem", { name: /Song 3 of Album A0/ })
-    .dblclick();
+  await songsInMix.getByRole("option", { name: /Song 3 of Album A0/ }).dblclick();
   await expect.poll(() => lastPlay(page)).toEqual({ ids: [0, 1, 2, 3, 4], start: 2 });
+  await songsInMix.getByRole("option").first().click();
+  await page.keyboard.press("Delete");
+  await expect(list(page).getByRole("option", { name: /Mix 1/ })).toContainText("5");
+  await expect(songsInMix.getByRole("option").first()).toContainText("Song 2 of Album A0");
 });
 
 test("P11.5: New playlist checks the name inline and creates the playlist", async ({ page }) => {
@@ -66,7 +70,7 @@ test("P11.5: New playlist checks the name inline and creates the playlist", asyn
   await dialog.getByRole("textbox", { name: "Name" }).fill("Road trip");
   await expect(dialog.getByRole("alert")).toHaveText("");
   await dialog.getByRole("button", { name: "Create" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Road trip/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Road trip/ })).toBeVisible();
 });
 
 test("P11.5: a second submit while the playlist is made creates nothing and shows no error", async ({ page }) => {
@@ -78,7 +82,7 @@ test("P11.5: a second submit while the playlist is made creates nothing and show
   await dialog.getByRole("textbox", { name: "Name" }).press("Enter");
   await dialog.getByRole("textbox", { name: "Name" }).press("Enter");
   await expect(dialog).toBeHidden();
-  await expect(tree(page).getByRole("treeitem", { name: /Slow/ })).toHaveCount(1);
+  await expect(list(page).getByRole("option", { name: /Slow/ })).toHaveCount(1);
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
   await expect(page.locator("footer").getByRole("status")).not.toHaveText(/Cannot create/);
 });
@@ -93,7 +97,7 @@ test("P11.6: a playlist made after the Library rows rendered shows in their Add 
   const dialog = page.getByRole("dialog", { name: "New playlist" });
   await dialog.getByRole("textbox", { name: "Name" }).fill("Later");
   await dialog.getByRole("button", { name: "Create" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Later/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Later/ })).toBeVisible();
   await album.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Add to playlist" }).click();
   await expect(page.getByRole("menu").last().getByRole("menuitem", { name: "Later" })).toBeVisible();
@@ -102,7 +106,7 @@ test("P11.6: a playlist made after the Library rows rendered shows in their Add 
 test("P11.6: Add to playlist lists playlists but Favorites, and New playlist adds the song", async ({ page }) => {
   await openPlaylists(page);
   await widget(page, "nowPlaying").getByRole("button", { name: "Add to Favorites" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Favorites/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Favorites/ })).toBeVisible();
   await songs(page)
     .getByRole("row", { name: /Song 2 of Album A0/ })
     .click({ button: "right" });
@@ -112,7 +116,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   await expect(submenu.getByRole("menuitem", { name: "Favorites" })).toHaveCount(0);
   await submenu.getByRole("menuitem", { name: "Mix 3" }).click();
   await expect(page.locator("footer").getByRole("status")).toHaveText("Added to playlist");
-  await expect(tree(page).getByRole("treeitem", { name: /Mix 3/ })).toContainText("7");
+  await expect(list(page).getByRole("option", { name: /Mix 3/ })).toContainText("7");
 
   await songs(page)
     .getByRole("row", { name: /Song 2 of Album A0/ })
@@ -122,7 +126,7 @@ test("P11.6: Add to playlist lists playlists but Favorites, and New playlist add
   const dialog = page.getByRole("dialog", { name: "New playlist" });
   await dialog.getByRole("textbox", { name: "Name" }).fill("Fresh");
   await dialog.getByRole("button", { name: "Create" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Fresh/ })).toContainText("1");
+  await expect(list(page).getByRole("option", { name: /Fresh/ })).toContainText("1");
 });
 
 test("P11-AC5: the hearts add and remove the song in Favorites", async ({ page }) => {
@@ -140,7 +144,7 @@ test("P11-AC5: the hearts add and remove the song in Favorites", async ({ page }
     "aria-pressed",
     "false",
   );
-  await expect(tree(page).getByRole("treeitem", { name: /Favorites/ })).toContainText("0");
+  await expect(list(page).getByRole("option", { name: /Favorites/ })).toContainText("0");
 });
 
 test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ page }) => {
@@ -164,12 +168,28 @@ test("P11-AC10: a failed write shows a dialog and playback goes on", async ({ pa
 
 test("R12: Delete playlist asks first and names the file", async ({ page }) => {
   await openPlaylists(page);
-  await tree(page).getByRole("treeitem", { name: /Mix 5/ }).click({ button: "right" });
+  await list(page).getByRole("option", { name: /Mix 5/ }).click({ button: "right" });
   await page.getByRole("menuitem", { name: "Delete playlist" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete playlist" });
   await expect(dialog).toContainText("Mix 5.m3u8");
   await dialog.getByRole("button", { name: "Delete" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Mix 5/ })).toHaveCount(0);
+  await expect(list(page).getByRole("option", { name: /Mix 5/ })).toHaveCount(0);
+});
+
+test("R12 v1.9: deleting the shown playlist and Ctrl+F both go back to the library lists", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 4/ }).click();
+  await expect(view(page, "Mix 4")).toBeVisible();
+  await page.keyboard.press("Control+f");
+  await expect(widget(page, "library").getByRole("searchbox", { name: "Search" })).toBeFocused();
+  await expect(songs(page)).toBeVisible();
+  // A right-click shows the playlist too; deleting it goes back.
+  await list(page).getByRole("option", { name: /Mix 4/ }).click({ button: "right" });
+  await expect(view(page, "Mix 4")).toBeVisible();
+  await page.getByRole("menuitem", { name: "Delete playlist" }).click();
+  await page.getByRole("dialog", { name: "Delete playlist" }).getByRole("button", { name: "Delete" }).click();
+  await expect(songs(page)).toBeVisible();
+  await expect(widget(page, "library").getByRole("button", { name: "Library" })).toHaveCount(0);
 });
 
 /**
@@ -207,7 +227,7 @@ test("P12.5, P19-AC7: Import playlist shows the combined report", async ({ page 
   );
   expect(await lastArgs(page, "playlist_import")).toBe("{}");
   await dialog.getByRole("button", { name: "OK" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Road Trip_ 2026/ })).toBeVisible();
 });
 
 test("P19-AC7: Import folder shows a busy state, then the combined report", async ({ page }) => {
@@ -227,12 +247,12 @@ test("P19-AC7: Import folder shows a busy state, then the combined report", asyn
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(playlists.getByRole("button", { name: "Import playlist" })).toBeEnabled();
   await expect(playlists).not.toContainText("Importing playlists");
-  await expect(tree(page).getByRole("treeitem", { name: /Evening \(2\)/ })).toBeVisible();
+  await expect(list(page).getByRole("option", { name: /Evening \(2\)/ })).toBeVisible();
 });
 
 test("P19-AC7: Find missing songs on one playlist, then on all playlists", async ({ page }) => {
   await openPlaylists(page);
-  const mix = tree(page).getByRole("treeitem", { name: /Mix 1/ });
+  const mix = list(page).getByRole("option", { name: /Mix 1/ });
   await mix.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Find missing songs" }).click();
   let dialog = report(page, "Find missing songs");
@@ -248,7 +268,7 @@ test("P19-AC7: Find missing songs on one playlist, then on all playlists", async
   // The context menu must be gone and its focus return done (WebKit returns focus a moment
   // after the close), or the focus return closes the next menu as soon as it opens.
   await expect(page.getByRole("menu")).toHaveCount(0);
-  await expect(tree(page)).toBeFocused();
+  await expect(list(page)).toBeFocused();
 
   await widget(page, "playlists").getByRole("button", { name: "Playlist actions" }).click();
   await page.getByRole("menuitem", { name: "Find missing songs in all playlists" }).click();
@@ -272,6 +292,6 @@ test("P19-AC7, R33.1: a canceled scan stops import and repair with nothing chang
   dialog = report(page, "Find missing songs");
   await expect(dialog).toContainText("Canceled, nothing changed");
   await dialog.getByRole("button", { name: "OK" }).click();
-  await expect(tree(page).getByRole("treeitem", { name: /Road Trip_ 2026/ })).toHaveCount(0);
-  await expect(tree(page).getByRole("treeitem", { name: /Mix 1/ })).toContainText("6");
+  await expect(list(page).getByRole("option", { name: /Road Trip_ 2026/ })).toHaveCount(0);
+  await expect(list(page).getByRole("option", { name: /Mix 1/ })).toContainText("6");
 });

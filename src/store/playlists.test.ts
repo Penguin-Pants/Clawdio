@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { playlistTask, usePlaylistsStore } from "./playlists";
+import { playlistQueue, playlistTask, usePlaylistsStore } from "./playlists";
 import { useUiStore } from "./ui";
 
 beforeEach(() => {
@@ -55,5 +55,27 @@ describe("playlistTask (R32 busy state)", () => {
     );
     expect(useUiStore.getState().dialog).toEqual({ kind: "error", text: "Choose a music folder first" });
     expect(usePlaylistsStore.getState().busy).toBeNull();
+  });
+});
+
+describe("playlistQueue (R6 queue rule)", () => {
+  const entries = [
+    { track: 4, label: "" },
+    { track: null, label: "../Missing.mp3" },
+    { track: 7, label: "" },
+  ];
+
+  it("queues the library tracks in order and skips missing entries", () => {
+    expect(playlistQueue(entries)).toEqual({ ids: [4, 7], start: 0 });
+  });
+
+  it("starts at the entry, or the next one that is not missing", () => {
+    expect(playlistQueue(entries, 2)).toEqual({ ids: [4, 7], start: 1 });
+    expect(playlistQueue(entries, 1)).toEqual({ ids: [4, 7], start: 1 });
+  });
+
+  it("gives null when nothing from the entry on can play", () => {
+    expect(playlistQueue([{ track: null, label: "x" }])).toBeNull();
+    expect(playlistQueue(entries, 3)).toBeNull();
   });
 });

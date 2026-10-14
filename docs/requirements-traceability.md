@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.18, October 13, 2026 (section 1 rows that v1.8 replaces are Superseded; the summary is counted again from the rows).
+**Version:** 1.19, October 14, 2026 (R12-2 follows requirements v1.9; TR-10 and SP-5 note the U8 changes; the counts do not change).
 **Plan:** `docs/build-plan.md` v1.21. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -226,7 +226,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
 | R12-1 | Create, add, remove, delete (delete after confirmation) | §2 R12 | P11.4, P11.5 | P11-AC2 | IT, E2E | Done (P11) |
-| R12-2 | Playlists widget: list, expand, double-click plays, "New playlist", "Add to playlist", "Remove from playlist" | §2 R12 | P11.5, P11.6 | P11-AC8 | E2E | Done (P11) |
+| R12-2 | Playlists widget: list; `(v1.9)` a selected playlist shows its songs in the Library (no tree); double-click plays, "New playlist", "Add to playlist", "Remove from playlist" | §2 R12 | P11.5, P11.6, U8 | P11-AC8, U8-AC1 | E2E | Done (P11, U8) |
 | R12-3 | Duplicates allowed; Favorites toggles | §2 R12 | P11.6, P11.7 | P11-AC2, P11-AC5 | IT | Done (P11, D20) |
 | R12-4 | Name rule: separators, "..", Windows characters, edge spaces and dots, reserved names, "Favorites" | §2 R12 | P11.3 | P11-AC1 | UT | Done (P11, D21) |
 | R13-1 | `.m3u8` (UTF-8) in `Playlists/` at the folder root | §2 R13 | P11.1 | P11-AC2 | IT | Done (P11) |
@@ -735,7 +735,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | TR-7 | Opaque background | U1 | E2E (alpha 1) | Done (U1) |
 | TR-8 | 32 px hit area, focus ring, tooltip with shortcut | U1 | E2E | Done (U1) |
 | TR-9 | Mini player (SHOULD) | U5 | UT `window.rs`; E2E `mini.spec.ts` | Done (U5) |
-| TR-10 | Customize transport (SHOULD) | U5 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5) |
+| TR-10 | Customize transport (SHOULD) | U5, U8 | UT `slots.test.ts`; E2E `customize.spec.ts` | Done (U5; U8: the play controls move as a group) |
 | TR-11 | Now playing card (SHOULD) | U5 | E2E `card.spec.ts` | Done (U5) |
 | DK-1 | One docking library | U2 (re-verify) | REV `package.json` | Done (U2) |
 | DK-2 | Minimum width and height per widget | U2 (re-verify) | UT `widgets.test.ts`; E2E `docking.spec.ts` | Done (U2) |
@@ -751,7 +751,7 @@ One row per rework requirement and per rework section that the plan `docs/planni
 | SP-2 | Double-click reset | U3 | UT, E2E | Done (U3) |
 | SP-3 | Keyboard separators | U3 | UT `splitters.test.ts`; E2E in both engines | Done (U3; WebKit in CI) |
 | SP-4 | Pixel sidebars, center absorbs | U2 | E2E `resize.spec.ts` | Done (U2) |
-| SP-5 | Icon rail (SHOULD) | U3 | E2E `rail.spec.ts` | Done (U3) |
+| SP-5 | Icon rail (SHOULD) | U3, U8 | E2E `rail.spec.ts` | Done (U3; U8: a rail button shows the playlist in the Library) |
 | SP-6 | No zero size, explicit collapse with a restore button (SHOULD) | U3 | E2E `docking.spec.ts`, `splitters.spec.ts` (UD25) | Done (U3) |
 | SP-7 | Auto-hide with pin (MAY) | none | Not built | Not built |
 | TB-1 | Virtualized fixed rows | U4 (re-verify) | E2E `table-perf.spec.ts` | Done (U4) |

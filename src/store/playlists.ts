@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { commands, type PlaylistRow } from "@/lib/ipc/commands";
+import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
 import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
@@ -56,6 +56,32 @@ export function toggleFavorite(track: number): void {
 export function addFavorites(tracks: number[]): void {
   if (tracks.length === 0) return;
   void playlistEdit(() => commands.favoritesAdd(tracks), "Cannot change Favorites");
+}
+
+/**
+ * The queue for a playlist (R6 queue rule): its library tracks in order, from entry `from`
+ * (the next entry that is not missing). Missing entries are skipped.
+ */
+export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number[]; start: number } | null {
+  const ids: number[] = [];
+  let start = -1;
+  entries.forEach((entry, index) => {
+    if (entry.track === null) return;
+    if (start < 0 && index >= from) start = ids.length;
+    ids.push(entry.track);
+  });
+  return start < 0 ? null : { ids, start };
+}
+
+/** Plays a playlist from entry `from` (R12: double-click or Enter plays). */
+export async function playPlaylist(id: number, from = 0): Promise<void> {
+  const queue = playlistQueue(await commands.playlistEntries(id), from);
+  if (queue) await commands.playerPlayList(queue.ids, queue.start);
+}
+
+/** "Remove from playlist" and the Delete key (R12, R25): removes the entry at `index`. */
+export function removePlaylistEntry(id: number, index: number): void {
+  void playlistEdit(() => commands.playlistRemoveEntry(id, index), "Cannot remove the entry");
 }
 
 /** Add to playlist (R12): appends; duplicates are allowed. */

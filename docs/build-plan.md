@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.25, October 13, 2026 (UI shell rework U0 to U7 executed: Done with exceptions).
+**Version:** 1.26, October 14, 2026 (UI shell rework U0 to U8: Done with exceptions; U8 holds the owner follow-ups of requirements v1.9).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -90,7 +90,7 @@ A phase is Done when all of these are true:
 | P21 | Release readiness after v1.6 | P20 | Done with exceptions |
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
-| U0 to U7 | UI shell rework (transport band, docking, splitters, Library table) | P23 | Done with exceptions (U0 to U7; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 

@@ -4,15 +4,7 @@ import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/co
 import { Icon } from "@/components/icons";
 import { IconButton } from "@/components/icon-button";
 import { cn } from "@/lib/utils";
-import {
-  DEFAULT_SLOTS,
-  type SlotId,
-  canHide,
-  canMove,
-  moveSlot,
-  moveSlotBefore,
-  setSlotHidden,
-} from "@/shell/transport/slots";
+import { DEFAULT_SLOTS, type SlotId, canHide, moveSlot, moveSlotBefore, setSlotHidden } from "@/shell/transport/slots";
 import { useUiStore } from "@/store/ui";
 
 /** The slot names in the dialog (UD20). */
@@ -32,7 +24,7 @@ export const SLOT_LABELS: Record<SlotId, string> = {
 
 /**
  * Customize transport bar (TR-10, UD20): a checkbox per optional slot, Move up and Move down, and
- * a drag handle per movable slot. Previous, play or pause and next stay first; play or pause cannot
+ * a drag handle per slot. Previous, play or pause and next move as one group; play or pause cannot
  * hide. Each change applies to the band at once and saves with the layout.
  */
 export function CustomizeTransportDialog() {
@@ -75,13 +67,13 @@ export function CustomizeTransportDialog() {
       <DialogHeader>
         <DialogTitle>Customize transport bar</DialogTitle>
         <DialogDescription>
-          Show or hide controls and change their order. Controls that do not fit move to the More menu.
+          Show or hide controls and change their order. Previous, Play or pause and Next move together. Controls that do
+          not fit move to the More menu.
         </DialogDescription>
       </DialogHeader>
       <ul ref={listRef} aria-label="Transport bar slots" className="flex flex-col gap-0.5">
         {slots.order.map((id, index) => {
           const label = SLOT_LABELS[id];
-          const movable = canMove(id);
           return (
             <li
               key={id}
@@ -100,18 +92,14 @@ export function CustomizeTransportDialog() {
                   "shadow-[inset_0_-2px_0_var(--color-brand-red)]",
               )}
             >
-              {movable ? (
-                <span
-                  aria-hidden="true"
-                  data-slot="slot-handle"
-                  onPointerDown={(event) => startDrag(event, id)}
-                  className="flex size-6 cursor-grab touch-none items-center justify-center text-text-muted"
-                >
-                  <Icon name="grip" />
-                </span>
-              ) : (
-                <span aria-hidden="true" className="size-6" />
-              )}
+              <span
+                aria-hidden="true"
+                data-slot="slot-handle"
+                onPointerDown={(event) => startDrag(event, id)}
+                className="flex size-6 cursor-grab touch-none items-center justify-center text-text-muted"
+              >
+                <Icon name="grip" />
+              </span>
               {canHide(id) ? (
                 <input
                   id={`slot-${id}`}
@@ -128,22 +116,18 @@ export function CustomizeTransportDialog() {
                 {label}
                 {!canHide(id) && <span className="text-text-muted"> (always shown)</span>}
               </label>
-              {movable && (
-                <>
-                  <IconButton
-                    icon="chevronUp"
-                    label={`Move ${label} up`}
-                    disabled={moveSlot(slots, id, -1) === slots}
-                    onClick={() => setSlots(moveSlot(slots, id, -1))}
-                  />
-                  <IconButton
-                    icon="chevronDown"
-                    label={`Move ${label} down`}
-                    disabled={moveSlot(slots, id, 1) === slots}
-                    onClick={() => setSlots(moveSlot(slots, id, 1))}
-                  />
-                </>
-              )}
+              <IconButton
+                icon="chevronUp"
+                label={`Move ${label} up`}
+                disabled={moveSlot(slots, id, -1) === slots}
+                onClick={() => setSlots(moveSlot(slots, id, -1))}
+              />
+              <IconButton
+                icon="chevronDown"
+                label={`Move ${label} down`}
+                disabled={moveSlot(slots, id, 1) === slots}
+                onClick={() => setSlots(moveSlot(slots, id, 1))}
+              />
             </li>
           );
         })}

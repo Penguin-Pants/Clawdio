@@ -25,12 +25,13 @@ const names = (list: HTMLElement) =>
 beforeEach(() => useUiStore.setState({ transportSlots: DEFAULT_SLOTS, dialog: { kind: "customizeTransport" } }));
 
 describe("CustomizeTransportDialog (UD20)", () => {
-  it("lists every slot; play or pause has no checkbox and no move buttons", () => {
+  it("lists every slot; play or pause has no checkbox but moves with its group", () => {
     const list = open();
     expect(names(list)).toEqual(DEFAULT_SLOTS.order);
-    const play = within(list).getAllByRole("listitem")[1];
+    const play = within(list).getAllByRole("listitem")[DEFAULT_SLOTS.order.indexOf("playPause")];
     expect(within(play).queryByRole("checkbox")).toBeNull();
-    expect(within(play).queryByRole("button", { name: /Move/ })).toBeNull();
+    fireEvent.click(within(play).getByRole("button", { name: "Move Play or pause up" }));
+    expect(names(list).slice(0, 5)).toEqual(["nowPlaying", "previous", "playPause", "next", "seek"]);
     expect((screen.getByRole("checkbox", { name: "Show Search" }) as HTMLInputElement).checked).toBe(false);
   });
 

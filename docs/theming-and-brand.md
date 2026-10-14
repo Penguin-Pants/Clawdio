@@ -49,7 +49,7 @@ Use token classes (`bg-bg-surface`, `text-text-muted`) or the shadcn/ui semantic
 | `radii.dialog` | `--radius-dialog` | Dialogs |
 | `sizes.transportBar` | `--size-transport-bar` | Transport band height at the MD, LG and XL size classes (3.5rem, 56 px at the 16 px root) |
 | `sizes.transportBarCompact` | `--size-transport-bar-compact` | Transport band height at SM and XS (2.5rem, 40 px) |
-| `sizes.rowRegular` | `--size-row-regular` | Row height of the Library lists, the Tree, the Play queue and the Playlists tree (1.75rem, 28 px) |
+| `sizes.rowRegular` | `--size-row-regular` | Row height of the Library lists, the Tree, the Play queue, the Playlists list and the playlist view (1.75rem, 28 px) |
 | `sizes.rowCompact` | `--size-row-compact` | Compact row height (1.5rem, 24 px) |
 | `sizes.rowAlbum` | `--size-row-album` | Album list row height (3rem, 48 px) |
 | `spacing.unit` | `--spacing-unit` | Tailwind's spacing scale (`--spacing`): every `p-*`, `m-*`, `gap-*`, `w-*` and `h-*` step is a multiple of it (0.25rem) |

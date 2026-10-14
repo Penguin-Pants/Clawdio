@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.8, October 13, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`).
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.8.
+**Status:** Decision-complete. Version 1.9, October 14, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.9.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.9)` marks an item changed in version 1.9 (owner decisions 39 and 40 in section 8).
 - `(v1.8)` marks an item changed or added in version 1.8 (the UI shell rework, owner decision 38 in section 8; the source is `docs/planning/ui-shell-rework.md`, called "the rework"). `(v1.7)` marks an item changed or added in version 1.7 (Library frame splitters and fixed-height bar widgets, owner decisions 29 to 37 in section 8). `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
 
@@ -173,7 +174,7 @@ The closest open source player (Strawberry) has many features the owner does not
 ### Playlists
 
 - **R12 (v1.2) `[D]`.** Create a playlist, add songs, remove songs and delete a playlist. Delete removes the `.m3u8` file after a confirmation.
-  - `[D]` The Playlists widget lists playlists. Each playlist expands to show its songs. Double-click plays a playlist. A "New playlist" button and "Add to playlist" in the context menu create playlists. "Remove from playlist" is a context menu action.
+  - `(v1.9)` The Playlists widget lists playlists. Selecting a playlist shows its songs in the Library widget, in playlist order, in place of the Artist, Album and Songs lists; a "Library" button and Ctrl+F go back. Double-click or Enter on a playlist plays it; on a song, plays the playlist from that song. Delete removes the selected song from the playlist. A "New playlist" button and "Add to playlist" in the context menu create playlists. "Remove from playlist" is a context menu action.
   - `(v1.5)` Add to playlist appends the song. Duplicates are allowed. Favorites is the exception: the heart toggles membership.
   - `(v1.5)` A playlist name must not contain a path separator ("/" or "\\"), the sequence "..", or a character that Windows rejects (< > : " | ? *). It must not start or end with a space or a dot. It must not be a Windows reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9). "Favorites" is reserved (R26). The app rejects such a name with a message.
 - **R13 (v1.1).** Storage is `.m3u8` (UTF-8) in `Playlists/` at the folder root.
@@ -444,6 +445,11 @@ Version 1.8 applies the owner's UI shell rework (`docs/planning/ui-shell-rework.
 
 38. **UI shell rework:** the rework wins where it conflicts with version 1.7, with two limits: the six widget names (Library, Transport controls, Now playing, Playlists, Play queue, Lyrics) and the three Library modes (Tree, Columns, Top/bottom) stay. Playlists, Play queue and Lyrics stand in for the rework's Navigator, Up Next and Info. Decisions 30 to 34, 36 and 37 are superseded by it; decisions 29 and 35 stay. The rework's own decisions hold: the band at the top by default, top or bottom only, unlocked on a fresh install, pop-out windows off. The rework's MUST and SHOULD list (its section 7) is part of these requirements; `docs/planning/ui-shell-rework-build-plan.md` section 4.2 records how each conflict resolves.
 
+Version 1.9 records two owner decisions made on October 14, 2026, after the UI shell rework merged:
+
+39. **Playlist view (R12):** the Playlists widget no longer expands into a tree. A selected playlist shows its songs in the Library widget, and the Artist and Album lists hide while it shows.
+40. **Transport band order:** the play controls (Previous, Play or pause, Next) sit in the middle of the band by default, with Now playing and the seek bar on the left. The three move together in Customize transport bar.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -498,6 +504,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.9 (October 14, 2026):** owner decisions 39 (playlist view, R12) and 40 (play controls in the middle of the transport band).
 - **1.8 (October 13, 2026):** the UI shell rework, with owner decision 38 (section 8). A change list for the owner's approval (UQ4).
   - **Added:** the R28 Songs table (columns, sort, multi-select, row drag, density), the R29 presets, Lock layout, floating groups, transport position and splitter rules, the layout backup, the rework's section 7 list by reference (section 8).
   - **Changed:** R5 (Transport controls is a fixed band; Now playing is a card widget; the menu groups), R28.1 (keyboard splitters), R29 (presets replace the built-in layouts; default arrangement; Reset layout; corrupt file backup), section 4 (floating panels and the edit lock leave the non-goals), section 7 (keyboard splitters and density leave the deferred ideas).

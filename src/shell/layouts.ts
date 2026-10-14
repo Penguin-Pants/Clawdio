@@ -226,14 +226,15 @@ export function guardLibrary(
 }
 
 /**
- * Ctrl+F (R25): activates the Library tab when it shares a group, then focuses the search
- * field. A tab that was hidden mounts its body after the switch, so the focus waits up to a
+ * Ctrl+F (R25): activates the Library tab when it shares a group, leaves a shown playlist for
+ * the library (R12 v1.9), then focuses the search field. A tab that was hidden mounts its body after the switch, so the focus waits up to a
  * few frames for the field. Returns false when there is no Library.
  */
 export function focusLibrarySearch(doc: Document = document): boolean {
   const panel = getDock()?.getPanel("library");
   if (!panel && !doc.querySelector('[data-widget="library"]')) return false;
   panel?.api.setActive();
+  useLibraryStore.getState().showPlaylist(null);
   const focusField = (framesLeft: number) => {
     const field = doc.querySelector<HTMLInputElement>('[data-widget="library"] input[type="search"]');
     if (field) {
