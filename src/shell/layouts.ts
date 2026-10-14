@@ -228,18 +228,31 @@ export function guardLibrary(
 /**
  * Brings a Library tab that another tab hides to the front of its group, so a picked playlist
  * shows (R12 v1.9). A widget in another group stays the active one and keeps the focus, so its
- * keys and the Layout menu still act on it (UD17).
+ * keys and the Layout menu still act on it (UD17). A widget in the same group goes behind the
+ * Library, so the focus moves to the shown playlist (AX-1).
  */
-export function revealLibrary(api: DockviewApi | null = dock): void {
+export function revealLibrary(api: DockviewApi | null = dock, doc: Document = document): void {
   const panel = api?.getPanel("library");
   if (!api || !panel || panel.api.isVisible) return;
   const active = api.activePanel;
-  const focused = document.activeElement;
+  const focused = doc.activeElement;
   panel.api.setActive();
-  if (active && active.group !== panel.group) active.api.setActive();
-  // The tab switch can drop the focus; the keys stay where they were.
-  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) {
-    focused.focus({ preventScroll: true });
+  if (active && active.group !== panel.group) {
+    active.api.setActive();
+    // The tab switch can drop the focus; the keys stay where they were.
+    if (focused instanceof HTMLElement && focused.isConnected && doc.activeElement !== focused) {
+      focused.focus({ preventScroll: true });
+    }
+  } else if (focused instanceof HTMLElement && focused !== doc.body) {
+    // The playlist view mounts after the switch: wait a few frames for its list, else take the
+    // Library region.
+    const focusView = (framesLeft: number) => {
+      const list = doc.querySelector<HTMLElement>('[data-widget="library"] [data-playlist-view] [role="listbox"]');
+      if (list) list.focus();
+      else if (framesLeft > 0) requestAnimationFrame(() => focusView(framesLeft - 1));
+      else doc.querySelector<HTMLElement>('[data-widget="library"]')?.focus();
+    };
+    focusView(10);
   }
 }
 

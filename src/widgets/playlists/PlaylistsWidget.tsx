@@ -47,9 +47,18 @@ export const RAIL_WIDTH = 140;
 
 /**
  * The icon rail (SP-5, UD18): one button per playlist, the heart for Favorites, with the name as
- * the tooltip and the accessible name. A button shows the playlist in the Library (R12 v1.9).
+ * the tooltip and the accessible name. A button shows the playlist in the Library (R12 v1.9);
+ * Enter and double-click also play it, as in the list (R25).
  */
-function PlaylistRail({ rows, onPick }: { rows: PlaylistRow[]; onPick: (id: number) => void }) {
+function PlaylistRail({
+  rows,
+  onPick,
+  onPlay,
+}: {
+  rows: PlaylistRow[];
+  onPick: (id: number) => void;
+  onPlay: (playlist: PlaylistRow) => void;
+}) {
   return (
     <nav aria-label="Playlists" className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-1">
       {rows.map((playlist) => (
@@ -61,6 +70,13 @@ function PlaylistRail({ rows, onPick }: { rows: PlaylistRow[]; onPick: (id: numb
           tooltip={playlist.name}
           data-drop-target={`playlist:${playlist.id}`}
           onClick={() => onPick(playlist.id)}
+          onDoubleClick={() => onPlay(playlist)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            onPick(playlist.id);
+            onPlay(playlist);
+          }}
         />
       ))}
     </nav>
@@ -162,7 +178,7 @@ export function PlaylistsWidget() {
       </>
     );
   } else if (rail) {
-    body = <PlaylistRail rows={rows} onPick={show} />;
+    body = <PlaylistRail rows={rows} onPick={show} onPlay={play} />;
   } else {
     body = (
       <>

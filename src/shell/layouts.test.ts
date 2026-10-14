@@ -250,6 +250,16 @@ describe("revealLibrary (R12 v1.9, UD17)", () => {
     expect(calls).toEqual(["library"]);
   });
 
+  it("moves the focus to the shown playlist when the active widget is a tab of the same group", () => {
+    const { api } = revealStandIn(false, "a");
+    document.body.innerHTML =
+      '<button id="from">pick</button><section data-widget="library"><div data-playlist-view="1"><div role="listbox" tabindex="0"></div></div></section>';
+    document.getElementById("from")?.focus();
+    revealLibrary(api);
+    expect(document.activeElement?.getAttribute("role")).toBe("listbox");
+    document.body.innerHTML = "";
+  });
+
   it("does nothing when Library already shows", () => {
     const { api, calls } = revealStandIn(true, "b");
     revealLibrary(api);

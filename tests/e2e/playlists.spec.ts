@@ -321,3 +321,31 @@ test("R12 v1.9, AX-1: the Library button by keyboard puts the focus in the Libra
   await expect(songs(page)).toBeVisible();
   await expect(widget(page, "library").getByRole("searchbox")).toBeFocused();
 });
+
+test("R12 v1.9, AX-1: with Playlists a tab of the Library group, a key pick moves the focus to the playlist", async ({
+  page,
+}) => {
+  await page.goto("/?data=library");
+  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    window.e2e.hide("playlists");
+    window.e2e.addAsTab("playlists", "library");
+  });
+  await list(page).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(view(page, "Mix 1")).toBeVisible();
+  await expect(view(page, "Mix 1")).toBeFocused();
+});
+
+test("R25, AX-1: Delete on the last entry keeps the focus in the Library", async ({ page }) => {
+  await openPlaylists(page);
+  await list(page).getByRole("option", { name: /Mix 1/ }).click();
+  const songsInMix = view(page, "Mix 1");
+  await songsInMix.getByRole("option").first().click();
+  for (let left = 6; left > 0; left--) {
+    await expect(songsInMix.getByRole("option")).toHaveCount(left);
+    await page.keyboard.press("Delete");
+  }
+  await expect(widget(page, "library")).toContainText("This playlist is empty.");
+  await expect(widget(page, "library")).toBeFocused();
+});

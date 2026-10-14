@@ -56,6 +56,11 @@ export function PlaylistView({ id }: { id: number }) {
     [entries, request],
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
+  const remove = (index: number) => {
+    // The last entry takes the list with it: the focus stays in the Library region (AX-1).
+    if (entries.length === 1) listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
+    removePlaylistEntry(id, index);
+  };
   const items = (index: number): RowMenuItem[] => {
     const track = entries[index]?.track ?? null;
     return [
@@ -64,7 +69,7 @@ export function PlaylistView({ id }: { id: number }) {
         label: "Add to queue",
         run: track === null ? undefined : () => void commands.queueAppend([track]).catch(() => {}),
       },
-      { label: "Remove from playlist", run: () => removePlaylistEntry(id, index) },
+      { label: "Remove from playlist", run: () => remove(index) },
     ];
   };
 
@@ -95,7 +100,7 @@ export function PlaylistView({ id }: { id: number }) {
               play(active);
             } else if (event.key === "Delete") {
               event.preventDefault();
-              removePlaylistEntry(id, active);
+              remove(active);
             }
           }}
           renderRow={(index, frame) => {

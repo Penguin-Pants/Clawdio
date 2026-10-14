@@ -1091,7 +1091,7 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F4: a custom order saved before v1.9 keeps its place, so the play controls stay where the user put them. Intended: only the untouched default moves.
 - F4: no row drag out of the playlist view. The tree had none either; drops onto playlists still work.
 
-**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 7, F3 0, F4 0.
+**PR 24 review (CI, Codex, CodeRabbit and DeepSource):** F1 1, F2 10, F3 0, F4 0.
 
 - F1 (fixed): the P3-AC1 e2e test clicked a playlist before it waited for `data-measure-ready`; the playlist view replaces the Library rows that the signal reads, so on a slow runner the signal never fired. The test waits for the signal first (`milestone.spec.ts`).
 - F2 (fixed): a playlist pick did not show a Library tab that another tab hid. `revealLibrary` brings it to the front; the widget in another group stays active and keeps the focus (`layouts.test.ts`, `playlists.spec.ts`).
@@ -1101,6 +1101,9 @@ One finding was a docs fix: `docs/file-formats.md` now gives the `collapsed` val
 - F2 (fixed): `playPlaylist` read the entries again, so a change between the two reads could start a different song than the activated row. The view passes the entries it shows (`playlists.test.ts`).
 - F2 (fixed): the TB-9 reason in section 10 still called the Playlists widget a tree.
 - F2 (fixed): DeepSource style findings in the new `PlaylistView.test.tsx` mocks (`async` with no `await`, an empty function with no comment).
+- F2 (fixed): with Playlists a tab of the Library group, a key pick hid the focused list. The focus now moves to the shown playlist (`layouts.test.ts`, `playlists.spec.ts`).
+- F2 (fixed): Delete on the last entry of a playlist dropped the focus to the page. It stays in the Library region (`playlists.spec.ts`).
+- F2 (fixed): Enter and double-click on a rail button only showed the playlist. They also play it, as in the list (`rail.spec.ts`).
 
 ## 11. Plan review record
 

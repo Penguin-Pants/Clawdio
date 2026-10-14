@@ -17,6 +17,10 @@ const hooks = {
   show(id: WidgetId): void {
     setWidgetVisible(id, true, dock());
   },
+  /** Hides a hideable widget. */
+  hide(id: WidgetId): void {
+    setWidgetVisible(id, false, dock());
+  },
   /** Clears the dock and stacks all five dock widgets in one column (P2-AC6 clamp case). */
   stackAll(): void {
     replaceArrangement(dock(), (api) =>

@@ -65,3 +65,22 @@ test("SP-5: a narrow Playlists widget with no playlists still shows the empty hi
   await expect.poll(async () => (await playlists.boundingBox())?.width ?? 0).toBeLessThan(140);
   await expect(playlists).toContainText("No playlists yet.");
 });
+
+test("SP-5, R12: Enter and double-click on a rail button play the playlist", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/?data=library");
+  const playlists = widget(page, "playlists");
+  await expect(playlists.getByRole("option", { name: /Mix 1/ })).toBeVisible();
+  const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
+  const box = await sash.boundingBox();
+  if (!box) throw new Error("no separator");
+  await drag(page, { x: box.x + box.width / 2, y: box.y + 200 }, { x: box.x - 120, y: box.y + 200 });
+  const rail = playlists.getByRole("navigation", { name: "Playlists" });
+  const lastPlay = async () => JSON.parse((await page.locator("body").getAttribute("data-play-list")) ?? "null");
+  await rail.getByRole("button", { name: "Mix 1" }).focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(lastPlay).toEqual({ ids: [0, 1, 2, 3, 4], start: 0 });
+  await expect(widget(page, "library").getByRole("listbox", { name: "Songs in Mix 1" })).toBeVisible();
+  await rail.getByRole("button", { name: "Mix 2" }).dblclick();
+  await expect.poll(lastPlay).toEqual({ ids: [10, 11, 12, 13, 14], start: 0 });
+});
