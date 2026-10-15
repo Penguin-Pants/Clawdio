@@ -1,14 +1,15 @@
 # Clawdio Build Plan
 
-**Version:** 1.26, October 14, 2026 (UI shell rework U0 to U8: Done with exceptions; U8 holds the owner follow-ups of requirements v1.9).
+**Version:** 1.27, October 15, 2026 (P24 added for requirements v1.10: automatic lyrics fetch and a selection that follows the playing song).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20) and the v1.7 additions (P22, P23).
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) and the v1.10 additions (P24).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
-- The plan has 24 phases (P0 to P23). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Not started.
+- The plan has 25 phases (P0 to P24). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -91,6 +92,7 @@ A phase is Done when all of these are true:
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
 | U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
+| P24 | Automatic lyrics and selection follow | U8 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1501,6 +1503,10 @@ The sources leave these details open. The owner may change any of them. Section 
 | D57 | **Superseded (October 13, 2026):** the transport band leaves the dock (UD2 in `docs/planning/ui-shell-rework-build-plan.md`); U1 deletes the bar-widget code. Kept as history. Bar height (R29.1): each bar widget's height is its measured content height plus the 32 px header. A `ResizeObserver` on the content measures it, so text scaling (Windows display scale, GNOME Large text, P17.5) changes it. The bar group's minimum and maximum height both equal it. When the two bar widgets share a row, both groups take the larger value. P23-AC6 fails when the content overflows or leaves more than 4 px empty, at the default font and at the P17.5 scales. | "Natural content height" needs a testable value. A fixed constant clips under large text (P17 note N2), and design.md §9 requires text scaling. |
 | D58 | **Superseded (October 13, 2026):** the transport band leaves the dock (UD2 in `docs/planning/ui-shell-rework-build-plan.md`); U1 deletes the bar-widget code. Kept as history. Bar drop rules (R29.1) live in one pure function, `allowDrop(source, target, position)` in `src/shell/bar-rules.ts`. A bar widget may drop on a top or bottom edge of a group or of the window, and on the left or right of a group that holds only the other bar widget. It may never drop into the center (tab) or a tab bar. A non-bar widget may not drop into the center of a bar group or on its left or right, and not on its top or bottom while the bar group shares a row (that would split the row), so a bar row holds bar widgets only. All other drops are unchanged. A refused drop shows no overlay and writes no log line. The window edges are the Dockview root drop target (event kind `edge`), a 10 px band along the dock edge. | R29.1 makes bar rows full width at a fixed height. A non-bar widget in the row would take the fixed height too. The shared-row case was found in P23. |
 | D59 | **Superseded (October 13, 2026):** the transport band leaves the dock (UD2 in `docs/planning/ui-shell-rework-build-plan.md`); U1 deletes the bar-widget code. Kept as history. Clamp with bar widgets (requirements section 5, v1.7): the D45 clamp lowers the minimums of non-bar groups first. Bar group heights fall only when the non-bar groups are at their D45 floor, and never below 32 px. The clamp then lowers both the minimum and the maximum of each bar group (D57 locks both), and restores both to the D57 height when space returns. | Section 5 says bar widgets keep their heights and the other widgets shrink first. |
+| D60 | Lyrics marker (R9.3): `sidecar.json` in the song's folder gets a `lyrics` object keyed by the song's file name: `{ "lyrics": { "01 Song.mp3": { "status": "no-match", "checked": "<RFC 3339>" } } }`. The P14.3 code writes it (lenient read, other fields stay, atomic). A corrupt sidecar is not rewritten (D44): the app logs it and writes no marker, so the song is tried again at its next play. | One sidecar per folder already holds the artwork marker and `tracks` (P16). A file name key works for songs in an album folder, an artist folder or the root. |
+| D61 | Automatic lyrics jobs (R9.1): one queue in `src-tauri` holds at most two songs, the playing song first, then the next song in play order (`Queue::peek_next`, no change to the shuffle state). A song change drops the jobs that have not started; a running job ends and saves (requirements section 5). A job starts only when the song has no R9 source, no marker and a writable folder. Automatic jobs write no status line text; only the manual "Fetch lyrics" shows "Fetching lyrics", "Lyrics saved" and "No lyrics found" (P15.3). | The fetch runs in the background on each song change. Status text on every song would be noise. |
+| D62 | lyrics.ovh (R9.2 step 4): `GET https://api.lyrics.ovh/v1/<artist>/<title>`, both parts percent-encoded as path segments. HTTP 200 with `{"lyrics": "<text>"}` and text that is not blank is a result. HTTP 404 (body `{"error":"No lyrics found"}`) is no result. Any other answer is an error (R9.3). One request at a time through the gate, as LRCLIB (section 6.11). Checked by hand on October 15, 2026: 200 for a known song, 404 for an unknown one. | The service has no versioned contract. A narrow parser makes a format change an error, not a wrong file. |
+| D63 | Selection follow (R35) lives in the webview. Each list (Songs list, playlist view, Tree song rows, Play queue) reads the current track from the player store. On a change it checks R35.2 (a selection exists), R35.5 (no menu, dialog or drag open, and no pointer or key input in that list for 5 s) and R35.6 (the track is in the list as shown). Then it selects that one row, sets the active row and scrolls it into view, without a call to `focus()`. | The lists already hold their selection and the playing track (`usePlayingTrack`, `src/widgets/library/lists.tsx`). No IPC change. |
 
 ### 5.3 Owner confirmations
 
@@ -1724,8 +1730,8 @@ Commands take ids and plain values. They return typed structs or a typed error `
 
 - One `OnlineGate` in the core holds the switch state, a cancellation token and the HTTP client. Code outside `net` cannot make a request (the client type is private to the module).
 - Every request and every redirect hop checks the switch first. Turning the switch off cancels the token: queued work stops and in-flight requests are dropped (R7).
-- Host allow-list: `musicbrainz.org`, `coverartarchive.org`, `archive.org` and its subdomains (Cover Art Archive redirects), `lrclib.net`. HTTPS only.
-- MusicBrainz: at least 1 s between requests (R8). LRCLIB: one request at a time. On HTTP 503 or 429 the job stops and retries at the next startup.
+- Host allow-list: `musicbrainz.org`, `coverartarchive.org`, `archive.org` and its subdomains (Cover Art Archive redirects), `lrclib.net`. P24 adds `api.lyrics.ovh` (R7 v1.10, D62). HTTPS only.
+- MusicBrainz: at least 1 s between requests (R8). LRCLIB: one request at a time. lyrics.ovh: one request at a time (P24). On HTTP 503 or 429 the job stops and retries at the next startup.
 - User-Agent: `Clawdio/<version> ( https://github.com/Penguin-Pants/Clawdio )`, built from `productName` and the version (R8, R31). LRCLIB also gets the same value in `Lrclib-Client`.
 - Downloads stream with a 10 MB cap. Images are decoded before saving.
 - Tests point the base URLs at a local mock server.
@@ -1873,6 +1879,7 @@ P0 foundation -> P1 brand assets -> P2 themed shell -> P3 GATE (Milestone 0)
   -> P17 UI quality audit -> P18 release readiness
   -> P19 bulk import and repair -> P20 microphone ducking -> P21 release readiness again
   -> P22 Library frame splitters -> P23 bar widgets and Windows build
+  -> U0 to U8 UI shell rework -> P24 automatic lyrics and selection follow
 ```
 
 - **Brand and design early.** Tokens and focus styles come in P0, brand assets in P1 and the themed shell in P2. Every later widget is built on them. P17 is an audit of what exists, not a styling pass.
@@ -2837,6 +2844,47 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 
 ---
 
+### P24. Automatic lyrics and selection follow
+
+**Objective.** Fetch lyrics for the playing and the next song without a click, try more sources before "no match", remember "no match", and move the list selection to the playing song.
+
+**Scope.** R7 (v1.10 service list). R9.1, R9.2, R9.3. R35. R11. Requirements section 3 (v1.10 items), section 4 (v1.10 non-goals), section 5 (v1.10 edge cases), section 6 (network). AC-28. AC-29. D60 to D63. K24. K25.
+
+**Depends on.** U8.
+
+The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selection follow (P24.8). The owner asked for one phase.
+
+**Tasks.**
+
+- **P24.1** Setting: `auto_lyrics: bool` in `crates/clawdio-core/src/settings.rs`, serde default `true`, so a settings file without the field reads as on. Command `set_auto_lyrics` in `src-tauri/src/commands/settings.rs`. `SettingsDialog` shows "Fetch lyrics automatically" under "Online lookups", disabled while the switch is off. ts-rs bindings (D15).
+- **P24.2** Chain in `crates/clawdio-core/src/net/lyrics.rs` (R9.2): `/api/get`, `/api/search`, then LRCLIB `/api/get` without `album_name`, then `/api/search` with a looser title (the R4 cleaned title without text in brackets or parentheses), then lyrics.ovh (D62). Each LRCLIB step keeps the 2 s rule and the P15 N5 choice. The result type tells a result, no result and an error apart; one error in any step makes the chain result an error when no step has a result.
+- **P24.3** Network: `Service::LyricsOvh` and a `lyrics_ovh` base URL in `NetConfig`, host `api.lyrics.ovh` on the allow-list, one request at a time (section 6.11, D62).
+- **P24.4** Marker (D60) in `crates/clawdio-core/src/sidecar.rs`: read, write and clear the per-song `lyrics` marker. "No result" from every step writes it. An error writes nothing.
+- **P24.5** Jobs (D61) in `src-tauri`: `commands/lyrics.rs` `song_changed` queues the playing song and the next song when Online lookups and `auto_lyrics` are on. `Queue::peek_next` in `crates/clawdio-core/src/queue.rs` gives the next entry in play order with shuffle and repeat, without a state change; Repeat one gives none. Skip a song with an R9 source or a marker. Skip and log a read-only folder (R23). Turning either switch off cancels the jobs (R7). A saved file for the playing song sends `lyrics-changed`.
+- **P24.6** Manual "Fetch lyrics" (`lyrics_fetch`) runs the same chain, clears the marker first and writes it again on no match. The status texts of P15.3 stay.
+- **P24.7** Docs and notice: `OnlineNoticeDialog` names lyrics.ovh with the other services (R7). `docs/file-formats.md`: the `lyrics` marker in the sidecar section.
+- **P24.8** Selection follow (R35, D63): `src/widgets/library/lists.tsx` (Songs list and Tree song rows), `src/widgets/library/PlaylistView.tsx` and `src/widgets/queue/QueueWidget.tsx`. One shared hook holds the R35.2, R35.5 and R35.6 checks; each list gives it its row ids, its selection and its busy state.
+- **P24.9** Tests: `httpmock` for P24.2 to P24.6, unit tests for `peek_next` and the marker, Vitest for the hook, Playwright with mocked IPC for the widgets.
+
+**Acceptance criteria.**
+
+- **P24-AC1** Settings: a new install and a settings file without `auto_lyrics` both read as on. The control is disabled while Online lookups is off. A change survives a restart.
+- **P24-AC2** Chain order (`httpmock`): each step runs only after the step before gives no result, and stops at the first result. A lyrics.ovh result saves as `.txt`. LRCLIB results 3 s off are still rejected on every LRCLIB step.
+- **P24-AC3** No match: when every step gives no result, the marker is in `sidecar.json` with the other fields kept. A second play of that song makes no request (request count). "Fetch lyrics" clears the marker and requests again.
+- **P24-AC4** Errors: HTTP 429, 503, 500, a timeout and a lyrics.ovh body that is not D62 JSON each move to the next step. With no result, no marker is written and the next play requests again.
+- **P24-AC5** A corrupt `sidecar.json`: no marker, the file is unchanged and one log line.
+- **P24-AC6** Jobs: a song change requests the playing song, then the next song in play order. With shuffle on, the next song is the shuffle next and the shuffle order is unchanged. Repeat one requests no next song. A song with a `.lrc`, a `.txt` or embedded lyrics gets no request.
+- **P24-AC7** Switches: with Online lookups off, or `auto_lyrics` off, a song change makes zero requests. Turning either off during a fetch cancels it and writes no file and no marker.
+- **P24-AC8** A read-only song folder: no request, no marker, one log line, no status line text.
+- **P24-AC9** Audio files are byte-identical after automatic fetches and marker writes (`tests/hash_guard.rs`, R11).
+- **P24-AC10** Playwright (R35.1 to R35.4): with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song and scrolls it into view. A multi-selection becomes the one playing row. A list with no selection stays without one. `document.activeElement` is the same before and after. The same holds in Tree mode and the playlist view.
+- **P24-AC11** Playwright (R35.5, R35.6): with an open row menu, during a drag, or within 5 s of a click in the list, the list does not follow. A search that hides the new song, or another Artist or Album selection, leaves the Songs list unchanged. The Artist and Album lists never change.
+- **P24-AC12** Manual Linux: with lookups on, play one song that LRCLIB knows and one that only lyrics.ovh knows. Both get a file without a click, the next song's file exists before it starts and the notice names lyrics.ovh.
+
+**Verification.** Rust tests with `httpmock` (P24-AC1 to P24-AC9). Vitest and Playwright (P24-AC1, P24-AC10, P24-AC11). Manual Linux (P24-AC12). Review: `OnlineNoticeDialog` and `docs/file-formats.md` (P24.7).
+
+---
+
 ## 9. Risks
 
 | ID | Risk | Effect | Mitigation | Phase |
@@ -2864,6 +2912,8 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | K21 | No Windows API may report microphone use by another app without opening the microphone (R34.2 is an unverified assumption) | R34 cannot ship as specified | Closed October 12, 2026: the P20.0 probe found two working signals; D54 | P20 |
 | K22 | A tool that keeps the microphone open (Handy "Always-On Microphone") holds the duck | Music stays quiet | Settings help text (P20.4); requirements section 5 | P20 |
 | K23 | Dockview 8.5.1 may not refuse a drop overlay for each widget or lock a group height | R29.1 cannot ship as specified | Closed October 13, 2026: `onWillShowOverlay` and `onWillDrop` take `preventDefault()`, and group constraints take `maximumHeight` (8.5.1 typings; P23-AC4 passes) | P23 |
+| K24 | lyrics.ovh is unofficial. It can stop, change its format or rate-limit without notice | The R9.2 chain loses its last step | Any answer other than D62's two forms is an error: no file, no marker (R9.3). Tests use a mock server. The owner accepted the risk (decision 42) | P24 |
+| K25 | lyrics.ovh has no duration check, so a live or remix version can give other lyrics | Wrong lyrics saved next to a song | It runs last, after every LRCLIB query. The owner accepted the risk (decision 42) | P24 |
 
 ---
 
@@ -2898,6 +2948,8 @@ The standard checkpoint in section 1.3 applies to every phase. A phase checkpoin
 | AC-25 | Library frames: per mode, survive restart, Reset restores | P22-AC3, P23-AC7 |
 | AC-26 | Bar widgets: top edge row, side and tab drops refused, shared row | P23-AC4, P23-AC7 |
 | AC-27 | Old arrangement repaired at start | P23-AC5, P23-AC7 |
+| AC-28 | Automatic lyrics for the playing and the next song; no repeat after no match | P24-AC3, P24-AC4, P24-AC6, P24-AC12 |
+| AC-29 | Songs list and Play queue selection follow the playing song | P24-AC10, P24-AC11 |
 
 ---
 
@@ -2907,6 +2959,8 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-24 | Add traceability rows DEC-38, DEC-39 and DEC-40 for requirements decisions 38 to 40. | Section 1.13 of `docs/requirements-traceability.md` jumps from DEC-37 to DEC-A, so three owner decisions have no row. | P24 planning review |
+| F-23 | Add the missing 1.26 entry to section 13. | The header names version 1.26 (U8), but the change log goes from 1.25 to 1.27. | P24 planning review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
@@ -3052,6 +3106,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.27 (October 15, 2026):** requirements v1.10 (R9.1 to R9.3, R35, AC-28, AC-29; owner decisions 41 to 44). Added phase P24, D60 to D63, K24 and K25. Section 6.11 adds the lyrics.ovh host for P24.
 - **1.25 (October 13, 2026):** the UI shell rework ran U0 to U7 (Done with exceptions). F-21 (mini player menus) joins section 11. The pointer row in section 2 and the bottom line give the status.
 - **1.24 (October 13, 2026):** the owner's UI shell rework (October 13, 2026) gets its own plan, `docs/planning/ui-shell-rework-build-plan.md`, with phases U0 to U7. Owner decision of the same day: the rework wins over requirements v1.7 where they conflict; the widget names and the Library modes stay. D57 to D59 and P23 are marked superseded.
 - **1.23 (October 13, 2026):** P23 Done with exceptions. Windows build: Release run 38377951211 (`workflow_dispatch`, Windows only) on `8c78a44`: artifact `windows`, `Clawdio_0.1.0_x64-setup.exe` 5,433,981 bytes (5.18 MiB), under the 30 MB check. Later commits change only a Rust test and docs, so the app code is the same. P23-AC7 stays open for the owner.
