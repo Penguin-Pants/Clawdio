@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 414 | 272 | 59 | 20 | 5 | 5 | 38 | 15 | 0 |
+| Requirements | 414 | 271 | 60 | 20 | 5 | 5 | 38 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -200,7 +200,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Done (P4) |
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Done (P15, D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
-| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Done (P14) |
+| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6, P24.5 | P14-AC2, P24-AC7 | IT | Planned (P24 adds lyrics jobs; done for P14) |
 | R7-5 | Services: MusicBrainz, Cover Art Archive, LRCLIB, lyrics.ovh; the notice names all four | §2 R7 | P24.3, P24.7 | P24-AC12 | MAN-L, REV | Planned |
 | R7-6 | Existing users see the updated notice once; no lyrics.ovh request before the answer | §2 R7 | P24.1, P24.7 | P24-AC1 | UT, E2E | Planned (D64) |
 | R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Done (P14, D44) |
