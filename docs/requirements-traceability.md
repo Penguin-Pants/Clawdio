@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.20, October 15, 2026 (requirements v1.10: rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24).
+**Version:** 1.20, October 15, 2026 (requirements v1.10: rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
 **Plan:** `docs/build-plan.md` v1.27. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 410 | 270 | 58 | 19 | 5 | 5 | 38 | 15 | 0 |
+| Requirements | 413 | 272 | 59 | 19 | 5 | 5 | 38 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -224,7 +224,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R9-9 | Automatic fetch skips songs with lyrics or a marker; a saved file shows at once | §2 R9.1 | P24.5 | P24-AC3, P24-AC6 | IT | Planned (D61) |
 | R9-10 | Chain: LRCLIB get, search, more LRCLIB queries, then lyrics.ovh; first result wins | §2 R9.2 | P24.2, P24.3, P24.6 | P24-AC2 | IT | Planned (D62) |
 | R9-11 | lyrics.ovh result accepted without the 2 s rule and saved as `.txt`; files with lyrics never replaced | §2 R9.2 | P24.2 | P24-AC2 | IT | Planned (D62) |
-| R9-12 | No result from every source: per-song marker in `sidecar.json` | §2 R9.3 | P24.4 | P24-AC3, P24-AC5 | IT | Planned (D60) |
+| R9-12 | No result from every source: per-song marker in the album `sidecar.json`; songs outside an album folder: once per app run | §2 R9.3 | P24.4 | P24-AC3, P24-AC5 | IT | Planned (D60) |
 | R9-13 | No automatic retry with a marker; "Fetch lyrics" clears it and retries | §2 R9.3 | P24.5, P24.6 | P24-AC3 | IT | Planned |
 | R9-14 | An error (network, timeout, 429, 503) is not no match and writes no marker | §2 R9.3 | P24.2, P24.4 | P24-AC4 | IT | Planned |
 | R9-15 | Turning lookups or the setting off cancels lyrics jobs | §2 R9.1, R7 | P24.5 | P24-AC7 | IT | Planned |
@@ -507,6 +507,9 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-35 | Frame sizes kept per Library mode | §8.35 | P22.2 | P22-AC1 | UT | Done (P22) |
 | DEC-36 | Old arrangements: repair only the widget that breaks the rules | §8.36 | P23.3 | P23-AC2 | UT | Done (P23) |
 | DEC-37 | Frame splitters mouse only | §8.37 | P22.1 | P22-AC4 | E2E | Done (P22, D56) |
+| DEC-38 | UI shell rework wins over v1.7; widget names and Library modes stay | §8.38 | U0 to U7 | U7-AC1 | E2E, MAN-L, MAN-W | In progress (U7) |
+| DEC-39 | Playlist view in the Library; no playlist tree | §8.39 | U8 | U8-AC1 | E2E | Done (U8) |
+| DEC-40 | Play controls in the middle of the transport band; they move as one group | §8.40 | U8 | U8-AC2 | E2E | Done (U8) |
 | DEC-41 | Automatic lyrics: setting on by default; playing and next song | §8.41 | P24.1, P24.5 | P24-AC1, P24-AC6 | UT, IT | Planned |
 | DEC-42 | Lyrics sources: more LRCLIB queries, then lyrics.ovh without the 2 s rule | §8.42 | P24.2, P24.3 | P24-AC2 | IT | Planned |
 | DEC-43 | Lyrics no match: per-song marker; no automatic retry | §8.43 | P24.4 | P24-AC3 | IT | Planned |

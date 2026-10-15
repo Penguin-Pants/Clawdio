@@ -179,11 +179,12 @@ The closest open source player (Strawberry) has many features the owner does not
 - **R9.2 (v1.10).** Lyrics source chain. "Fetch lyrics" and the automatic fetch use the same chain, in this order. The first accepted result wins.
   1. LRCLIB `/api/get` with the R9 fields.
   2. LRCLIB `/api/search` by artist and title (R9).
-  3. `[D]` More LRCLIB queries: without the album, then with a looser cleaned title. Each one keeps the 2 s rule.
+  3. `[D]` More LRCLIB queries: without the album, then with a looser cleaned title. Each one keeps the 2 s rule. The looser-title query runs only when the looser title is not blank and differs from the cleaned title.
   4. lyrics.ovh with the folder artist and the cleaned title. lyrics.ovh sends no duration, so the 2 s rule does not apply. Any result with text that is not blank is accepted and saved as `.txt`.
   - The save rule of R9 stays: `.lrc` for synced lyrics, else `.txt`, next to the song. The app never replaces a file with lyrics in it.
 - **R9.3 (v1.10).** Lyrics "no match".
-  - When every source in the chain gives no result, the app records a lyrics "no match" marker for that song in `sidecar.json` in the song's folder (R10).
+  - When every source in the chain gives no result, the app records a lyrics "no match" marker for that song in the album's `sidecar.json` (R10), keyed by the song's path inside the album folder.
+  - `[D]` A song that is not in an album folder (directly in an artist folder or in the music folder root) gets no marker. The automatic fetch tries it at most once per app run.
   - The automatic fetch never retries a song with the marker. "Fetch lyrics" clears the marker and runs the chain again.
   - An error (network, timeout, HTTP 429 or 503) is not "no match". It writes no marker.
 - **R10 (v1.1).** Metadata fill is a per-album action with a preview. The app writes nothing until the user confirms.
