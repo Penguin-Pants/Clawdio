@@ -174,7 +174,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - Synced line highlighting is deferred.
 - **R9.1 (v1.10).** Automatic lyrics fetch.
   - **Setting.** Settings has "Fetch lyrics automatically" under "Online lookups". On by default. It is disabled and does nothing while "Online lookups" is off (R7). It is saved with the other settings (R18).
-  - **When.** The app fetches for the playing song when that song has no lyrics from any R9 source. It also fetches for the next song in play order, which follows shuffle. With Repeat one there is no next song.
+  - **When.** The app fetches for the playing song (playing or paused, not stopped) when that song has no lyrics from any R9 source. It also fetches for the next song in play order, which follows shuffle, after the playing song's fetch. This is best effort: a quick skip can start the next song before its file exists. With Repeat one there is no next song.
   - **Skip.** It skips a song that has a lyrics "no match" marker (R9.3).
   - **Result.** A fetched file shows in the Lyrics widget at once, as with the manual action.
 - **R9.2 (v1.10).** Lyrics source chain. "Fetch lyrics" and the automatic fetch use the same chain, in this order. The first accepted result wins.
@@ -530,7 +530,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 25. **Library frames `(v1.7)`:** in Columns and Top/bottom modes, the user drags each frame splitter. Each mode keeps its sizes after a mode switch and a restart. Reset layout restores the defaults.
 26. **Transport band `(v1.8)`:** from 800 px to 2560 px window width the band never wraps, never changes height and never loses Play. (Replaces the v1.7 bar-widget check.)
 27. **Old arrangement `(v1.8)`:** a hand-corrupted or version 1 `layout.json` starts the app with the default preset and leaves `layout.json.bak`. (Replaces the v1.7 repair check.)
-28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The next song in play order gets its file before it starts. A song that no source knows gets a marker and no second request when it plays again.
+28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The fetch for the next song in play order starts while the current song plays; when the current song plays long enough, the next song has its file before it starts (best effort). A song that no source knows gets a marker and no second request when it plays again.
 29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
 
 ---
