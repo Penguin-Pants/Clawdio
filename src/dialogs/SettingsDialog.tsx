@@ -110,6 +110,33 @@ function MicrophoneSection() {
   );
 }
 
+/** "Online lookups" (R7) and "Fetch lyrics automatically" (R9.1), off while lookups are off. */
+function OnlineSection() {
+  const view = useSettingsStore((state) => state.view);
+  return (
+    <Section title="Online lookups">
+      <label className="flex items-center justify-between gap-3 text-sm">
+        <span>Look up missing album art and lyrics on MusicBrainz, Cover Art Archive, LRCLIB and lyrics.ovh</span>
+        <Switch
+          checked={view.onlineLookups}
+          onCheckedChange={(on) => void change(() => commands.setOnlineLookups(on), "changing Online lookups")}
+        />
+      </label>
+      <label className="flex items-center justify-between gap-3 text-sm">
+        <span className={view.onlineLookups ? undefined : "text-text-secondary"}>
+          Fetch lyrics automatically
+          <span className="block text-text-secondary">For the playing song and the next song</span>
+        </span>
+        <Switch
+          checked={view.autoLyrics}
+          disabled={!view.onlineLookups}
+          onCheckedChange={(on) => void change(() => commands.setAutoLyrics(on), "changing Fetch lyrics automatically")}
+        />
+      </label>
+    </Section>
+  );
+}
+
 /** Settings (P4.10): music folder, Online lookups, microphone ducking, the log folder and About (D12). */
 export function SettingsDialog() {
   const open = useUiStore((state) => state.settingsOpen);
@@ -139,28 +166,7 @@ export function SettingsDialog() {
             </Button>
           </div>
         </Section>
-        <Section title="Online lookups">
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Look up missing album art and lyrics on MusicBrainz, Cover Art Archive, LRCLIB and lyrics.ovh</span>
-            <Switch
-              checked={view.onlineLookups}
-              onCheckedChange={(on) => void change(() => commands.setOnlineLookups(on), "changing Online lookups")}
-            />
-          </label>
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span className={view.onlineLookups ? undefined : "text-text-secondary"}>
-              Fetch lyrics automatically
-              <span className="block text-text-secondary">For the playing song and the next song</span>
-            </span>
-            <Switch
-              checked={view.autoLyrics}
-              disabled={!view.onlineLookups}
-              onCheckedChange={(on) =>
-                void change(() => commands.setAutoLyrics(on), "changing Fetch lyrics automatically")
-              }
-            />
-          </label>
-        </Section>
+        <OnlineSection />
         <MicrophoneSection />
         <Section title="Log">
           <div>

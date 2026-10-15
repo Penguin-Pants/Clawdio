@@ -198,7 +198,8 @@ test("P24-AC11: an open row menu, a dialog or a drag stops the follow; it follow
   await expect(selectedRows(songs)).toContainText("Song 6 of Album A0");
   // A row drag.
   const row = songs.getByRole("row", { name: /Song 6 of Album A0/ });
-  const box = (await row.boundingBox())!;
+  const box = await row.boundingBox();
+  if (!box) throw new Error("the row has no box");
   await page.mouse.move(box.x + 40, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + 80, box.y + box.height * 3);

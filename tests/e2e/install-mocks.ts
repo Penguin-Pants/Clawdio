@@ -83,64 +83,58 @@ function saveSettings(change: Record<string, unknown>) {
   return { ...settings };
 }
 
+/** Counts a call in `document.body.dataset[key]`, for tests to read. */
+function count(key: string): null {
+  document.body.dataset[key] = String(Number(document.body.dataset[key] ?? 0) + 1);
+  return null;
+}
+
+/** Moves a saved file to its backup key, like the Rust rename (UD5). */
+function backup(key: string, counter: string): null {
+  const text = sessionStorage.getItem(key);
+  if (text !== null) sessionStorage.setItem(`${key}.bak`, text);
+  sessionStorage.removeItem(key);
+  return count(counter);
+}
+
+/** The settings, layout and window commands, by name. */
+const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
+  settings_get: () => ({ ...settings }),
+  // On: Settings names every service, so the updated notice is answered too (D64).
+  set_online_lookups: (args) => saveSettings({ onlineLookups: args.on, noticeUpdate: false }),
+  set_auto_lyrics: (args) => saveSettings({ autoLyrics: args.on }),
+  set_mic_ducking: (args) => saveSettings({ micDucking: args.mode }),
+  set_mic_duck_percent: (args) => saveSettings({ micDuckPercent: args.percent }),
+  first_run_notice_done: () => {
+    count("noticeAnswers");
+    return saveSettings({ noticePending: false, noticeUpdate: false });
+  },
+  choose_music_folder: () => saveSettings({ folderName: "music", folderState: "ready" }),
+  rescan: () => count("rescans"),
+  layout_load: () => sessionStorage.getItem(LAYOUT_KEY),
+  // Tests read the saves from the page and the next load restores the last one (P9).
+  layout_save: (args) => {
+    sessionStorage.setItem(LAYOUT_KEY, args.json as string);
+    return count("layoutSaves");
+  },
+  columns_load: () => sessionStorage.getItem(COLUMNS_KEY),
+  columns_save: (args) => {
+    sessionStorage.setItem(COLUMNS_KEY, args.json as string);
+    return count("columnsSaves");
+  },
+  columns_backup: () => backup(COLUMNS_KEY, "columnsBackups"),
+  layout_backup: () => backup(LAYOUT_KEY, "layoutBackups"),
+  "plugin:window|destroy": () => {
+    document.body.dataset.destroyed = "true";
+    return null;
+  },
+  cancel_job: () => null,
+  open_log_folder: () => null,
+  open_notice: () => null,
+};
+
 function settingsCommand(command: string, args: Args): unknown {
-  switch (command) {
-    case "settings_get":
-      return { ...settings };
-    case "set_online_lookups":
-      // On: Settings names every service, so the updated notice is answered too (D64).
-      return saveSettings({ onlineLookups: args.on, noticeUpdate: false });
-    case "set_auto_lyrics":
-      return saveSettings({ autoLyrics: args.on });
-    case "set_mic_ducking":
-      return saveSettings({ micDucking: args.mode });
-    case "set_mic_duck_percent":
-      return saveSettings({ micDuckPercent: args.percent });
-    case "first_run_notice_done":
-      document.body.dataset.noticeAnswers = String(Number(document.body.dataset.noticeAnswers ?? 0) + 1);
-      return saveSettings({ noticePending: false, noticeUpdate: false });
-    case "choose_music_folder":
-      return saveSettings({ folderName: "music", folderState: "ready" });
-    case "rescan":
-      document.body.dataset.rescans = String(Number(document.body.dataset.rescans ?? 0) + 1);
-      return null;
-    case "layout_load":
-      return sessionStorage.getItem(LAYOUT_KEY);
-    case "layout_save":
-      // Tests read the saves from the page and the next load restores the last one (P9).
-      sessionStorage.setItem(LAYOUT_KEY, args.json as string);
-      document.body.dataset.layoutSaves = String(Number(document.body.dataset.layoutSaves ?? 0) + 1);
-      return null;
-    case "columns_load":
-      return sessionStorage.getItem(COLUMNS_KEY);
-    case "columns_save":
-      sessionStorage.setItem(COLUMNS_KEY, args.json as string);
-      document.body.dataset.columnsSaves = String(Number(document.body.dataset.columnsSaves ?? 0) + 1);
-      return null;
-    case "columns_backup": {
-      const text = sessionStorage.getItem(COLUMNS_KEY);
-      if (text !== null) sessionStorage.setItem(`${COLUMNS_KEY}.bak`, text);
-      sessionStorage.removeItem(COLUMNS_KEY);
-      document.body.dataset.columnsBackups = String(Number(document.body.dataset.columnsBackups ?? 0) + 1);
-      return null;
-    }
-    case "layout_backup": {
-      // Like the Rust rename (UD5): the bad file moves to the backup key.
-      const text = sessionStorage.getItem(LAYOUT_KEY);
-      if (text !== null) sessionStorage.setItem(`${LAYOUT_KEY}.bak`, text);
-      sessionStorage.removeItem(LAYOUT_KEY);
-      document.body.dataset.layoutBackups = String(Number(document.body.dataset.layoutBackups ?? 0) + 1);
-      return null;
-    }
-    case "plugin:window|destroy":
-      document.body.dataset.destroyed = "true";
-      return null;
-    case "cancel_job":
-    case "open_log_folder":
-    case "open_notice":
-      return null;
-  }
-  return undefined;
+  return Object.hasOwn(SETTINGS_COMMANDS, command) ? SETTINGS_COMMANDS[command](args) : undefined;
 }
 
 type Args = Record<string, unknown>;
