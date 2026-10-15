@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.9, October 14, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.9.
+**Status:** Decision-complete. Version 1.10, October 15, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.10.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.10)` marks an item changed or added in version 1.10 (owner decisions 41 to 44 in section 8).
 - `(v1.9)` marks an item changed in version 1.9 (owner decisions 39 and 40 in section 8).
 - `(v1.8)` marks an item changed or added in version 1.8 (the UI shell rework, owner decision 38 in section 8; the source is `docs/planning/ui-shell-rework.md`, called "the rework"). `(v1.7)` marks an item changed or added in version 1.7 (Library frame splitters and fixed-height bar widgets, owner decisions 29 to 37 in section 8). `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
 - Items with neither mark come from the owner's own words or from approved defaults 1 to 18.
@@ -143,10 +144,19 @@ The closest open source player (Strawberry) has many features the owner does not
 - **R27 (v1.1).** Remember queue, current song, position and volume.
   - The app saves them in the OS config directory.
   - `[D]` At startup it restores them and starts paused. It drops queue entries that no longer exist in the library without a message. `(v1.5)` State stores paths relative to the music folder root. The music folder path is stored as set, except in portable mode (R18.1).
+- **R35 (v1.10).** The selection follows the playing song.
+  - **R35.1 Lists.** The Library Songs list (the Songs table in Columns and Top/bottom modes, the song rows in Tree mode and the playlist view) and the Play queue. The Artist and Album lists do not follow.
+  - **R35.2 Condition.** A list follows only when it already has a selected row.
+  - **R35.3 Action.** When the playing song changes, the playing song becomes the only selected row in that list and the list scrolls to show it. A multi-selection is replaced.
+  - **R35.4 Focus.** Keyboard focus never moves. If focus is in that list, its active row becomes the playing row.
+  - **R35.5 Busy.** A list does not follow while a menu, a dialog or a drag is open, or within 5 s of the user's last input in that list. `[D]` The 5 s value is a starting value.
+  - **R35.6 Not in view.** If the playing song is not in the list as shown (another Artist or Album selection, a search, another playlist), that list does not change. No filter, search or Library view changes.
 
 ### Online and sidecars
 
 - **R7 (v1.4).** One "Online lookups" switch in Settings. Off by default. Off means the app's own code makes zero network calls. The first run shows a notice that explains sidecar files and names the services. It offers "Turn on" and "Keep off". Turning the switch off cancels queued lookups and aborts in-flight requests.
+  - `(v1.10)` The services are MusicBrainz, Cover Art Archive, LRCLIB and lyrics.ovh. The first-run notice names all four.
+  - `(v1.10)` `[D]` A user who accepted the notice before version 1.10 sees the updated notice once. Until they answer, the app sends nothing to lyrics.ovh.
 - **R8 (v1.1).** Artwork fetches automatically in the background for albums with no embedded art and no cover image file.
   - Sources: MusicBrainz and Cover Art Archive.
   - It saves `cover.jpg` in the album folder. It never overwrites existing art.
@@ -162,6 +172,22 @@ The closest open source player (Strawberry) has many features the owner does not
   - `[D]` Lookup sends the folder artist, the cleaned title (R4), the folder album and the duration from the decoder. If that finds nothing, search by artist and title. Accept a result only if its duration is within 2 seconds.
   - The Lyrics widget shows the lyrics text for the playing song. For `.lrc` files it hides timestamps. `(v1.5)` Lyrics sources in order: a `.lrc` file with the song's base name next to the song, then a `.txt` file with the same base name, then embedded lyrics (ID3v2 USLT, Vorbis comment LYRICS or UNSYNCEDLYRICS). The "Fetch lyrics" button shows only when none exists (disabled when Online lookups are off). `[D]`
   - Synced line highlighting is deferred.
+- **R9.1 (v1.10).** Automatic lyrics fetch.
+  - **Setting.** Settings has "Fetch lyrics automatically" under "Online lookups". On by default. It is disabled and does nothing while "Online lookups" is off (R7). It is saved with the other settings (R18).
+  - **When.** The app fetches for the playing song (playing or paused, not stopped) when that song has no lyrics from any R9 source. It also fetches for the next song in play order, which follows shuffle, after the playing song's fetch. This is best effort: a quick skip can start the next song before its file exists. With Repeat one there is no next song.
+  - **Skip.** It skips a song that has a lyrics "no match" marker (R9.3).
+  - **Result.** A fetched file shows in the Lyrics widget at once, as with the manual action.
+- **R9.2 (v1.10).** Lyrics source chain. "Fetch lyrics" and the automatic fetch use the same chain, in this order. The first accepted result wins.
+  1. LRCLIB `/api/get` with the R9 fields.
+  2. LRCLIB `/api/search` by artist and title (R9).
+  3. `[D]` More LRCLIB queries: without the album, then with a looser cleaned title. Each one keeps the 2 s rule. The looser-title query runs only when the looser title is not blank and differs from the cleaned title.
+  4. lyrics.ovh with the folder artist and the cleaned title. lyrics.ovh sends no duration, so the 2 s rule does not apply. Any result with text that is not blank is accepted and saved as `.txt`.
+  - The save rule of R9 stays: `.lrc` for synced lyrics, else `.txt`, next to the song. The app never replaces a file with lyrics in it.
+- **R9.3 (v1.10).** Lyrics "no match".
+  - When every source in the chain gives no result, the app records a lyrics "no match" marker for that song in the album's `sidecar.json` (R10), keyed by the song's path inside the album folder.
+  - `[D]` A song that is not in an album folder (directly in an artist folder or in the music folder root) gets no marker. The automatic fetch tries it at most once per app run.
+  - The automatic fetch never retries a song with the marker. "Fetch lyrics" clears the marker and runs the chain again.
+  - An error (network, timeout, HTTP 429 or 503) is not "no match". It writes no marker.
 - **R10 (v1.1).** Metadata fill is a per-album action with a preview. The app writes nothing until the user confirms.
   - It fills blanks only (title, track number, year).
   - `[D]` A field is "missing" when the embedded tag is absent or empty. The file-name fallbacks in R4 do not count as filled.
@@ -264,6 +290,8 @@ The closest open source player (Strawberry) has many features the owner does not
 - "Twenty percent" is the default duck level (R34.3). It is not a fixed value. `(v1.6)`
 - Handy, Google Meet, Slack, WhatsApp and Signal are examples of microphone users (R34.2). Detection must work for any app. `(v1.6)`
 - "Automatically scan the music library" means rescan, then match (R33.1). Matching against the library already existed (R14). `(v1.6)`
+- "Keep trying different services" is met by the R9.2 chain. The extra LRCLIB queries in R9.2 step 3 are examples. `(v1.10)`
+- "Focus or highlight moves to the playing song" means the selection (R35). Keyboard focus does not move. `(v1.10)`
 
 ---
 
@@ -288,6 +316,9 @@ These are out under the owner's "few features" rule.
 - Opening the microphone or measuring its sound level (R34.2). `(v1.6)`
 - Automatic repair of playlists on Rescan (R13). `(v1.6)`
 - Replacing an existing playlist on import (R32). `(v1.6)`
+- Lyrics fetch for the whole library in the background (R9.1 fetches the playing and the next song only). `(v1.10)`
+- Lyrics services that need an API key or an account, for example Musixmatch or Genius. `(v1.10)`
+- The Artist and Album lists follow the playing song (R35.1). `(v1.10)`
 
 ---
 
@@ -335,6 +366,12 @@ These are out under the owner's "few features" rule.
 - **Setting changed to Off during a duck `(v1.6)` `[D]`:** the volume fades back at once (Lower volume), or a track that the duck paused resumes (Pause).
 - **Stop during a Pause duck `(v1.6)`:** playback stays stopped when the microphone is free.
 - **Mode changed during a duck `(v1.6)` `[D]`:** the new mode applies at once. Lower volume to Pause: playback pauses (a duck pause) and the gain returns to the user volume. Pause to Lower volume: a duck-paused track resumes at the ducked volume.
+- **Lyrics source error `(v1.10)`:** a network error, a timeout or HTTP 429 or 503 from one source moves on to the next source. If no source accepts a result and any source had an error, the app writes no marker and tries again the next time the song plays.
+- **Read-only song folder during an automatic lyrics fetch `(v1.10)`:** skip the song and log it (R23). No request, no marker and no status line error.
+- **Song changes during a lyrics fetch `(v1.10)`:** the fetch continues and saves its file. The Lyrics widget changes only if that song is playing.
+- **Wrong song version from lyrics.ovh `(v1.10)`:** a live or remix version can give other lyrics. The owner accepts this risk. The user deletes the file and uses "Fetch lyrics" again.
+- **Online lookups turned off during a lyrics fetch `(v1.10)`:** R7 applies: queued fetches stop and in-flight requests abort. No marker is written.
+- **Playing song changes while a list is busy `(v1.10)`:** that list does not follow for this song change (R35.5). It follows at the next song change.
 
 ---
 
@@ -351,7 +388,7 @@ These are out under the owner's "few features" rule.
 - **Formats:** mp3, ogg (Vorbis) and wav.
 - **Source of truth:** the music folder.
 - **Audio files:** never modified.
-- **Network:** only the R7 services. No accounts and no API keys.
+- **Network:** only the R7 services. No accounts and no API keys. `(v1.10)` lyrics.ovh joins the R7 services. It is unofficial and can stop without notice; the R9.2 chain then ends at the last LRCLIB query.
 - **Theme source:** `theme/tokens.json`, compiled at build time (R31). `(v1.4)`
 
 ---
@@ -378,6 +415,9 @@ These are out under the owner's "few features" rule.
 - Multiple music folders (likely the first growth request).
 - Light theme variant of the brand tokens.
 - Microphone ducking on Linux (PipeWire and PulseAudio). `(v1.6)`
+- More lyrics services that need no key, each after a separate check. `(v1.10)`
+- A "Follow playing song" setting (R35). `(v1.10)`
+- Automatic retry of lyrics "no match" songs after some time (R9.3). `(v1.10)`
 - An exclusion list of apps that do not trigger ducking. `(v1.6)`
 - Picking the right song by hand for a "more than one match" entry. `(v1.6)`
 - An adjustable wait time before the music comes back (R34.5). `(v1.6)`
@@ -450,6 +490,13 @@ Version 1.9 records two owner decisions made on October 14, 2026, after the UI s
 39. **Playlist view (R12):** the Playlists widget no longer expands into a tree. A selected playlist shows its songs in the Library widget, and the Artist and Album lists hide while it shows.
 40. **Transport band order:** the play controls (Previous, Play or pause, Next) sit in the middle of the band by default, with Now playing and the seek bar on the left. The three move together in Customize transport bar.
 
+Version 1.10 records owner decisions made on October 15, 2026:
+
+41. **Automatic lyrics fetch (R9.1):** a "Fetch lyrics automatically" setting under "Online lookups", on by default. It fetches for the playing song and the next song in play order.
+42. **Lyrics sources (R9.2):** more LRCLIB queries, then lyrics.ovh, a service that needs no key. A lyrics.ovh result for the folder artist and the cleaned title is accepted without the 2 s rule. Services that need a key stay out.
+43. **Lyrics no match (R9.3):** a per-song marker in the sidecar. No automatic retry. "Fetch lyrics" retries.
+44. **Selection follows the playing song (R35):** the Songs list and the Play queue only, only when the list has a selection. The selection is replaced. Keyboard focus does not move. No follow while the user is busy in that list. A song that is not in the list as shown changes nothing.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -483,6 +530,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 25. **Library frames `(v1.7)`:** in Columns and Top/bottom modes, the user drags each frame splitter. Each mode keeps its sizes after a mode switch and a restart. Reset layout restores the defaults.
 26. **Transport band `(v1.8)`:** from 800 px to 2560 px window width the band never wraps, never changes height and never loses Play. (Replaces the v1.7 bar-widget check.)
 27. **Old arrangement `(v1.8)`:** a hand-corrupted or version 1 `layout.json` starts the app with the default preset and leaves `layout.json.bak`. (Replaces the v1.7 repair check.)
+28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The fetch for the next song in play order starts while the current song plays; when the current song plays long enough, the next song has its file before it starts (best effort). A song in an album folder that no source knows gets a marker and no second request when it plays again. A song outside an album folder gets no marker and no second request in the same app run.
+29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
 
 ---
 
@@ -493,6 +542,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 - DESIGN.md spec: https://github.com/google-labs-code/design.md/blob/main/docs/spec.md
 - MusicBrainz rate limiting and User-Agent rules: https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting
 - lrclib API: https://lrclib.net/docs
+- lyrics.ovh API: https://lyricsovh.docs.apiary.io
 - Tauri AppImage notes: https://v2.tauri.app/de/distribute/appimage/
 - Symphonia (Rust audio decoding): https://github.com/pdeljanov/Symphonia
 - Apple playlist export (XML and plain text): https://support.apple.com/kb/PH19491
@@ -504,6 +554,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.10 (October 15, 2026):** automatic lyrics fetch and a selection that follows the playing song, with owner decisions 41 to 44 (section 8).
+  - **Added:** R9.1, R9.2, R9.3, R35, two preferences, three non-goals, six edge cases, three deferred ideas, acceptance checks 28 and 29, the lyrics.ovh reference.
+  - **Changed:** R7 (the service list), section 6 (network).
 - **1.9 (October 14, 2026):** owner decisions 39 (playlist view, R12) and 40 (play controls in the middle of the transport band).
 - **1.8 (October 13, 2026):** the UI shell rework, with owner decision 38 (section 8). A change list for the owner's approval (UQ4).
   - **Added:** the R28 Songs table (columns, sort, multi-select, row drag, density), the R29 presets, Lock layout, floating groups, transport position and splitter rules, the layout backup, the rework's section 7 list by reference (section 8).
