@@ -156,6 +156,7 @@ The closest open source player (Strawberry) has many features the owner does not
 
 - **R7 (v1.4).** One "Online lookups" switch in Settings. Off by default. Off means the app's own code makes zero network calls. The first run shows a notice that explains sidecar files and names the services. It offers "Turn on" and "Keep off". Turning the switch off cancels queued lookups and aborts in-flight requests.
   - `(v1.10)` The services are MusicBrainz, Cover Art Archive, LRCLIB and lyrics.ovh. The first-run notice names all four.
+  - `(v1.10)` `[D]` A user who accepted the notice before version 1.10 sees the updated notice once. Until they answer, the app sends nothing to lyrics.ovh.
 - **R8 (v1.1).** Artwork fetches automatically in the background for albums with no embedded art and no cover image file.
   - Sources: MusicBrainz and Cover Art Archive.
   - It saves `cover.jpg` in the album folder. It never overwrites existing art.

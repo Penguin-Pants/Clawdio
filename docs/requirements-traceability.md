@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 413 | 272 | 59 | 19 | 5 | 5 | 38 | 15 | 0 |
+| Requirements | 414 | 272 | 59 | 20 | 5 | 5 | 38 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -202,6 +202,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
 | R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6 | P14-AC2 | IT | Done (P14) |
 | R7-5 | Services: MusicBrainz, Cover Art Archive, LRCLIB, lyrics.ovh; the notice names all four | §2 R7 | P24.3, P24.7 | P24-AC12 | MAN-L, REV | Planned |
+| R7-6 | Existing users see the updated notice once; no lyrics.ovh request before the answer | §2 R7 | P24.1, P24.7 | P24-AC1 | UT, E2E | Planned (D64) |
 | R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Done (P14, D44) |
 | R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
 | R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
