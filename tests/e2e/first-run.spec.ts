@@ -5,7 +5,16 @@ test("P4-AC1: the notice names the services and the files, and the choice persis
   await page.goto("/?first=1");
   const notice = page.getByRole("dialog", { name: "Online lookups" });
   await expect(notice).toBeVisible();
-  for (const text of ["MusicBrainz", "Cover Art Archive", "LRCLIB", "cover.jpg", ".lrc", ".txt", "sidecar.json"]) {
+  for (const text of [
+    "MusicBrainz",
+    "Cover Art Archive",
+    "LRCLIB",
+    "lyrics.ovh",
+    "cover.jpg",
+    ".lrc",
+    ".txt",
+    "sidecar.json",
+  ]) {
     await expect(notice).toContainText(text);
   }
   await page.keyboard.press("Escape");
@@ -18,7 +27,7 @@ test("P4-AC1: the notice names the services and the files, and the choice persis
   await expect(page.getByRole("dialog", { name: "Online lookups" })).toHaveCount(0);
   await openMenu(page);
   await page.getByRole("menuitem", { name: "Settings" }).click();
-  await expect(page.getByRole("dialog", { name: "Settings" }).getByRole("switch")).toBeChecked();
+  await expect(page.getByRole("dialog", { name: "Settings" }).getByRole("switch", { name: /Look up/ })).toBeChecked();
 });
 
 test("P4-AC1: Keep off leaves Online lookups off", async ({ page }) => {
@@ -26,7 +35,61 @@ test("P4-AC1: Keep off leaves Online lookups off", async ({ page }) => {
   await page.getByRole("dialog", { name: "Online lookups" }).getByRole("button", { name: "Keep off" }).click();
   await openMenu(page);
   await page.getByRole("menuitem", { name: "Settings" }).click();
-  await expect(page.getByRole("dialog", { name: "Settings" }).getByRole("switch")).not.toBeChecked();
+  await expect(
+    page.getByRole("dialog", { name: "Settings" }).getByRole("switch", { name: /Look up/ }),
+  ).not.toBeChecked();
+});
+
+test("P24-AC1: Fetch lyrics automatically is on by default, disabled while lookups are off, and kept", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await openMenu(page);
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const lookups = settings.getByRole("switch", { name: /Look up/ });
+  const auto = settings.getByRole("switch", { name: /Fetch lyrics automatically/ });
+  await expect(lookups).toHaveAccessibleName(/lyrics\.ovh/);
+  await expect(auto).toBeChecked();
+  await expect(auto).toBeDisabled();
+  await lookups.click();
+  await expect(auto).toBeEnabled();
+  await auto.click();
+  await expect(auto).not.toBeChecked();
+  await page.reload();
+  await openMenu(page);
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Settings" }).getByRole("switch", { name: /Fetch lyrics/ }),
+  ).not.toBeChecked();
+});
+
+test("P24-AC1: a user with lookups on from before v1.10 sees the updated notice once (Keep on)", async ({ page }) => {
+  await page.goto("/?update=1");
+  const notice = page.getByRole("dialog", { name: "Online lookups" });
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText("lyrics.ovh");
+  await page.keyboard.press("Escape");
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Keep on" }).click();
+  await expect(notice).toHaveCount(0);
+  await page.reload();
+  await expect(widget(page, "library")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Online lookups" })).toHaveCount(0);
+  await openMenu(page);
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" }).getByRole("switch", { name: /Look up/ })).toBeChecked();
+});
+
+test("P24-AC1: Turn off on the updated notice turns Online lookups off", async ({ page }) => {
+  await page.goto("/?update=1");
+  await page.getByRole("dialog", { name: "Online lookups" }).getByRole("button", { name: "Turn off" }).click();
+  await expect(page.getByRole("dialog", { name: "Online lookups" })).toHaveCount(0);
+  await openMenu(page);
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Settings" }).getByRole("switch", { name: /Look up/ }),
+  ).not.toBeChecked();
 });
 
 test("P4-AC2: with no folder the Library asks for one, Transport is disabled and widgets show hints", async ({

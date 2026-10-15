@@ -8,6 +8,7 @@ import { currentTrack, usePlayerStore } from "@/store/player";
 import { addFavorites, addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
+import { useFollowPlaying } from "../follow";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
 import { type ViewId, contentWidth, gridTemplate, visibleColumns } from "./columns";
 import { AlbumCells, type ClickModifiers, Row, SongCells, SongTableRow, useAlbumRowHeight, useRowHeight } from "./rows";
@@ -36,6 +37,12 @@ function playScope(scope: { artist: number | null; album: number | null }, song?
 /** The track that plays or is paused, for the playing indicator (P6.4). */
 function usePlayingTrack(): number | null {
   return usePlayerStore((state) => (state.player.status === "stopped" ? null : currentTrack(state.queue)));
+}
+
+/** The track that plays or is paused now, read at a song change (R35). */
+function playingNow(): number | null {
+  const { player, queue } = usePlayerStore.getState();
+  return player.status === "stopped" ? null : currentTrack(queue);
 }
 
 /** Appends `ids` to the queue and says so in the status line, which shows with the queue hidden (R6). */
@@ -382,6 +389,24 @@ export function SongTable({ view }: { view: ViewId }) {
     if (!selectedSongs.has(ids[index])) select(index, "single");
     menu.open(anchor, items(index));
   });
+  // R35, D63: the playing song becomes the one selected row, by track id.
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  useFollowPlaying(
+    listRef,
+    () => {
+      const track = playingNow();
+      const index = track === null ? -1 : ids.indexOf(track);
+      // A search or filter keeps a hidden selection in the store: only a shown one counts.
+      const rows = new Set(ids);
+      const shown = [...selectedSongs].some((id) => rows.has(id));
+      return { hasSelection: shown, target: index >= 0 ? index : null };
+    },
+    (index) => {
+      const id = ids[index];
+      setSongSelection(new Set([id]), id, id);
+      setReveal({ index });
+    },
+  );
   // Stable, so it reads the ids of the latest sort, also when the count did not change.
   const focusBody = useStable(() => {
     listRef.current?.querySelector<HTMLElement>("[role='grid']")?.focus();
@@ -402,6 +427,7 @@ export function SongTable({ view }: { view: ViewId }) {
           <TableHeader view={view} state={columnState} columns={columns} template={template} onFocusBody={focusBody} />
         }
         activeIndex={active >= 0 ? active : null}
+        reveal={reveal}
         onMove={(index, { shift }) => select(index, shift ? "range" : "single")}
         onKeyDown={(event) => {
           if (menu.fromKey(event, active >= 0 ? items(active) : null)) return;
@@ -541,6 +567,21 @@ export function TreeList() {
         ? line.kind === "album" && line.id === selection.album
         : line.kind === "artist" && line.id === selection.artist,
   );
+  // R35, D63: a song row of an open album follows like a click on it, so a later switch to
+  // Columns shows its album.
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  useFollowPlaying(
+    listRef,
+    () => {
+      const track = playingNow();
+      const index = lines.findIndex((line) => line.kind === "song" && line.id === track);
+      return { hasSelection: active >= 0, target: track !== null && index >= 0 ? index : null };
+    },
+    (index) => {
+      select(lines[index]);
+      setReveal({ index });
+    },
+  );
   // A selection from another mode opens its artist and album, so it shows (R28, P6-AC2).
   const opened = useRef(false);
   useEffect(() => {
@@ -606,6 +647,7 @@ export function TreeList() {
         rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={active >= 0 ? active : null}
+        reveal={reveal}
         onMove={(index) => select(lines[index])}
         place={(index) => ({ posinset: lines[index].posinset, setsize: lines[index].setsize })}
         onKeyDown={onKeyDown}

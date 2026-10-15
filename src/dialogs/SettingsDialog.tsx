@@ -141,10 +141,23 @@ export function SettingsDialog() {
         </Section>
         <Section title="Online lookups">
           <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Look up missing album art and lyrics on MusicBrainz, Cover Art Archive and LRCLIB</span>
+            <span>Look up missing album art and lyrics on MusicBrainz, Cover Art Archive, LRCLIB and lyrics.ovh</span>
             <Switch
               checked={view.onlineLookups}
               onCheckedChange={(on) => void change(() => commands.setOnlineLookups(on), "changing Online lookups")}
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <span className={view.onlineLookups ? undefined : "text-text-secondary"}>
+              Fetch lyrics automatically
+              <span className="block text-text-secondary">For the playing song and the next song</span>
+            </span>
+            <Switch
+              checked={view.autoLyrics}
+              disabled={!view.onlineLookups}
+              onCheckedChange={(on) =>
+                void change(() => commands.setAutoLyrics(on), "changing Fetch lyrics automatically")
+              }
             />
           </label>
         </Section>

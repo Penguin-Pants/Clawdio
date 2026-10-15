@@ -442,7 +442,7 @@ mod tests {
         let mut config = NetConfig::production("Test/1 ( https://example.org )".into());
         config.musicbrainz = base.clone();
         config.cover_art = base;
-        config.allowed_hosts = vec!["127.0.0.1".into()];
+        config.hosts = clawdio_core::net::Hosts::every(&["127.0.0.1"]);
         config.https_only = false;
         config.use_proxy = false;
         config.musicbrainz_gap = Duration::ZERO;

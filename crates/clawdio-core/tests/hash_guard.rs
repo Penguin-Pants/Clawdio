@@ -1,5 +1,5 @@
-//! P16-AC4 (R11): every write of P10 to P16 leaves the audio files byte-identical. Temp
-//! folders only.
+//! P16-AC4, P24-AC9 (R11): every write of P10 to P16 and P24 leaves the audio files
+//! byte-identical. Temp folders only.
 
 mod common;
 
@@ -100,6 +100,17 @@ fn audio_files_stay_byte_identical_after_every_write() {
     )
     .unwrap();
     lyrics::save(&album.join("02 Two.ogg"), &Fetched::Plain("b".into())).unwrap();
+
+    // P24: an automatic fetch saves a lyrics.ovh result as text, and the lyrics marker is
+    // written, cleared and written again.
+    lyrics::save(
+        &album.join("03 Three.wav"),
+        &Fetched::Plain("from lyrics.ovh".into()),
+    )
+    .unwrap();
+    sidecar::write_lyrics_marker(&album, "02 Two.ogg", SystemTime::now()).unwrap();
+    sidecar::clear_lyrics_marker(&album, "02 Two.ogg").unwrap();
+    sidecar::write_lyrics_marker(&album, "03 Three.wav", SystemTime::now()).unwrap();
 
     // P16: the metadata sidecar, then a scan that reads it.
     let entry = TrackEntry {

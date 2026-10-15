@@ -208,3 +208,17 @@ test("P15-AC6, P15-AC7: Fetch lyrics is off without Online lookups; fetched lyri
   await expect(fetch).toHaveCount(0);
   await expect(page.locator("footer").getByRole("status")).toHaveText("Lyrics saved");
 });
+
+test("P24-AC6: an automatic save shows in the Lyrics widget with no click and no status text", async ({ page }) => {
+  await page.goto("/?data=library&measure=columns");
+  const lyrics = widget(page, "lyrics");
+  await expect(lyrics).toContainText("Lyric line 60");
+  await page.evaluate(() => window.e2e.setLyrics(null));
+  await expect(lyrics).toContainText("No lyrics for this song.");
+  // Rust saves the file of the playing song and sends `lyrics-changed` (P24.5).
+  await page.evaluate(() => window.e2e.setLyrics({ text: "Automatic one\n\nAutomatic two" }));
+  await expect(lyrics.getByRole("region", { name: "Lyrics text" })).toHaveText(/Automatic one\s+Automatic two/);
+  await expect(lyrics.getByRole("button", { name: "Fetch lyrics" })).toHaveCount(0);
+  // The status line keeps its idle text: an automatic fetch writes none (D61).
+  await expect(page.locator("footer").getByRole("status")).toHaveText("Ready");
+});

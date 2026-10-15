@@ -187,10 +187,23 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
 
     fn announce(&self) {
         self.events.state(self.state());
+        self.announce_songs();
     }
 
     fn announce_queue(&self) {
         self.events.queue(&self.queue.snapshot());
+        self.announce_songs();
+    }
+
+    /// The playing and the next song for the automatic lyrics fetch (P24.5, D61): a shuffle or
+    /// repeat change sends only `player-state`, so both announcements send it.
+    fn announce_songs(&self) {
+        let playing = (self.status != PlayerStatus::Stopped)
+            .then(|| self.queue.current())
+            .flatten()
+            .and_then(|index| self.queue.entries().get(index).copied());
+        let next = playing.and(self.queue.peek_next());
+        self.events.songs(playing, next);
     }
 
     /// The file name for messages, or "track N".
@@ -604,6 +617,24 @@ mod tests {
         fn message(&self, text: String) {
             self.0.lock().unwrap().push(format!("message {text}"));
         }
+        fn songs(&self, playing: Option<u32>, next: Option<u32>) {
+            self.0
+                .lock()
+                .unwrap()
+                .push(format!("songs {playing:?} {next:?}"));
+        }
+    }
+
+    impl Recorder {
+        fn last_songs(&self) -> Option<String> {
+            self.0
+                .lock()
+                .unwrap()
+                .iter()
+                .rev()
+                .find(|line| line.starts_with("songs "))
+                .cloned()
+        }
     }
 
     /// Seed files by id. 9 is a text file; other ids are unknown.
@@ -662,6 +693,46 @@ mod tests {
             "repeat off stops on the last entry at position 0 (R6)"
         );
         assert!(recorder.messages().is_empty());
+    }
+
+    /// P24.5, P24-AC6: the engine reports the playing and the next song; a repeat or shuffle
+    /// change and a queue edit report the new next song; stopped reports none.
+    #[test]
+    fn the_playing_and_next_song_follow_play_state_and_order() {
+        let (mut engine, recorder) = engine();
+        engine.append(vec![0, 1]);
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs None None"),
+            "stopped"
+        );
+        engine.play();
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs Some(0) Some(1)")
+        );
+        engine.set_repeat(RepeatMode::One);
+        assert_eq!(recorder.last_songs().as_deref(), Some("songs Some(0) None"));
+        engine.set_repeat(RepeatMode::Off);
+        engine.append(vec![2]);
+        engine.remove(1);
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs Some(0) Some(2)")
+        );
+        engine.set_shuffle(true);
+        let next = engine.queue.peek_next();
+        assert_eq!(
+            recorder.last_songs(),
+            Some(format!("songs Some(0) {next:?}"))
+        );
+        engine.pause();
+        assert!(
+            recorder.last_songs().unwrap().starts_with("songs Some(0)"),
+            "paused"
+        );
+        engine.stop();
+        assert_eq!(recorder.last_songs().as_deref(), Some("songs None None"));
     }
 
     #[test]

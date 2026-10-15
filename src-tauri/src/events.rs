@@ -93,4 +93,8 @@ impl PlayerEvents for AppEvents {
     fn message(&self, text: String) {
         emit(&self.app, STATUS_MESSAGE, text);
     }
+
+    fn songs(&self, playing: Option<u32>, next: Option<u32>) {
+        crate::commands::lyrics::targets(&self.app, playing, next);
+    }
 }

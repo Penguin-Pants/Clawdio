@@ -647,3 +647,50 @@ fn the_sidecar_fills_untagged_songs_and_follows_its_changes() {
     load(&reloaded, &cache).unwrap();
     assert_eq!(titles(&reloaded), plain);
 }
+
+/// P24-AC3: after a lyrics marker write or clear, the index keeps the new sidecar stamp (as
+/// the app does), so a rescan reads none of the album's songs again. A sidecar title that a
+/// re-read would take shows whether the album was read again.
+#[test]
+fn a_lyrics_marker_with_the_new_stamp_reads_no_song_again() {
+    use clawdio_core::sidecar::{self, TrackEntry, SIDECAR_FILE};
+    let root = tempfile::tempdir().unwrap();
+    put(root.path(), "A/B/01 One.mp3", "tone.mp3", Tags::default());
+    put(
+        root.path(),
+        "A/B/CD2/02 Two.mp3",
+        "tone.mp3",
+        Tags::default(),
+    );
+    let index = RwLock::new(LibraryIndex::new());
+    run(root.path(), &index, None);
+    let album = root.path().join("A/B");
+    let keep_stamp = || {
+        let stamp = clawdio_core::artwork::stamp(&album.join(SIDECAR_FILE));
+        index.write().unwrap().set_sidecar("A", "B", stamp);
+    };
+    let title = || {
+        titles(&index)
+            .into_iter()
+            .find(|(path, _, _)| path == "A/B/01 One.mp3")
+            .map(|(_, title, _)| title)
+            .unwrap()
+    };
+    let entry = TrackEntry {
+        title: Some("From Sidecar".into()),
+        ..TrackEntry::default()
+    };
+    sidecar::write_tracks(&album, &[("01 One.mp3".into(), entry)], false).unwrap();
+    sidecar::write_lyrics_marker(&album, "CD2/02 Two.mp3", std::time::SystemTime::now()).unwrap();
+    keep_stamp();
+    run(root.path(), &index, None);
+    assert_eq!(title(), "One", "after a write: not read again");
+    sidecar::clear_lyrics_marker(&album, "CD2/02 Two.mp3").unwrap();
+    keep_stamp();
+    run(root.path(), &index, None);
+    assert_eq!(title(), "One", "after a clear: not read again");
+    // Without the new stamp the album is read again: the checks above are not empty.
+    sidecar::write_lyrics_marker(&album, "01 One.mp3", std::time::SystemTime::now()).unwrap();
+    run(root.path(), &index, None);
+    assert_eq!(title(), "From Sidecar");
+}

@@ -35,8 +35,9 @@ export function createPlayer(queue: Queue, player: Player) {
     player.positionMs = 0;
   };
   const commands: Record<string, (args: Record<string, unknown>) => unknown> = {
-    queue_get: () => queue,
-    player_state: () => player,
+    // Copies, like the real IPC: the store must not hold the object this mock changes.
+    queue_get: () => ({ ...queue, entries: [...queue.entries] }),
+    player_state: () => ({ ...player }),
     player_play_list: ({ ids, start: from }) => {
       // Tests read the last queue request from the page (P6-AC4).
       document.body.dataset.playList = JSON.stringify({ ids, start: from });

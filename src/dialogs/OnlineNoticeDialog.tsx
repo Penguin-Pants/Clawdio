@@ -13,7 +13,7 @@ import { useSettingsStore } from "@/store/settings";
 
 async function answer(on: boolean) {
   try {
-    await commands.setOnlineLookups(on);
+    if (on !== useSettingsStore.getState().view.onlineLookups) await commands.setOnlineLookups(on);
     useSettingsStore.getState().set(await commands.firstRunNoticeDone());
   } catch (reason) {
     error(`notice: cannot save the answer: ${String(reason)}`);
@@ -21,19 +21,22 @@ async function answer(on: boolean) {
 }
 
 /**
- * The first-run notice (R7, P4.6). It names the services and the files the app may write. It
+ * The first-run notice (R7, P4.6) and, for a user who turned lookups on before lyrics.ovh
+ * joined, the updated notice (D64). It names the services and the files the app may write. It
  * stays until the user chooses, and does not show again.
  */
 export function OnlineNoticeDialog() {
   const pending = useSettingsStore((state) => state.view.noticePending);
+  const update = useSettingsStore((state) => !state.view.noticePending && state.view.noticeUpdate);
   return (
-    <Dialog open={pending} disablePointerDismissal onOpenChange={() => {}}>
+    <Dialog open={pending || update} disablePointerDismissal onOpenChange={() => {}}>
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Online lookups</DialogTitle>
           <DialogDescription>
-            With online lookups on, the app finds missing album art and lyrics on MusicBrainz, Cover Art Archive and
-            LRCLIB. It sends artist, album and song names, never your files.
+            {update && "Online lookups now also use lyrics.ovh. "}
+            With online lookups on, the app finds missing album art and lyrics on MusicBrainz, Cover Art Archive, LRCLIB
+            and lyrics.ovh. It sends artist, album and song names, never your files.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2 text-sm text-text-secondary">
@@ -53,9 +56,9 @@ export function OnlineNoticeDialog() {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => void answer(false)}>
-            Keep off
+            {update ? "Turn off" : "Keep off"}
           </Button>
-          <Button onClick={() => void answer(true)}>Turn on</Button>
+          <Button onClick={() => void answer(true)}>{update ? "Keep on" : "Turn on"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

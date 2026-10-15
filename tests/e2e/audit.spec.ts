@@ -287,7 +287,10 @@ test("P17-AC6: in forced colors the focus ring and the toggle, switch and slider
   // The Online lookups switch on and off.
   await openMenu(page);
   await page.getByRole("menuitem", { name: "Settings" }).click();
-  const toggle = page.getByRole("dialog", { name: "Settings" }).locator("[data-slot='switch']");
+  const toggle = page
+    .getByRole("dialog", { name: "Settings" })
+    .getByRole("switch", { name: /Look up/ })
+    .and(page.locator("[data-slot='switch']"));
   const off = await background(toggle);
   await toggle.click();
   await expect(toggle).toHaveAttribute("data-checked");

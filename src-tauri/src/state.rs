@@ -26,13 +26,25 @@ pub struct AppState {
     pub scan_cancel: Mutex<Option<Arc<AtomicBool>>>,
 }
 
-/// The lyrics the widget read last, for the scan check, and the playing song (P13.3).
+/// The lyrics the widget read last, for the scan check, the playing song (P13.3) and the
+/// lyrics jobs (P24.5).
 #[derive(Default)]
 pub struct LyricsState {
     pub served: Mutex<Option<(u32, Option<Lyrics>)>>,
     pub song: Mutex<Option<u32>>,
-    /// The running "Fetch lyrics" requests; Cancel stops them (R5).
-    pub fetches: crate::online::CancelSlot,
+    pub jobs: Mutex<crate::commands::lyrics::Registry>,
+    /// "Fetch lyrics automatically" (R9.1). An atomic, so the player thread never takes the
+    /// settings lock.
+    pub auto_on: AtomicBool,
+}
+
+impl LyricsState {
+    pub fn new(auto_lyrics: bool) -> Self {
+        LyricsState {
+            auto_on: AtomicBool::new(auto_lyrics),
+            ..LyricsState::default()
+        }
+    }
 }
 
 /// The playlists of the music folder (P11). Lock order: this, then the library index.

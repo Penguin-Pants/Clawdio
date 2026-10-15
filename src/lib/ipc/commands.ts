@@ -98,6 +98,8 @@ export const commands = {
   queueClear: () => invoke<void>("queue_clear"),
   settingsGet: () => invoke<SettingsView>("settings_get"),
   setOnlineLookups: (on: boolean) => invoke<SettingsView>("set_online_lookups", { on }),
+  /** "Fetch lyrics automatically" (R9.1). */
+  setAutoLyrics: (on: boolean) => invoke<SettingsView>("set_auto_lyrics", { on }),
   /** "When the microphone is in use" (R34.1). */
   setMicDucking: (mode: MicDucking) => invoke<SettingsView>("set_mic_ducking", { mode }),
   /** The ducked volume, 5 to 90 in steps of 5 (R34.3). */

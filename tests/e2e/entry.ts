@@ -1,5 +1,6 @@
 // E2E page entry (P2.15). The mocks install before the app starts.
 import { retagSong, setLyrics } from "./install-mocks";
+import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import "../../src/main";
 import { addWidget, getDock, replaceArrangement, setWidgetVisible } from "../../src/shell/layouts";
@@ -45,6 +46,10 @@ const hooks = {
   },
   setLyrics,
   retagSong,
+  /** Sends a command to the mocked IPC with no click, so the focus stays where it is (R35.4). */
+  invoke(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
+    return invoke(command, args);
+  },
   /** Adds a widget as a tab in the group of another widget. */
   addAsTab(id: WidgetId, reference: WidgetId): void {
     addWidget(dock(), id, { referencePanel: reference, direction: "within" });

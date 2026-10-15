@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { commands } from "@/lib/ipc/commands";
+import { usePlayerStore } from "./player";
 import { playPlaylist, playlistQueue, playlistTask, usePlaylistsStore } from "./playlists";
 import { useUiStore } from "./ui";
 
@@ -94,6 +95,14 @@ describe("playPlaylist (R12)", () => {
     await playPlaylist(1, 1, shown);
     expect(read).not.toHaveBeenCalled();
     expect(play).toHaveBeenCalledWith([7, 8], 1);
+    // D63: the view that shows the entries becomes the source of the queue.
+    expect(usePlayerStore.getState().pending).toEqual({ source: { id: 1, signature: "[7,8]" }, ids: [7, 8] });
+  });
+
+  it("forgets the view as the queue source when the play fails (D63)", async () => {
+    vi.spyOn(commands, "playerPlayList").mockRejectedValue(new Error("no"));
+    await expect(playPlaylist(1, 0, shown)).rejects.toThrow("no");
+    expect(usePlayerStore.getState().pending).toBeNull();
   });
 
   it("reads the entries when the caller has none", async () => {

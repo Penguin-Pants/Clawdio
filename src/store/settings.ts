@@ -8,6 +8,8 @@ export const UNKNOWN_SETTINGS: SettingsView = {
   folderState: "none",
   onlineLookups: false,
   noticePending: false,
+  noticeUpdate: false,
+  autoLyrics: true,
   portable: false,
   micDucking: "off",
   micDuckPercent: 20,

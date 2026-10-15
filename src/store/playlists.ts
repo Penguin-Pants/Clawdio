@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
+import { usePlayerStore } from "@/store/player";
 import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
@@ -83,13 +84,27 @@ export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number
   return start < 0 ? null : { ids, start };
 }
 
+/** The entries of a playlist as a view shows them; an edit of the playlist changes it (D63). */
+export function playlistSignature(entries: readonly PlaylistEntry[]): string {
+  return JSON.stringify(entries.map((entry) => entry.track));
+}
+
 /**
  * Plays a playlist from entry `from` (R12: double-click or Enter plays). A caller that shows the
- * entries passes them, so `from` points into the list the user saw.
+ * entries (the playlist view) passes them, so `from` points into the list the user saw, and the
+ * view becomes the source of the queue for the selection follow (D63).
  */
 export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry[]): Promise<void> {
   const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
-  if (queue) await commands.playerPlayList(queue.ids, queue.start);
+  if (!queue) return;
+  if (entries) usePlayerStore.getState().expectPlaylist(id, queue.ids, playlistSignature(entries));
+  try {
+    await commands.playerPlayList(queue.ids, queue.start);
+  } catch (error) {
+    // No queue came from the view, so a later queue with the same ids is not its queue.
+    usePlayerStore.setState({ pending: null });
+    throw error;
+  }
 }
 
 /**

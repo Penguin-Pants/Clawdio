@@ -45,6 +45,8 @@ interface VirtualListProps {
   contentWidth?: number;
   /** `aria-multiselectable` (UD12). */
   multiselectable?: boolean;
+  /** Each new object scrolls its row into view, with no focus change (R35.3). */
+  reveal?: { index: number } | null;
   className?: string;
 }
 
@@ -94,6 +96,7 @@ export function VirtualList({
   header,
   contentWidth,
   multiselectable,
+  reveal = null,
   className,
 }: VirtualListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -122,6 +125,11 @@ export function VirtualList({
     scrollMargin: headerHeight,
     scrollPaddingStart: headerHeight,
   });
+  useEffect(() => {
+    if (reveal && reveal.index < count) virtualizer.scrollToIndex(reveal.index, { align: "auto" });
+    // Only a new reveal request scrolls; a new count alone does not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reveal, virtualizer]);
   // A new row height (a root font change) measures every row again.
   useEffect(() => virtualizer.measure(), [rowHeight, virtualizer]);
   const items = virtualizer.getVirtualItems();

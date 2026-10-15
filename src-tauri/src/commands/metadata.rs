@@ -385,7 +385,7 @@ mod tests {
         app.manage(MetadataFills::default());
         let mut config = NetConfig::production("Test/1 ( https://example.org )".into());
         config.musicbrainz = Url::parse(&format!("{}/", server.base_url())).unwrap();
-        config.allowed_hosts = vec!["127.0.0.1".into()];
+        config.hosts = clawdio_core::net::Hosts::every(&["127.0.0.1"]);
         config.https_only = false;
         config.use_proxy = false;
         config.musicbrainz_gap = std::time::Duration::ZERO;

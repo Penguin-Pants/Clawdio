@@ -26,6 +26,8 @@ const settings = JSON.parse(
             folderState: "none",
             onlineLookups: false,
             noticePending: true,
+            noticeUpdate: false,
+            autoLyrics: true,
             portable: false,
             lastScan: null,
             micDucking: "off",
@@ -35,8 +37,11 @@ const settings = JSON.parse(
         : {
             folderName: "music",
             folderState: params.get("missing") === "1" ? "missing" : "ready",
-            onlineLookups: false,
+            // "?update=1": a user from before v1.10 with lookups on sees the updated notice (D64).
+            onlineLookups: params.get("update") === "1",
             noticePending: false,
+            noticeUpdate: params.get("update") === "1",
+            autoLyrics: true,
             portable: false,
             lastScan: LAST_SCAN,
             micDucking: "off",
@@ -83,13 +88,17 @@ function settingsCommand(command: string, args: Args): unknown {
     case "settings_get":
       return { ...settings };
     case "set_online_lookups":
-      return saveSettings({ onlineLookups: args.on });
+      // On: Settings names every service, so the updated notice is answered too (D64).
+      return saveSettings({ onlineLookups: args.on, noticeUpdate: false });
+    case "set_auto_lyrics":
+      return saveSettings({ autoLyrics: args.on });
     case "set_mic_ducking":
       return saveSettings({ micDucking: args.mode });
     case "set_mic_duck_percent":
       return saveSettings({ micDuckPercent: args.percent });
     case "first_run_notice_done":
-      return saveSettings({ noticePending: false });
+      document.body.dataset.noticeAnswers = String(Number(document.body.dataset.noticeAnswers ?? 0) + 1);
+      return saveSettings({ noticePending: false, noticeUpdate: false });
     case "choose_music_folder":
       return saveSettings({ folderName: "music", folderState: "ready" });
     case "rescan":
