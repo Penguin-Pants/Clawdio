@@ -18,9 +18,14 @@ import { TableHeader } from "./TableHeader";
 const NO_IDS: number[] = [];
 const NO_TREE: TreeArtist[] = [];
 
-/** Plays `ids` from `start` (R6 queue rule). A failure leaves the player as it was. */
+/**
+ * Plays `ids` from `start` (R6 queue rule). A failure leaves the player as it was. A library
+ * play ends any playlist source, so a pending view play with the same ids cannot claim it.
+ */
 function playList(ids: number[], start: number) {
-  if (start >= 0 && start < ids.length) void commands.playerPlayList(ids, start).catch(() => {});
+  if (start < 0 || start >= ids.length) return;
+  usePlayerStore.getState().clearPlaylistSource();
+  void commands.playerPlayList(ids, start).catch(() => {});
 }
 
 /**
