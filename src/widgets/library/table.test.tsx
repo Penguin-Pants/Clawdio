@@ -31,7 +31,7 @@ vi.mock("@/lib/ipc/commands", async (importOriginal) => {
       ...real.commands,
       librarySongIds: async () => IDS,
       libraryRows: async (ids: number[]) => ids.map(song),
-      playerPlayList: async () => {},
+      playerPlayList: () => Promise.resolve(),
     },
   };
 });
@@ -88,7 +88,7 @@ describe("Library playback (P24.8)", () => {
     const { container } = render(<SongTable view="songs.topBottom" />);
     const grid = container.querySelector<HTMLElement>("[role='grid']");
     if (!grid) throw new Error("no grid");
-    await act(async () => {
+    act(() => {
       resize(grid, 600, 400);
       flushFrames();
     });

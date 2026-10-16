@@ -25,7 +25,9 @@ const NO_TREE: TreeArtist[] = [];
 function playList(ids: number[], start: number) {
   if (start < 0 || start >= ids.length) return;
   usePlayerStore.getState().clearPlaylistSource();
-  void commands.playerPlayList(ids, start).catch(() => {});
+  void commands.playerPlayList(ids, start).catch(() => {
+    // A failed play leaves the player as it was; the source stays cleared.
+  });
 }
 
 /**
