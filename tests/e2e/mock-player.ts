@@ -16,6 +16,7 @@ interface Player {
   volume: number;
   shuffle: boolean;
   repeat: Repeat;
+  started: number;
 }
 
 export function createPlayer(queue: Queue, player: Player) {
@@ -30,13 +31,15 @@ export function createPlayer(queue: Queue, player: Player) {
     document.body.dataset.playerCalls = JSON.stringify(calls);
   };
   const start = (index: number) => {
+    player.started += 1;
     queue.current = index;
     player.status = "playing";
     player.positionMs = 0;
   };
   const commands: Record<string, (args: Record<string, unknown>) => unknown> = {
-    queue_get: () => queue,
-    player_state: () => player,
+    // Copies, like the real IPC: the store must not hold the object this mock changes.
+    queue_get: () => ({ ...queue, entries: [...queue.entries] }),
+    player_state: () => ({ ...player }),
     player_play_list: ({ ids, start: from }) => {
       // Tests read the last queue request from the page (P6-AC4).
       document.body.dataset.playList = JSON.stringify({ ids, start: from });
@@ -44,14 +47,20 @@ export function createPlayer(queue: Queue, player: Player) {
       start(from as number);
     },
     player_play: () => {
-      if (queue.entries.length > 0) player.status = "playing";
+      if (queue.entries.length === 0) return;
+      // Like the engine: Play from stopped starts the file again.
+      if (player.status === "stopped") player.started += 1;
+      player.status = "playing";
     },
     player_pause: () => {
       if (player.status === "playing") player.status = "paused";
     },
     player_toggle: () => {
       if (player.status === "playing") player.status = "paused";
-      else if (queue.entries.length > 0) player.status = "playing";
+      else if (queue.entries.length > 0) {
+        if (player.status === "stopped") player.started += 1;
+        player.status = "playing";
+      }
     },
     player_stop: () => {
       player.status = "stopped";

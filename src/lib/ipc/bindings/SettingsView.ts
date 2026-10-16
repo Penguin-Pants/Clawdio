@@ -14,7 +14,16 @@ folderName: string | null, folderState: FolderState, onlineLookups: boolean,
 /**
  * The first-run notice is still to be answered (R7).
  */
-noticePending: boolean, portable: boolean, 
+noticePending: boolean, 
+/**
+ * Online lookups are on and the user has not seen the notice that names lyrics.ovh: the
+ * updated notice shows (D64).
+ */
+noticeUpdate: boolean, 
+/**
+ * "Fetch lyrics automatically" (R9.1).
+ */
+autoLyrics: boolean, portable: boolean, 
 /**
  * Counts of the last scan (R2), shown in Settings.
  */

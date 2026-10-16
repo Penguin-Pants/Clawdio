@@ -92,21 +92,23 @@ In portable mode all of these are in `data/` next to the executable. The formats
 
 ## Online lookups
 
-The "Online lookups" switch in Settings is off by default. While it is off, the app makes no network request. While it is on, the app looks up missing album art and, on request, lyrics over HTTPS, with no account and no API key:
+The "Online lookups" switch in Settings is off by default. While it is off, the app makes no network request. While it is on, the app looks up missing album art and lyrics over HTTPS, with no account and no API key. With "Fetch lyrics automatically" on (the default), it fetches lyrics for the playing song and the next song with no click:
 
 | Service | Use | Data sent |
 |---|---|---|
 | MusicBrainz | Find the release group of an album with no art | The artist and album folder names, in lower case and without accents, a leading year, edition words such as "Remastered" or a leading "The" |
 | Cover Art Archive | Download the front cover at 500 px | The MusicBrainz release group id |
-| LRCLIB | "Fetch lyrics" in the Lyrics widget, for the playing song | The artist and album folder names, the song title and its duration in seconds |
+| LRCLIB | Lyrics: the first sources of the lyrics chain | The artist and album folder names, the song title and its duration in seconds |
+| lyrics.ovh | Lyrics: the last source, after LRCLIB found none | The artist folder name and the song title |
 
-Each request carries a User-Agent with the app name, its version and the project URL. MusicBrainz requests start at least 1 second apart. LRCLIB gets one request at a time.
+Each request carries a User-Agent with the app name, its version and the project URL. MusicBrainz requests start at least 1 second apart. LRCLIB gets one request at a time, at least 0.5 seconds apart; lyrics.ovh gets one request at a time. lyrics.ovh is an unofficial service with no duration check, so it can give the lyrics of another version of a song: delete the file and use "Fetch lyrics" again.
 
 Files the app writes in the music folder:
 
 - `cover.jpg` in an album folder that has no cover file and no embedded art. The app never replaces an existing file.
 - `sidecar.json` in an album folder: a `no-match` marker (no single matching album on MusicBrainz) or a `no-art` marker (no cover on Cover Art Archive), so the album is not looked up again. "Retry lookup" on the album menu removes the marker. See `docs/file-formats.md`.
-- `<song>.lrc` (synced lyrics) or `<song>.txt` (plain lyrics) next to the song, after "Fetch lyrics". The app never replaces an existing file.
+- `<song>.lrc` (synced lyrics) or `<song>.txt` (plain lyrics) next to the song, after "Fetch lyrics" or an automatic fetch. The app never replaces an existing file.
+- In the album's `sidecar.json`: a lyrics `no-match` marker for a song that no lyrics source knows, so the automatic fetch does not ask again. "Fetch lyrics" removes the marker and asks again.
 
 Turning the switch off cancels the lookups and stops downloads at once.
 

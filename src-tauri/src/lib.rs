@@ -133,10 +133,13 @@ pub fn run() -> tauri::Result<()> {
             // The saved queue waits for the library; the saver starts now (P9.1).
             app.manage(persist::StateStore::load(dirs.config.clone()));
             persist::StateStore::spawn_saver(app.handle().clone());
-            // Online lookups (P14): the gate follows the stored switch.
+            // Online lookups (P14): the gate follows the stored switch; lyrics.ovh waits for
+            // the notice that names it (D64).
             if let Some(gate) = online::gate(app.handle(), settings.online_lookups) {
+                gate.set_lyrics_ovh_allowed(settings.notice_current());
                 app.manage(online::Online::new(gate));
             }
+            app.manage(state::LyricsState::new(settings.auto_lyrics));
             app.manage(AppState {
                 dirs,
                 base,
@@ -148,7 +151,6 @@ pub fn run() -> tauri::Result<()> {
             app.manage(ArtService::new(thumbs));
             app.manage(media_controls::Publisher::default());
             ArtService::spawn_workers(app.handle());
-            app.manage(state::LyricsState::default());
             app.manage(window::MiniState::default());
             app.manage(commands::metadata::MetadataFills::default());
             app.manage(state::Playlists::default());
@@ -201,6 +203,7 @@ pub fn run() -> tauri::Result<()> {
             commands::player::player_state,
             commands::settings::settings_get,
             commands::settings::set_online_lookups,
+            commands::settings::set_auto_lyrics,
             commands::settings::set_mic_ducking,
             commands::settings::set_mic_duck_percent,
             commands::settings::first_run_notice_done,

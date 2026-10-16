@@ -198,7 +198,14 @@ export const library = {
   /** The art file of an album: "Lemonade" has none (P10-AC4). */
   art: (id: number): string | null => (albums[id]?.name === "Lemonade" ? null : "album.jpg"),
   queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
-  player: { status: "paused" as const, positionMs: 83_000, volume: 80, shuffle: false, repeat: "off" as const },
+  player: {
+    status: "paused" as const,
+    positionMs: 83_000,
+    volume: 80,
+    shuffle: false,
+    repeat: "off" as const,
+    started: 0,
+  },
   playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
     { id: p, name: `Mix ${p + 1}`, fileName: `Mix ${p + 1}.m3u8`, entryCount: 6, isFavorites: false, missingCount: 1 },
     Array.from({ length: 6 }, (_, e) =>

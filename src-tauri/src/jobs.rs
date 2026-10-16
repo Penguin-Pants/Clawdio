@@ -350,7 +350,7 @@ pub fn cancel(app: &AppHandle, id: &str) {
         return;
     }
     if id == crate::commands::lyrics::LYRICS_JOB {
-        crate::commands::lyrics::cancel(app);
+        crate::commands::lyrics::cancel_manual(app);
         return;
     }
     if id == crate::commands::metadata::METADATA_JOB {

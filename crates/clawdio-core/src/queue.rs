@@ -217,6 +217,32 @@ impl Queue {
         }
     }
 
+    /// The track that plays after the current one ends, in play order with shuffle and
+    /// repeat, without a change to the queue or the shuffle order (P24.5). Repeat one gives
+    /// none (R9.1). It runs at every player event, so it copies only what the shuffle pick
+    /// needs.
+    pub fn peek_next(&self) -> Option<TrackId> {
+        if self.repeat == RepeatMode::One {
+            return None;
+        }
+        let current = self.current?;
+        let next = if self.shuffle {
+            let mut pool = if self.pool.is_empty() && self.repeat == RepeatMode::All {
+                (0..self.entries.len()).collect()
+            } else {
+                self.pool.clone()
+            };
+            take_from(&mut pool, &mut self.random.clone(), Some(current))
+        } else if current + 1 < self.entries.len() {
+            Some(current + 1)
+        } else if self.repeat == RepeatMode::All {
+            Some(0)
+        } else {
+            None
+        };
+        next.and_then(|index| self.entries.get(index).copied())
+    }
+
     /// Previous (the user) at `position_ms` into the current entry: over 3 s it restarts the
     /// entry; else it goes to the previous entry in play order, or restarts when there is none.
     pub fn previous(&mut self, position_ms: u32) -> Step {
@@ -280,18 +306,22 @@ impl Queue {
         };
     }
 
-    /// Takes a random entry from the pool. A new cycle does not start with `avoid` (the entry
-    /// that just played) when another entry is left.
     fn take_from_pool(&mut self, avoid: Option<usize>) -> Option<usize> {
-        if self.pool.is_empty() {
-            return None;
-        }
-        let mut pick = self.random.below(self.pool.len());
-        if Some(self.pool[pick]) == avoid && self.pool.len() > 1 {
-            pick = (pick + 1) % self.pool.len();
-        }
-        Some(self.pool.swap_remove(pick))
+        take_from(&mut self.pool, &mut self.random, avoid)
     }
+}
+
+/// Takes a random entry from `pool`. A new cycle does not start with `avoid` (the entry that
+/// just played) when another entry is left.
+fn take_from(pool: &mut Vec<usize>, random: &mut Random, avoid: Option<usize>) -> Option<usize> {
+    if pool.is_empty() {
+        return None;
+    }
+    let mut pick = random.below(pool.len());
+    if Some(pool[pick]) == avoid && pool.len() > 1 {
+        pick = (pick + 1) % pool.len();
+    }
+    Some(pool.swap_remove(pick))
 }
 
 #[cfg(test)]
@@ -321,6 +351,47 @@ mod tests {
             None,
             "a start outside the list plays nothing"
         );
+    }
+
+    /// P24-AC6: the next track in play order, with no change to the queue.
+    #[test]
+    fn peek_next_follows_the_play_order_without_a_change() {
+        let mut queue = queue(3, 1);
+        assert_eq!(queue.peek_next(), Some(102));
+        queue.next();
+        assert_eq!(queue.peek_next(), None, "repeat off at the end");
+        queue.set_repeat(RepeatMode::All);
+        assert_eq!(queue.peek_next(), Some(100));
+        queue.set_repeat(RepeatMode::One);
+        assert_eq!(queue.peek_next(), None, "repeat one has no next song");
+        let mut middle = self::queue(3, 0);
+        middle.set_repeat(RepeatMode::One);
+        assert_eq!(middle.peek_next(), None, "repeat one, not at the end");
+        assert_eq!(Queue::new(1).peek_next(), None, "empty");
+    }
+
+    /// P24-AC6: with shuffle, the peeked track is the one that plays next, and the shuffle
+    /// order does not change.
+    #[test]
+    fn peek_next_with_shuffle_is_the_shuffle_next() {
+        for seed in 1..40 {
+            let mut queue = Queue::new(seed);
+            queue.replace((100..110).collect(), 0);
+            queue.set_shuffle(true);
+            queue.set_repeat(RepeatMode::All);
+            let mut copy = queue.clone();
+            for _ in 0..25 {
+                let peeked = queue.peek_next();
+                let peeked_again = queue.peek_next();
+                assert_eq!(peeked, peeked_again, "seed {seed}");
+                let Step::Play(index) = queue.on_end() else {
+                    panic!("repeat all plays on");
+                };
+                assert_eq!(peeked, Some(queue.entries()[index]), "seed {seed}");
+                copy.on_end();
+                assert_eq!(copy.current(), queue.current(), "the order did not change");
+            }
+        }
     }
 
     #[test]

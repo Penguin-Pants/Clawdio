@@ -17,6 +17,18 @@ fn default_duck_percent() -> u8 {
     DEFAULT_DUCK_PERCENT
 }
 
+/// The version of the Online lookups notice (D64). Version 2 names lyrics.ovh (R7 v1.10).
+pub const ONLINE_NOTICE_VERSION: u32 = 2;
+
+/// A file without `onlineNoticeVersion` was written before version 2 of the notice (D64).
+fn first_notice_version() -> u32 {
+    1
+}
+
+fn on() -> bool {
+    true
+}
+
 /// Why a duck percentage is refused (R34.3).
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("The percentage must be 5 to 90 in steps of 5")]
@@ -75,6 +87,26 @@ pub struct Settings {
     /// 5 to 90 in steps of 5 (R34.3). A file value outside that range loads as the default.
     #[serde(default = "default_duck_percent")]
     pub mic_duck_percent: u8,
+    /// "Fetch lyrics automatically" (R9.1). On by default, also for a file without the field.
+    #[serde(default = "on")]
+    pub auto_lyrics: bool,
+    /// The notice version the user answered (D64). A file without it reads as 1.
+    #[serde(default = "first_notice_version")]
+    pub online_notice_version: u32,
+}
+
+impl Settings {
+    /// The user answered a notice that names every service, so lyrics.ovh may get
+    /// requests (D64).
+    pub fn notice_current(&self) -> bool {
+        self.online_notice_version >= ONLINE_NOTICE_VERSION
+    }
+
+    /// Online lookups are on, but the user has not seen the notice that names lyrics.ovh: the
+    /// updated notice shows (D64).
+    pub fn notice_update_pending(&self) -> bool {
+        self.online_notice_done && self.online_lookups && !self.notice_current()
+    }
 }
 
 impl Default for Settings {
@@ -88,6 +120,8 @@ impl Default for Settings {
             last_scan: None,
             mic_ducking: MicDucking::Off,
             mic_duck_percent: DEFAULT_DUCK_PERCENT,
+            auto_lyrics: true,
+            online_notice_version: 1,
         }
     }
 }
@@ -261,6 +295,44 @@ mod tests {
         assert_eq!(settings.mic_duck_percent, 20, "a bad file value");
         assert_eq!(settings.mic_ducking, MicDucking::Pause, "the rest stays");
         assert_eq!(settings.music_folder.as_deref(), Some("M"));
+    }
+
+    /// P24-AC1: a new install and a file without the fields both fetch lyrics automatically;
+    /// a file from before v1.10 with lookups on shows the updated notice (D64).
+    #[test]
+    fn auto_lyrics_is_on_and_an_old_file_needs_the_updated_notice() {
+        let fresh = Settings::default();
+        assert!(fresh.auto_lyrics);
+        assert!(
+            !fresh.notice_update_pending(),
+            "the first-run notice shows instead"
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let text = r#"{"version":1,"musicFolder":"M","onlineLookups":true,"onlineNoticeDone":true,"window":null}"#;
+        std::fs::write(dir.path().join(SETTINGS_FILE), text).unwrap();
+        let Loaded::Read(old) = load(dir.path()) else {
+            panic!("the file reads");
+        };
+        assert!(old.auto_lyrics);
+        assert_eq!(old.online_notice_version, 1);
+        assert!(!old.notice_current());
+        assert!(old.notice_update_pending());
+        let off = Settings {
+            online_lookups: false,
+            ..old.clone()
+        };
+        assert!(!off.notice_update_pending(), "lookups off: no notice");
+        let answered = Settings {
+            online_notice_version: ONLINE_NOTICE_VERSION,
+            auto_lyrics: false,
+            ..old
+        };
+        save(dir.path(), &answered).unwrap();
+        assert_eq!(load(dir.path()), Loaded::Read(answered.clone()));
+        assert!(!answered.notice_update_pending());
+        let text = std::fs::read_to_string(dir.path().join(SETTINGS_FILE)).unwrap();
+        assert!(text.contains("\"autoLyrics\": false"), "{text}");
+        assert!(text.contains("\"onlineNoticeVersion\": 2"), "{text}");
     }
 
     #[test]

@@ -1,6 +1,7 @@
-//! Lyrics fetch from LRCLIB (P15.1, R9): `/api/get` by artist, title, album and duration,
-//! then `/api/search` by title and artist. Only a result within 2 s of the song's duration
-//! that has lyrics counts.
+//! Lyrics fetch (P15.1, R9, R9.2): the source chain. LRCLIB `/api/get` by artist, title,
+//! album and duration, `/api/search` by title and artist, `/api/get` without the album,
+//! `/api/search` with a looser title, then lyrics.ovh (D62). An LRCLIB result counts only
+//! within 2 s of the song's duration; a lyrics.ovh result has no duration and saves as text.
 
 use std::path::Path;
 
@@ -78,11 +79,35 @@ impl Record {
     }
 }
 
-/// Asks LRCLIB (P15.1). None means no acceptable result. A network or service error is an
-/// error; a 404 from `/api/get` leads to the search, and one from the search is no result.
-pub async fn fetch(
+/// The cleaned title without text in brackets or parentheses, for the looser LRCLIB query
+/// (R9.2 step 3): "Song (Live) [2011]" gives "Song".
+/// Only text inside a matching pair goes; an unmatched or mismatched delimiter stays.
+pub fn looser_title(title: &str) -> String {
+    let mut out = String::with_capacity(title.len());
+    // Where each open delimiter starts in `out`, and which close it needs.
+    let mut open: Vec<(usize, char)> = Vec::new();
+    for c in title.chars() {
+        match c {
+            '(' | '[' => {
+                open.push((out.len(), if c == '(' { ')' } else { ']' }));
+                out.push(c);
+            }
+            ')' | ']' if open.last().is_some_and(|(_, close)| *close == c) => {
+                if let Some((start, _)) = open.pop() {
+                    out.truncate(start);
+                }
+            }
+            _ => out.push(c),
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// LRCLIB `/api/get`. A 404 is no result; a body that is not valid JSON is an error (P24.2).
+async fn lrclib_get(
     gate: &OnlineGate,
     query: &LyricsQuery,
+    with_album: bool,
     cancel: &CancellationToken,
 ) -> Result<Option<Fetched>, NetError> {
     let mut url = gate
@@ -90,30 +115,39 @@ pub async fn fetch(
         .lrclib
         .join("api/get")
         .map_err(|_| NetError::NotAllowed)?;
-    url.query_pairs_mut()
-        .append_pair("artist_name", &query.artist)
-        .append_pair("track_name", &query.title)
-        .append_pair("album_name", &query.album)
-        .append_pair("duration", &query.duration_s().to_string());
-    match gate.get(Service::Lrclib, url, cancel).await {
-        Ok(body) => {
-            let found = serde_json::from_slice::<Record>(&body.bytes)
-                .ok()
-                .and_then(|record| record.accept(query.duration_ms));
-            if let Some((_, lyrics)) = found {
-                return Ok(Some(lyrics));
-            }
+    {
+        let mut pairs = url.query_pairs_mut();
+        pairs
+            .append_pair("artist_name", &query.artist)
+            .append_pair("track_name", &query.title);
+        if with_album {
+            pairs.append_pair("album_name", &query.album);
         }
-        Err(NetError::Status(404)) => {}
-        Err(error) => return Err(error),
+        pairs.append_pair("duration", &query.duration_s().to_string());
     }
+    let body = match gate.get(Service::Lrclib, url, cancel).await {
+        Err(NetError::Status(404)) => return Ok(None),
+        result => result?,
+    };
+    let record: Record = serde_json::from_slice(&body.bytes).map_err(|_| NetError::BadAnswer)?;
+    Ok(record.accept(query.duration_ms).map(|(_, lyrics)| lyrics))
+}
+
+/// LRCLIB `/api/search` by `title` and the artist. Synced lyrics first, then the result
+/// closest to the song's duration. A 404 is no result.
+async fn lrclib_search(
+    gate: &OnlineGate,
+    query: &LyricsQuery,
+    title: &str,
+    cancel: &CancellationToken,
+) -> Result<Option<Fetched>, NetError> {
     let mut url = gate
         .config()
         .lrclib
         .join("api/search")
         .map_err(|_| NetError::NotAllowed)?;
     url.query_pairs_mut()
-        .append_pair("track_name", &query.title)
+        .append_pair("track_name", title)
         .append_pair("artist_name", &query.artist);
     let body = match gate.get(Service::Lrclib, url, cancel).await {
         Err(NetError::Status(404)) => return Ok(None),
@@ -121,7 +155,6 @@ pub async fn fetch(
     };
     let records: Vec<Record> =
         serde_json::from_slice(&body.bytes).map_err(|_| NetError::BadAnswer)?;
-    // Synced lyrics first, then the result closest to the song's duration.
     let best = records
         .into_iter()
         .filter_map(|record| record.accept(query.duration_ms))
@@ -130,6 +163,92 @@ pub async fn fetch(
             plain(a).cmp(&plain(b)).then(a_offset.total_cmp(b_offset))
         });
     Ok(best.map(|(_, lyrics)| lyrics))
+}
+
+#[derive(Deserialize)]
+struct OvhFound {
+    lyrics: String,
+}
+
+#[derive(Deserialize)]
+struct OvhMissing {
+    error: String,
+}
+
+/// lyrics.ovh (D62): `GET /v1/<artist>/<title>`. HTTP 200 with lyrics text that is not blank
+/// is a plain result; HTTP 404 with `{"error":"No lyrics found"}` is no result; any other
+/// answer is an error (R9.3, K24).
+async fn lyrics_ovh(
+    gate: &OnlineGate,
+    query: &LyricsQuery,
+    cancel: &CancellationToken,
+) -> Result<Option<Fetched>, NetError> {
+    let mut url = gate
+        .config()
+        .lyrics_ovh
+        .join("v1/")
+        .map_err(|_| NetError::NotAllowed)?;
+    url.path_segments_mut()
+        .map_err(|_| NetError::NotAllowed)?
+        .pop_if_empty()
+        .push(&query.artist)
+        .push(&query.title);
+    let answer = gate.answer(Service::LyricsOvh, url, cancel).await?;
+    match answer.status {
+        200 => serde_json::from_slice::<OvhFound>(&answer.body.bytes)
+            .ok()
+            .and_then(|found| text(Some(found.lyrics)))
+            .map(|text| Some(Fetched::Plain(text)))
+            .ok_or(NetError::BadAnswer),
+        404 => match serde_json::from_slice::<OvhMissing>(&answer.body.bytes) {
+            Ok(missing) if missing.error == "No lyrics found" => Ok(None),
+            _ => Err(NetError::BadAnswer),
+        },
+        status => Err(NetError::Status(status)),
+    }
+}
+
+/// The R9.2 chain. Each step runs only after the step before gave no result or an error, and
+/// the first result wins. `Ok(None)` means every step gave no result; one error in any step
+/// makes the result that error (R9.3: no marker). A 429 or 503 from LRCLIB skips the other
+/// LRCLIB steps (section 6.11). Off and Cancel stop the chain at once.
+pub async fn fetch(
+    gate: &OnlineGate,
+    query: &LyricsQuery,
+    cancel: &CancellationToken,
+) -> Result<Option<Fetched>, NetError> {
+    let looser = looser_title(&query.title);
+    let looser = (!looser.is_empty() && looser != query.title).then_some(looser);
+    let mut error = None;
+    let mut lrclib_waits = false;
+    for step in 0..5 {
+        if step < 4 && lrclib_waits {
+            continue;
+        }
+        let result = match step {
+            0 => lrclib_get(gate, query, true, cancel).await,
+            1 => lrclib_search(gate, query, &query.title, cancel).await,
+            2 => lrclib_get(gate, query, false, cancel).await,
+            3 => match &looser {
+                Some(title) => lrclib_search(gate, query, title, cancel).await,
+                None => continue,
+            },
+            _ => lyrics_ovh(gate, query, cancel).await,
+        };
+        match result {
+            Ok(Some(found)) => return Ok(Some(found)),
+            Ok(None) => {}
+            Err(stop @ (NetError::Off | NetError::Canceled)) => return Err(stop),
+            Err(failed) => {
+                log::info!("lyrics: step {} gave an error: {failed}", step + 1);
+                if step < 4 && matches!(failed, NetError::Status(429 | 503) | NetError::Wait) {
+                    lrclib_waits = true;
+                }
+                error.get_or_insert(failed);
+            }
+        }
+    }
+    error.map_or(Ok(None), Err)
 }
 
 /// Why fetched lyrics were not saved. The messages hold no path (D13).

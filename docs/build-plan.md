@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.27, October 15, 2026 (P24 added for requirements v1.10: automatic lyrics fetch and a selection that follows the playing song).
+**Version:** 1.28, October 15, 2026 (P24 Done with exceptions: automatic lyrics fetch and a selection that follows the playing song).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) and the v1.10 additions (P24).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -8,7 +8,7 @@
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
-- Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Not started.
+- Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Done with exceptions: the manual Linux check P24-AC12 waits on the owner.
 - The plan has 25 phases (P0 to P24). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
@@ -92,7 +92,7 @@ A phase is Done when all of these are true:
 | P22 | Library frame splitters | P21 | Done with exceptions |
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
 | U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
-| P24 | Automatic lyrics and selection follow | U8 | Not started |
+| P24 | Automatic lyrics and selection follow | U8 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1365,6 +1365,89 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - A drag from outside the dock (no panel data) passes the rule: it is not a widget, and the app accepts no external drops.
 
 **Follow-ups:** none new.
+
+#### P24. Automatic lyrics and selection follow (October 15, 2026)
+
+- **Status:** Done with exceptions. P24.1 to P24.9 are done. P24-AC12 (manual Linux check) is open (E3).
+- **Commits:** branch `clawd/youthful-turing-cbwk1w`, from `main` after PR 25 (`d685219`). Messages start with `P24:`.
+- **Packages:** none new.
+- **Facts checked on October 15, 2026:** lyrics.ovh `GET /v1/Coldplay/Yellow` gave 200 `{"lyrics": ...}` and an unknown song gave 404 `{"error":"No lyrics found"}`. LRCLIB `/api/get` without `album_name` gave 200; a second request at once gave 429 (K24, the 500 ms spacing).
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P24-AC1 | Pass | `settings.rs` test `auto_lyrics_is_on_and_an_old_file_needs_the_updated_notice`; `first-run.spec.ts`: the switch is on by default, disabled while lookups are off and kept after a reload; `?update=1` shows the updated notice once, "Keep on" and "Turn off". `net/tests.rs` `lyrics_ovh_waits_for_the_notice_answer`; `commands/lyrics.rs` `the_notice_answer_runs_the_chain_again` (no lyrics.ovh request and no marker before the answer, then one). |
+| P24-AC2 | Pass | `net/tests.rs` module `lyrics_chain`: step order and first result (request counts per step), 3 s off on every LRCLIB step, lyrics.ovh saves `.txt` with percent-encoded segments, "Song" and "(Intro)" skip the looser step, 500 ms between LRCLIB requests. |
+| P24-AC3 | Pass | `sidecar.rs` marker tests; `commands/lyrics.rs` `no_match_is_remembered_in_the_sidecar_or_in_memory` (`CD2/` key, no `CD2/sidecar.json`, index stamp, no second request, the click clears the memory) and `no_result_writes_the_marker_and_fetch_clears_it`; `a_redirect_stays_on_the_service_host`; `tests/scan.rs` `a_lyrics_marker_with_the_new_stamp_reads_no_song_again`. |
+| P24-AC4 | Pass | `lyrics_chain` `an_error_moves_on_and_makes_the_chain_an_error` (500, bad JSON on both LRCLIB endpoints, other lyrics.ovh bodies, a 404 with another body), `a_timeout_moves_to_the_next_step`, `retry_after_skips_lrclib_and_blocks_it` (429 and 503); `commands/lyrics.rs` `an_error_writes_no_marker_and_the_next_play_requests_again`. |
+| P24-AC5 | Pass | `a_corrupt_sidecar_stays_and_a_click_still_saves`. One log line: the check's `sidecar::read` logs it and the marker write is skipped (code review; the test does not count log lines). |
+| P24-AC6 | Pass | `queue.rs` `peek_next` tests (40 shuffle seeds); `engine.rs` `the_playing_and_next_song_follow_play_state_and_order` (stopped, Repeat one, shuffle, queue edit, Add to queue while stopped then Play); `commands/lyrics.rs` registry tests (order, old next dropped, `A`/`B`/`C`/`D` case), `a_song_change_fetches_the_playing_and_the_next_song`, `a_click_joins_the_running_job`, `a_folder_change_cancels_queued_and_running_jobs`, `a_song_with_lyrics_gets_no_request` (`.txt`; `.lrc` and embedded use the same `lyrics::load`, P13 tests); `playback.spec.ts` P24-AC6. |
+| P24-AC7 | Pass | `the_switches_gate_the_automatic_fetch`, `turning_off_cancels_running_jobs`, `a_canceled_running_job_does_not_block_a_new_one`. |
+| P24-AC8 | Not run here (E2) | `a_read_only_folder_is_skipped_without_a_request` skips as root; CI runs it as a normal user. |
+| P24-AC9 | Pass | `tests/hash_guard.rs` adds the lyrics.ovh save and the marker write, clear and write. |
+| P24-AC10 | Pass (Chromium) (E1) | `tests/e2e/follow.spec.ts`: both lists, scroll into view, focus and active row, multi-selection, no selection, the same track twice in the queue, Tree mode and Columns after it, `[missing, A, A]`, a queue edit that restores the sequence, `[A, B, B]` minus `A`, stopped queue edit. |
+| P24-AC11 | Pass (Chromium) (E1) | `follow.spec.ts`: row menu, Settings dialog, row drag, click, arrow key, wheel and the 5 s rule (page clock), another artist, a search that hides the song, a search that hides the selection; Artist and Album unchanged. `src/widgets/follow.test.ts`. |
+| P24-AC12 | Not run (E3) | Manual Linux check by the owner. |
+
+**Notes**
+
+- N1: the gate follows redirects itself (`Policy::none()` and a loop in `OnlineGate::answer`), so every hop checks the switch and the hosts of its own service. `NetConfig.hosts` (`Hosts`) replaces the one host list. MusicBrainz can now redirect only to `musicbrainz.org`.
+- N2: `Retry-After` is read in seconds; another form reads as 60 s. The wait is capped at 1 hour, so a huge value cannot overflow the clock.
+- N3: turning Online lookups on in Settings, after the first-run notice, writes notice version 2: Settings names all four services next to the switch. D64 does not cover this case; without it, the updated notice would open on top of Settings.
+- N4: Cancel on the status line now cancels only the jobs that a "Fetch lyrics" request waits for. A music folder change stops playback first, then cancels and drains every lyrics job, so no song change queues a job in between.
+- N5: one worker runs the jobs one at a time. Jobs that a click joined go first. A lyrics.ovh 200 with blank text is an error (D62: any other answer).
+- N6: the selection follow counts a new play in the player store (`follow`): `player-state` carries the count of entries the player started (`started`), so the same track at another entry is a new song, and a restart of the same entry (Repeat one, Previous after 3 s) or a queue edit that keeps the playing entry is not. The lyrics fetch keeps its own count of every file start, so a restart tries an error again. The playlist source ends at any queue edit and at any `playlists-changed` (the event does not name the playlist, so an edit of another playlist also ends it; the view then follows only a track it holds once).
+- N7: the e2e mock `queue_get` returned its live object, so the store missed the first change; it returns copies now, like the real IPC. Two earlier tests pinned a single Settings switch; they now name it.
+- N8: `README.md` lists lyrics.ovh, the automatic fetch and the lyrics marker.
+
+**Exceptions**
+
+- E1: WebKit is not installed in this environment. The Playwright suite ran in Chromium with the installed build (`PW_CHROMIUM_PATH`, the pinned Playwright wants another build). CI runs Chromium and WebKit.
+- E2: the tests run as root here, so the read-only folder tests skip (also P15-AC5). CI runs them.
+- E3: P24-AC12 is a manual check on a Linux desktop with sound and network; this container has neither a desktop nor audio.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 28, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource, CodeRabbit and Codex on the PR.
+
+- F2:
+  - `peek_next` cloned the whole queue at every player event (a volume drag sends many). It copies only the shuffle pool now.
+  - Review: a job canceled by a switch still counted as live, so turning the switch on again before it ended skipped the song, and a click joined the canceled job. Fixed, with a test.
+  - Review: a click that cleared the marker joined an automatic job that had read the marker already and skipped. The worker runs the song again for the click.
+  - Review: a panic in a job left its track in the registry; a later click waited forever. The worker guard ends the job.
+  - Review: a "Fetch lyrics" in its marker-clear step during a folder change could write after the cancel. A generation check under the commit lock closes it.
+  - Review: a manual fetch with a corrupt sidecar logged up to four lines. The extra lines are gone.
+  - Review: a failed play from the playlist view left `pending`, so a later queue with the same ids could count as the view's. Cleared, with a test.
+  - Review: `lyrics::targets` used `app.state` for state that the player could reach before setup managed it. It uses `try_state`.
+  - `README.md` named only LRCLIB for lyrics (N8).
+  - Codex: a click that cleared a marker the automatic job had just written got the old no-match result. The worker runs the song again for the click when the marker is gone.
+  - Codex: "Fetch lyrics" removed any `lyrics` entry of the song. It removes only the `no-match` status and time; other entries and fields stay (R11).
+  - Codex: the Playlists widget playing the same track ids kept an old playlist view as the queue source. Any play that is not from a view ends the source.
+  - Codex: the looser title dropped unmatched brackets (`Song)` gave `Song`). Only text inside a matching pair goes.
+  - Codex: a restart of the same song (Repeat one, Previous) was not a new play, so an error before was never tried again. The player sends a play count with the songs.
+  - Codex: switch-off with a quick switch-on left a click waiting on the new job. Switch-off, Cancel and a folder change answer every waiting click at once.
+  - Codex (second round): with `[A, A, B]`, removing the playing `A` started the second `A` but the lists did not follow. `PlayerSnapshot.plays` (N6) drives the follow now.
+  - Codex (second round): a playlist edit that restored the same tracks kept the view as the queue source. Any playlist change ends it (N6).
+  - Codex (second round): an LRCLIB redirect hop skipped the 500 ms gap. Every hop keeps it, with a test.
+  - Codex (third round): a Repeat one or Previous restart counted as a new song and moved an idle selection. `started` leaves restarts out (N6), with an engine test.
+  - Codex (third round): a "Fetch lyrics" in its checks when lookups went off and on again could still send requests. It takes a gate token before the checks and stops when switch-off canceled it.
+  - Codex (third round): a playlist change before the queue event of a play from the view kept the pending source. A playlist change clears it too.
+  - Codex (fourth round): the marker clear of "Fetch lyrics" ran under a token that switch-off could not cancel. It uses the preflight token now.
+  - Codex (fourth round): "Keep on" while a chain that saw lyrics.ovh blocked had not ended yet ran nothing again. The answer stops the running automatic jobs, so the songs queue again; a joined job keeps running. Registry test.
+  - CodeRabbit: a library play did not end a pending playlist view play, so a library queue with the same ids could take the playlist source. The library play clears it now. Component test.
+  - DeepSource: the library play fix had an empty catch arrow and its test an empty async mock and an async `act` with no `await`. The catch body states its purpose; the mock returns a resolved promise; the `act` is synchronous.
+  - Codex (fifth round): the worker read the marker before it locked the registry, so a click that cleared the marker in between got the old no-match result. The marker read is gone: a click that joins an automatic job with no match always gets a new chain. Worker test.
+  - Codex (fifth round): a pointer held in the list (a scrollbar drag) counted only at its press, so the list could follow during the drag. A held pointer keeps the list busy until 5 s after its release. Playwright test.
+  - Codex (fifth round): "Fetch lyrics" read the folder generation after it resolved the song, so a folder change in between let the marker clear write to the old folder. The generation is read first. No test can place a folder change between the two reads.
+- F3: F-23 (section 11).
+- F4:
+  - A redirect loop could pass the 30 s timeout: each hop has the client timeout and the hop limit is 5.
+  - The follow check spreads the selection into an array: it runs only at a song change.
+  - Three document listeners per list: one `contains` call per input event.
+  - A changed playlist with the view closed revives no source: the view compares its entries when it opens.
+  - The worker serializes a click behind a running automatic job of another song: LRCLIB runs one request at a time anyway.
+  - The Settings label spans two lines of text in the switch name: tests and screen readers read the full name.
+
+**Follow-ups:** F-23 (new).
 
 ## 3. Source documents and precedence
 
@@ -2960,6 +3043,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
+| F-23 | Count the running "Fetch lyrics" requests and hide the status line progress only when the last one ends. | Two clicks on two songs: the first to end hides "Fetching lyrics" while the second still runs (P15 behavior, kept by P24). | P24 review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
@@ -3105,6 +3189,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.28 (October 15, 2026):** P24 Done with exceptions (P24-AC12 manual Linux check open). F-23 proposed.
 - **1.27 (October 15, 2026):** requirements v1.10 (R9.1 to R9.3, R35, AC-28, AC-29; owner decisions 41 to 44). Added phase P24, D60 to D64, K24 and K25. Section 6.11 adds the lyrics.ovh host for P24. The 1.26 entry, missing before, is added. Section 6.11 scopes the startup retry rule to artwork and metadata jobs and spaces LRCLIB requests by 500 ms.
 - **1.26 (October 14, 2026):** U8 Done: the owner follow-ups of requirements v1.9 (decision 39, playlist view in the Library; decision 40, centered play controls). The pointer row in section 2 names U0 to U8.
 - **1.25 (October 13, 2026):** the UI shell rework ran U0 to U7 (Done with exceptions). F-21 (mini player menus) joins section 11. The pointer row in section 2 and the bottom line give the status.

@@ -130,6 +130,21 @@ impl Sidecar {
     }
 }
 
+impl Sidecar {
+    /// The song has the lyrics "no match" marker (R9.3, D60). Unknown status text is no
+    /// marker.
+    pub fn lyrics_no_match(&self, key: &str) -> bool {
+        let Sidecar::Valid(map) = self else {
+            return false;
+        };
+        map.get("lyrics")
+            .and_then(|lyrics| lyrics.get(key))
+            .and_then(|entry| entry.get("status"))
+            .and_then(Value::as_str)
+            == Some("no-match")
+    }
+}
+
 /// Writes `map` back with the schema fields set.
 fn write(folder: &Path, mut map: Map<String, Value>) -> Result<(), SidecarError> {
     map.insert("version".into(), SIDECAR_VERSION.into());
@@ -223,6 +238,71 @@ fn write_tracks_now(
         }
     }
     write(folder, map)
+}
+
+/// Records the lyrics "no match" marker of one song (R9.3, D60), keyed by its path inside the
+/// album folder. Other fields and other songs stay. A `lyrics` value of an unknown form is
+/// the user's data: the file stays and the result is [`SidecarError::Corrupt`].
+pub fn write_lyrics_marker(
+    folder: &Path,
+    key: &str,
+    checked: SystemTime,
+) -> Result<(), SidecarError> {
+    edit(|| {
+        let mut map = current(folder)?;
+        let lyrics = map
+            .entry("lyrics")
+            .or_insert_with(|| Value::Object(Map::new()));
+        let Value::Object(lyrics) = lyrics else {
+            return Err(SidecarError::Corrupt);
+        };
+        let entry = lyrics
+            .entry(key.to_owned())
+            .or_insert_with(|| Value::Object(Map::new()));
+        let Value::Object(entry) = entry else {
+            return Err(SidecarError::Corrupt);
+        };
+        entry.insert("status".into(), "no-match".into());
+        entry.insert("checked".into(), rfc3339(checked).into());
+        write(folder, map)
+    })
+}
+
+/// "Fetch lyrics" (P24.6): removes the song's lyrics marker. Returns false when there was
+/// none. An unknown form is [`SidecarError::Corrupt`] and stays.
+pub fn clear_lyrics_marker(folder: &Path, key: &str) -> Result<bool, SidecarError> {
+    edit(|| {
+        let mut map = match read(folder) {
+            Sidecar::Missing => return Ok(false),
+            Sidecar::Corrupt => return Err(SidecarError::Corrupt),
+            Sidecar::Valid(map) => map,
+        };
+        let Some(lyrics) = map.get_mut("lyrics") else {
+            return Ok(false);
+        };
+        let Value::Object(entries) = lyrics else {
+            return Err(SidecarError::Corrupt);
+        };
+        let entry = match entries.get_mut(key) {
+            None => return Ok(false),
+            Some(Value::Object(entry)) => entry,
+            Some(_) => return Err(SidecarError::Corrupt),
+        };
+        // Only the app's own marker goes; an entry of another status is the user's data.
+        if entry.get("status").and_then(Value::as_str) != Some("no-match") {
+            return Ok(false);
+        }
+        entry.remove("status");
+        entry.remove("checked");
+        if entry.is_empty() {
+            entries.remove(key);
+        }
+        if entries.is_empty() {
+            map.remove("lyrics");
+        }
+        write(folder, map)?;
+        Ok(true)
+    })
 }
 
 /// "Retry lookup" (R8): removes the artwork marker. Returns false when there was none.
@@ -458,6 +538,100 @@ mod tests {
             assert_eq!(
                 write_tracks(folder.path(), &entry, true),
                 Err(SidecarError::Corrupt)
+            );
+            assert_eq!(
+                std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),
+                text
+            );
+        }
+    }
+
+    /// P24-AC3: the lyrics marker goes into the album sidecar, keyed by the song's path in
+    /// the album folder; other fields stay; a clear removes only that song's entry.
+    #[test]
+    fn a_lyrics_marker_is_written_read_and_cleared_and_other_fields_stay() {
+        let folder = tempfile::tempdir().unwrap();
+        assert!(!read(folder.path()).lyrics_no_match("CD2/01 a.mp3"));
+        assert_eq!(
+            clear_lyrics_marker(folder.path(), "CD2/01 a.mp3"),
+            Ok(false)
+        );
+        std::fs::write(
+            folder.path().join(SIDECAR_FILE),
+            r#"{"version":1,"artwork":{"status":"no-art"},"tracks":{"01 a.mp3":{"title":"A"}},"future":true}"#,
+        )
+        .unwrap();
+        write_lyrics_marker(folder.path(), "CD2/01 a.mp3", UNIX_EPOCH).unwrap();
+        write_lyrics_marker(folder.path(), "02 b.mp3", UNIX_EPOCH).unwrap();
+        let sidecar = read(folder.path());
+        assert!(sidecar.lyrics_no_match("CD2/01 a.mp3"));
+        assert!(sidecar.lyrics_no_match("02 b.mp3"));
+        assert!(!sidecar.lyrics_no_match("01 a.mp3"));
+        assert_eq!(sidecar.marker(), Some(ArtworkMarker::NoArt));
+        let Sidecar::Valid(map) = &sidecar else {
+            panic!("valid")
+        };
+        assert_eq!(
+            map["lyrics"]["CD2/01 a.mp3"],
+            serde_json::json!({"status": "no-match", "checked": "1970-01-01T00:00:00Z"})
+        );
+        assert_eq!(map["tracks"]["01 a.mp3"]["title"], "A");
+        assert_eq!(map["future"], true);
+        assert_eq!(clear_lyrics_marker(folder.path(), "CD2/01 a.mp3"), Ok(true));
+        let sidecar = read(folder.path());
+        assert!(!sidecar.lyrics_no_match("CD2/01 a.mp3"));
+        assert!(sidecar.lyrics_no_match("02 b.mp3"));
+        assert_eq!(clear_lyrics_marker(folder.path(), "02 b.mp3"), Ok(true));
+        let Sidecar::Valid(map) = read(folder.path()) else {
+            panic!("valid")
+        };
+        assert!(!map.contains_key("lyrics"), "an empty lyrics object goes");
+        assert_eq!(map["artwork"]["status"], "no-art");
+    }
+
+    /// R11: a clear removes only the app's marker; other entries and fields stay.
+    #[test]
+    fn a_clear_keeps_entries_that_are_not_the_marker() {
+        let folder = tempfile::tempdir().unwrap();
+        let other = r#"{"lyrics":{"a.mp3":{"status":"reviewed","note":"keep"}}}"#;
+        std::fs::write(folder.path().join(SIDECAR_FILE), other).unwrap();
+        assert_eq!(clear_lyrics_marker(folder.path(), "a.mp3"), Ok(false));
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),
+            other
+        );
+        std::fs::write(
+            folder.path().join(SIDECAR_FILE),
+            r#"{"lyrics":{"a.mp3":{"status":"no-match","checked":"x","note":"keep"}}}"#,
+        )
+        .unwrap();
+        assert_eq!(clear_lyrics_marker(folder.path(), "a.mp3"), Ok(true));
+        let Sidecar::Valid(map) = read(folder.path()) else {
+            panic!("valid")
+        };
+        assert_eq!(map["lyrics"]["a.mp3"], serde_json::json!({"note": "keep"}));
+    }
+
+    /// P24-AC3, P24-AC5: a corrupt file or a `lyrics` value of an unknown form stays.
+    #[test]
+    fn lyrics_of_an_unknown_form_or_a_corrupt_file_stay() {
+        let folder = tempfile::tempdir().unwrap();
+        for text in [
+            "{broken",
+            r#"{"lyrics":[1]}"#,
+            r#"{"lyrics":{"a.mp3":"note"}}"#,
+        ] {
+            std::fs::write(folder.path().join(SIDECAR_FILE), text).unwrap();
+            assert!(!read(folder.path()).lyrics_no_match("a.mp3"));
+            assert_eq!(
+                write_lyrics_marker(folder.path(), "a.mp3", UNIX_EPOCH),
+                Err(SidecarError::Corrupt),
+                "{text}"
+            );
+            assert_eq!(
+                clear_lyrics_marker(folder.path(), "a.mp3"),
+                Err(SidecarError::Corrupt),
+                "{text}"
             );
             assert_eq!(
                 std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),

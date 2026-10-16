@@ -1,10 +1,11 @@
 // PF-1 on the real path (U4): a Songs table container resize renders no row again, and a new
 // active row renders only the two rows whose props changed.
-import { act, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, memo } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SongRow } from "@/lib/ipc/commands";
 import { EMPTY_SELECTION, useLibraryStore } from "@/store/library";
+import { usePlayerStore } from "@/store/player";
 import { flushFrames, installControlledLayout, resize } from "@/test/resize";
 
 const renders = vi.hoisted(() => ({ rows: 0 }));
@@ -30,6 +31,7 @@ vi.mock("@/lib/ipc/commands", async (importOriginal) => {
       ...real.commands,
       librarySongIds: async () => IDS,
       libraryRows: async (ids: number[]) => ids.map(song),
+      playerPlayList: () => Promise.resolve(),
     },
   };
 });
@@ -77,5 +79,24 @@ describe("Songs table rows (PF-1)", () => {
     renders.rows = 0;
     act(() => useLibraryStore.getState().setSongSelection(new Set([1]), 1, 1));
     expect(renders.rows).toBe(2);
+  });
+});
+
+describe("Library playback (P24.8)", () => {
+  it("a library play ends a pending playlist source, so the same ids do not claim it", async () => {
+    usePlayerStore.getState().expectPlaylist(3, IDS);
+    const { container } = render(<SongTable view="songs.topBottom" />);
+    const grid = container.querySelector<HTMLElement>("[role='grid']");
+    if (!grid) throw new Error("no grid");
+    act(() => {
+      resize(grid, 600, 400);
+      flushFrames();
+    });
+    await waitFor(() => expect(container.querySelector("[role='row'][data-row]")).not.toBeNull());
+    const row = container.querySelector<HTMLElement>("[role='row'][data-row]");
+    if (!row) throw new Error("no row");
+    fireEvent.doubleClick(row);
+    expect(usePlayerStore.getState().pending).toBeNull();
+    expect(usePlayerStore.getState().playlistSource).toBeNull();
   });
 });

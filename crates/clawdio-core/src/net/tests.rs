@@ -22,17 +22,23 @@ fn config(server: &MockServer) -> NetConfig {
     NetConfig {
         musicbrainz: base.clone(),
         cover_art: base.clone(),
-        lrclib: base,
-        allowed_hosts: vec!["127.0.0.1".into()],
+        lrclib: base.clone(),
+        lyrics_ovh: base,
+        hosts: Hosts::every(&["127.0.0.1"]),
         https_only: false,
         user_agent: USER_AGENT.into(),
         musicbrainz_gap: Duration::ZERO,
+        lrclib_gap: Duration::ZERO,
+        request_timeout: Duration::from_secs(30),
         use_proxy: false,
     }
 }
 
+/// A gate for the mock server, with the D64 notice answered.
 fn gate(server: &MockServer) -> OnlineGate {
-    OnlineGate::new(config(server), true).unwrap()
+    let gate = OnlineGate::new(config(server), true).unwrap();
+    gate.set_lyrics_ovh_allowed(true);
+    gate
 }
 
 fn image(format: ImageFormat) -> Vec<u8> {
@@ -577,14 +583,46 @@ async fn redirects_follow_the_allow_list_and_the_hop_limit() {
 #[test]
 fn production_hosts_are_https_and_archive_subdomains() {
     let config = NetConfig::production(USER_AGENT.into());
-    let allowed = |url: &str| host_allowed(&config.allowed_hosts, true, &Url::parse(url).unwrap());
+    let allowed = |url: &str| {
+        let url = Url::parse(url).unwrap();
+        [
+            Service::MusicBrainz,
+            Service::CoverArt,
+            Service::Lrclib,
+            Service::LyricsOvh,
+        ]
+        .into_iter()
+        .any(|service| host_allowed(config.hosts.of(service), true, &url))
+    };
     assert!(allowed("https://musicbrainz.org/ws/2/"));
+    assert!(allowed("https://api.lyrics.ovh/v1/a/b"));
+    assert!(!allowed("https://lyrics.ovh/"));
     assert!(allowed("https://ia800.us.archive.org/x.jpg"));
     assert!(allowed("https://archive.org/x.jpg"));
     assert!(!allowed("http://musicbrainz.org/ws/2/"), "HTTPS only");
     assert!(!allowed("https://evilarchive.org/x.jpg"));
     assert!(!allowed("https://musicbrainz.org.example.com/"));
     assert!(!allowed("https://example.com/"));
+    // P24.3: each service keeps to its own hosts.
+    let lyrics_ovh = Url::parse("https://api.lyrics.ovh/v1/a/b").unwrap();
+    assert!(!host_allowed(
+        config.hosts.of(Service::Lrclib),
+        true,
+        &lyrics_ovh
+    ));
+    assert!(!host_allowed(
+        config.hosts.of(Service::MusicBrainz),
+        true,
+        &lyrics_ovh
+    ));
+    let lrclib = Url::parse("https://lrclib.net/api/get").unwrap();
+    assert!(!host_allowed(
+        config.hosts.of(Service::LyricsOvh),
+        true,
+        &lrclib
+    ));
+    assert_eq!(config.lyrics_ovh.as_str(), "https://api.lyrics.ovh/");
+    assert_eq!(config.lrclib_gap, Duration::from_millis(500));
 }
 
 #[test]
@@ -806,6 +844,16 @@ mod lyrics_fetch {
         }
     }
 
+    /// lyrics.ovh knows no song (D62).
+    async fn ovh_missing(server: &MockServer) -> httpmock::Mock<'_> {
+        server
+            .mock_async(|when, then| {
+                when.path_includes("/v1/");
+                then.status(404).body(r#"{"error":"No lyrics found"}"#);
+            })
+            .await
+    }
+
     fn record(duration: f64, synced: Option<&str>, plain: Option<&str>) -> serde_json::Value {
         serde_json::json!({
             "id": 1, "trackName": "Title", "artistName": "Artist", "albumName": "Album",
@@ -938,6 +986,7 @@ mod lyrics_fetch {
                 );
             })
             .await;
+        ovh_missing(&server).await;
         let gate = gate(&server);
         assert_eq!(fetch(&gate, &query(200), &gate.job_token()).await, Ok(None));
         assert_eq!(search.calls_async().await, 1);
@@ -1063,6 +1112,7 @@ mod lyrics_fetch {
                         .body(serde_json::Value::from(records).to_string());
                 })
                 .await;
+            ovh_missing(&server).await;
             let gate = gate(&server);
             let mut song = query(200);
             song.duration_ms = 200_400;
@@ -1506,6 +1556,592 @@ mod metadata_fill {
                 tag_album: Some("Al".into()),
                 tag_artist: Some("Ar".into()),
             }
+        );
+    }
+}
+
+/// The R9.2 chain (P24.2, P24.3) against a mock server.
+mod lyrics_chain {
+    use super::*;
+    use crate::net::lyrics::{fetch, looser_title, save, Fetched, LyricsQuery};
+
+    fn query(title: &str) -> LyricsQuery {
+        LyricsQuery {
+            artist: "Artist".into(),
+            title: title.into(),
+            album: "Album".into(),
+            duration_ms: 200_000,
+        }
+    }
+
+    fn record(duration: f64, plain: &str) -> String {
+        serde_json::json!({ "duration": duration, "plainLyrics": plain }).to_string()
+    }
+
+    /// Mocks for the five steps, each answering `answer` (status, body) unless set.
+    struct Steps<'a> {
+        get: httpmock::Mock<'a>,
+        search: httpmock::Mock<'a>,
+        get_no_album: httpmock::Mock<'a>,
+        search_looser: httpmock::Mock<'a>,
+        ovh: httpmock::Mock<'a>,
+    }
+
+    impl Steps<'_> {
+        async fn calls(&self) -> [usize; 5] {
+            [
+                self.get.calls_async().await,
+                self.search.calls_async().await,
+                self.get_no_album.calls_async().await,
+                self.search_looser.calls_async().await,
+                self.ovh.calls_async().await,
+            ]
+        }
+    }
+
+    type Answer = (u16, String);
+
+    fn missing() -> Answer {
+        (404, "{}".into())
+    }
+
+    fn ovh_missing() -> Answer {
+        (404, r#"{"error":"No lyrics found"}"#.into())
+    }
+
+    /// The steps for the title "Song (Live)", whose looser title is "Song".
+    async fn steps(server: &MockServer, answers: [Answer; 5]) -> Steps<'_> {
+        let [get, search, get_no_album, search_looser, ovh] = answers;
+        Steps {
+            get: server
+                .mock_async(|when, then| {
+                    when.path("/api/get").query_param_exists("album_name");
+                    then.status(get.0).body(get.1);
+                })
+                .await,
+            search: server
+                .mock_async(|when, then| {
+                    when.path("/api/search")
+                        .query_param("track_name", "Song (Live)");
+                    then.status(search.0).body(search.1);
+                })
+                .await,
+            get_no_album: server
+                .mock_async(|when, then| {
+                    when.path("/api/get")
+                        .query_param_missing("album_name")
+                        .query_param("track_name", "Song (Live)");
+                    then.status(get_no_album.0).body(get_no_album.1);
+                })
+                .await,
+            search_looser: server
+                .mock_async(|when, then| {
+                    when.path("/api/search").query_param("track_name", "Song");
+                    then.status(search_looser.0).body(search_looser.1);
+                })
+                .await,
+            ovh: server
+                .mock_async(|when, then| {
+                    when.path("/v1/Artist/Song%20(Live)");
+                    then.status(ovh.0).body(ovh.1);
+                })
+                .await,
+        }
+    }
+
+    #[test]
+    fn the_looser_title_drops_bracket_text() {
+        assert_eq!(looser_title("Song (Live) [2011 Remaster]"), "Song");
+        assert_eq!(looser_title("Song"), "Song");
+        assert_eq!(looser_title("(Intro)"), "");
+        assert_eq!(looser_title("A (b (c)) d"), "A d");
+        // Unmatched or mismatched delimiters stay, so no other title is searched.
+        assert_eq!(looser_title("Song)"), "Song)");
+        assert_eq!(looser_title("Song (Live"), "Song (Live");
+        assert_eq!(looser_title("Song (a]"), "Song (a]");
+        assert_eq!(
+            looser_title("Song [a (b] c)"),
+            "Song [a",
+            "the pair goes, the open [ stays"
+        );
+    }
+
+    /// P24-AC2: each step runs only after the steps before gave no result, and the chain
+    /// stops at the first result.
+    #[tokio::test]
+    async fn each_step_runs_after_no_result_and_the_first_result_wins() {
+        let found = || (200, record(200.0, "found"));
+        let empty = || (200, "[]".to_owned());
+        let cases: [([Answer; 5], [usize; 5]); 5] = [
+            (
+                [found(), empty(), missing(), empty(), ovh_missing()],
+                [1, 0, 0, 0, 0],
+            ),
+            (
+                [
+                    missing(),
+                    (200, format!("[{}]", record(200.0, "found"))),
+                    missing(),
+                    empty(),
+                    ovh_missing(),
+                ],
+                [1, 1, 0, 0, 0],
+            ),
+            (
+                [missing(), empty(), found(), empty(), ovh_missing()],
+                [1, 1, 1, 0, 0],
+            ),
+            (
+                [
+                    missing(),
+                    empty(),
+                    missing(),
+                    (200, format!("[{}]", record(200.0, "found"))),
+                    ovh_missing(),
+                ],
+                [1, 1, 1, 1, 0],
+            ),
+            (
+                [
+                    missing(),
+                    empty(),
+                    missing(),
+                    empty(),
+                    (200, r#"{"lyrics":"found"}"#.into()),
+                ],
+                [1, 1, 1, 1, 1],
+            ),
+        ];
+        for (answers, calls) in cases {
+            let server = MockServer::start_async().await;
+            let steps = steps(&server, answers).await;
+            let gate = gate(&server);
+            let result = fetch(&gate, &query("Song (Live)"), &gate.job_token()).await;
+            assert_eq!(
+                result,
+                Ok(Some(Fetched::Plain("found".into()))),
+                "{calls:?}"
+            );
+            assert_eq!(steps.calls().await, calls);
+        }
+    }
+
+    /// P24-AC2: no result from every step is "no match"; an LRCLIB result 3 s off is
+    /// rejected on every LRCLIB step.
+    #[tokio::test]
+    async fn three_seconds_off_is_rejected_on_every_lrclib_step() {
+        let server = MockServer::start_async().await;
+        let off = record(203.0, "off");
+        let steps = steps(
+            &server,
+            [
+                (200, off.clone()),
+                (200, format!("[{off}]")),
+                (200, off.clone()),
+                (200, format!("[{off}]")),
+                ovh_missing(),
+            ],
+        )
+        .await;
+        let gate = gate(&server);
+        assert_eq!(
+            fetch(&gate, &query("Song (Live)"), &gate.job_token()).await,
+            Ok(None)
+        );
+        assert_eq!(steps.calls().await, [1, 1, 1, 1, 1]);
+    }
+
+    /// P24-AC2: a lyrics.ovh result saves as `.txt`; the artist and title are path segments.
+    #[tokio::test]
+    async fn a_lyrics_ovh_result_saves_as_text() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path_includes("/api/");
+                then.status(404);
+            })
+            .await;
+        let ovh = server
+            .mock_async(|when, then| {
+                when.path("/v1/AC%2FDC/T%C3%A9st%20%3F");
+                then.status(200)
+                    .body(r#"{"lyrics":"line one\r\nline two"}"#);
+            })
+            .await;
+        let gate = gate(&server);
+        let mut song = query("Tést ?");
+        song.artist = "AC/DC".into();
+        let found = fetch(&gate, &song, &gate.job_token()).await;
+        assert_eq!(
+            found,
+            Ok(Some(Fetched::Plain("line one\r\nline two".into())))
+        );
+        assert_eq!(ovh.calls_async().await, 1);
+        let folder = tempfile::tempdir().unwrap();
+        save(&folder.path().join("01 Song.mp3"), &found.unwrap().unwrap()).unwrap();
+        assert!(folder.path().join("01 Song.txt").is_file());
+    }
+
+    /// P24-AC2: "Song" and "(Intro)" skip the looser-title step.
+    #[tokio::test]
+    async fn titles_without_a_looser_form_skip_that_step() {
+        for title in ["Song", "(Intro)"] {
+            let server = MockServer::start_async().await;
+            let get = server
+                .mock_async(|when, then| {
+                    when.path("/api/get");
+                    then.status(404);
+                })
+                .await;
+            let search = server
+                .mock_async(|when, then| {
+                    when.path("/api/search");
+                    then.status(200).body("[]");
+                })
+                .await;
+            let ovh = server
+                .mock_async(|when, then| {
+                    when.path_includes("/v1/");
+                    then.status(404).body(r#"{"error":"No lyrics found"}"#);
+                })
+                .await;
+            let gate = gate(&server);
+            assert_eq!(
+                fetch(&gate, &query(title), &gate.job_token()).await,
+                Ok(None)
+            );
+            assert_eq!(get.calls_async().await, 2, "{title}");
+            assert_eq!(search.calls_async().await, 1, "{title}");
+            assert_eq!(ovh.calls_async().await, 1, "{title}");
+        }
+    }
+
+    /// P24-AC2: two LRCLIB requests start at least 500 ms apart.
+    #[tokio::test]
+    async fn lrclib_requests_are_500_ms_apart() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path_includes("/api/");
+                then.status(404);
+            })
+            .await;
+        let mut config = config(&server);
+        config.lrclib_gap = Duration::from_millis(500);
+        let gate = OnlineGate::new(config, true).unwrap();
+        let url = gate.config().lrclib.join("api/get").unwrap();
+        let start = Instant::now();
+        for _ in 0..3 {
+            let _ = gate
+                .get(Service::Lrclib, url.clone(), &gate.job_token())
+                .await;
+        }
+        assert!(
+            start.elapsed() >= Duration::from_millis(1000),
+            "{:?}",
+            start.elapsed()
+        );
+    }
+
+    /// P24-AC2: a redirect hop to another LRCLIB URL keeps the 500 ms gap too.
+    #[tokio::test]
+    async fn an_lrclib_redirect_hop_keeps_the_gap() {
+        let server = MockServer::start_async().await;
+        let port = server.port();
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(302)
+                    .header("location", format!("http://127.0.0.1:{port}/api/moved"));
+            })
+            .await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/moved");
+                then.status(404);
+            })
+            .await;
+        let mut config = config(&server);
+        config.lrclib_gap = Duration::from_millis(500);
+        let gate = OnlineGate::new(config, true).unwrap();
+        let url = gate.config().lrclib.join("api/get").unwrap();
+        let start = Instant::now();
+        let _ = gate.get(Service::Lrclib, url, &gate.job_token()).await;
+        assert!(
+            start.elapsed() >= Duration::from_millis(500),
+            "{:?}",
+            start.elapsed()
+        );
+    }
+
+    /// P24-AC4: each error moves to the next step; with no result the chain is an error.
+    #[tokio::test]
+    async fn an_error_moves_on_and_makes_the_chain_an_error() {
+        let ovh_missing = ovh_missing;
+        let cases: [([Answer; 5], [usize; 5], NetError); 6] = [
+            (
+                [
+                    (500, String::new()),
+                    (200, "[]".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    ovh_missing(),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::Status(500),
+            ),
+            (
+                [
+                    (200, "<html>".into()),
+                    (200, "not json".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    ovh_missing(),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::BadAnswer,
+            ),
+            (
+                [
+                    missing(),
+                    (200, "[]".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    (200, r#"{"text":"x"}"#.into()),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::BadAnswer,
+            ),
+            (
+                [
+                    missing(),
+                    (200, "[]".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    (200, r#"{"lyrics":"  "}"#.into()),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::BadAnswer,
+            ),
+            (
+                [
+                    missing(),
+                    (200, "[]".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    (404, "Not Found".into()),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::BadAnswer,
+            ),
+            (
+                [
+                    missing(),
+                    (200, "[]".into()),
+                    missing(),
+                    (200, "[]".into()),
+                    (500, r#"{"error":"No lyrics found"}"#.into()),
+                ],
+                [1, 1, 1, 1, 1],
+                NetError::Status(500),
+            ),
+        ];
+        for (answers, calls, error) in cases {
+            let server = MockServer::start_async().await;
+            let steps = steps(&server, answers).await;
+            let gate = gate(&server);
+            assert_eq!(
+                fetch(&gate, &query("Song (Live)"), &gate.job_token()).await,
+                Err(error.clone()),
+                "{error}"
+            );
+            assert_eq!(steps.calls().await, calls, "{error}");
+        }
+    }
+
+    /// P24-AC4: a lyrics.ovh result after an LRCLIB error is still a result.
+    #[tokio::test]
+    async fn a_later_result_wins_over_an_earlier_error() {
+        let server = MockServer::start_async().await;
+        let steps = steps(
+            &server,
+            [
+                (500, String::new()),
+                (200, "[]".into()),
+                missing(),
+                (200, "[]".into()),
+                (200, r#"{"lyrics":"ok"}"#.into()),
+            ],
+        )
+        .await;
+        let gate = gate(&server);
+        assert_eq!(
+            fetch(&gate, &query("Song (Live)"), &gate.job_token()).await,
+            Ok(Some(Fetched::Plain("ok".into())))
+        );
+        assert_eq!(steps.calls().await, [1, 1, 1, 1, 1]);
+    }
+
+    /// P24-AC4: a timeout is an error and the chain moves on.
+    #[tokio::test]
+    async fn a_timeout_moves_to_the_next_step() {
+        let server = MockServer::start_async().await;
+        let get = server
+            .mock_async(|when, then| {
+                when.path("/api/get").query_param_exists("album_name");
+                then.status(200).delay(Duration::from_secs(5)).body("{}");
+            })
+            .await;
+        let search = server
+            .mock_async(|when, then| {
+                when.path("/api/search");
+                then.status(200)
+                    .body(format!("[{}]", record(200.0, "found")));
+            })
+            .await;
+        let mut config = config(&server);
+        config.request_timeout = Duration::from_millis(300);
+        let gate = OnlineGate::new(config, true).unwrap();
+        assert_eq!(
+            fetch(&gate, &query("Song"), &gate.job_token()).await,
+            Ok(Some(Fetched::Plain("found".into())))
+        );
+        assert_eq!(get.calls_async().await, 1);
+        assert_eq!(search.calls_async().await, 1);
+    }
+
+    /// P24-AC4: an LRCLIB 429 or 503 with `Retry-After: 2` skips the other LRCLIB steps, goes on
+    /// to lyrics.ovh, and no LRCLIB request goes out for 2 s.
+    #[tokio::test]
+    async fn retry_after_skips_lrclib_and_blocks_it() {
+        for status in [429, 503] {
+            let server = MockServer::start_async().await;
+            let lrclib = server
+                .mock_async(|when, then| {
+                    when.path_includes("/api/");
+                    then.status(status).header("retry-after", "2");
+                })
+                .await;
+            let ovh = server
+                .mock_async(|when, then| {
+                    when.path_includes("/v1/");
+                    then.status(404).body(r#"{"error":"No lyrics found"}"#);
+                })
+                .await;
+            let gate = gate(&server);
+            let started = Instant::now();
+            assert_eq!(
+                fetch(&gate, &query("Song (Live)"), &gate.job_token()).await,
+                Err(NetError::Status(status)),
+                "an error, not no match"
+            );
+            assert_eq!(lrclib.calls_async().await, 1);
+            assert_eq!(ovh.calls_async().await, 1);
+            // A second chain inside the 2 s sends no LRCLIB request.
+            assert_eq!(
+                fetch(&gate, &query("Song (Live)"), &gate.job_token()).await,
+                Err(NetError::Wait)
+            );
+            assert!(started.elapsed() < Duration::from_secs(2));
+            assert_eq!(lrclib.calls_async().await, 1);
+            assert_eq!(ovh.calls_async().await, 2);
+            tokio::time::sleep_until(started + Duration::from_millis(2100)).await;
+            let _ = fetch(&gate, &query("Song (Live)"), &gate.job_token()).await;
+            assert_eq!(
+                lrclib.calls_async().await,
+                2,
+                "after 2 s LRCLIB gets requests again"
+            );
+        }
+    }
+
+    /// D64: until the user answers the updated notice, lyrics.ovh gets no request and the
+    /// chain that reaches it ends as an error, so no marker is written.
+    #[tokio::test]
+    async fn lyrics_ovh_waits_for_the_notice_answer() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path_includes("/api/");
+                then.status(404);
+            })
+            .await;
+        let ovh = server
+            .mock_async(|when, then| {
+                when.path_includes("/v1/");
+                then.status(200).body(r#"{"lyrics":"ok"}"#);
+            })
+            .await;
+        let gate = OnlineGate::new(config(&server), true).unwrap();
+        assert_eq!(
+            fetch(&gate, &query("Song"), &gate.job_token()).await,
+            Err(NetError::NoticePending)
+        );
+        assert_eq!(ovh.calls_async().await, 0);
+        gate.set_lyrics_ovh_allowed(true);
+        assert_eq!(
+            fetch(&gate, &query("Song"), &gate.job_token()).await,
+            Ok(Some(Fetched::Plain("ok".into())))
+        );
+    }
+
+    /// P24-AC3, P24.3: an LRCLIB redirect to the lyrics.ovh host is refused; a lyrics.ovh
+    /// redirect stays on its own host too.
+    #[tokio::test]
+    async fn a_redirect_stays_on_the_service_host() {
+        let server = MockServer::start_async().await;
+        let port = server.port();
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(302)
+                    .header("location", format!("http://localhost:{port}/v1/x/y"));
+            })
+            .await;
+        let target = server
+            .mock_async(|when, then| {
+                when.path("/v1/x/y");
+                then.status(200).body(r#"{"lyrics":"ok"}"#);
+            })
+            .await;
+        let mut config = config(&server);
+        config.hosts.lyrics_ovh = vec!["localhost".into()];
+        let gate = OnlineGate::new(config, true).unwrap();
+        gate.set_lyrics_ovh_allowed(true);
+        let url = gate.config().lrclib.join("api/get").unwrap();
+        assert_eq!(
+            gate.get(Service::Lrclib, url, &gate.job_token()).await,
+            Err(NetError::NotAllowed)
+        );
+        assert_eq!(target.calls_async().await, 0);
+        let direct = Url::parse(&format!("http://localhost:{port}/v1/x/y")).unwrap();
+        assert!(gate
+            .get(Service::LyricsOvh, direct, &gate.job_token())
+            .await
+            .is_ok());
+    }
+
+    /// D62: the answer path keeps the status and the body of an answer that is not a success.
+    #[tokio::test]
+    async fn the_answer_keeps_the_status_and_body() {
+        let server = MockServer::start_async().await;
+        server
+            .mock_async(|when, then| {
+                when.path("/v1/a/b");
+                then.status(404).body(r#"{"error":"No lyrics found"}"#);
+            })
+            .await;
+        let gate = gate(&server);
+        let url = gate.config().lyrics_ovh.join("v1/a/b").unwrap();
+        let answer = gate
+            .answer(Service::LyricsOvh, url.clone(), &gate.job_token())
+            .await
+            .unwrap();
+        assert_eq!(answer.status, 404);
+        assert_eq!(answer.body.bytes, br#"{"error":"No lyrics found"}"#);
+        assert_eq!(
+            gate.get(Service::LyricsOvh, url, &gate.job_token()).await,
+            Err(NetError::Status(404))
         );
     }
 }

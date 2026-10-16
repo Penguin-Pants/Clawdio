@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { commands, type PlaylistEntry, type PlaylistRow } from "@/lib/ipc/commands";
+import { usePlayerStore } from "@/store/player";
 import { type AppDialog, useUiStore } from "@/store/ui";
 
 interface PlaylistsState {
@@ -24,6 +25,9 @@ export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   load: async () => {
     // Synchronous on `playlists-changed`: open views stop index edits before the reads finish.
     set((state) => ({ reloading: state.reloading + 1 }));
+    // A playlist edit, even one that restores the same tracks, ends the follow by queue index
+    // (D63). The event does not name the playlist, so any change ends it.
+    usePlayerStore.getState().clearPlaylistSource();
     const [rows, favorites] = await Promise.all([
       commands.playlistsList().catch(() => [] as PlaylistRow[]),
       commands.favorites().catch(() => [] as number[]),
@@ -85,11 +89,22 @@ export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number
 
 /**
  * Plays a playlist from entry `from` (R12: double-click or Enter plays). A caller that shows the
- * entries passes them, so `from` points into the list the user saw.
+ * entries (the playlist view) passes them, so `from` points into the list the user saw, and the
+ * view becomes the source of the queue for the selection follow (D63).
  */
 export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry[]): Promise<void> {
   const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
-  if (queue) await commands.playerPlayList(queue.ids, queue.start);
+  if (!queue) return;
+  // A queue started anywhere else is not a view's queue, also with the same ids (D63).
+  if (entries) usePlayerStore.getState().expectPlaylist(id, queue.ids);
+  else usePlayerStore.setState({ playlistSource: null, pending: null });
+  try {
+    await commands.playerPlayList(queue.ids, queue.start);
+  } catch (error) {
+    // No queue came from the view, so a later queue with the same ids is not its queue.
+    usePlayerStore.setState({ pending: null });
+    throw error;
+  }
 }
 
 /**

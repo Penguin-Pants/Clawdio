@@ -164,6 +164,10 @@ pub struct PlayerSnapshot {
     pub volume: u8,
     pub shuffle: bool,
     pub repeat: RepeatMode,
+    /// Queue entries the player started (wraps); a restart of the same entry does not count.
+    /// A new value while playing or paused is a new playing song: the lists follow it (R35.3,
+    /// D63), also when the same track plays at another entry.
+    pub started: u32,
 }
 
 /// Repeat modes (R6).
@@ -312,6 +316,11 @@ pub struct SettingsView {
     pub online_lookups: bool,
     /// The first-run notice is still to be answered (R7).
     pub notice_pending: bool,
+    /// Online lookups are on and the user has not seen the notice that names lyrics.ovh: the
+    /// updated notice shows (D64).
+    pub notice_update: bool,
+    /// "Fetch lyrics automatically" (R9.1).
+    pub auto_lyrics: bool,
     pub portable: bool,
     /// Counts of the last scan (R2), shown in Settings.
     pub last_scan: Option<ScanCounts>,

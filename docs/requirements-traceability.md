@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.20, October 15, 2026 (requirements v1.10: rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Version:** 1.21, October 15, 2026 (P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
 **Plan:** `docs/build-plan.md` v1.27. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -179,12 +179,12 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
-| R35-1 | Lists that follow: Songs list (table, Tree song rows, playlist view) and Play queue; not Artist or Album | §2 R35.1 | P24.8 | P24-AC10, P24-AC11 | E2E | Planned |
-| R35-2 | A list follows only when it has a selected row | §2 R35.2 | P24.8 | P24-AC10 | E2E | Planned (D63) |
-| R35-3 | The playing song becomes the only selected row; the list scrolls to it | §2 R35.3 | P24.8 | P24-AC10 | E2E | Planned (D63) |
-| R35-4 | Keyboard focus never moves; a focused list's active row becomes the playing row | §2 R35.4 | P24.8 | P24-AC10 | E2E | Planned (D63) |
-| R35-5 | No follow while a menu, dialog or drag is open, or within 5 s of input in that list | §2 R35.5 | P24.8 | P24-AC11 | E2E | Planned (D63) |
-| R35-6 | A song not in the list as shown changes nothing; no filter or search changes | §2 R35.6 | P24.8 | P24-AC11 | E2E | Planned (D63) |
+| R35-1 | Lists that follow: Songs list (table, Tree song rows, playlist view) and Play queue; not Artist or Album | §2 R35.1 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, D63) |
+| R35-2 | A list follows only when it has a selected row | §2 R35.2 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
+| R35-3 | The playing song becomes the only selected row; the list scrolls to it | §2 R35.3 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
+| R35-4 | Keyboard focus never moves; a focused list's active row becomes the playing row | §2 R35.4 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
+| R35-5 | No follow while a menu, dialog or drag is open, or within 5 s of input in that list | §2 R35.5 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
+| R35-6 | A song not in the list as shown changes nothing; no filter or search changes | §2 R35.6 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
@@ -200,9 +200,9 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R7-1 | One "Online lookups" switch in Settings, off by default | §2 R7 | P4.4, P4.10 | P4-AC1 | E2E | Done (P4) |
 | R7-2 | Off means zero network calls by the app's own code | §2 R7 | P14.1, P14.8 | P14-AC1, P15-AC6 | IT | Done (P15, D29) |
 | R7-3 | First-run notice explains sidecar files, names the services, offers "Turn on" and "Keep off" | §2 R7 | P4.6 | P4-AC1 | E2E | Done (P4) |
-| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6, P24.5 | P14-AC2, P24-AC7 | IT | Planned (P24 adds lyrics jobs; done for P14) |
-| R7-5 | Services: MusicBrainz, Cover Art Archive, LRCLIB, lyrics.ovh; the notice names all four | §2 R7 | P24.3, P24.7 | P24-AC12 | MAN-L, REV | Planned |
-| R7-6 | Existing users see the updated notice once; no lyrics.ovh request before the answer | §2 R7 | P24.1, P24.7 | P24-AC1 | UT, E2E | Planned (D64) |
+| R7-4 | Turning the switch off cancels queued lookups and aborts in-flight requests | §2 R7 | P14.6, P24.5 | P14-AC2, P24-AC7 | IT | Done (P14, P24) |
+| R7-5 | Services: MusicBrainz, Cover Art Archive, LRCLIB, lyrics.ovh; the notice names all four | §2 R7 | P24.3, P24.7 | P24-AC12 | MAN-L, REV | Done (P24; P24-AC12 manual check open) |
+| R7-6 | Existing users see the updated notice once; no lyrics.ovh request before the answer | §2 R7 | P24.1, P24.7 | P24-AC1 | UT, E2E | Done (P24, D64) |
 | R8-1 | Automatic background fetch for albums with no embedded art and no cover file | §2 R8 | P14.5, P14.6, P5.3 | P14-AC4, P14-AC5, P5-AC16, P14-AC15 | IT | Done (P14, D44) |
 | R8-2 | Sources: MusicBrainz and Cover Art Archive | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
 | R8-3 | Saves `cover.jpg` in the album folder; never overwrites art | §2 R8 | P14.5 | P14-AC4 | IT | Done (P14) |
@@ -220,15 +220,15 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R9-4 | Source order: `.lrc`, `.txt`, embedded (USLT, LYRICS, UNSYNCEDLYRICS) | §2 R9 | P13.1 | P13-AC1, P13-AC3, P13-AC4 | IT | Done (P13, D26) |
 | R9-5 | "Fetch lyrics" only when no lyrics exist; disabled when lookups are off | §2 R9 | P13.4, P15.3 | P13-AC5, P15-AC6 | E2E | Done (P15) |
 | R9-6 | Synced line highlighting | §2 R9 | none | none | REV | Deferred |
-| R9-7 | "Fetch lyrics automatically" under Online lookups; on by default; disabled while lookups are off | §2 R9.1 | P24.1 | P24-AC1 | UT, E2E | Planned |
-| R9-8 | Automatic fetch for the playing song and the next song in play order | §2 R9.1 | P24.5 | P24-AC6, P24-AC12 | IT, MAN-L | Planned (D61) |
-| R9-9 | Automatic fetch skips songs with lyrics or a marker; a saved file shows at once | §2 R9.1 | P24.5 | P24-AC3, P24-AC6 | IT | Planned (D61) |
-| R9-10 | Chain: LRCLIB get, search, more LRCLIB queries, then lyrics.ovh; first result wins | §2 R9.2 | P24.2, P24.3, P24.6 | P24-AC2 | IT | Planned (D62) |
-| R9-11 | lyrics.ovh result accepted without the 2 s rule and saved as `.txt`; files with lyrics never replaced | §2 R9.2 | P24.2 | P24-AC2 | IT | Planned (D62) |
-| R9-12 | No result from every source: per-song marker in the album `sidecar.json`; songs outside an album folder: once per app run | §2 R9.3 | P24.4 | P24-AC3, P24-AC5 | IT | Planned (D60) |
-| R9-13 | No automatic retry with a marker; "Fetch lyrics" clears it and retries | §2 R9.3 | P24.5, P24.6 | P24-AC3 | IT | Planned |
-| R9-14 | An error (network, timeout, 429, 503) is not no match and writes no marker | §2 R9.3 | P24.2, P24.4 | P24-AC4 | IT | Planned |
-| R9-15 | Turning lookups or the setting off cancels lyrics jobs | §2 R9.1, R7 | P24.5 | P24-AC7 | IT | Planned |
+| R9-7 | "Fetch lyrics automatically" under Online lookups; on by default; disabled while lookups are off | §2 R9.1 | P24.1 | P24-AC1 | UT, E2E | Done (P24) |
+| R9-8 | Automatic fetch for the playing song and the next song in play order | §2 R9.1 | P24.5 | P24-AC6, P24-AC12 | IT, MAN-L | Done (P24, D61; P24-AC12 manual check open) |
+| R9-9 | Automatic fetch skips songs with lyrics or a marker; a saved file shows at once | §2 R9.1 | P24.5 | P24-AC3, P24-AC6 | IT | Done (P24, D61) |
+| R9-10 | Chain: LRCLIB get, search, more LRCLIB queries, then lyrics.ovh; first result wins | §2 R9.2 | P24.2, P24.3, P24.6 | P24-AC2 | IT | Done (P24, D62) |
+| R9-11 | lyrics.ovh result accepted without the 2 s rule and saved as `.txt`; files with lyrics never replaced | §2 R9.2 | P24.2 | P24-AC2 | IT | Done (P24, D62) |
+| R9-12 | No result from every source: per-song marker in the album `sidecar.json`; songs outside an album folder: once per app run | §2 R9.3 | P24.4 | P24-AC3, P24-AC5 | IT | Done (P24, D60) |
+| R9-13 | No automatic retry with a marker; "Fetch lyrics" clears it and retries | §2 R9.3 | P24.5, P24.6 | P24-AC3 | IT | Done (P24) |
+| R9-14 | An error (network, timeout, 429, 503) is not no match and writes no marker | §2 R9.3 | P24.2, P24.4 | P24-AC4 | IT | Done (P24) |
+| R9-15 | Turning lookups or the setting off cancels lyrics jobs | §2 R9.1, R7 | P24.5 | P24-AC7 | IT | Done (P24) |
 | R10-1 | Per-album action with a preview; nothing written before confirmation | §2 R10 | P16.4, P16.7 | P16-AC2 | IT | Done (P16) |
 | R10-2 | Fill blanks only: title, track number, year | §2 R10 | P16.1, P16.4 | P16-AC1 | UT | Done (P16) |
 | R10-3 | "Missing" means the embedded tag is absent or empty; file-name fallbacks do not count | §2 R10 | P16.1 | P16-AC1 | UT | Done (P16) |
@@ -356,9 +356,9 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | N-15 | Automatic playlist repair on Rescan | §4 | P11.2 | P11-AC7 | IT | Non-goal |
 | N-16 | Replacing an existing playlist on import | §4 | P19.2 | P19-AC2 | UT | Non-goal |
 | N-17 | Layout mode, edit lock or Save and Cancel for the arrangement | §4 | none | none | REV | Non-goal |
-| N-18 | Lyrics fetch for the whole library in the background | §4 | P24.5 | P24-AC6 | IT | Non-goal |
-| N-19 | Lyrics services that need an API key or an account | §4 | P24.3 | P24-AC2 | REV | Non-goal |
-| N-20 | Artist and Album lists follow the playing song | §4 | P24.8 | P24-AC11 | E2E | Non-goal |
+| N-18 | Lyrics fetch for the whole library in the background | §4 | P24.5 | P24-AC6 | IT | Non-goal (held: P24 fetches the playing and the next song only) |
+| N-19 | Lyrics services that need an API key or an account | §4 | P24.3 | P24-AC2 | REV | Non-goal (held: no key or account) |
+| N-20 | Artist and Album lists follow the playing song | §4 | P24.8 | P24-AC11 | E2E | Non-goal (held: P24-AC11) |
 
 ### 1.10 Section 5: edge cases
 
@@ -406,12 +406,12 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | E-40 | Window too short for bar widgets: other widgets and frames shrink first, then the clamp | §5 | P23.4, P22.4 | P23-AC3, P22-AC4 | UT, E2E | Done (P23, D59) |
 | E-41 | One bar widget shown: own row; showing the other joins that row | §5 | P23.1 | P23-AC4 | E2E | Done (P23) |
 | E-42 | Corrupt or unknown frame-size data: defaults for that mode, logged; rest loads | §5 | P22.3 | P22-AC2 | UT | Done (P22, D55) |
-| E-43 | Lyrics source error: next source; no marker; retry at next play | §5 | P24.2, P24.4 | P24-AC4 | IT | Planned |
-| E-44 | Read-only song folder in an automatic fetch: skip, log, no marker, no status text | §5 | P24.5 | P24-AC8 | IT | Planned (D61) |
-| E-45 | Song change during a lyrics fetch: the fetch saves; the widget changes only for the playing song | §5 | P24.5 | P24-AC6 | IT | Planned (D61) |
-| E-46 | Wrong song version from lyrics.ovh: risk accepted; delete the file and fetch again | §5 | P24.2 | P24-AC2 | REV | Planned |
-| E-47 | Lookups turned off during a lyrics fetch: R7 cancel, no marker | §5 | P24.5 | P24-AC7 | IT | Planned |
-| E-48 | A busy list skips that song change and follows at the next one | §5 | P24.8 | P24-AC11 | E2E | Planned (D63) |
+| E-43 | Lyrics source error: next source; no marker; retry at next play | §5 | P24.2, P24.4 | P24-AC4 | IT | Done (P24) |
+| E-44 | Read-only song folder in an automatic fetch: skip, log, no marker, no status text | §5 | P24.5 | P24-AC8 | IT | Done (P24; the read-only test runs in CI, not as root here) |
+| E-45 | Song change during a lyrics fetch: the fetch saves; the widget changes only for the playing song | §5 | P24.5 | P24-AC6 | IT | Done (P24, D61) |
+| E-46 | Wrong song version from lyrics.ovh: risk accepted; delete the file and fetch again | §5 | P24.2 | P24-AC2 | REV | Done (P24, README note) |
+| E-47 | Lookups turned off during a lyrics fetch: R7 cancel, no marker | §5 | P24.5 | P24-AC7 | IT | Done (P24) |
+| E-48 | A busy list skips that song change and follows at the next one | §5 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
 
 ### 1.11 Section 6: constraints
 
@@ -431,7 +431,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | CON-12 | Theme source: `theme/tokens.json` compiled at build time | §6 | P0.6 | P0-AC3 | UT | Done (P0) |
 | CON-13 | Microphone ducking is Windows only in this version | §6 | P20.2, P20.4 | P20-AC3, P20-AC6 | E2E, REV | Planned |
 | CON-14 | Microphone privacy: read only the in-use state; never record; never log app names | §6 | P20.2 | P20-AC5, P20-AC6 | MAN-W, REV | Done (P20); MAN-W open |
-| CON-15 | Network (v1.10): lyrics.ovh joins the R7 services; no accounts, no API keys | §6 | P24.3 | P24-AC2, P24-AC12 | IT, MAN-L | Planned |
+| CON-15 | Network (v1.10): lyrics.ovh joins the R7 services; no accounts, no API keys | §6 | P24.3 | P24-AC2, P24-AC12 | IT, MAN-L | Done (P24; P24-AC12 manual check open) |
 
 ### 1.12 Section 7: deferred ideas
 
@@ -511,10 +511,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-38 | UI shell rework wins over v1.7; widget names and Library modes stay | §8.38 | U0 to U7 | U7-AC1 | E2E, MAN-L, MAN-W | In progress (U7) |
 | DEC-39 | Playlist view in the Library; no playlist tree | §8.39 | U8 | U8-AC1 | E2E | Done (U8) |
 | DEC-40 | Play controls in the middle of the transport band; they move as one group | §8.40 | U8 | U8-AC2 | E2E | Done (U8) |
-| DEC-41 | Automatic lyrics: setting on by default; playing and next song | §8.41 | P24.1, P24.5 | P24-AC1, P24-AC6 | UT, IT | Planned |
-| DEC-42 | Lyrics sources: more LRCLIB queries, then lyrics.ovh without the 2 s rule | §8.42 | P24.2, P24.3 | P24-AC2 | IT | Planned |
-| DEC-43 | Lyrics no match: per-song marker; no automatic retry | §8.43 | P24.4 | P24-AC3 | IT | Planned |
-| DEC-44 | Selection follows: Songs list and Play queue; only with a selection; no focus move | §8.44 | P24.8 | P24-AC10, P24-AC11 | E2E | Planned |
+| DEC-41 | Automatic lyrics: setting on by default; playing and next song | §8.41 | P24.1, P24.5 | P24-AC1, P24-AC6 | UT, IT | Done (P24) |
+| DEC-42 | Lyrics sources: more LRCLIB queries, then lyrics.ovh without the 2 s rule | §8.42 | P24.2, P24.3 | P24-AC2 | IT | Done (P24) |
+| DEC-43 | Lyrics no match: per-song marker; no automatic retry | §8.43 | P24.4 | P24-AC3 | IT | Done (P24) |
+| DEC-44 | Selection follows: Songs list and Play queue; only with a selection; no focus move | §8.44 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -554,8 +554,8 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
 | AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
 | AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
-| AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Planned |
-| AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Planned |
+| AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Done with exceptions (P24; P24-AC12 manual Linux check open) |
+| AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
 
 ---
 

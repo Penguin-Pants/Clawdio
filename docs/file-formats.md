@@ -14,10 +14,12 @@ The app writes the file atomically: a temp file in the same folder, then a renam
 | `musicFolder` | string or `null` | `null` | The music folder, absolute. In portable mode (R18.1): relative to the executable folder when both are on the same volume, else absolute. |
 | `onlineLookups` | boolean | `false` | The Online lookups switch (R7). |
 | `onlineNoticeDone` | boolean | `false` | `true` after the user answers the first-run notice. |
+| `onlineNoticeVersion` | integer | `1` | The version of the Online lookups notice the user answered (D64). Version 2 names lyrics.ovh. With `onlineLookups` on and a value below 2, the updated notice shows at start, and the app sends nothing to lyrics.ovh until the user answers. An answer to either notice, or turning Online lookups on in Settings, writes 2. A file without the key reads as `1`. |
 | `window` | object or `null` | `null` | The last window size: `width` and `height` in logical pixels (numbers), and the optional outer position `x` and `y` in physical pixels (integers, PS-5, UD14). The position applies at start only when a 160 x 40 px title area at that point lies on one available monitor; else the OS places the window. A file without `x` and `y` loads with no position. Sizes below the 800 x 560 minimum are not saved, so the mini player (TR-9) never replaces the normal size. |
 | `lastScan` | object or `null` | `null` | Counts of the last scan (R2): `added`, `removed` and `skipped`. Settings shows them. A file without the key reads as `null`. |
 | `micDucking` | `"off"`, `"lower"` or `"pause"` | `"off"` | "When the microphone is in use" (R34.1). Windows only; other platforms keep the value and do not use it (D53). A file without the key reads as `"off"`. |
 | `micDuckPercent` | integer | `20` | The ducked volume for `"lower"`, as a percentage of the user volume (R34.3): 5 to 90 in steps of 5. A file without the key, or with another value, reads as `20`. |
+| `autoLyrics` | boolean | `true` | "Fetch lyrics automatically" (R9.1): the app fetches lyrics for the playing and the next song while Online lookups are on. A file without the key reads as `true`. |
 
 Example:
 
@@ -27,6 +29,7 @@ Example:
   "musicFolder": "../Music",
   "onlineLookups": false,
   "onlineNoticeDone": true,
+  "onlineNoticeVersion": 2,
   "window": {
     "width": 1200.0,
     "height": 800.0
@@ -37,7 +40,8 @@ Example:
     "skipped": 12
   },
   "micDucking": "lower",
-  "micDuckPercent": 20
+  "micDuckPercent": 20,
+  "autoLyrics": true
 }
 ```
 
@@ -46,6 +50,7 @@ Rules:
 - No file: first run. The app uses the defaults and shows the first-run notice.
 - A corrupt file or an unknown `version`: the app writes a warning to `app.log` and uses the defaults. The next change to a setting replaces the file.
 - The ducking keys came in v1.6 without a new `version`: an older file loads with all its values and the ducking defaults.
+- `autoLyrics` and `onlineNoticeVersion` came in v1.10 without a new `version`: an older file loads with all its values, `autoLyrics` on and notice version 1. With Online lookups on, that user sees the updated notice once (D64).
 
 ## `state.json`
 
@@ -275,7 +280,7 @@ Source: `crates/clawdio-core/src/playlist/repair.rs` (R33.3 to R33.5). "Find mis
 
 ## Lyrics (`.lrc`, `.txt`)
 
-Source: `crates/clawdio-core/src/lyrics.rs` (P13, R9). The app reads the first source that exists, next to the song and with the song's base name (`01 Song.mp3` uses `01 Song.lrc`):
+Source: `crates/clawdio-core/src/lyrics.rs` (P13, R9). "Fetch lyrics" and the automatic fetch (R9.1, P24) save `<base name>.lrc` for synced lyrics, else `<base name>.txt`; a lyrics.ovh result is always `.txt`. A file with lyrics in it is never replaced. The app reads the first source that exists, next to the song and with the song's base name (`01 Song.mp3` uses `01 Song.lrc`):
 
 1. `<base name>.lrc`
 2. `<base name>.txt`
@@ -294,6 +299,9 @@ Source: `crates/clawdio-core/src/sidecar.rs` (P14, R10, R11). One file per album
   "tracks": {
     "01 Human Behaviour.mp3": { "title": "Human Behaviour", "track": 1, "year": 1993 },
     "CD2/01 Intro.mp3": { "title": "Intro" }
+  },
+  "lyrics": {
+    "CD2/01 Intro.mp3": { "status": "no-match", "checked": "2026-10-15T09:12:00Z" }
   }
 }
 ```
@@ -304,6 +312,7 @@ Source: `crates/clawdio-core/src/sidecar.rs` (P14, R10, R11). One file per album
 | `artwork.status` | `no-match`: MusicBrainz gave no single release group after name normalization (D43). `no-art`: one release group matched, but Cover Art Archive has no front image. An album with either marker is not looked up again until "Retry lookup" removes `artwork`. |
 | `artwork.checked` | UTC time of the lookup, RFC 3339. |
 | `tracks` | Track metadata from "Fill metadata" (P16). Entries for songs that no longer exist are ignored and kept. |
+| `lyrics` | Lyrics "no match" markers (R9.3, D60), keyed like `tracks` by the song's path inside the album folder. `status` `no-match`: every source of the R9.2 chain gave no result. `checked`: UTC time, RFC 3339. The automatic fetch skips a song with the marker; "Fetch lyrics" removes it and runs the chain again. An error (network, timeout, HTTP 429 or 503) writes no marker. A `lyrics` value that is not an object, or a song entry that is not an object, is the user's data: the app leaves the file as it is. Songs outside an album folder get no marker; the app keeps their result in memory for one app run. |
 
 Song order and titles use the sidecar between the tag and the file name (R4): the title is the tag, then `title`, then the file name without its number prefix; the track number is the tag, then `track`, then the prefix. "Fill missing metadata" proposes only fields that the song's tags lack, shows a preview and writes nothing before Confirm. The scan stores the sidecar's size and modified time and reads the album's songs again when they change.
 

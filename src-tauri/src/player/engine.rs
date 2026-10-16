@@ -75,6 +75,12 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     resume_at: Option<u32>,
     /// Microphone ducking (P20.3). `volume` stays the user volume (R34.6).
     duck: Duck,
+    /// Files started (wraps): a restart of the same song is a new play, so the lyrics fetch
+    /// tries an error again (P24.5).
+    plays: u32,
+    /// Entries started (wraps), without a restart of the same entry: the lists follow each new
+    /// value (R35.3, D63).
+    started: u32,
     /// The duck factor the output applies (D52).
     gain: Ramp,
     /// The time source: the real clock, or a fake one in tests.
@@ -101,6 +107,8 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             failures: 0,
             resume_at: None,
             duck: Duck::default(),
+            plays: 0,
+            started: 0,
             gain: Ramp::flat(1.0, Instant::now()),
             clock: Box::new(Instant::now),
         }
@@ -182,15 +190,29 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             volume: self.volume,
             shuffle: self.queue.shuffle(),
             repeat: self.queue.repeat(),
+            started: self.started,
         }
     }
 
     fn announce(&self) {
         self.events.state(self.state());
+        self.announce_songs();
     }
 
     fn announce_queue(&self) {
         self.events.queue(&self.queue.snapshot());
+        self.announce_songs();
+    }
+
+    /// The playing and the next song for the automatic lyrics fetch (P24.5, D61): a shuffle or
+    /// repeat change sends only `player-state`, so both announcements send it.
+    fn announce_songs(&self) {
+        let playing = (self.status != PlayerStatus::Stopped)
+            .then(|| self.queue.current())
+            .flatten()
+            .and_then(|index| self.queue.entries().get(index).copied());
+        let next = playing.and(self.queue.peek_next());
+        self.events.songs(playing, next, u64::from(self.plays));
     }
 
     /// The file name for messages, or "track N".
@@ -210,7 +232,10 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
 
     /// Plays the entry at `index`. A file that cannot open is skipped to the next entry; after
     /// MAX_FAILURES in a row playback stops (R6, D32 rule a).
-    fn play_index(&mut self, mut index: usize) {
+    /// `restart` is true when the current entry starts again (Repeat one, Previous after 3 s,
+    /// Play on a restored queue): the playing song does not change.
+    fn play_index(&mut self, mut index: usize, restart: bool) {
+        let first = index;
         self.resume_at = None;
         loop {
             let Some(&id) = self.queue.entries().get(index) else {
@@ -224,6 +249,10 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             };
             match result {
                 Ok(()) => {
+                    self.plays = self.plays.wrapping_add(1);
+                    if !restart || index != first {
+                        self.started = self.started.wrapping_add(1);
+                    }
                     self.status = PlayerStatus::Playing;
                     if self.duck.holds_pause() {
                         // A track change during a Pause duck: the duck stays (E-35).
@@ -260,9 +289,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     /// Does what the queue decided.
     fn apply(&mut self, step: Step) {
         match step {
-            Step::Play(index) => self.play_index(index),
+            Step::Play(index) => self.play_index(index, false),
             Step::Restart => match self.queue.current() {
-                Some(current) => self.play_index(current),
+                Some(current) => self.play_index(current, true),
                 None => self.halt(),
             },
             Step::Stop => self.halt(),
@@ -322,7 +351,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             let actions = self.duck.user_play();
             self.apply_duck(actions);
             self.failures = 0;
-            self.play_index(start);
+            self.play_index(start, false);
         }
     }
 
@@ -338,7 +367,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
                     // A restored queue: load the current entry, then go to the saved position.
                     self.failures = 0;
                     let saved = self.queue.current().unwrap_or(0);
-                    self.play_index(saved);
+                    self.play_index(saved, true);
                     // The position belongs to the saved entry, not to one after a skip.
                     if at > 0
                         && self.status == PlayerStatus::Playing
@@ -355,7 +384,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             PlayerStatus::Stopped => {
                 if !self.queue.entries().is_empty() {
                     self.failures = 0;
-                    self.play_index(self.queue.current().unwrap_or(0));
+                    self.play_index(self.queue.current().unwrap_or(0), false);
                 }
             }
         }
@@ -604,6 +633,23 @@ mod tests {
         fn message(&self, text: String) {
             self.0.lock().unwrap().push(format!("message {text}"));
         }
+        fn songs(&self, playing: Option<u32>, next: Option<u32>, play: u64) {
+            let mut lines = self.0.lock().unwrap();
+            lines.push(format!("songs {playing:?} {next:?}"));
+            lines.push(format!("play {play}"));
+        }
+    }
+
+    impl Recorder {
+        fn last_songs(&self) -> Option<String> {
+            self.0
+                .lock()
+                .unwrap()
+                .iter()
+                .rev()
+                .find(|line| line.starts_with("songs "))
+                .cloned()
+        }
     }
 
     /// Seed files by id. 9 is a text file; other ids are unknown.
@@ -662,6 +708,46 @@ mod tests {
             "repeat off stops on the last entry at position 0 (R6)"
         );
         assert!(recorder.messages().is_empty());
+    }
+
+    /// P24.5, P24-AC6: the engine reports the playing and the next song; a repeat or shuffle
+    /// change and a queue edit report the new next song; stopped reports none.
+    #[test]
+    fn the_playing_and_next_song_follow_play_state_and_order() {
+        let (mut engine, recorder) = engine();
+        engine.append(vec![0, 1]);
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs None None"),
+            "stopped"
+        );
+        engine.play();
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs Some(0) Some(1)")
+        );
+        engine.set_repeat(RepeatMode::One);
+        assert_eq!(recorder.last_songs().as_deref(), Some("songs Some(0) None"));
+        engine.set_repeat(RepeatMode::Off);
+        engine.append(vec![2]);
+        engine.remove(1);
+        assert_eq!(
+            recorder.last_songs().as_deref(),
+            Some("songs Some(0) Some(2)")
+        );
+        engine.set_shuffle(true);
+        let next = engine.queue.peek_next();
+        assert_eq!(
+            recorder.last_songs(),
+            Some(format!("songs Some(0) {next:?}"))
+        );
+        engine.pause();
+        assert!(
+            recorder.last_songs().unwrap().starts_with("songs Some(0)"),
+            "paused"
+        );
+        engine.stop();
+        assert_eq!(recorder.last_songs().as_deref(), Some("songs None None"));
     }
 
     #[test]

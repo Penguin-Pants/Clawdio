@@ -4,9 +4,10 @@ import { VirtualList } from "@/components/virtual-list";
 import { commands } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
-import { usePlayerStore } from "@/store/player";
+import { currentTrack, usePlayerStore } from "@/store/player";
 import { Row, SongCells, useRowHeight } from "../library/rows";
 import { EmptyHint } from "../hint";
+import { useFollowPlaying } from "../follow";
 import { useRowMenu } from "../row-menu";
 
 /** Removes queue entry `index` (R6 queue edits). Events bring the new queue. */
@@ -32,6 +33,19 @@ export function QueueWidget() {
   const onRange = useCallback(
     (start: number, end: number) => request(queue.entries.slice(start, end + 1)),
     [queue.entries, request],
+  );
+  // R35, D63: the queue follows by entry index, because an entry can repeat a track.
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  useFollowPlaying(
+    listRef,
+    () => {
+      const { queue: now } = usePlayerStore.getState();
+      return { hasSelection: active !== null, target: currentTrack(now) === null ? null : now.current };
+    },
+    (index) => {
+      setSelected(index);
+      setReveal({ index });
+    },
   );
   if (count === 0) {
     return (
@@ -59,6 +73,7 @@ export function QueueWidget() {
           rowHeight={rowHeight}
           onRange={onRange}
           activeIndex={active}
+          reveal={reveal}
           onMove={setSelected}
           onKeyDown={(event) => {
             if (menu.fromKey(event, active === null ? null : items(active))) return;

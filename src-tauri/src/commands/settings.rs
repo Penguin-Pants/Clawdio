@@ -4,7 +4,9 @@ use std::path::Path;
 
 use clawdio_core::api::{FolderState, IpcError, MicDucking, SettingsView};
 use clawdio_core::paths::{resolve_music_path, store_music_path};
-use clawdio_core::settings::{check_duck_percent, save, Settings};
+use std::sync::atomic::Ordering;
+
+use clawdio_core::settings::{check_duck_percent, save, Settings, ONLINE_NOTICE_VERSION};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -13,7 +15,7 @@ use super::CommandResult;
 use crate::events::{emit, SETTINGS_CHANGED};
 use crate::jobs;
 use crate::player::{Command, PlayerHandle};
-use crate::state::{AppState, MusicRoot};
+use crate::state::{AppState, LyricsState, MusicRoot};
 
 fn io_error(error: impl std::fmt::Display) -> IpcError {
     IpcError {
@@ -54,6 +56,8 @@ pub fn view(state: &AppState, settings: &Settings) -> SettingsView {
         folder_name: folder.as_deref().map(display_name),
         online_lookups: settings.online_lookups,
         notice_pending: !settings.online_notice_done,
+        notice_update: settings.notice_update_pending(),
+        auto_lyrics: settings.auto_lyrics,
         portable: state.dirs.portable,
         last_scan: settings.last_scan,
         mic_ducking: settings.mic_ducking,
@@ -90,16 +94,30 @@ pub(crate) fn update(
         (changed.online_lookups != settings.online_lookups).then_some(changed.online_lookups);
     let ducking = changed.mic_ducking != settings.mic_ducking
         || changed.mic_duck_percent != settings.mic_duck_percent;
+    let auto_lyrics = changed.auto_lyrics != settings.auto_lyrics;
+    // D64: the answer to the notice that names lyrics.ovh queues the songs again.
+    let answered = changed.notice_current() && !settings.notice_current();
     *settings = changed;
     let view = view(&state, &settings);
     // Under the settings lock, so two quick changes reach the gate in the saved order.
     if let Some(on) = online {
         crate::online::switch(app, on);
     }
+    if let Some(online) = app.try_state::<crate::online::Online>() {
+        online
+            .gate
+            .set_lyrics_ovh_allowed(settings.notice_current());
+    }
+    app.state::<LyricsState>()
+        .auto_on
+        .store(settings.auto_lyrics, Ordering::SeqCst);
     if ducking {
         apply_ducking(app, &settings);
     }
     drop(settings);
+    if online.is_some() || auto_lyrics || answered {
+        crate::commands::lyrics::rules_changed(app, answered);
+    }
     emit(app, SETTINGS_CHANGED, view.clone());
     Ok(view)
 }
@@ -110,9 +128,22 @@ pub fn settings_get(state: State<'_, AppState>) -> CommandResult<SettingsView> {
     Ok(view(&state, &settings))
 }
 
+/// The Online lookups switch (R7). Settings names every service next to it, so turning it on
+/// there also answers the notice that names lyrics.ovh (D64).
 #[tauri::command]
 pub fn set_online_lookups(app: AppHandle, on: bool) -> CommandResult<SettingsView> {
-    update(&app, |settings| settings.online_lookups = on)
+    update(&app, |settings| {
+        settings.online_lookups = on;
+        if on && settings.online_notice_done {
+            settings.online_notice_version = ONLINE_NOTICE_VERSION;
+        }
+    })
+}
+
+/// "Fetch lyrics automatically" (R9.1).
+#[tauri::command]
+pub fn set_auto_lyrics(app: AppHandle, on: bool) -> CommandResult<SettingsView> {
+    update(&app, |settings| settings.auto_lyrics = on)
 }
 
 /// "When the microphone is in use" (R34.1).
@@ -131,9 +162,13 @@ pub fn set_mic_duck_percent(app: AppHandle, percent: u8) -> CommandResult<Settin
     update(&app, |settings| settings.mic_duck_percent = percent)
 }
 
+/// The user answered the first-run notice or the updated one (R7, D64).
 #[tauri::command]
 pub fn first_run_notice_done(app: AppHandle) -> CommandResult<SettingsView> {
-    update(&app, |settings| settings.online_notice_done = true)
+    update(&app, |settings| {
+        settings.online_notice_done = true;
+        settings.online_notice_version = ONLINE_NOTICE_VERSION;
+    })
 }
 
 /// Checks that the folder exists and can be listed.
@@ -164,13 +199,14 @@ pub async fn choose_music_folder(app: AppHandle) -> CommandResult<SettingsView> 
     };
     let stored = store_music_path(&folder, &base, portable);
     let view = update(&app, |settings| settings.music_folder = Some(stored))?;
+    // Playback of the old folder stops before the root changes, so no old id plays from the
+    // new folder (P5.9). It stops first, so no song change queues a new lyrics job.
+    app.state::<crate::player::PlayerHandle>().clear();
     // Lookups for the old folder stop before the root changes: Cancel returns only after a
-    // running write ended, so no old job writes into either folder after this (P14.6).
+    // running write ended, so no old job writes into either folder after this (P14.6,
+    // P24.5).
     crate::online::cancel(&app);
     crate::commands::lyrics::cancel(&app);
-    // Playback of the old folder stops before the root changes, so no old id plays from the
-    // new folder (P5.9).
-    app.state::<crate::player::PlayerHandle>().clear();
     if let Ok(mut root) = app.state::<MusicRoot>().0.write() {
         *root = Some(folder.clone());
     }
