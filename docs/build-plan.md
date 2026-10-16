@@ -1407,7 +1407,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 21, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 23, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource and Codex on the PR.
 
 - F2:
   - `peek_next` cloned the whole queue at every player event (a volume drag sends many). It copies only the shuffle pool now.
@@ -1431,6 +1431,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Codex (third round): a Repeat one or Previous restart counted as a new song and moved an idle selection. `started` leaves restarts out (N6), with an engine test.
   - Codex (third round): a "Fetch lyrics" in its checks when lookups went off and on again could still send requests. It takes a gate token before the checks and stops when switch-off canceled it.
   - Codex (third round): a playlist change before the queue event of a play from the view kept the pending source. A playlist change clears it too.
+  - Codex (fourth round): the marker clear of "Fetch lyrics" ran under a token that switch-off could not cancel. It uses the preflight token now.
+  - Codex (fourth round): "Keep on" while a chain that saw lyrics.ovh blocked had not ended yet ran nothing again. The answer stops the running automatic jobs, so the songs queue again; a joined job keeps running. Registry test.
 - F3: F-23 (section 11).
 - F4:
   - A redirect loop could pass the 30 s timeout: each hop has the client timeout and the hop limit is 5.

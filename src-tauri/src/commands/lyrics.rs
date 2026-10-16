@@ -280,6 +280,11 @@ pub fn rules_changed<R: Runtime>(app: &AppHandle<R>, again: bool) {
         }
         if again {
             jobs.applied = (None, None);
+            // D64 "Keep on": a chain that saw lyrics.ovh blocked runs again. Its automatic job
+            // stops, so the song queues anew; a job a click joined keeps running.
+            for job in jobs.running.values().filter(|job| !job.manual) {
+                job.token.cancel();
+            }
         }
         if jobs.retarget(enabled) {
             start_worker(app, &mut jobs);
@@ -618,13 +623,13 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
     };
     // File work runs on a blocking thread, so a slow disk never stalls the runtime.
     let (probe, sidecar_entry, root) = (song.path.clone(), song.sidecar.clone(), song.root.clone());
-    let (commits, handle) = (gate.commit_lock(), app.clone());
+    let (commits, handle, clear_token) = (gate.commit_lock(), app.clone(), preflight.clone());
     let cleared = tauri::async_runtime::spawn_blocking(move || {
         online_lyrics::check_writable(&probe)?;
         // D60: the marker goes first, so the chain runs; a corrupt sidecar stays (D44), its
         // read logs it, and the chain runs anyway (P24.6). Under the commit lock, so a folder
         // change that returned has no clear after it.
-        let clear = commits.run(&CancellationToken::new(), || {
+        let clear = commits.run(&clear_token, || {
             let same = handle
                 .state::<LyricsState>()
                 .jobs
@@ -1508,6 +1513,47 @@ mod tests {
         std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
         assert_eq!(requests(&app), 0);
         assert!(!folder.join(sidecar::SIDECAR_FILE).exists());
+    }
+
+    /// D64: "Keep on" while a chain that saw lyrics.ovh blocked has not ended yet: its
+    /// automatic job stops and the song queues again; a job a click joined keeps running.
+    #[test]
+    fn keep_on_stops_a_running_automatic_job_so_it_runs_again() {
+        let music = tempfile::tempdir().unwrap();
+        let (app, _) = app(music.path());
+        let server = server(&[]);
+        online(&app, &server, true);
+        app.state::<LyricsState>()
+            .auto_on
+            .store(true, Ordering::SeqCst);
+        let (auto, manual) = (CancellationToken::new(), CancellationToken::new());
+        let state = app.state::<LyricsState>();
+        {
+            let mut jobs = state.jobs.lock().unwrap();
+            jobs.targets = (Some(0), None);
+            jobs.applied = (Some(0), None);
+            jobs.running.insert(
+                0,
+                Running {
+                    token: auto.clone(),
+                    manual: false,
+                },
+            );
+            jobs.running.insert(
+                7,
+                Running {
+                    token: manual.clone(),
+                    manual: true,
+                },
+            );
+            // The worker flag keeps the test's registry from starting a real worker.
+            jobs.worker = true;
+        }
+        rules_changed(app.handle(), true);
+        assert!(auto.is_cancelled(), "the automatic job stops");
+        assert!(!manual.is_cancelled(), "a joined job keeps running");
+        let jobs = state.jobs.lock().unwrap();
+        assert_eq!(jobs.auto, vec![0], "the song queues again");
     }
 
     /// P24-AC1, D64: before the notice answer, no lyrics.ovh request and no marker; "Keep on"
