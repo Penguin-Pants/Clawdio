@@ -16,7 +16,7 @@ interface Player {
   volume: number;
   shuffle: boolean;
   repeat: Repeat;
-  plays: number;
+  started: number;
 }
 
 export function createPlayer(queue: Queue, player: Player) {
@@ -31,7 +31,7 @@ export function createPlayer(queue: Queue, player: Player) {
     document.body.dataset.playerCalls = JSON.stringify(calls);
   };
   const start = (index: number) => {
-    player.plays += 1;
+    player.started += 1;
     queue.current = index;
     player.status = "playing";
     player.positionMs = 0;
@@ -49,7 +49,7 @@ export function createPlayer(queue: Queue, player: Player) {
     player_play: () => {
       if (queue.entries.length === 0) return;
       // Like the engine: Play from stopped starts the file again.
-      if (player.status === "stopped") player.plays += 1;
+      if (player.status === "stopped") player.started += 1;
       player.status = "playing";
     },
     player_pause: () => {
@@ -58,7 +58,7 @@ export function createPlayer(queue: Queue, player: Player) {
     player_toggle: () => {
       if (player.status === "playing") player.status = "paused";
       else if (queue.entries.length > 0) {
-        if (player.status === "stopped") player.plays += 1;
+        if (player.status === "stopped") player.started += 1;
         player.status = "playing";
       }
     },

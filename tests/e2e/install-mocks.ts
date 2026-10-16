@@ -143,7 +143,7 @@ const player = withLibrary
   ? createPlayer(structuredClone(library.queue), structuredClone(library.player))
   : createPlayer(
       { entries: [], current: null },
-      { status: "stopped", positionMs: 0, volume: 100, shuffle: false, repeat: "off", plays: 0 },
+      { status: "stopped", positionMs: 0, volume: 100, shuffle: false, repeat: "off", started: 0 },
     );
 
 function libraryCommand(command: string, args: Args): unknown {

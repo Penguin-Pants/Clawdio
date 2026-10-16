@@ -75,9 +75,12 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     resume_at: Option<u32>,
     /// Microphone ducking (P20.3). `volume` stays the user volume (R34.6).
     duck: Duck,
-    /// Files started (wraps): a restart of the same song is a new play, for the lyrics fetch
-    /// (P24.5) and the selection follow (D63).
+    /// Files started (wraps): a restart of the same song is a new play, so the lyrics fetch
+    /// tries an error again (P24.5).
     plays: u32,
+    /// Entries started (wraps), without a restart of the same entry: the lists follow each new
+    /// value (R35.3, D63).
+    started: u32,
     /// The duck factor the output applies (D52).
     gain: Ramp,
     /// The time source: the real clock, or a fake one in tests.
@@ -105,6 +108,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             resume_at: None,
             duck: Duck::default(),
             plays: 0,
+            started: 0,
             gain: Ramp::flat(1.0, Instant::now()),
             clock: Box::new(Instant::now),
         }
@@ -186,7 +190,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             volume: self.volume,
             shuffle: self.queue.shuffle(),
             repeat: self.queue.repeat(),
-            plays: self.plays,
+            started: self.started,
         }
     }
 
@@ -228,7 +232,10 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
 
     /// Plays the entry at `index`. A file that cannot open is skipped to the next entry; after
     /// MAX_FAILURES in a row playback stops (R6, D32 rule a).
-    fn play_index(&mut self, mut index: usize) {
+    /// `restart` is true when the current entry starts again (Repeat one, Previous after 3 s,
+    /// Play on a restored queue): the playing song does not change.
+    fn play_index(&mut self, mut index: usize, restart: bool) {
+        let first = index;
         self.resume_at = None;
         loop {
             let Some(&id) = self.queue.entries().get(index) else {
@@ -243,6 +250,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             match result {
                 Ok(()) => {
                     self.plays = self.plays.wrapping_add(1);
+                    if !restart || index != first {
+                        self.started = self.started.wrapping_add(1);
+                    }
                     self.status = PlayerStatus::Playing;
                     if self.duck.holds_pause() {
                         // A track change during a Pause duck: the duck stays (E-35).
@@ -279,9 +289,9 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
     /// Does what the queue decided.
     fn apply(&mut self, step: Step) {
         match step {
-            Step::Play(index) => self.play_index(index),
+            Step::Play(index) => self.play_index(index, false),
             Step::Restart => match self.queue.current() {
-                Some(current) => self.play_index(current),
+                Some(current) => self.play_index(current, true),
                 None => self.halt(),
             },
             Step::Stop => self.halt(),
@@ -341,7 +351,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             let actions = self.duck.user_play();
             self.apply_duck(actions);
             self.failures = 0;
-            self.play_index(start);
+            self.play_index(start, false);
         }
     }
 
@@ -357,7 +367,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
                     // A restored queue: load the current entry, then go to the saved position.
                     self.failures = 0;
                     let saved = self.queue.current().unwrap_or(0);
-                    self.play_index(saved);
+                    self.play_index(saved, true);
                     // The position belongs to the saved entry, not to one after a skip.
                     if at > 0
                         && self.status == PlayerStatus::Playing
@@ -374,7 +384,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             PlayerStatus::Stopped => {
                 if !self.queue.entries().is_empty() {
                     self.failures = 0;
-                    self.play_index(self.queue.current().unwrap_or(0));
+                    self.play_index(self.queue.current().unwrap_or(0), false);
                 }
             }
         }

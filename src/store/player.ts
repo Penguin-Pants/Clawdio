@@ -10,9 +10,9 @@ interface PlayerState {
   queue: QueueSnapshot;
   player: PlayerSnapshot;
   /**
-   * Goes up each time the player starts a file while playing or paused (R35, D63): another
-   * entry plays, the same track at another entry, or Play from stopped. A queue edit that
-   * keeps the playing entry does not count.
+   * Goes up each time the player starts another entry while playing or paused (R35, D63),
+   * also the same track at another entry, or Play from stopped. A restart of the same entry
+   * (Repeat one, Previous) and a queue edit that keeps the playing entry do not count.
    */
   follow: number;
   /** The playlist view that started the queue, until any queue edit or playlist change (D63). */
@@ -39,7 +39,7 @@ export const STOPPED: PlayerSnapshot = {
   volume: 100,
   shuffle: false,
   repeat: "off",
-  plays: 0,
+  started: 0,
 };
 
 /** Set once a player event arrives: a later start read is older, so it is dropped. */
@@ -56,7 +56,8 @@ export const usePlayerStore = create<PlayerState>()((set) => ({
   playlistSource: null,
   pending: null,
   expectPlaylist: (id, ids) => set({ pending: { source: { id }, ids } }),
-  clearPlaylistSource: () => set({ playlistSource: null }),
+  // A playlist change ends a source and one that a view's play has not confirmed yet (D63).
+  clearPlaylistSource: () => set({ playlistSource: null, pending: null }),
   load: async () => {
     stateSeen = false;
     queueSeen = false;
@@ -69,10 +70,10 @@ export const usePlayerStore = create<PlayerState>()((set) => ({
   },
   applyState: (player) => {
     stateSeen = true;
-    // A new play count is a file the player started (the engine sends the queue first).
+    // A new count is an entry the player started (the engine sends the queue first).
     set((state) => ({
       player,
-      follow: state.follow + (player.status !== "stopped" && player.plays !== state.player.plays ? 1 : 0),
+      follow: state.follow + (player.status !== "stopped" && player.started !== state.player.started ? 1 : 0),
     }));
   },
   applyQueue: (queue) => {

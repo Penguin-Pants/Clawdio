@@ -204,7 +204,7 @@ export const library = {
     volume: 80,
     shuffle: false,
     repeat: "off" as const,
-    plays: 0,
+    started: 0,
   },
   playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
     { id: p, name: `Mix ${p + 1}`, fileName: `Mix ${p + 1}.m3u8`, entryCount: 6, isFavorites: false, missingCount: 1 },

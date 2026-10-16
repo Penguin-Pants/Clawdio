@@ -590,6 +590,9 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
     if !gate.is_on() {
         return Err(fetch_error("Online lookups are off"));
     }
+    // Switch-off during the checks below cancels this token, also when the switch is on
+    // again before the request joins the registry (R7).
+    let preflight = gate.job_token();
     let song = {
         let in_library = app
             .state::<Library>()
@@ -651,7 +654,7 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
     {
         let state = app.state::<LyricsState>();
         let mut jobs = state.jobs.lock().map_err(|_| super::lock_error())?;
-        if jobs.generation != generation {
+        if jobs.generation != generation || preflight.is_cancelled() {
             drop(jobs);
             return canceled();
         }

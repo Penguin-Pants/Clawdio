@@ -127,9 +127,10 @@ describe("usePlaylistsStore.load (R25 stale indices)", () => {
   it("ends the queue's playlist source at any playlist change (D63)", async () => {
     vi.spyOn(commands, "playlistsList").mockResolvedValue([]);
     vi.spyOn(commands, "favorites").mockResolvedValue([]);
-    usePlayerStore.setState({ playlistSource: { id: 3 } });
+    usePlayerStore.setState({ playlistSource: { id: 3 }, pending: { source: { id: 4 }, ids: [1] } });
     await usePlaylistsStore.getState().load();
     expect(usePlayerStore.getState().playlistSource).toBeNull();
+    expect(usePlayerStore.getState().pending).toBeNull();
   });
 
   it("counts a load in flight from its start until both reads land", async () => {

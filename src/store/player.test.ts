@@ -33,14 +33,14 @@ describe("follow (R35, D63)", () => {
   ) =>
     usePlayerStore.setState({
       queue,
-      player: { ...STOPPED, status, plays: 1 },
+      player: { ...STOPPED, status, started: 1 },
       follow: 0,
       playlistSource: null,
       pending: null,
     });
   const follow = () => usePlayerStore.getState().follow;
-  const state = (status: "stopped" | "playing" | "paused", plays: number) =>
-    usePlayerStore.getState().applyState({ ...STOPPED, status, plays });
+  const state = (status: "stopped" | "playing" | "paused", started: number) =>
+    usePlayerStore.getState().applyState({ ...STOPPED, status, started });
 
   it("counts each file the player starts, also the same track at another entry", () => {
     reset();
