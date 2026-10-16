@@ -235,6 +235,31 @@ test("P24-AC11: a click, an arrow key or a wheel in the list holds the follow fo
   await expect(selectedRows(songs)).toContainText("Song 7 of Album A0");
 });
 
+test("P24-AC11: a pointer held in the list (a scrollbar drag) holds the follow until 5 s after its release", async ({
+  page,
+}) => {
+  await open(page);
+  const songs = songsGrid(page);
+  const row = songs.getByRole("row", { name: /Song 2 of Album A0/ });
+  await row.click();
+  await idle(page);
+  const box = await row.boundingBox();
+  if (!box) throw new Error("the row has no box");
+  await page.mouse.move(box.x + 40, box.y + box.height / 2);
+  await page.mouse.down();
+  await idle(page);
+  await send(page, "player_next");
+  await expect(widget(page, "transport")).toContainText("Song 5 of Album A0");
+  await expect(selectedRows(songs)).toContainText("Song 2 of Album A0");
+  await page.mouse.up();
+  await send(page, "player_next");
+  await expect(widget(page, "transport")).toContainText("Song 6 of Album A0");
+  await expect(selectedRows(songs)).toContainText("Song 2 of Album A0");
+  await idle(page);
+  await send(page, "player_next");
+  await expect(selectedRows(songs)).toContainText("Song 7 of Album A0");
+});
+
 test("P24-AC11: a hidden song or a hidden selection leaves the Songs list as it is; Artist and Album never change", async ({
   page,
 }) => {

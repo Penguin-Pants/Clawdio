@@ -338,14 +338,12 @@ fn start_worker<R: Runtime>(app: &AppHandle<R>, jobs: &mut Registry) {
                 return;
             };
             let outcome = run(&app, &gate, track, manual, &token).await;
-            // A no match whose marker is gone again: a click cleared it after the job wrote it.
-            let cleared =
-                !manual && outcome == Outcome::NoMatch && !no_match_kept(&app, track).await;
             if let Ok(mut jobs) = app.state::<LyricsState>().jobs.lock() {
-                // A click joined an automatic job that skipped the song or found no match on a
-                // marker the click has cleared since: the song runs again for the click (P24.6).
+                // A click joined an automatic job that skipped the song or found no match: the
+                // song runs again for the click (P24.6). The click cleared the marker before it
+                // joined, maybe after the job wrote it, so only a new chain keeps R9.3.
                 let joined_later = !manual
-                    && (matches!(outcome, Outcome::Skipped(_)) || cleared)
+                    && matches!(outcome, Outcome::Skipped(_) | Outcome::NoMatch)
                     && jobs.running.get(&track).is_some_and(|job| job.manual)
                     && !token.is_cancelled();
                 if joined_later {
@@ -357,29 +355,6 @@ fn start_worker<R: Runtime>(app: &AppHandle<R>, jobs: &mut Registry) {
             }
         }
     });
-}
-
-/// The no-match result of a track is still recorded: its sidecar marker, or the result in
-/// memory for a song outside an album folder (D60).
-async fn no_match_kept<R: Runtime>(app: &AppHandle<R>, track: u32) -> bool {
-    let Some(song) = song(app, track) else {
-        return false;
-    };
-    match song.sidecar {
-        Some((folder, key)) => {
-            let album = song.root.join(folder);
-            tauri::async_runtime::spawn_blocking(move || {
-                sidecar::read(&album).lyrics_no_match(&key)
-            })
-            .await
-            .unwrap_or(false)
-        }
-        None => app
-            .state::<LyricsState>()
-            .jobs
-            .lock()
-            .is_ok_and(|jobs| jobs.no_match.contains(&track)),
-    }
 }
 
 fn stop_worker<R: Runtime>(app: &AppHandle<R>) {
@@ -598,6 +573,13 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
     // Switch-off during the checks below cancels this token, also when the switch is on
     // again before the request joins the registry (R7).
     let preflight = gate.job_token();
+    // Before the song is resolved: a folder change after this point cancels the fetch.
+    let generation = app
+        .state::<LyricsState>()
+        .jobs
+        .lock()
+        .map_err(|_| super::lock_error())?
+        .generation;
     let song = {
         let in_library = app
             .state::<Library>()
@@ -611,12 +593,6 @@ async fn fetch<R: Runtime>(app: &AppHandle<R>, track: u32) -> CommandResult<bool
         }
         song(app, track).ok_or_else(|| fetch_error("Choose a music folder first"))?
     };
-    let generation = app
-        .state::<LyricsState>()
-        .jobs
-        .lock()
-        .map_err(|_| super::lock_error())?
-        .generation;
     let canceled = || {
         emit(app, STATUS_MESSAGE, "Lyrics fetch canceled");
         Ok(false)
@@ -1407,6 +1383,45 @@ mod tests {
         wait_idle(&app);
         assert_eq!(slow.calls(), 1);
         assert_eq!(requests(&app), 1);
+    }
+
+    /// P24-AC6, R9.3: a click that joins an automatic job which then finds no match gets a
+    /// chain that runs after the click, and the marker stays.
+    #[test]
+    fn a_click_on_an_automatic_no_match_runs_the_chain_again() {
+        let music = tempfile::tempdir().unwrap();
+        let (app, _) = app(music.path());
+        let server = httpmock::MockServer::start();
+        let missing = server.mock(|when, then| {
+            when.path_includes("/api/");
+            then.status(404)
+                .delay(std::time::Duration::from_millis(200));
+        });
+        server.mock(|when, then| {
+            when.path_includes("/v1/");
+            then.status(404)
+                .delay(std::time::Duration::from_millis(200))
+                .body(r#"{"error":"No lyrics found"}"#);
+        });
+        online(&app, &server, true);
+        set_auto(&app, true);
+        targets(app.handle(), Some(0), None, 0);
+        let started = std::time::Instant::now();
+        while missing.calls() == 0 {
+            assert!(started.elapsed() < std::time::Duration::from_secs(5));
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert_eq!(
+            tauri::async_runtime::block_on(fetch(app.handle(), 0)),
+            Ok(false)
+        );
+        wait_idle(&app);
+        assert_eq!(
+            requests(&app),
+            8,
+            "the automatic chain, then the chain for the click"
+        );
+        assert!(sidecar::read(&music.path().join("A/B")).lyrics_no_match("01 Song.mp3"));
     }
 
     /// P24-AC6: a music folder change with a queued and a running job writes nothing.

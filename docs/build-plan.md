@@ -1407,7 +1407,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 25, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource, CodeRabbit and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 28, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource, CodeRabbit and Codex on the PR.
 
 - F2:
   - `peek_next` cloned the whole queue at every player event (a volume drag sends many). It copies only the shuffle pool now.
@@ -1435,6 +1435,9 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Codex (fourth round): "Keep on" while a chain that saw lyrics.ovh blocked had not ended yet ran nothing again. The answer stops the running automatic jobs, so the songs queue again; a joined job keeps running. Registry test.
   - CodeRabbit: a library play did not end a pending playlist view play, so a library queue with the same ids could take the playlist source. The library play clears it now. Component test.
   - DeepSource: the library play fix had an empty catch arrow and its test an empty async mock and an async `act` with no `await`. The catch body states its purpose; the mock returns a resolved promise; the `act` is synchronous.
+  - Codex (fifth round): the worker read the marker before it locked the registry, so a click that cleared the marker in between got the old no-match result. The marker read is gone: a click that joins an automatic job with no match always gets a new chain. Worker test.
+  - Codex (fifth round): a pointer held in the list (a scrollbar drag) counted only at its press, so the list could follow during the drag. A held pointer keeps the list busy until 5 s after its release. Playwright test.
+  - Codex (fifth round): "Fetch lyrics" read the folder generation after it resolved the song, so a folder change in between let the marker clear write to the old folder. The generation is read first. No test can place a folder change between the two reads.
 - F3: F-23 (section 11).
 - F4:
   - A redirect loop could pass the 30 s timeout: each hop has the client timeout and the hop limit is 5.

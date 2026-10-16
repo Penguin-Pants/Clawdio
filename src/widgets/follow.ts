@@ -68,16 +68,30 @@ export function useFollowPlaying(
   onFollow: (index: number) => void,
 ): void {
   const lastInput = useRef<number | null>(null);
+  // A pointer pressed in the list and not released yet, for example a scrollbar drag (R35.5).
+  const held = useRef(false);
   // Pointer, key and wheel input inside the list (R35.5). The list element can come and go
   // (an empty queue), so the document listens.
   useEffect(() => {
     const mark = (event: Event) => {
-      if (event.target instanceof Node && listRef.current?.contains(event.target)) lastInput.current = Date.now();
+      if (!(event.target instanceof Node && listRef.current?.contains(event.target))) return;
+      lastInput.current = Date.now();
+      if (event.type === "pointerdown") held.current = true;
+    };
+    // The release can land outside the list. A move with no button down also ends the press,
+    // for a release that the webview did not report.
+    const release = (event: PointerEvent) => {
+      if (!held.current || (event.type === "pointermove" && event.buttons !== 0)) return;
+      held.current = false;
+      lastInput.current = Date.now();
     };
     const kinds = ["pointerdown", "keydown", "wheel"] as const;
+    const ends = ["pointerup", "pointercancel", "pointermove"] as const;
     for (const kind of kinds) document.addEventListener(kind, mark, { capture: true, passive: true });
+    for (const kind of ends) document.addEventListener(kind, release, { capture: true, passive: true });
     return () => {
       for (const kind of kinds) document.removeEventListener(kind, mark, { capture: true });
+      for (const kind of ends) document.removeEventListener(kind, release, { capture: true });
     };
   }, [listRef]);
   const latest = useRef({ check, onFollow });
@@ -91,7 +105,8 @@ export function useFollowPlaying(
     seen.current = follow;
     const { hasSelection, target, busy = false } = latest.current.check();
     const now = Date.now();
-    if (shouldFollow({ hasSelection, target, busy: busy || appBusy(), lastInput: lastInput.current, now })) {
+    const listBusy = busy || held.current || appBusy();
+    if (shouldFollow({ hasSelection, target, busy: listBusy, lastInput: lastInput.current, now })) {
       if (target !== null) latest.current.onFollow(target);
     }
   }, [follow]);
