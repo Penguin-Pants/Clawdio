@@ -283,12 +283,20 @@ pub fn clear_lyrics_marker(folder: &Path, key: &str) -> Result<bool, SidecarErro
         let Value::Object(entries) = lyrics else {
             return Err(SidecarError::Corrupt);
         };
-        match entries.get(key) {
+        let entry = match entries.get_mut(key) {
             None => return Ok(false),
-            Some(Value::Object(_)) => {}
+            Some(Value::Object(entry)) => entry,
             Some(_) => return Err(SidecarError::Corrupt),
+        };
+        // Only the app's own marker goes; an entry of another status is the user's data.
+        if entry.get("status").and_then(Value::as_str) != Some("no-match") {
+            return Ok(false);
         }
-        entries.remove(key);
+        entry.remove("status");
+        entry.remove("checked");
+        if entry.is_empty() {
+            entries.remove(key);
+        }
         if entries.is_empty() {
             map.remove("lyrics");
         }
@@ -579,6 +587,29 @@ mod tests {
         };
         assert!(!map.contains_key("lyrics"), "an empty lyrics object goes");
         assert_eq!(map["artwork"]["status"], "no-art");
+    }
+
+    /// R11: a clear removes only the app's marker; other entries and fields stay.
+    #[test]
+    fn a_clear_keeps_entries_that_are_not_the_marker() {
+        let folder = tempfile::tempdir().unwrap();
+        let other = r#"{"lyrics":{"a.mp3":{"status":"reviewed","note":"keep"}}}"#;
+        std::fs::write(folder.path().join(SIDECAR_FILE), other).unwrap();
+        assert_eq!(clear_lyrics_marker(folder.path(), "a.mp3"), Ok(false));
+        assert_eq!(
+            std::fs::read_to_string(folder.path().join(SIDECAR_FILE)).unwrap(),
+            other
+        );
+        std::fs::write(
+            folder.path().join(SIDECAR_FILE),
+            r#"{"lyrics":{"a.mp3":{"status":"no-match","checked":"x","note":"keep"}}}"#,
+        )
+        .unwrap();
+        assert_eq!(clear_lyrics_marker(folder.path(), "a.mp3"), Ok(true));
+        let Sidecar::Valid(map) = read(folder.path()) else {
+            panic!("valid")
+        };
+        assert_eq!(map["lyrics"]["a.mp3"], serde_json::json!({"note": "keep"}));
     }
 
     /// P24-AC3, P24-AC5: a corrupt file or a `lyrics` value of an unknown form stays.

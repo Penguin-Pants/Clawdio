@@ -75,6 +75,8 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     resume_at: Option<u32>,
     /// Microphone ducking (P20.3). `volume` stays the user volume (R34.6).
     duck: Duck,
+    /// Files started, for the lyrics fetch: a restart of the same song is a new play (P24.5).
+    plays: u64,
     /// The duck factor the output applies (D52).
     gain: Ramp,
     /// The time source: the real clock, or a fake one in tests.
@@ -101,6 +103,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             failures: 0,
             resume_at: None,
             duck: Duck::default(),
+            plays: 0,
             gain: Ramp::flat(1.0, Instant::now()),
             clock: Box::new(Instant::now),
         }
@@ -203,7 +206,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             .flatten()
             .and_then(|index| self.queue.entries().get(index).copied());
         let next = playing.and(self.queue.peek_next());
-        self.events.songs(playing, next);
+        self.events.songs(playing, next, self.plays);
     }
 
     /// The file name for messages, or "track N".
@@ -237,6 +240,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             };
             match result {
                 Ok(()) => {
+                    self.plays += 1;
                     self.status = PlayerStatus::Playing;
                     if self.duck.holds_pause() {
                         // A track change during a Pause duck: the duck stays (E-35).
@@ -617,11 +621,10 @@ mod tests {
         fn message(&self, text: String) {
             self.0.lock().unwrap().push(format!("message {text}"));
         }
-        fn songs(&self, playing: Option<u32>, next: Option<u32>) {
-            self.0
-                .lock()
-                .unwrap()
-                .push(format!("songs {playing:?} {next:?}"));
+        fn songs(&self, playing: Option<u32>, next: Option<u32>, play: u64) {
+            let mut lines = self.0.lock().unwrap();
+            lines.push(format!("songs {playing:?} {next:?}"));
+            lines.push(format!("play {play}"));
         }
     }
 

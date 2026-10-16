@@ -1407,7 +1407,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 9, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, and an independent review agent.
+**TWO-PASS REVIEW:** F1 0, F2 15, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource and Codex on the PR.
 
 - F2:
   - `peek_next` cloned the whole queue at every player event (a volume drag sends many). It copies only the shuffle pool now.
@@ -1419,6 +1419,12 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Review: a failed play from the playlist view left `pending`, so a later queue with the same ids could count as the view's. Cleared, with a test.
   - Review: `lyrics::targets` used `app.state` for state that the player could reach before setup managed it. It uses `try_state`.
   - `README.md` named only LRCLIB for lyrics (N8).
+  - Codex: a click that cleared a marker the automatic job had just written got the old no-match result. The worker runs the song again for the click when the marker is gone.
+  - Codex: "Fetch lyrics" removed any `lyrics` entry of the song. It removes only the `no-match` status and time; other entries and fields stay (R11).
+  - Codex: the Playlists widget playing the same track ids kept an old playlist view as the queue source. Any play that is not from a view ends the source.
+  - Codex: the looser title dropped unmatched brackets (`Song)` gave `Song`). Only text inside a matching pair goes.
+  - Codex: a restart of the same song (Repeat one, Previous) was not a new play, so an error before was never tried again. The player sends a play count with the songs.
+  - Codex: switch-off with a quick switch-on left a click waiting on the new job. Switch-off, Cancel and a folder change answer every waiting click at once.
 - F3: F-23 (section 11).
 - F4:
   - A redirect loop could pass the 30 s timeout: each hop has the client timeout and the hop limit is 5.

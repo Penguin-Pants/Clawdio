@@ -105,6 +105,14 @@ describe("playPlaylist (R12)", () => {
     expect(usePlayerStore.getState().pending).toBeNull();
   });
 
+  it("ends the view's source when the Playlists widget plays the same ids (D63)", async () => {
+    vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
+    vi.spyOn(commands, "playerPlayList").mockResolvedValue();
+    usePlayerStore.setState({ playlistSource: { id: 3, signature: "[7,8]" } });
+    await playPlaylist(1);
+    expect(usePlayerStore.getState().playlistSource).toBeNull();
+  });
+
   it("reads the entries when the caller has none", async () => {
     vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
     const play = vi.spyOn(commands, "playerPlayList").mockResolvedValue();

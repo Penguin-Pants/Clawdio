@@ -97,7 +97,9 @@ export function playlistSignature(entries: readonly PlaylistEntry[]): string {
 export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry[]): Promise<void> {
   const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
   if (!queue) return;
+  // A queue started anywhere else is not a view's queue, also with the same ids (D63).
   if (entries) usePlayerStore.getState().expectPlaylist(id, queue.ids, playlistSignature(entries));
+  else usePlayerStore.setState({ playlistSource: null, pending: null });
   try {
     await commands.playerPlayList(queue.ids, queue.start);
   } catch (error) {

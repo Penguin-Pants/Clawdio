@@ -81,15 +81,23 @@ impl Record {
 
 /// The cleaned title without text in brackets or parentheses, for the looser LRCLIB query
 /// (R9.2 step 3): "Song (Live) [2011]" gives "Song".
+/// Only text inside a matching pair goes; an unmatched or mismatched delimiter stays.
 pub fn looser_title(title: &str) -> String {
     let mut out = String::with_capacity(title.len());
-    let mut depth = 0usize;
+    // Where each open delimiter starts in `out`, and which close it needs.
+    let mut open: Vec<(usize, char)> = Vec::new();
     for c in title.chars() {
         match c {
-            '(' | '[' => depth += 1,
-            ')' | ']' => depth = depth.saturating_sub(1),
-            _ if depth == 0 => out.push(c),
-            _ => {}
+            '(' | '[' => {
+                open.push((out.len(), if c == '(' { ')' } else { ']' }));
+                out.push(c);
+            }
+            ')' | ']' if open.last().is_some_and(|(_, close)| *close == c) => {
+                if let Some((start, _)) = open.pop() {
+                    out.truncate(start);
+                }
+            }
+            _ => out.push(c),
         }
     }
     out.split_whitespace().collect::<Vec<_>>().join(" ")

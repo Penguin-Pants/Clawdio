@@ -1655,6 +1655,15 @@ mod lyrics_chain {
         assert_eq!(looser_title("Song"), "Song");
         assert_eq!(looser_title("(Intro)"), "");
         assert_eq!(looser_title("A (b (c)) d"), "A d");
+        // Unmatched or mismatched delimiters stay, so no other title is searched.
+        assert_eq!(looser_title("Song)"), "Song)");
+        assert_eq!(looser_title("Song (Live"), "Song (Live");
+        assert_eq!(looser_title("Song (a]"), "Song (a]");
+        assert_eq!(
+            looser_title("Song [a (b] c)"),
+            "Song [a",
+            "the pair goes, the open [ stays"
+        );
     }
 
     /// P24-AC2: each step runs only after the steps before gave no result, and the chain

@@ -115,9 +115,13 @@ pub struct Registry {
     waiters: HashMap<u32, Vec<Sender<Outcome>>>,
     /// The playing and the next song as the player reported them (None while stopped).
     targets: (Option<u32>, Option<u32>),
+    /// The player's play count of `targets.0`: a restart of the same song is a new play, so
+    /// an error before is tried again (requirements section 5).
+    play: u64,
     /// The songs jobs were queued for; reset while the rule is off, so turning it on queues
     /// both again.
     applied: (Option<u32>, Option<u32>),
+    applied_play: u64,
     /// Songs outside an album folder with no match in this app run (D60).
     no_match: HashSet<u32>,
     /// The worker task runs.
@@ -149,12 +153,14 @@ impl Registry {
         }
         let (playing, next) = self.targets;
         let (old_playing, old_next) = self.applied;
+        let new_play = self.play != self.applied_play;
         self.applied = self.targets;
+        self.applied_play = self.play;
         self.auto
             .retain(|track| Some(*track) == playing || Some(*track) == next);
         let mut queued = false;
         let mut want = Vec::new();
-        if playing.is_some() && playing != old_playing {
+        if playing.is_some() && (playing != old_playing || new_play) {
             want.extend(playing);
         }
         if next.is_some() && next != old_next && next != playing {
@@ -191,6 +197,14 @@ impl Registry {
         }
     }
 
+    /// Answers every waiting manual request with "canceled" (R7: switch-off, Cancel, a new
+    /// music folder). A later job for the same track has no waiter.
+    fn cancel_waiters(&mut self) {
+        for waiter in self.waiters.drain().flat_map(|(_, waiters)| waiters) {
+            let _ = waiter.try_send(Outcome::Canceled);
+        }
+    }
+
     /// Takes every queued job, automatic and joined.
     fn all_queued(&mut self) -> Vec<u32> {
         let mut queued: Vec<u32> = self.auto.drain(..).collect();
@@ -218,7 +232,7 @@ fn auto_enabled<R: Runtime>(app: &AppHandle<R>) -> bool {
 
 /// The player reported the playing and the next song (P24.5): the playing song and then the
 /// next song are queued when the rule holds. Stopped reports none.
-pub fn targets<R: Runtime>(app: &AppHandle<R>, playing: Option<u32>, next: Option<u32>) {
+pub fn targets<R: Runtime>(app: &AppHandle<R>, playing: Option<u32>, next: Option<u32>, play: u64) {
     let enabled = auto_enabled(app);
     let Some(state) = app.try_state::<LyricsState>() else {
         return;
@@ -226,10 +240,12 @@ pub fn targets<R: Runtime>(app: &AppHandle<R>, playing: Option<u32>, next: Optio
     let Ok(mut jobs) = state.jobs.lock() else {
         return;
     };
-    if jobs.targets == (playing, next) && (jobs.applied == jobs.targets || !enabled) {
+    let same = jobs.targets == (playing, next) && jobs.play == play;
+    if same && ((jobs.applied == jobs.targets && jobs.applied_play == play) || !enabled) {
         return;
     }
     jobs.targets = (playing, next);
+    jobs.play = play;
     if jobs.retarget(enabled) {
         start_worker(app, &mut jobs);
     }
@@ -254,6 +270,7 @@ pub fn rules_changed<R: Runtime>(app: &AppHandle<R>, again: bool) {
             for job in jobs.running.values() {
                 job.token.cancel();
             }
+            jobs.cancel_waiters();
         } else if !enabled {
             let queued: Vec<u32> = jobs.auto.drain(..).collect();
             jobs.drop_queued(queued);
@@ -316,11 +333,14 @@ fn start_worker<R: Runtime>(app: &AppHandle<R>, jobs: &mut Registry) {
                 return;
             };
             let outcome = run(&app, &gate, track, manual, &token).await;
+            // A no match whose marker is gone again: a click cleared it after the job wrote it.
+            let cleared =
+                !manual && outcome == Outcome::NoMatch && !no_match_kept(&app, track).await;
             if let Ok(mut jobs) = app.state::<LyricsState>().jobs.lock() {
-                // A click joined an automatic job that skipped the song, for example on the
+                // A click joined an automatic job that skipped the song or found no match on a
                 // marker the click has cleared since: the song runs again for the click (P24.6).
                 let joined_later = !manual
-                    && matches!(outcome, Outcome::Skipped(_))
+                    && (matches!(outcome, Outcome::Skipped(_)) || cleared)
                     && jobs.running.get(&track).is_some_and(|job| job.manual)
                     && !token.is_cancelled();
                 if joined_later {
@@ -332,6 +352,29 @@ fn start_worker<R: Runtime>(app: &AppHandle<R>, jobs: &mut Registry) {
             }
         }
     });
+}
+
+/// The no-match result of a track is still recorded: its sidecar marker, or the result in
+/// memory for a song outside an album folder (D60).
+async fn no_match_kept<R: Runtime>(app: &AppHandle<R>, track: u32) -> bool {
+    let Some(song) = song(app, track) else {
+        return false;
+    };
+    match song.sidecar {
+        Some((folder, key)) => {
+            let album = song.root.join(folder);
+            tauri::async_runtime::spawn_blocking(move || {
+                sidecar::read(&album).lyrics_no_match(&key)
+            })
+            .await
+            .unwrap_or(false)
+        }
+        None => app
+            .state::<LyricsState>()
+            .jobs
+            .lock()
+            .is_ok_and(|jobs| jobs.no_match.contains(&track)),
+    }
 }
 
 fn stop_worker<R: Runtime>(app: &AppHandle<R>) {
@@ -656,6 +699,7 @@ pub fn cancel_manual<R: Runtime>(app: &AppHandle<R>) {
         for job in jobs.running.values().filter(|job| job.manual) {
             job.token.cancel();
         }
+        jobs.cancel_waiters();
     }
     if let Some(gate) = gate {
         gate.wait_commits();
@@ -675,6 +719,7 @@ pub fn cancel<R: Runtime>(app: &AppHandle<R>) {
         }
         jobs.no_match.clear();
         jobs.generation += 1;
+        jobs.cancel_waiters();
         jobs.applied = (None, None);
         jobs.targets = (None, None);
     }
@@ -1013,6 +1058,35 @@ mod tests {
         assert_eq!(answer.try_recv().ok(), Some(Outcome::Saved));
     }
 
+    /// Requirements section 5: after an error, a restart of the same song (a new play) asks
+    /// again; a repeat of the same announcement does not.
+    #[test]
+    fn a_new_play_of_the_same_song_queues_it_again() {
+        let mut jobs = registry();
+        jobs.targets = (Some(1), None);
+        jobs.play = 1;
+        assert!(jobs.retarget(true));
+        jobs.take();
+        assert!(!jobs.retarget(true), "the same announcement");
+        jobs.play = 2;
+        assert!(jobs.retarget(true));
+        assert_eq!(jobs.auto, vec![1]);
+    }
+
+    /// R7: switch-off answers a waiting click at once, also when a new job for the same
+    /// track queues before the old one ends.
+    #[test]
+    fn cancel_answers_every_waiter() {
+        let mut jobs = registry();
+        let (reply, mut answer) = channel(1);
+        jobs.waiters.entry(1).or_default().push(reply);
+        jobs.auto.push(1);
+        jobs.cancel_waiters();
+        assert_eq!(answer.try_recv().ok(), Some(Outcome::Canceled));
+        jobs.finish(1, &Outcome::Saved);
+        assert!(answer.try_recv().is_err(), "no second answer");
+    }
+
     /// D61: off clears the automatic queue; on queues both songs again.
     #[test]
     fn off_clears_and_on_queues_again() {
@@ -1127,7 +1201,7 @@ mod tests {
         });
         song_changed(app.handle(), Some(0));
         events.store(0, Ordering::SeqCst);
-        targets(app.handle(), Some(0), Some(next));
+        targets(app.handle(), Some(0), Some(next), 0);
         wait_idle(&app);
         assert!(music.path().join("A/B/01 Song.txt").is_file());
         assert!(music.path().join("A/B/02 Next.txt").is_file());
@@ -1135,8 +1209,8 @@ mod tests {
         assert_eq!(messages.load(Ordering::SeqCst), 0, "no status line text");
         // A second play of a song with lyrics makes no request.
         let before = requests(&app);
-        targets(app.handle(), None, None);
-        targets(app.handle(), Some(0), Some(next));
+        targets(app.handle(), None, None, 0);
+        targets(app.handle(), Some(0), Some(next), 0);
         wait_idle(&app);
         assert_eq!(requests(&app), before);
     }
@@ -1153,7 +1227,7 @@ mod tests {
         let server = server(&[]);
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(disc), None);
+        targets(app.handle(), Some(disc), None, 0);
         wait_idle(&app);
         let album = music.path().join("A/B");
         assert!(sidecar::read(&album).lyrics_no_match("CD2/01 Deep.mp3"));
@@ -1172,13 +1246,13 @@ mod tests {
             Some(stamp),
             "the next scan does not read the album again"
         );
-        targets(app.handle(), Some(loose), None);
+        targets(app.handle(), Some(loose), None, 0);
         wait_idle(&app);
         assert!(!music.path().join("A").join(sidecar::SIDECAR_FILE).exists());
         let before = requests(&app);
         for track in [disc, loose] {
-            targets(app.handle(), None, None);
-            targets(app.handle(), Some(track), None);
+            targets(app.handle(), None, None, 0);
+            targets(app.handle(), Some(track), None, 0);
             wait_idle(&app);
         }
         assert_eq!(requests(&app), before, "no second request in this app run");
@@ -1201,7 +1275,7 @@ mod tests {
         });
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         assert!(!music
             .path()
@@ -1210,8 +1284,8 @@ mod tests {
             .exists());
         let before = requests(&app);
         assert!(before > 0);
-        targets(app.handle(), None, None);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), None, None, 0);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         assert!(requests(&app) > before, "tried again");
     }
@@ -1226,12 +1300,12 @@ mod tests {
         let server = server(&["Song", "Next"]);
         online(&app, &server, false);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), Some(next));
+        targets(app.handle(), Some(0), Some(next), 0);
         wait_idle(&app);
         app.state::<Online>().gate.set_on(true);
         set_auto(&app, false);
-        targets(app.handle(), Some(next), Some(0));
-        targets(app.handle(), Some(0), Some(next));
+        targets(app.handle(), Some(next), Some(0), 0);
+        targets(app.handle(), Some(0), Some(next), 0);
         wait_idle(&app);
         assert_eq!(requests(&app), 0);
         set_auto(&app, true);
@@ -1262,7 +1336,7 @@ mod tests {
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
         };
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_request(1);
         set_auto(&app, false);
         wait_idle(&app);
@@ -1274,8 +1348,8 @@ mod tests {
             .exists());
         // A manual request joins the automatic job: the setting off does not cancel it.
         set_auto(&app, true);
-        targets(app.handle(), None, None);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), None, None, 0);
+        targets(app.handle(), Some(0), None, 0);
         wait_request(2);
         let handle = app.handle().clone();
         let click = std::thread::spawn(move || tauri::async_runtime::block_on(fetch(&handle, 0)));
@@ -1312,7 +1386,7 @@ mod tests {
         });
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         let started = std::time::Instant::now();
         while slow.calls() == 0 {
             assert!(started.elapsed() < std::time::Duration::from_secs(5));
@@ -1342,7 +1416,7 @@ mod tests {
         });
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), Some(next));
+        targets(app.handle(), Some(0), Some(next), 0);
         let started = std::time::Instant::now();
         while slow.calls() == 0 {
             assert!(started.elapsed() < std::time::Duration::from_secs(5));
@@ -1367,7 +1441,7 @@ mod tests {
         let server = server(&["Song"]);
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         assert_eq!(requests(&app), 0);
     }
@@ -1391,7 +1465,7 @@ mod tests {
         });
         online(&app, &server, true);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         assert_eq!(requests(&app), 4);
         assert_eq!(std::fs::read_to_string(&file).unwrap(), "{broken");
@@ -1426,7 +1500,7 @@ mod tests {
             eprintln!("skipped: the test runs with write access to read-only folders");
             return;
         }
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
         assert_eq!(requests(&app), 0);
@@ -1451,7 +1525,7 @@ mod tests {
         online(&app, &server, true);
         app.state::<Online>().gate.set_lyrics_ovh_allowed(false);
         set_auto(&app, true);
-        targets(app.handle(), Some(0), None);
+        targets(app.handle(), Some(0), None, 0);
         wait_idle(&app);
         assert_eq!(ovh.calls(), 0);
         assert!(!music

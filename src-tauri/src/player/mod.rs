@@ -34,9 +34,10 @@ pub trait PlayerEvents: Send {
     fn position(&self, position_ms: u32);
     /// A transient status line message (D18).
     fn message(&self, text: String);
-    /// The playing song and the next song in play order (P24.5), or none while stopped. The
-    /// engine sends it with every state and queue event; the receiver drops repeats.
-    fn songs(&self, _playing: Option<u32>, _next: Option<u32>) {}
+    /// The playing song and the next song in play order (P24.5), or none while stopped, and
+    /// the count of files the player started, so a restart of the same song is a new play.
+    /// The engine sends it with every state and queue event; the receiver drops repeats.
+    fn songs(&self, _playing: Option<u32>, _next: Option<u32>, _play: u64) {}
 }
 
 /// The absolute file of a track id, or `None` for an unknown or removed id.
