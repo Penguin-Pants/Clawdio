@@ -6,4 +6,9 @@ export type PlayerSnapshot = { status: PlayerStatus, positionMs: number,
 /**
  * Volume from 0 to 100.
  */
-volume: number, shuffle: boolean, repeat: RepeatMode, };
+volume: number, shuffle: boolean, repeat: RepeatMode, 
+/**
+ * Files the player started (wraps). A new value while playing or paused is a new play:
+ * the lists follow it (R35, D63), also when the same track plays at another entry.
+ */
+plays: number, };

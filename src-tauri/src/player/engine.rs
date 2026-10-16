@@ -75,8 +75,9 @@ pub struct Engine<O: AudioOutput, E: PlayerEvents> {
     resume_at: Option<u32>,
     /// Microphone ducking (P20.3). `volume` stays the user volume (R34.6).
     duck: Duck,
-    /// Files started, for the lyrics fetch: a restart of the same song is a new play (P24.5).
-    plays: u64,
+    /// Files started (wraps): a restart of the same song is a new play, for the lyrics fetch
+    /// (P24.5) and the selection follow (D63).
+    plays: u32,
     /// The duck factor the output applies (D52).
     gain: Ramp,
     /// The time source: the real clock, or a fake one in tests.
@@ -185,6 +186,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             volume: self.volume,
             shuffle: self.queue.shuffle(),
             repeat: self.queue.repeat(),
+            plays: self.plays,
         }
     }
 
@@ -206,7 +208,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             .flatten()
             .and_then(|index| self.queue.entries().get(index).copied());
         let next = playing.and(self.queue.peek_next());
-        self.events.songs(playing, next, self.plays);
+        self.events.songs(playing, next, u64::from(self.plays));
     }
 
     /// The file name for messages, or "track N".
@@ -240,7 +242,7 @@ impl<O: AudioOutput, E: PlayerEvents> Engine<O, E> {
             };
             match result {
                 Ok(()) => {
-                    self.plays += 1;
+                    self.plays = self.plays.wrapping_add(1);
                     self.status = PlayerStatus::Playing;
                     if self.duck.holds_pause() {
                         // A track change during a Pause duck: the duck stays (E-35).

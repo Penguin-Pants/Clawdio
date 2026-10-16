@@ -96,7 +96,7 @@ describe("playPlaylist (R12)", () => {
     expect(read).not.toHaveBeenCalled();
     expect(play).toHaveBeenCalledWith([7, 8], 1);
     // D63: the view that shows the entries becomes the source of the queue.
-    expect(usePlayerStore.getState().pending).toEqual({ source: { id: 1, signature: "[7,8]" }, ids: [7, 8] });
+    expect(usePlayerStore.getState().pending).toEqual({ source: { id: 1 }, ids: [7, 8] });
   });
 
   it("forgets the view as the queue source when the play fails (D63)", async () => {
@@ -108,7 +108,7 @@ describe("playPlaylist (R12)", () => {
   it("ends the view's source when the Playlists widget plays the same ids (D63)", async () => {
     vi.spyOn(commands, "playlistEntries").mockResolvedValue(shown);
     vi.spyOn(commands, "playerPlayList").mockResolvedValue();
-    usePlayerStore.setState({ playlistSource: { id: 3, signature: "[7,8]" } });
+    usePlayerStore.setState({ playlistSource: { id: 3 } });
     await playPlaylist(1);
     expect(usePlayerStore.getState().playlistSource).toBeNull();
   });
@@ -123,6 +123,14 @@ describe("playPlaylist (R12)", () => {
 
 describe("usePlaylistsStore.load (R25 stale indices)", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("ends the queue's playlist source at any playlist change (D63)", async () => {
+    vi.spyOn(commands, "playlistsList").mockResolvedValue([]);
+    vi.spyOn(commands, "favorites").mockResolvedValue([]);
+    usePlayerStore.setState({ playlistSource: { id: 3 } });
+    await usePlaylistsStore.getState().load();
+    expect(usePlayerStore.getState().playlistSource).toBeNull();
+  });
 
   it("counts a load in flight from its start until both reads land", async () => {
     let finish: (rows: never[]) => void = () => undefined;

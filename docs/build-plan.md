@@ -1395,7 +1395,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N3: turning Online lookups on in Settings, after the first-run notice, writes notice version 2: Settings names all four services next to the switch. D64 does not cover this case; without it, the updated notice would open on top of Settings.
 - N4: Cancel on the status line now cancels only the jobs that a "Fetch lyrics" request waits for. A music folder change stops playback first, then cancels and drains every lyrics job, so no song change queues a job in between.
 - N5: one worker runs the jobs one at a time. Jobs that a click joined go first. A lyrics.ovh 200 with blank text is an error (D62: any other answer).
-- N6: the selection follow counts a song change in the player store (`follow`): another entry plays, or Play starts from stopped. A queue edit that keeps the playing song is not a change. The playlist source ends at any queue edit, and when the view's entries differ from those it played.
+- N6: the selection follow counts a new play in the player store (`follow`): `player-state` carries the count of files the player started (`plays`), so the same track at another entry is a new play and a queue edit that keeps the playing entry is not. The playlist source ends at any queue edit and at any `playlists-changed` (the event does not name the playlist, so an edit of another playlist also ends it; the view then follows only a track it holds once).
 - N7: the e2e mock `queue_get` returned its live object, so the store missed the first change; it returns copies now, like the real IPC. Two earlier tests pinned a single Settings switch; they now name it.
 - N8: `README.md` lists lyrics.ovh, the automatic fetch and the lyrics marker.
 
@@ -1407,7 +1407,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 15, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 18, F3 1, F4 6. Source: own audit, the full Rust and Chromium runs, an independent review agent, DeepSource and Codex on the PR.
 
 - F2:
   - `peek_next` cloned the whole queue at every player event (a volume drag sends many). It copies only the shuffle pool now.
@@ -1425,6 +1425,9 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Codex: the looser title dropped unmatched brackets (`Song)` gave `Song`). Only text inside a matching pair goes.
   - Codex: a restart of the same song (Repeat one, Previous) was not a new play, so an error before was never tried again. The player sends a play count with the songs.
   - Codex: switch-off with a quick switch-on left a click waiting on the new job. Switch-off, Cancel and a folder change answer every waiting click at once.
+  - Codex (second round): with `[A, A, B]`, removing the playing `A` started the second `A` but the lists did not follow. `PlayerSnapshot.plays` (N6) drives the follow now.
+  - Codex (second round): a playlist edit that restored the same tracks kept the view as the queue source. Any playlist change ends it (N6).
+  - Codex (second round): an LRCLIB redirect hop skipped the 500 ms gap. Every hop keeps it, with a test.
 - F3: F-23 (section 11).
 - F4:
   - A redirect loop could pass the 30 s timeout: each hop has the client timeout and the hop limit is 5.

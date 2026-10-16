@@ -164,6 +164,9 @@ pub struct PlayerSnapshot {
     pub volume: u8,
     pub shuffle: bool,
     pub repeat: RepeatMode,
+    /// Files the player started (wraps). A new value while playing or paused is a new play:
+    /// the lists follow it (R35, D63), also when the same track plays at another entry.
+    pub plays: u32,
 }
 
 /// Repeat modes (R6).

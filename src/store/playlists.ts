@@ -25,6 +25,9 @@ export const usePlaylistsStore = create<PlaylistsState>()((set) => ({
   load: async () => {
     // Synchronous on `playlists-changed`: open views stop index edits before the reads finish.
     set((state) => ({ reloading: state.reloading + 1 }));
+    // A playlist edit, even one that restores the same tracks, ends the follow by queue index
+    // (D63). The event does not name the playlist, so any change ends it.
+    usePlayerStore.getState().clearPlaylistSource();
     const [rows, favorites] = await Promise.all([
       commands.playlistsList().catch(() => [] as PlaylistRow[]),
       commands.favorites().catch(() => [] as number[]),
@@ -84,11 +87,6 @@ export function playlistQueue(entries: PlaylistEntry[], from = 0): { ids: number
   return start < 0 ? null : { ids, start };
 }
 
-/** The entries of a playlist as a view shows them; an edit of the playlist changes it (D63). */
-export function playlistSignature(entries: readonly PlaylistEntry[]): string {
-  return JSON.stringify(entries.map((entry) => entry.track));
-}
-
 /**
  * Plays a playlist from entry `from` (R12: double-click or Enter plays). A caller that shows the
  * entries (the playlist view) passes them, so `from` points into the list the user saw, and the
@@ -98,7 +96,7 @@ export async function playPlaylist(id: number, from = 0, entries?: PlaylistEntry
   const queue = playlistQueue(entries ?? (await commands.playlistEntries(id)), from);
   if (!queue) return;
   // A queue started anywhere else is not a view's queue, also with the same ids (D63).
-  if (entries) usePlayerStore.getState().expectPlaylist(id, queue.ids, playlistSignature(entries));
+  if (entries) usePlayerStore.getState().expectPlaylist(id, queue.ids);
   else usePlayerStore.setState({ playlistSource: null, pending: null });
   try {
     await commands.playerPlayList(queue.ids, queue.start);

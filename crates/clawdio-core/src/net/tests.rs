@@ -1843,6 +1843,37 @@ mod lyrics_chain {
         );
     }
 
+    /// P24-AC2: a redirect hop to another LRCLIB URL keeps the 500 ms gap too.
+    #[tokio::test]
+    async fn an_lrclib_redirect_hop_keeps_the_gap() {
+        let server = MockServer::start_async().await;
+        let port = server.port();
+        server
+            .mock_async(|when, then| {
+                when.path("/api/get");
+                then.status(302)
+                    .header("location", format!("http://127.0.0.1:{port}/api/moved"));
+            })
+            .await;
+        server
+            .mock_async(|when, then| {
+                when.path("/api/moved");
+                then.status(404);
+            })
+            .await;
+        let mut config = config(&server);
+        config.lrclib_gap = Duration::from_millis(500);
+        let gate = OnlineGate::new(config, true).unwrap();
+        let url = gate.config().lrclib.join("api/get").unwrap();
+        let start = Instant::now();
+        let _ = gate.get(Service::Lrclib, url, &gate.job_token()).await;
+        assert!(
+            start.elapsed() >= Duration::from_millis(500),
+            "{:?}",
+            start.elapsed()
+        );
+    }
+
     /// P24-AC4: each error moves to the next step; with no result the chain is an error.
     #[tokio::test]
     async fn an_error_moves_on_and_makes_the_chain_an_error() {

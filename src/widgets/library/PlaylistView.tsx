@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type PlaylistEntry } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
-import { playlistSignature, playPlaylist, removePlaylistEntry, usePlaylistsStore } from "@/store/playlists";
+import { playPlaylist, removePlaylistEntry, usePlaylistsStore } from "@/store/playlists";
 import { playlistFollowRow, useFollowPlaying } from "../follow";
 import { EmptyHint } from "../hint";
 import { type RowMenuItem, useRowMenu } from "../row-menu";
@@ -76,15 +76,6 @@ export function PlaylistView({ id }: { id: number }) {
     [entries, request],
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
-  // The entries as this view shows them: a playlist edit changes it (D63).
-  const signature = useMemo(() => playlistSignature(entries), [entries]);
-  // Any edit of the source playlist ends the follow by index (D63).
-  const source = usePlayerStore((state) => state.playlistSource);
-  useEffect(() => {
-    if (Array.isArray(loaded) && source?.id === id && source.signature !== signature) {
-      usePlayerStore.getState().clearPlaylistSource();
-    }
-  }, [loaded, source, id, signature]);
   // The list goes away when the last entry goes or a read fails, after the menu or the key put
   // the focus back on it: the focus moves to the Library region instead of the page (AX-1).
   const noList = loaded === "failed" || (Array.isArray(loaded) && loaded.length === 0);
@@ -109,7 +100,7 @@ export function PlaylistView({ id }: { id: number }) {
     () => {
       const { queue, playlistSource } = usePlayerStore.getState();
       const track = currentTrack(queue);
-      const fromThisView = playlistSource?.id === id && playlistSource.signature === signature;
+      const fromThisView = playlistSource?.id === id;
       const target =
         track === null || queue.current === null
           ? null

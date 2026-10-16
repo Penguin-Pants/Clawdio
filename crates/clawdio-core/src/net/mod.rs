@@ -418,6 +418,13 @@ impl OnlineGate {
                     log::warn!("net: refused a redirect to {next}");
                     return Err(NetError::NotAllowed);
                 }
+                // Each LRCLIB request, a redirect hop too, keeps the gap (section 6.11).
+                if let Some(turn) = lrclib.as_deref_mut() {
+                    if let Some(last) = turn.last {
+                        tokio::time::sleep_until(last + self.config.lrclib_gap).await;
+                    }
+                    turn.last = Some(Instant::now());
+                }
                 url = next;
             };
             let status = response.status();
