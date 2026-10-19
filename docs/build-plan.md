@@ -1485,7 +1485,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 11, F3 0, F4 7. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec), DeepSource and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 12, F3 0, F4 7. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec), DeepSource and Codex on the PR.
 
 - F2:
   - `commands.ts` re-exported `FindList` and `TreeRow`, which nothing imported. Removed.
@@ -1496,7 +1496,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Codex: while new ids loaded, a find ran with the new query against the old shown ids. `useCommandResult` (behind `useCommand`) says when the ids match the inputs; the Artist, Album, Songs and Tree finds wait for it, with a test.
   - Codex: a playlist edit that started after a find request let its reply set an old index. The reply checks `stale()` again when it lands, with a component test.
   - Codex: the Playlists fold lowercased the whole name, so "ΟΣ" gave a final sigma and did not match "οσ" as the core does. Each character folds alone now, with a test.
-  - DeepSource: the e2e `libraryCommand` mock passed the complexity limit. A table holds the empty-library answers.
+  - DeepSource: the e2e `libraryCommand` mock passed the complexity limit. It is back to its `main` form; `findCommand` answers `library_find`.
+  - Codex: a reply that landed after its list unmounted (a Library mode change) still set the selection. The hook drops pending replies on unmount, with a test.
   - Codex: a reply that landed after the 1 s reset still moved the selection. The hook takes a reply only while its text is active, with a test.
   - DeepSource (second run, issues outside the diff view): helpers used before their definition (`foldName`, `flush`, `findPlaylists`) and nested ternaries in the e2e mocks. The helpers move up; `treeName` and `findTracks` replace the ternaries.
 - F4:

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useCallback, useLayoutEffect, useRef } from "react";
+import { type KeyboardEvent, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { FindHit } from "@/lib/ipc/commands";
 
 /** The typed text resets after this time with no character (R36.3, a starting value). */
@@ -51,6 +51,13 @@ export function useTypeFind({ list, find, onMatch }: TypeFind): (event: Keyboard
     latest.current = { list, find, onMatch };
   });
   const sent = useRef(0);
+  // A list that goes away (a Library mode change) drops its pending reply.
+  useEffect(
+    () => () => {
+      sent.current += 1;
+    },
+    [],
+  );
   return useCallback((event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return false;
     const character = typedCharacter(event);

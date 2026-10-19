@@ -155,22 +155,29 @@ function findTracks(list: FindList): (number | null)[] {
   return entries.map((entry) => entry.track);
 }
 
-/** The answers of the library commands when the app starts empty. */
-const EMPTY_LIBRARY: Record<string, unknown> = {
-  library_artists: [],
-  library_artist_rows: [],
-  library_albums: [],
-  library_album_rows: [],
-  library_song_ids: [],
-  library_tree: [],
-  library_rows: [],
-  library_find: null,
-  lyrics_get: null,
-  album_art: null,
-};
+/** Type-to-find (D65): no match in an empty app. */
+function findCommand(args: Args): unknown {
+  if (!withLibrary) return null;
+  const list = args.list as FindList;
+  return library.find(list, args.text as string, findTracks(list));
+}
 
 function libraryCommand(command: string, args: Args): unknown {
-  if (!withLibrary && command in EMPTY_LIBRARY) return EMPTY_LIBRARY[command];
+  if (!withLibrary) {
+    switch (command) {
+      case "library_artists":
+      case "library_artist_rows":
+      case "library_albums":
+      case "library_album_rows":
+      case "library_song_ids":
+      case "library_tree":
+      case "library_rows":
+        return [];
+      case "lyrics_get":
+      case "album_art":
+        return null;
+    }
+  }
   switch (command) {
     case "library_artists":
       return library.artists(args.query as string).map((artist) => artist.id);
@@ -192,10 +199,6 @@ function libraryCommand(command: string, args: Args): unknown {
       return library.rows(args.ids as number[]);
     case "library_tree":
       return library.tree(args.query as string);
-    case "library_find": {
-      const list = args.list as FindList;
-      return library.find(list, args.text as string, findTracks(list));
-    }
     case "album_art": {
       // Tests count the art requests (P10-AC7).
       const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];
@@ -282,7 +285,8 @@ mockIPC(
         const played = player(command, input);
         if (played !== undefined) return played;
         const listed = playlists(command, input);
-        return listed !== undefined ? listed : libraryCommand(command, input);
+        if (listed !== undefined) return listed;
+        return command === "library_find" ? findCommand(input) : libraryCommand(command, input);
       }
     }
   },
