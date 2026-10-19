@@ -1,15 +1,16 @@
 # Clawdio Build Plan
 
-**Version:** 1.28, October 15, 2026 (P24 Done with exceptions: automatic lyrics fetch and a selection that follows the playing song).
+**Version:** 1.29, October 19, 2026 (requirements v1.11: phase P25, type-to-find in lists, Not started).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) and the v1.10 additions (P24).
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24) and the v1.11 additions (P25).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
 - Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Done with exceptions: the manual Linux check P24-AC12 waits on the owner.
-- The plan has 25 phases (P0 to P24). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.11 adds P25 (type-to-find in lists). Not started.
+- The plan has 26 phases (P0 to P25). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -93,6 +94,7 @@ A phase is Done when all of these are true:
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
 | U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 | P24 | Automatic lyrics and selection follow | U8 | Done with exceptions |
+| P25 | Type-to-find in lists | P24 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1543,7 +1545,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D14 | The library index lives in Rust memory. SQLite is the rebuildable cache (R19). The UI asks for id lists and fetches row data for the visible window only. | Memory (R20) and responsiveness (AC-2). |
 | D15 | `ts-rs` generates TypeScript types for IPC structs into `src/lib/ipc/bindings/` during `cargo test`. CI fails if they are not committed. | One source of truth for IPC types. |
 | D16 | Scan classes: files with other extensions are ignored and not counted (R1). "Unsupported type": an audio extension with other content. "Unsupported codec": an Ogg stream that is not Vorbis, or a WAV encoding other than PCM integer, PCM float or ADPCM (for example A-law, mu-law or MP3 in WAV), or one of those three that Symphonia 0.5.5 cannot decode. "Corrupt file": a parse or probe failure. | R2 skip reasons. |
-| D17 | Reset layout is Ctrl+Shift+L. Space toggles play and pause everywhere except in text fields and inside open menus and dialogs. On a focused button outside a dialog, Space toggles playback and Enter activates the button. UI shell rework (U4 keyboard path, AX-1): a focused table column header keeps Space, which sorts. | R25 exempts only typing. Menus and dialogs keep Space for their own controls. |
+| D17 | Reset layout is Ctrl+Shift+L. Space toggles play and pause everywhere except in text fields, inside open menus and dialogs and, from P25, in a list with an active type-to-find text (R36.6, D65). On a focused button outside a dialog, Space toggles playback and Enter activates the button. UI shell rework (U4 keyboard path, AX-1): a focused table column header keeps Space, which sorts. | R25 exempts only typing. Menus and dialogs keep Space for their own controls. |
 | D18 | A transient status message shows for 5 s, then the line returns to "Ready" or the running job. | R5 status line. |
 | D19 | "Set cover" over an existing `cover.jpg` asks for confirmation, then replaces it atomically. | C17. R8's "never overwrites" applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | D20 | The "Add to playlist" submenu lists all playlists except Favorites, so only the heart adds to Favorites and Favorites never holds duplicates. "Remove from playlist" and Delete work on Favorites entries like on any playlist. The name "Favorites" is reserved in any letter case. | R12 (Favorites toggles), R25 (Delete in a playlist), R26 (a normal playlist). |
@@ -1591,6 +1593,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D62 | lyrics.ovh (R9.2 step 4): `GET https://api.lyrics.ovh/v1/<artist>/<title>`, both parts percent-encoded as path segments. HTTP 200 with `{"lyrics": "<text>"}` and text that is not blank is a result. HTTP 404 (body `{"error":"No lyrics found"}`) is no result. Any other answer is an error (R9.3), including a 404 with another body. `OnlineGate::get` returns only the status for an answer that is not a success, so P24 adds a core response path that keeps the status and the body of a lyrics.ovh answer. One request at a time through the gate, as LRCLIB (section 6.11). Checked by hand on October 15, 2026: 200 for a known song, 404 for an unknown one. | The service has no versioned contract. A narrow parser makes a format change an error, not a wrong file. |
 | D63 | Selection follow (R35) lives in the webview. Each list (Songs list, playlist view, Tree song rows, Play queue) reads the current song from the player store. The Play queue uses the current entry index (`queue.current`), not the track id, because an entry can repeat a track. The playlist view can repeat a track too (R12): when the playing track is in the playlist more than once, the view follows by index only when the queue came from this playlist (the player store keeps the source playlist id when the playlist view starts playback; any queue edit and any edit of that playlist clear it); comparing ids is not enough, because an edit can restore the same sequence. The queue index then maps to the playlist row through the list of rows that are not missing, because `playlistQueue` skips missing entries. Otherwise the view does not change. The other lists use the track id. Tree mode has no separate filter: its selection is the row's artist, album and song, so a Tree follow sets the selection the same way a click on that song row does; a later switch to Columns shows that song's album, as after a click. Lists follow only while the player is playing or paused: a queue edit while stopped moves no selection. On a change it checks R35.2 (a selected row is in the list as shown: the selected ids meet the shown row ids, because a search or filter keeps a hidden selection in the store), R35.5 (no menu, dialog or drag open, and no pointer, key, wheel or scroll input in that list for 5 s) and R35.6 (the track is in the list as shown). Then it selects that one row, sets the active row and scrolls it into view, without a call to `focus()`. | The lists already hold their selection and the playing track (`usePlayingTrack`, `src/widgets/library/lists.tsx`). No IPC change. |
 | D64 | Notice version (R7 v1.10): `settings.json` gets `online_notice_version` (absent reads as 1). Version 2 names lyrics.ovh. With Online lookups on and a version below 2, the updated notice shows at the next start, with "Keep on" and "Turn off". Until the user answers, no request goes to lyrics.ovh; the services the user already accepted continue. A chain that reaches the blocked lyrics.ovh step with no result ends as an error: no marker. "Keep on" checks the D61 rule again, so the playing and the next song run the chain again. | The R7 notice names the services the user agrees to. An existing user must see the new service before the app sends song names to it. |
+| D65 | Type-to-find (R36). One shared hook in `src/lib/` holds the typed text, the 1 s reset (R36.3) and the R36.2 and R36.6 key rules; `lib/keyboard.ts` `isPlaybackSpace` asks it, so Space joins an active text and toggles playback otherwise (D17). Lists whose names the webview does not hold (Artist, Album, Songs table, playlist view, Play queue: D14 rows for the visible window only) ask the core: one command takes the list identity the webview already sends for its id list (scope, query, sort, or the playlist or queue) and the typed text, and returns the index of the first match or none. No paths cross IPC (D13). The core matches with the R3 sort normalization (case, accents). Trees match their rows shown now in the webview. | R36.4 searches the whole list; D14 keeps names out of the webview. One hook keeps the timeout and Space rule in one place. |
 
 ### 5.3 Owner confirmations
 
@@ -1964,6 +1967,7 @@ P0 foundation -> P1 brand assets -> P2 themed shell -> P3 GATE (Milestone 0)
   -> P19 bulk import and repair -> P20 microphone ducking -> P21 release readiness again
   -> P22 Library frame splitters -> P23 bar widgets and Windows build
   -> U0 to U8 UI shell rework -> P24 automatic lyrics and selection follow
+  -> P25 type-to-find in lists
 ```
 
 - **Brand and design early.** Tokens and focus styles come in P0, brand assets in P1 and the themed shell in P2. Every later widget is built on them. P17 is an audit of what exists, not a styling pass.
@@ -2969,6 +2973,35 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 ---
 
+### P25. Type-to-find in lists
+
+**Objective.** In a focused list, typed characters move the selection to the first row whose name starts with the typed text.
+
+**Scope.** R36. R25 (v1.11 Space rule). Requirements section 3 (v1.11 item), section 4 (v1.11 non-goals), section 5 (v1.11 edge cases). AC-30. D17. D65.
+
+**Depends on.** P24.
+
+**Tasks.**
+
+- **P25.1** Core find (D65) in `crates/clawdio-core`: given a list identity and the typed text, return the index of the first row in the list as shown whose R36.5 name starts with the text, with the R3 normalization; or none. Command in `src-tauri/src/commands/`, ts-rs bindings (D15).
+- **P25.2** Hook (D65) in `src/lib/`: typed text, 1 s reset (R36.3), the R36.2 trigger and the R36.6 Space rule. `isPlaybackSpace` in `src/lib/keyboard.ts` uses it (D17 update).
+- **P25.3** Wire the hook into each R36.1 list: `src/widgets/library/lists.tsx`, `src/widgets/library/PlaylistView.tsx`, `src/widgets/queue/QueueWidget.tsx` and `src/widgets/playlists/PlaylistsWidget.tsx`. A match moves the active row and the selection through the list's existing `onMove` path (R36.7). Trees match their rows shown now (R36.5).
+- **P25.4** Docs: the R36 keys in `docs/release-checklist.md` (keyboard walkthrough) and in the README keyboard section.
+- **P25.5** Tests: Rust unit tests for P25.1, Vitest for the hook, Playwright with mocked IPC for the lists.
+
+**Acceptance criteria.**
+
+- **P25-AC1** Core: prefix match ignores case and accents; the first match from the top wins; the Songs table uses the first sort key's column, else Title; the queue and playlist use Title; no match gives none (unit tests).
+- **P25-AC2** Hook: characters within 1 s add to the text; after 1 s the text resets; Ctrl, Alt or Meta with a letter does not start a find; Shift does; a repeated letter adds to the text (Vitest).
+- **P25-AC3** Space: with an active text, Space adds a space and playback does not toggle; with no text, Space toggles playback; on a column header Space sorts (Vitest and Playwright).
+- **P25-AC4** Playwright (AC-30): focus on "Chemical Brothers" in the Artist list, "z" selects the first Z artist and the Album list filters; "zz top" selects "ZZ Top"; "zzx" changes nothing; focus stays in the list. The same holds in the Album list, the Songs table (with and without a column sort), the playlist view and the Play queue.
+- **P25-AC5** Playwright: in Tree mode and the Playlists tree, a find reaches rows shown at any level and does not open a collapsed node. With an open row menu or dialog, typed keys do not move the selection. An empty list does not change.
+- **P25-AC6** Playwright: a typed character counts as input for R35.5: the list does not follow the playing song for 5 s.
+
+**Verification.** Rust unit tests (P25-AC1). Vitest (P25-AC2, P25-AC3). Playwright (P25-AC3 to P25-AC6). Manual Linux: the `docs/release-checklist.md` walkthrough (P25.4).
+
+---
+
 ## 9. Risks
 
 | ID | Risk | Effect | Mitigation | Phase |
@@ -3034,6 +3067,7 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 | AC-27 | Old arrangement repaired at start | P23-AC5, P23-AC7 |
 | AC-28 | Automatic lyrics for the playing and the next song; no repeat after no match | P24-AC3, P24-AC4, P24-AC6, P24-AC12 |
 | AC-29 | Songs list and Play queue selection follow the playing song | P24-AC10, P24-AC11 |
+| AC-30 | Type-to-find in lists | P25-AC4 |
 
 ---
 
@@ -3189,6 +3223,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.29 (October 19, 2026):** requirements v1.11 (R36, AC-30, owner decision 45). Added phase P25 (Not started) and D65.
 - **1.28 (October 15, 2026):** P24 Done with exceptions (P24-AC12 manual Linux check open). F-23 proposed.
 - **1.27 (October 15, 2026):** requirements v1.10 (R9.1 to R9.3, R35, AC-28, AC-29; owner decisions 41 to 44). Added phase P24, D60 to D64, K24 and K25. Section 6.11 adds the lyrics.ovh host for P24. The 1.26 entry, missing before, is added. Section 6.11 scopes the startup retry rule to artwork and metadata jobs and spaces LRCLIB requests by 500 ms.
 - **1.26 (October 14, 2026):** U8 Done: the owner follow-ups of requirements v1.9 (decision 39, playlist view in the Library; decision 40, centered play controls). The pointer row in section 2 names U0 to U8.

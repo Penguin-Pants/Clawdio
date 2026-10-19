@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.21, October 15, 2026 (P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
-**Plan:** `docs/build-plan.md` v1.27. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.22, October 19, 2026 (requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Plan:** `docs/build-plan.md` v1.29. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -176,6 +176,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R25-5 | F6 and Shift+F6 move focus between visible widgets | §2 R25 | P2.12 | P2-AC10 | E2E | Done (P2) |
 | R25-6 | Delete removes the selected entry from the Play queue or a playlist | §2 R25 | P7.9, P11.5 | P11-AC8, P17-AC2, P7-AC12 | E2E, MAN-L | Done (P17) |
 | R25-7 | Keyboard focus is always visible | §2 R25 | P0.7, P2.12 | P2-AC10, P6-AC5, P17-AC2, P2-AC14 | E2E, MAN-L | Done (P17) |
+| R25-8 | Space does not toggle playback while a type-to-find text is active | §2 R25, R36.6 | P25.2 | P25-AC3 | UT, E2E | Planned (D65) |
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
@@ -185,6 +186,14 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R35-4 | Keyboard focus never moves; a focused list's active row becomes the playing row | §2 R35.4 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
 | R35-5 | No follow while a menu, dialog or drag is open, or within 5 s of input in that list | §2 R35.5 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
 | R35-6 | A song not in the list as shown changes nothing; no filter or search changes | §2 R35.6 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
+| R36-1 | Type-to-find in the Artist, Album, Songs table, playlist view, Play queue, Library tree and Playlists tree | §2 R36.1 | P25.3 | P25-AC4, P25-AC5 | E2E | Planned |
+| R36-2 | Printable character with no Ctrl, Alt or Meta starts or extends a find; Shift allowed | §2 R36.2 | P25.2 | P25-AC2 | UT | Planned |
+| R36-3 | Typed text resets after 1 s with no character | §2 R36.3 | P25.2 | P25-AC2 | UT | Planned |
+| R36-4 | Prefix match, case and accents ignored, first match from the top; a repeated letter adds to the text | §2 R36.4 | P25.1, P25.2 | P25-AC1, P25-AC2 | UT | Planned (D65) |
+| R36-5 | Name matched: display name; sorted column, else Title; Title in queue and playlist; visible tree rows only | §2 R36.5 | P25.1, P25.3 | P25-AC1, P25-AC5 | UT, E2E | Planned (D65) |
+| R36-6 | Space adds to an active text; otherwise R25; a column header keeps Space | §2 R36.6 | P25.2 | P25-AC3 | UT, E2E | Planned (D65) |
+| R36-7 | A match moves the active row and the selection as Down does; focus stays | §2 R36.7 | P25.3 | P25-AC4 | E2E | Planned |
+| R36-8 | No match changes nothing; no sound, no status text | §2 R36.8 | P25.3 | P25-AC4 | E2E | Planned |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
@@ -515,6 +524,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-42 | Lyrics sources: more LRCLIB queries, then lyrics.ovh without the 2 s rule | §8.42 | P24.2, P24.3 | P24-AC2 | IT | Done (P24) |
 | DEC-43 | Lyrics no match: per-song marker; no automatic retry | §8.43 | P24.4 | P24-AC3 | IT | Done (P24) |
 | DEC-44 | Selection follows: Songs list and Play queue; only with a selection; no focus move | §8.44 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24) |
+| DEC-45 | Type-to-find: every list and tree; prefix from the top; Space joins an active text; sorted column, else Title; 1 s reset | §8.45 | P25 | P25-AC1 to P25-AC6 | UT, E2E | Planned |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -556,6 +566,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
 | AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Done with exceptions (P24; P24-AC12 manual Linux check open) |
 | AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
+| AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.3 | P25-AC4 | E2E | Planned |
 
 ---
 
