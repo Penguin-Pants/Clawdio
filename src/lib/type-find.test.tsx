@@ -113,6 +113,15 @@ describe("useTypeFind (R36, P25-AC2)", () => {
     expect(onMatch.mock.calls).toEqual([[3]]);
   });
 
+  it("drops a reply that lands after the typed text reset", async () => {
+    let reply: ((index: number | null) => void) | undefined;
+    const { onMatch, type } = setup(() => new Promise((resolve) => (reply = resolve)));
+    await type("z");
+    pause();
+    await flush(() => reply?.(2));
+    expect(onMatch).not.toHaveBeenCalled();
+  });
+
   it("drops an older reply when the latest request failed", async () => {
     const replies = new Map<string, { resolve: (index: number | null) => void; reject: () => void }>();
     const { onMatch, type } = setup(

@@ -66,8 +66,9 @@ export function useTypeFind({ list, find, onMatch }: TypeFind): (event: Keyboard
     const request = sent.current;
     const shown = latest.current.list;
     const land = (index: number | null) => {
-      // Only the reply to the latest typed text counts, whatever happened to later requests.
-      if (request !== sent.current || latest.current.list !== shown) return;
+      // Only the reply to the latest typed text counts, and only while that text is active: a
+      // reply after the 1 s reset is for a text that is gone (R36.3).
+      if (request !== sent.current || latest.current.list !== shown || !findTextActive(owner)) return;
       if (menuDialogOrDrag(owner.ownerDocument)) return;
       // No match: the active row and the selection do not change (R36.8).
       if (index !== null) latest.current.onMatch(index);
