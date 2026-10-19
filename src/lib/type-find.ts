@@ -92,15 +92,15 @@ export function shownIndex(
   return hit !== null && idAt(hit.index) === hit.id ? hit.index + offset : null;
 }
 
+/** NFD, combining marks removed, lowercase: the R3 fold of the core (D4). */
+function foldName(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
 /** The first of `names` (as shown, top to bottom) that starts with `text`, folded as in R3. */
 export function firstMatch(names: readonly string[], text: string): number | null {
   const prefix = foldName(text);
   if (prefix === "") return null;
   const index = names.findIndex((name) => foldName(name).startsWith(prefix));
   return index >= 0 ? index : null;
-}
-
-/** NFD, combining marks removed, lowercase: the R3 fold of the core (D4). */
-function foldName(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }

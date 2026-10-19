@@ -1485,13 +1485,14 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 6. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec) and DeepSource on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 5, F3 0, F4 6. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec) and DeepSource on the PR.
 
 - F2:
   - `commands.ts` re-exported `FindList` and `TreeRow`, which nothing imported. Removed.
   - The P25-AC4 spec focused the queue while the Library button still moved the focus to the search field a frame later (1 fail in 120 runs). The spec waits for the search field focus.
   - The Tree spec read the selected rows, but a selected song also marks its album row selected (R28). The spec reads the active row.
   - DeepSource: an empty error arrow in the hook, and empty or `await`-less async arrows in its test. The arrow states its purpose; the test uses one `flush` helper that returns a promise.
+  - DeepSource (second run, issues outside the diff view): helpers used before their definition (`foldName`, `flush`, `findPlaylists`) and nested ternaries in the e2e mocks. The helpers move up; `treeName` and `findTracks` replace the ternaries.
 - F4:
   - The Tree find sends every shown row: only expanded rows are shown, and D65 names this design.
   - The Songs find sorts the list again in Rust for each key: the same cost as one sort change (UK4).

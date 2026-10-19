@@ -22,6 +22,14 @@ function List(props: TypeFind & { header?: boolean }) {
   );
 }
 
+/** Runs `step`, then lets the pending replies land inside `act`. */
+function flush(step?: () => void) {
+  return act(() => {
+    step?.();
+    return Promise.resolve();
+  });
+}
+
 function setup(find: TypeFind["find"] = (text) => firstMatch(NAMES, text), list: unknown = NAMES) {
   const onMatch = vi.fn<(index: number) => void>();
   const finds = vi.fn(find);
@@ -32,14 +40,6 @@ function setup(find: TypeFind["find"] = (text) => firstMatch(NAMES, text), list:
     await flush();
   };
   return { view, element, onMatch, finds, type };
-}
-
-/** Runs `step`, then lets the pending replies land inside `act`. */
-function flush(step?: () => void) {
-  return act(() => {
-    step?.();
-    return Promise.resolve();
-  });
 }
 
 /** Waits out the reset time (R36.3). */

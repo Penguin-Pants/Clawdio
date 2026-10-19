@@ -147,6 +147,14 @@ const player = withLibrary
       { status: "stopped", positionMs: 0, volume: 100, shuffle: false, repeat: "off", started: 0 },
     );
 
+/** The tracks of the queue or a playlist, from their owners as in Rust (D65); none for other lists. */
+function findTracks(list: FindList): (number | null)[] {
+  if (list.kind === "queue") return (player("queue_get", {}) as { entries: number[] }).entries;
+  if (list.kind !== "playlist") return [];
+  const entries = playlists("playlist_entries", { id: list.id }) as { track: number | null }[];
+  return entries.map((entry) => entry.track);
+}
+
 function libraryCommand(command: string, args: Args): unknown {
   if (!withLibrary) {
     switch (command) {
@@ -188,14 +196,7 @@ function libraryCommand(command: string, args: Args): unknown {
       return library.tree(args.query as string);
     case "library_find": {
       const list = args.list as FindList;
-      // The queue and the playlist come from their owners, as in Rust (D65).
-      const tracks =
-        list.kind === "queue"
-          ? (player("queue_get", {}) as { entries: number[] }).entries
-          : list.kind === "playlist"
-            ? (playlists("playlist_entries", { id: list.id }) as { track: number | null }[]).map((entry) => entry.track)
-            : [];
-      return library.find(list, args.text as string, tracks);
+      return library.find(list, args.text as string, findTracks(list));
     }
     case "album_art": {
       // Tests count the art requests (P10-AC7).

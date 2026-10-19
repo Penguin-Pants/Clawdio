@@ -13,6 +13,7 @@ import type { PlaylistRow } from "../../src/lib/ipc/bindings/PlaylistRow";
 import type { SongRow } from "../../src/lib/ipc/bindings/SongRow";
 import type { SongScope } from "../../src/lib/ipc/bindings/SongScope";
 import type { SortKey } from "../../src/lib/ipc/bindings/SortKey";
+import type { TreeRow } from "../../src/lib/ipc/bindings/TreeRow";
 import type { TreeArtist } from "../../src/lib/ipc/bindings/TreeArtist";
 
 const artists: ArtistRow[] = [];
@@ -217,6 +218,35 @@ function sortSongs(list: SongRow[], sort: SortKey[]): SongRow[] {
   return sorted;
 }
 
+function findPlaylists(): [PlaylistRow, PlaylistEntry[]][] {
+  const row = (id: number, name: string, entries: PlaylistEntry[]): [PlaylistRow, PlaylistEntry[]] => [
+    { id, name, fileName: `${name}.m3u8`, entryCount: entries.length, isFavorites: false, missingCount: 0 },
+    entries,
+  ];
+  const long: PlaylistEntry[] = [
+    { track: null, label: "../Missing/Zzz.mp3" },
+    ...Array.from({ length: 40 }, (_, track) => ({ track, label: "" })),
+    ...findSongs.map((track) => ({ track, label: "" })),
+  ];
+  return [
+    row(5, "Find mix", long),
+    row(6, "Zapp jams", [{ track: findSongs[2], label: "" }]),
+    row(7, "ZZ Top hits", [{ track: findSongs[4], label: "" }]),
+  ];
+}
+
+/** The label of a shown tree row (R36.5): the artist, album or song name. */
+function treeName(row: TreeRow): string {
+  switch (row.kind) {
+    case "artist":
+      return artists[row.id]?.name ?? "";
+    case "album":
+      return albums[row.id]?.name ?? "";
+    default:
+      return songs[row.id]?.title ?? "";
+  }
+}
+
 export const library = {
   // Every artist and album has songs, so an empty query skips the song scan (the 50,000-row case).
   artists: (query: string) =>
@@ -281,15 +311,7 @@ export const library = {
         );
       case "tree":
         return firstHit(
-          list.rows.map((row) => ({
-            id: row.id,
-            name:
-              (row.kind === "artist"
-                ? artists[row.id]?.name
-                : row.kind === "album"
-                  ? albums[row.id]?.name
-                  : songs[row.id]?.title) ?? "",
-          })),
+          list.rows.map((row) => ({ id: row.id, name: treeName(row) })),
           text,
         );
       default:
@@ -331,20 +353,3 @@ export const library = {
   ],
   lyrics: { text: Array.from({ length: 60 }, (_, line) => `Lyric line ${line + 1}`).join("\n") },
 };
-
-function findPlaylists(): [PlaylistRow, PlaylistEntry[]][] {
-  const row = (id: number, name: string, entries: PlaylistEntry[]): [PlaylistRow, PlaylistEntry[]] => [
-    { id, name, fileName: `${name}.m3u8`, entryCount: entries.length, isFavorites: false, missingCount: 0 },
-    entries,
-  ];
-  const long: PlaylistEntry[] = [
-    { track: null, label: "../Missing/Zzz.mp3" },
-    ...Array.from({ length: 40 }, (_, track) => ({ track, label: "" })),
-    ...findSongs.map((track) => ({ track, label: "" })),
-  ];
-  return [
-    row(5, "Find mix", long),
-    row(6, "Zapp jams", [{ track: findSongs[2], label: "" }]),
-    row(7, "ZZ Top hits", [{ track: findSongs[4], label: "" }]),
-  ];
-}
