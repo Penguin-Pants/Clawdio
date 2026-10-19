@@ -73,9 +73,16 @@ describe("useTypeFind (R36, P25-AC2)", () => {
 
   it("a repeated letter adds to the text; no match changes nothing", async () => {
     const { finds, onMatch, type } = setup();
-    await type("zzx");
+    // Each reply lands before the next key.
+    for (const key of "zzx") await type(key);
     expect(finds.mock.calls.map(([text]) => text)).toEqual(["z", "zz", "zzx"]);
     expect(onMatch.mock.calls.map(([index]) => index)).toEqual([2, 3]);
+  });
+
+  it("keys faster than the replies select only the latest match", async () => {
+    const { onMatch, type } = setup();
+    await type("zz");
+    expect(onMatch.mock.calls).toEqual([[3]]);
   });
 
   it("Ctrl, Alt or Meta with a letter does not start a find; Shift does", async () => {
@@ -104,6 +111,17 @@ describe("useTypeFind (R36, P25-AC2)", () => {
     await flush(() => replies.get("zz")?.(3));
     await flush(() => replies.get("z")?.(2));
     expect(onMatch.mock.calls).toEqual([[3]]);
+  });
+
+  it("drops an older reply when the latest request failed", async () => {
+    const replies = new Map<string, { resolve: (index: number | null) => void; reject: () => void }>();
+    const { onMatch, type } = setup(
+      (text) => new Promise((resolve, reject) => replies.set(text, { resolve, reject: () => reject(new Error(text)) })),
+    );
+    await type("zz");
+    await flush(() => replies.get("zz")?.reject());
+    await flush(() => replies.get("z")?.resolve(2));
+    expect(onMatch).not.toHaveBeenCalled();
   });
 
   it("drops a reply after a search or sort change", async () => {

@@ -42,8 +42,8 @@ export interface TypeFind {
  * Type-to-find (R36, D65). Returns the list's key handler: true when it took the key. The
  * key must land on the list element itself, so a focused column header keeps its keys. Space
  * adds to an active text and is not a find key otherwise (R36.6, D17). Each request has a
- * number: a reply older than the last one that landed is dropped, so a slow `z` reply cannot
- * replace a later `zz` match.
+ * number: only the reply to the latest request counts, so a slow `z` reply cannot replace a
+ * later `zz` match, also when the `zz` request failed.
  */
 export function useTypeFind({ list, find, onMatch }: TypeFind): (event: KeyboardEvent<HTMLElement>) => boolean {
   const latest = useRef({ list, find, onMatch });
@@ -51,7 +51,6 @@ export function useTypeFind({ list, find, onMatch }: TypeFind): (event: Keyboard
     latest.current = { list, find, onMatch };
   });
   const sent = useRef(0);
-  const landed = useRef(0);
   return useCallback((event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return false;
     const character = typedCharacter(event);
@@ -67,9 +66,9 @@ export function useTypeFind({ list, find, onMatch }: TypeFind): (event: Keyboard
     const request = sent.current;
     const shown = latest.current.list;
     const land = (index: number | null) => {
-      if (request <= landed.current || latest.current.list !== shown) return;
+      // Only the reply to the latest typed text counts, whatever happened to later requests.
+      if (request !== sent.current || latest.current.list !== shown) return;
       if (menuDialogOrDrag(owner.ownerDocument)) return;
-      landed.current = request;
       // No match: the active row and the selection do not change (R36.8).
       if (index !== null) latest.current.onMatch(index);
     };

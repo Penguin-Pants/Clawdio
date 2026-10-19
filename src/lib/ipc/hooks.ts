@@ -6,16 +6,37 @@ import { commands, type SongRow } from "./commands";
  * example outside the app shell) gives `fallback`.
  */
 export function useCommand<T>(load: () => Promise<T>, fallback: T, deps: readonly unknown[]): T {
-  const [value, setValue] = useState<T>(fallback);
+  return useCommandResult(load, fallback, deps).value;
+}
+
+/** Two input lists hold the same values in the same order. */
+function sameInputs(a: readonly unknown[] | null, b: readonly unknown[]): boolean {
+  return a !== null && a.length === b.length && a.every((input, index) => Object.is(input, b[index]));
+}
+
+/**
+ * `useCommand` with `current`: true when the value was loaded for the inputs of this render.
+ * While new inputs load, the old value stays and `current` is false (D65 type-to-find).
+ */
+export function useCommandResult<T>(
+  load: () => Promise<T>,
+  fallback: T,
+  deps: readonly unknown[],
+): { value: T; current: boolean } {
+  const [state, setState] = useState<{ value: T; inputs: readonly unknown[] | null }>({
+    value: fallback,
+    inputs: null,
+  });
   const fallbackRef = useRef(fallback);
   useEffect(() => {
     let active = true;
+    const inputs = deps;
     load().then(
       (result) => {
-        if (active) setValue(result);
+        if (active) setState({ value: result, inputs });
       },
       () => {
-        if (active) setValue(fallbackRef.current);
+        if (active) setState({ value: fallbackRef.current, inputs });
       },
     );
     return () => {
@@ -23,7 +44,7 @@ export function useCommand<T>(load: () => Promise<T>, fallback: T, deps: readonl
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the caller lists the inputs of `load`.
   }, deps);
-  return value;
+  return { value: state.value, current: sameInputs(state.inputs, deps) };
 }
 
 /** Most rows a list keeps. Older rows are dropped first and load again when needed. */
