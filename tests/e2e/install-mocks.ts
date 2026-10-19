@@ -6,6 +6,7 @@ import app from "./data/app.json";
 import { library } from "./library-data";
 import { createPlayer } from "./mock-player";
 import { createPlaylists } from "./mock-playlists";
+import type { FindList } from "../../src/lib/ipc/bindings/FindList";
 import type { SortKey } from "../../src/lib/ipc/bindings/SortKey";
 
 const params = new URLSearchParams(window.location.search);
@@ -157,6 +158,8 @@ function libraryCommand(command: string, args: Args): unknown {
       case "library_tree":
       case "library_rows":
         return [];
+      case "library_find":
+        return null;
       case "lyrics_get":
       case "album_art":
         return null;
@@ -183,6 +186,17 @@ function libraryCommand(command: string, args: Args): unknown {
       return library.rows(args.ids as number[]);
     case "library_tree":
       return library.tree(args.query as string);
+    case "library_find": {
+      const list = args.list as FindList;
+      // The queue and the playlist come from their owners, as in Rust (D65).
+      const tracks =
+        list.kind === "queue"
+          ? (player("queue_get", {}) as { entries: number[] }).entries
+          : list.kind === "playlist"
+            ? (playlists("playlist_entries", { id: list.id }) as { track: number | null }[]).map((entry) => entry.track)
+            : [];
+      return library.find(list, args.text as string, tracks);
+    }
     case "album_art": {
       // Tests count the art requests (P10-AC7).
       const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];

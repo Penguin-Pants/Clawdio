@@ -1,5 +1,6 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
 import type { PlaylistEntry } from "@/lib/ipc/commands";
+import { menuDialogOrDrag } from "@/lib/type-find";
 import { usePlayerStore } from "@/store/player";
 
 /** No follow within this time of the user's last input in the list (R35.5, a starting value). */
@@ -18,13 +19,6 @@ export function shouldFollow(check: {
 }): boolean {
   const idle = check.lastInput === null || check.now - check.lastInput >= FOLLOW_IDLE_MS;
   return check.hasSelection && check.target !== null && !check.busy && idle;
-}
-
-/** A menu, a dialog or a row drag is open (R35.5). */
-function appBusy(): boolean {
-  return (
-    document.querySelector('[role="menu"], [role="dialog"], [role="alertdialog"], [data-slot="drag-ghost"]') !== null
-  );
 }
 
 /**
@@ -105,7 +99,7 @@ export function useFollowPlaying(
     seen.current = follow;
     const { hasSelection, target, busy = false } = latest.current.check();
     const now = Date.now();
-    const listBusy = busy || held.current || appBusy();
+    const listBusy = busy || held.current || menuDialogOrDrag();
     if (shouldFollow({ hasSelection, target, busy: listBusy, lastInput: lastInput.current, now })) {
       if (target !== null) latest.current.onFollow(target);
     }

@@ -43,6 +43,8 @@ P7-AC12, P11-AC8).
 | Delete | Remove the selected Play queue entry | Pass | Not run |
 | Delete | Remove the selected playlist entry | Pass: the entry left `Mix.m3u8` on disk | Not run |
 | Ctrl+Shift+L | Reset layout | Pass: the Columns layout with the default widgets | Not run |
+| Letters (R36, P25.4) | Type-to-find: in the Artist list with "Chemical Brothers" selected, "z" selects the first Z artist and scrolls it into view; after a 1 s pause "zz top" selects "ZZ Top" and playback does not toggle; after a pause "zzx" changes nothing. The same in the Album list, the Songs table (with and without a column sort), the playlist view, the Play queue, the Tree and the Playlists list | Not run: P25 (October 19, 2026) had no desktop session with a real music folder. Playwright P25-AC3 to P25-AC6 pass in Chromium. | Not run |
+| Space (R36.6) | With a typed name active, Space adds a space; with none, Space toggles play and pause | Not run (as above) | Not run |
 
 ## Text scaling, reduced motion and high contrast (P17.3, P17.5, P17.6)
 

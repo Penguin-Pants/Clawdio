@@ -3,8 +3,11 @@
 // commands like the Rust index does: search folds case and accents (D4), and the Songs table
 // sorts by up to two keys with ties in the R4 order (UD11). "?size=50000" adds generated
 // artists until the library has that many songs (the U4 performance case, PF-3).
+import { formatDuration } from "../../src/lib/format";
 import type { AlbumRow } from "../../src/lib/ipc/bindings/AlbumRow";
 import type { ArtistRow } from "../../src/lib/ipc/bindings/ArtistRow";
+import type { FindHit } from "../../src/lib/ipc/bindings/FindHit";
+import type { FindList } from "../../src/lib/ipc/bindings/FindList";
 import type { PlaylistEntry } from "../../src/lib/ipc/bindings/PlaylistEntry";
 import type { PlaylistRow } from "../../src/lib/ipc/bindings/PlaylistRow";
 import type { SongRow } from "../../src/lib/ipc/bindings/SongRow";
@@ -69,6 +72,47 @@ for (let a = 0; a < 20; a += 1) {
   });
 }
 
+/**
+ * "?find=1" adds the type-to-find artists (P25-AC4): their albums and songs start with Z or
+ * "ZZ Top" only here, so each list has one first Z row and one "ZZ Top" row, far down.
+ */
+const FIND = new URLSearchParams(globalThis.location?.search ?? "").get("find") === "1";
+const findSongs: number[] = [];
+if (FIND) {
+  // Twenty "Delta" artists put the Z artists out of view below "Chemical Brothers".
+  const deltas = Array.from({ length: 20 }, (_, d): [string, string, string[]] => {
+    const name = `Delta ${String(d + 1).padStart(2, "0")}`;
+    return [name, `${name} Album`, [`${name} Song`]];
+  });
+  const groups: [string, string, string[]][] = [
+    ["Chemical Brothers", "Dig Your Own Hole", ["Setting Sun", "Block Rockin' Beats"]],
+    ...deltas,
+    ["Zapp", "Zapp II", ["Zoom", "Dance Floor"]],
+    ["ZZ Top", "ZZ Top's First Album", ["ZZ Top Boogie", "Brown Sugar"]],
+  ];
+  for (const [name, albumName, titles] of groups) {
+    const artist = { id: artists.length, name };
+    artists.push(artist);
+    const album: AlbumRow = { id: albums.length, artistId: artist.id, name: albumName, artistName: name };
+    albums.push(album);
+    titles.forEach((title, index) => {
+      if (!name.startsWith("Delta")) findSongs.push(songs.length);
+      songs.push({
+        id: songs.length,
+        artistId: artist.id,
+        albumId: album.id,
+        title,
+        artistName: name,
+        albumName,
+        tagArtist: null,
+        durationMs: 180_000,
+        trackNo: index + 1,
+        disc: null,
+      });
+    });
+  }
+}
+
 {
   const size = Number(new URLSearchParams(globalThis.location?.search ?? "").get("size") ?? 0);
   for (let a = 0; songs.length < size; a += 1) {
@@ -123,6 +167,29 @@ function sortValue(song: SongRow, column: SortKey["column"]): string | number {
 }
 
 const collator = new Intl.Collator("en", { numeric: true });
+
+/** The name type-to-find matches in the Songs table: the first sort column as shown, else Title (R36.5). */
+function songName(song: SongRow, column: SortKey["column"] | undefined): string {
+  switch (column) {
+    case "track":
+      return song.trackNo === null ? "" : String(song.trackNo);
+    case "duration":
+      return formatDuration(song.durationMs);
+    case "artist":
+      return song.tagArtist ?? song.artistName;
+    case "album":
+      return song.albumName;
+    default:
+      return song.title;
+  }
+}
+
+/** The first name from the top that starts with `text`, folded (R36.4), as the Rust `find`. */
+function firstHit(rows: { id: number; name: string }[], text: string): FindHit | null {
+  const prefix = fold(text);
+  const index = prefix === "" ? -1 : rows.findIndex((row) => fold(row.name).startsWith(prefix));
+  return index < 0 ? null : { index, id: rows[index].id };
+}
 /** The whole library sorted per sort keys: the mock stands in for the Rust index, so it keeps its work small. */
 const sortedAll = new Map<string, SongRow[]>();
 
@@ -195,9 +262,47 @@ export const library = {
           .filter((album) => album.songs.length > 0),
       }))
       .filter((artist) => artist.albums.length > 0),
+  /**
+   * Type-to-find (D65). The playlist view and the queue pass their entries' tracks (null for a
+   * missing entry); the other lists are read again from their identity, as in Rust.
+   */
+  find: (list: FindList, text: string, tracks: (number | null)[] = []): FindHit | null => {
+    switch (list.kind) {
+      case "artists":
+        return firstHit(library.artists(list.query), text);
+      case "albums":
+        return firstHit(library.albums(list.artist, list.query), text);
+      case "songs":
+        return firstHit(
+          library
+            .songIds(list.scope, list.query, list.sort)
+            .map((id) => ({ id, name: songName(songs[id], list.sort[0]?.column) })),
+          text,
+        );
+      case "tree":
+        return firstHit(
+          list.rows.map((row) => ({
+            id: row.id,
+            name:
+              (row.kind === "artist"
+                ? artists[row.id]?.name
+                : row.kind === "album"
+                  ? albums[row.id]?.name
+                  : songs[row.id]?.title) ?? "",
+          })),
+          text,
+        );
+      default:
+        return firstHit(
+          tracks.map((track) => ({ id: track ?? 0, name: track === null ? "" : (songs[track]?.title ?? "") })),
+          text,
+        );
+    }
+  },
   /** The art file of an album: "Lemonade" has none (P10-AC4). */
   art: (id: number): string | null => (albums[id]?.name === "Lemonade" ? null : "album.jpg"),
-  queue: { entries: songs.slice(0, 50).map((s) => s.id), current: 3 },
+  // "?find=1" adds the type-to-find songs to the end of the queue (P25-AC4).
+  queue: { entries: [...songs.slice(0, 50).map((s) => s.id), ...findSongs], current: 3 },
   player: {
     status: "paused" as const,
     positionMs: 83_000,
@@ -206,11 +311,40 @@ export const library = {
     repeat: "off" as const,
     started: 0,
   },
-  playlists: Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
-    { id: p, name: `Mix ${p + 1}`, fileName: `Mix ${p + 1}.m3u8`, entryCount: 6, isFavorites: false, missingCount: 1 },
-    Array.from({ length: 6 }, (_, e) =>
-      e === 5 ? { track: null, label: `../Missing/Song ${e}.mp3` } : { track: p * 10 + e, label: "" },
-    ),
-  ]),
+  playlists: [
+    ...Array.from({ length: 5 }, (_, p): [PlaylistRow, PlaylistEntry[]] => [
+      {
+        id: p,
+        name: `Mix ${p + 1}`,
+        fileName: `Mix ${p + 1}.m3u8`,
+        entryCount: 6,
+        isFavorites: false,
+        missingCount: 1,
+      },
+      Array.from({ length: 6 }, (_, e) =>
+        e === 5 ? { track: null, label: `../Missing/Song ${e}.mp3` } : { track: p * 10 + e, label: "" },
+      ),
+    ]),
+    // "?find=1": a long playlist that ends with the type-to-find songs, a missing entry named
+    // "Zzz" first, and two playlists whose names start with Z (P25-AC4).
+    ...(FIND ? findPlaylists() : []),
+  ],
   lyrics: { text: Array.from({ length: 60 }, (_, line) => `Lyric line ${line + 1}`).join("\n") },
 };
+
+function findPlaylists(): [PlaylistRow, PlaylistEntry[]][] {
+  const row = (id: number, name: string, entries: PlaylistEntry[]): [PlaylistRow, PlaylistEntry[]] => [
+    { id, name, fileName: `${name}.m3u8`, entryCount: entries.length, isFavorites: false, missingCount: 0 },
+    entries,
+  ];
+  const long: PlaylistEntry[] = [
+    { track: null, label: "../Missing/Zzz.mp3" },
+    ...Array.from({ length: 40 }, (_, track) => ({ track, label: "" })),
+    ...findSongs.map((track) => ({ track, label: "" })),
+  ];
+  return [
+    row(5, "Find mix", long),
+    row(6, "Zapp jams", [{ track: findSongs[2], label: "" }]),
+    row(7, "ZZ Top hits", [{ track: findSongs[4], label: "" }]),
+  ];
+}

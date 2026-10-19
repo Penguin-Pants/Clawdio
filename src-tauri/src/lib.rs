@@ -180,6 +180,7 @@ pub fn run() -> tauri::Result<()> {
             commands::library::library_song_ids,
             commands::library::library_rows,
             commands::library::library_tree,
+            commands::library::library_find,
             commands::art::album_art,
             commands::art::set_cover,
             commands::art::album_retry_lookup,

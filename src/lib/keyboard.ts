@@ -1,5 +1,6 @@
 import { commands } from "@/lib/ipc/commands";
 import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
+import { findTextActive } from "./type-find";
 
 /** Reset layout shortcut (D17, R29). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
@@ -41,8 +42,9 @@ function onColumnHeader(target: EventTarget | null): boolean {
 }
 
 /**
- * Space toggles play and pause everywhere except in text fields, on a table column header and in
- * open menus and dialogs (D17, P7.11, AX-1). On a focused button it does not press the button.
+ * Space toggles play and pause everywhere except in text fields, on a table column header, in
+ * open menus and dialogs and in a list with an active type-to-find text (D17, P7.11, AX-1,
+ * R36.6). On a focused button it does not press the button.
  */
 export function isPlaybackSpace(event: KeyboardEvent): boolean {
   return (
@@ -52,7 +54,8 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
     !event.metaKey &&
     !inTextField(event.target) &&
     !onColumnHeader(event.target) &&
-    !inMenuOrDialog(event.target)
+    !inMenuOrDialog(event.target) &&
+    !findTextActive(event.target)
   );
 }
 

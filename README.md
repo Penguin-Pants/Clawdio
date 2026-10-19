@@ -42,12 +42,13 @@ A file named `portable` next to the executable (next to the `.AppImage` file on 
 
 | Key | Action |
 |---|---|
-| Space | Play or pause (not while typing in a field or on a column header) |
+| Space | Play or pause (not while typing in a field, on a column header or while a typed name is active) |
 | Up, Down | Move in lists and trees |
 | Right, Left | Expand or collapse in trees |
 | Enter | Play the selected song or album |
 | Ctrl+F | Focus the Library search |
 | Esc | Clear the search and return to the Library |
+| Letters, digits (in a list) | Type the start of a name to select the first row that matches. Case and accents do not count. After 1 s with no key, a new name starts; Space adds a space to the typed name. In the Songs table the name is the sorted column, else Title. |
 | F6, Shift+F6 | Move focus to the next or previous widget |
 | Delete | Remove the selected entry from the Play queue or a playlist |
 | Shift+F10, Menu key | Open the menu of the selected row (in the Songs table: Add to Favorites too) |
