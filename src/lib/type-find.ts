@@ -73,7 +73,9 @@ export function useTypeFind({ list, find, onMatch }: TypeFind): (event: Keyboard
       // No match: the active row and the selection do not change (R36.8).
       if (index !== null) latest.current.onMatch(index);
     };
-    void Promise.resolve(latest.current.find(typed.text)).then(land, () => {});
+    void Promise.resolve(latest.current.find(typed.text)).then(land, () => {
+      // A failed request is no match: nothing changes (R36.8).
+    });
     return true;
   }, []);
 }

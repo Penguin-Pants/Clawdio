@@ -29,9 +29,17 @@ function setup(find: TypeFind["find"] = (text) => firstMatch(NAMES, text), list:
   const element = view.getByRole("listbox");
   const type = async (keys: string, init: KeyboardEventInit = {}) => {
     for (const key of keys) fireEvent.keyDown(element, { key, ...init });
-    await act(async () => {});
+    await flush();
   };
   return { view, element, onMatch, finds, type };
+}
+
+/** Runs `step`, then lets the pending replies land inside `act`. */
+function flush(step?: () => void) {
+  return act(() => {
+    step?.();
+    return Promise.resolve();
+  });
 }
 
 /** Waits out the reset time (R36.3). */
@@ -93,20 +101,20 @@ describe("useTypeFind (R36, P25-AC2)", () => {
     const replies = new Map<string, (index: number | null) => void>();
     const { onMatch, type } = setup((text) => new Promise((resolve) => replies.set(text, resolve)));
     await type("zz");
-    await act(async () => replies.get("zz")?.(3));
-    await act(async () => replies.get("z")?.(2));
+    await flush(() => replies.get("zz")?.(3));
+    await flush(() => replies.get("z")?.(2));
     expect(onMatch.mock.calls).toEqual([[3]]);
   });
 
   it("drops a reply after a search or sort change", async () => {
-    let reply: (index: number | null) => void = () => {};
+    let reply: ((index: number | null) => void) | undefined;
     const onMatch = vi.fn();
     const find = () => new Promise<number | null>((resolve) => (reply = resolve));
     const view = render(<List list={NAMES} find={find} onMatch={onMatch} />);
     fireEvent.keyDown(view.getByRole("listbox"), { key: "z" });
     // A new search gives a new id list.
     view.rerender(<List list={[...NAMES]} find={find} onMatch={onMatch} />);
-    await act(async () => reply(2));
+    await flush(() => reply?.(2));
     expect(onMatch).not.toHaveBeenCalled();
   });
 
@@ -126,7 +134,7 @@ describe("useTypeFind (R36, P25-AC2)", () => {
     const menu = document.createElement("div");
     menu.setAttribute("role", "menu");
     document.body.append(menu);
-    await act(async () => replies[0](2));
+    await flush(() => replies[0](2));
     expect(onMatch).not.toHaveBeenCalled();
   });
 });
