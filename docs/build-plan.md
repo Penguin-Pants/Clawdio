@@ -1485,7 +1485,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 6. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec), DeepSource and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 10, F3 0, F4 7. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec), DeepSource and Codex on the PR.
 
 - F2:
   - `commands.ts` re-exported `FindList` and `TreeRow`, which nothing imported. Removed.
@@ -1494,6 +1494,9 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - DeepSource: an empty error arrow in the hook, and empty or `await`-less async arrows in its test. The arrow states its purpose; the test uses one `flush` helper that returns a promise.
   - Codex: a failed or dropped latest request let an older reply select a row. Only the reply to the latest request counts now, with a test.
   - Codex: while new ids loaded, a find ran with the new query against the old shown ids. `useCommandResult` (behind `useCommand`) says when the ids match the inputs; the Artist, Album, Songs and Tree finds wait for it, with a test.
+  - Codex: a playlist edit that started after a find request let its reply set an old index. The reply checks `stale()` again when it lands, with a component test.
+  - Codex: the Playlists fold lowercased the whole name, so "ΟΣ" gave a final sigma and did not match "οσ" as the core does. Each character folds alone now, with a test.
+  - DeepSource: the e2e `libraryCommand` mock passed the complexity limit. A table holds the empty-library answers.
   - DeepSource (second run, issues outside the diff view): helpers used before their definition (`foldName`, `flush`, `findPlaylists`) and nested ternaries in the e2e mocks. The helpers move up; `treeName` and `findTracks` replace the ternaries.
 - F4:
   - The Tree find sends every shown row: only expanded rows are shown, and D65 names this design.
@@ -1502,6 +1505,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Space up after the 1 s reset: the keyup path never toggles, so no extra toggle.
   - A missing playlist entry never matches (N2): R36.5 names Title.
   - A held key repeats a letter into the text: R36.4 adds a repeated letter.
+  - Codex: committed IME text does not start a find. A list is not an editable element, so the browser starts no composition there and no text is committed; keys arrive as plain keys.
 
 **Follow-ups:** none.
 

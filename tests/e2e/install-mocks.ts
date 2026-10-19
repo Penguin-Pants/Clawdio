@@ -155,24 +155,22 @@ function findTracks(list: FindList): (number | null)[] {
   return entries.map((entry) => entry.track);
 }
 
+/** The answers of the library commands when the app starts empty. */
+const EMPTY_LIBRARY: Record<string, unknown> = {
+  library_artists: [],
+  library_artist_rows: [],
+  library_albums: [],
+  library_album_rows: [],
+  library_song_ids: [],
+  library_tree: [],
+  library_rows: [],
+  library_find: null,
+  lyrics_get: null,
+  album_art: null,
+};
+
 function libraryCommand(command: string, args: Args): unknown {
-  if (!withLibrary) {
-    switch (command) {
-      case "library_artists":
-      case "library_artist_rows":
-      case "library_albums":
-      case "library_album_rows":
-      case "library_song_ids":
-      case "library_tree":
-      case "library_rows":
-        return [];
-      case "library_find":
-        return null;
-      case "lyrics_get":
-      case "album_art":
-        return null;
-    }
-  }
+  if (!withLibrary && command in EMPTY_LIBRARY) return EMPTY_LIBRARY[command];
   switch (command) {
     case "library_artists":
       return library.artists(args.query as string).map((artist) => artist.id);

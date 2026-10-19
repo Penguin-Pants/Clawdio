@@ -113,13 +113,16 @@ export function PlaylistView({ id }: { id: number }) {
       setReveal({ index });
     },
   );
-  // R36: Title in Rust; a missing entry has no title (D65). A stale list finds nothing.
+  // R36: Title in Rust; a missing entry has no title (D65). A list that is stale when the
+  // request goes or when the reply lands finds nothing: an edit can start in between.
   const onType = useTypeFind({
     list: entries,
     find: (text) =>
       stale()
         ? null
-        : commands.libraryFind({ kind: "playlist", id }, text).then((hit) => shownIndex(hit, (i) => entries[i]?.track)),
+        : commands
+            .libraryFind({ kind: "playlist", id }, text)
+            .then((hit) => (stale() ? null : shownIndex(hit, (i) => entries[i]?.track))),
     onMatch: (index) => {
       setActive(index);
       setReveal({ index });

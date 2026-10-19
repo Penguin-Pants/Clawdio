@@ -214,6 +214,8 @@ describe("firstMatch (R36.4)", () => {
     expect(firstMatch(NAMES, "brothers")).toBeNull();
     expect(firstMatch(NAMES, "")).toBeNull();
     expect(firstMatch([], "a")).toBeNull();
+    // Each character folds alone, as in the core: no final sigma (D4).
+    expect(firstMatch(["ΟΣ"], "οσ")).toBe(0);
   });
 });
 

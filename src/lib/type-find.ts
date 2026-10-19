@@ -91,9 +91,12 @@ export function shownIndex(
   return hit !== null && idAt(hit.index) === hit.id ? hit.index + offset : null;
 }
 
-/** NFD, combining marks removed, lowercase: the R3 fold of the core (D4). */
+/**
+ * NFD, combining marks removed, then each character lowercased on its own: the R3 fold of the
+ * core (D4, `char::to_lowercase`). A whole-string lowercase would give a final sigma.
+ */
 function foldName(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  return [...text.normalize("NFD").replace(/\p{M}/gu, "")].map((character) => character.toLowerCase()).join("");
 }
 
 /** The first of `names` (as shown, top to bottom) that starts with `text`, folded as in R3. */
