@@ -186,13 +186,13 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R35-4 | Keyboard focus never moves; a focused list's active row becomes the playing row | §2 R35.4 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
 | R35-5 | No follow while a menu, dialog or drag is open, or within 5 s of input in that list | §2 R35.5 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
 | R35-6 | A song not in the list as shown changes nothing; no filter or search changes | §2 R35.6 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
-| R36-1 | Type-to-find in the Artist, Album, Songs table, playlist view, Play queue, Library tree and Playlists tree | §2 R36.1 | P25.3 | P25-AC4, P25-AC5 | E2E | Planned |
+| R36-1 | Type-to-find in the Artist, Album, Songs table, playlist view, Play queue, Library tree and Playlists list; not the icon rail | §2 R36.1 | P25.3 | P25-AC4, P25-AC5 | E2E | Planned |
 | R36-2 | Printable character with no Ctrl, Alt or Meta starts or extends a find; Shift allowed | §2 R36.2 | P25.2 | P25-AC2 | UT | Planned |
 | R36-3 | Typed text resets after 1 s with no character | §2 R36.3 | P25.2 | P25-AC2 | UT | Planned |
 | R36-4 | Prefix match, case and accents ignored, first match from the top; a repeated letter adds to the text | §2 R36.4 | P25.1, P25.2 | P25-AC1, P25-AC2 | UT | Planned (D65) |
-| R36-5 | Name matched: display name; sorted column, else Title; Title in queue and playlist; visible tree rows only | §2 R36.5 | P25.1, P25.3 | P25-AC1, P25-AC5 | UT, E2E | Planned (D65) |
+| R36-5 | Name matched: display name (never "All"); sorted column, else Title; Title in queue and playlist; playlist name; shown tree rows only | §2 R36.5 | P25.1, P25.3 | P25-AC1, P25-AC5 | UT, E2E | Planned (D65) |
 | R36-6 | Space adds to an active text; otherwise R25; a column header keeps Space | §2 R36.6 | P25.2 | P25-AC3 | UT, E2E | Planned (D65) |
-| R36-7 | A match moves the active row and the selection as Down does; focus stays | §2 R36.7 | P25.3 | P25-AC4 | E2E | Planned |
+| R36-7 | A match moves the active row and the selection as Down does and scrolls it into view; focus stays, except the Down tab-group case | §2 R36.7 | P25.3 | P25-AC4 | E2E | Planned |
 | R36-8 | No match changes nothing; no sound, no status text | §2 R36.8 | P25.3 | P25-AC4 | E2E | Planned |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |

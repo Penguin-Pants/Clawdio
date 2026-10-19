@@ -153,13 +153,13 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R35.5 Busy.** A list does not follow while a menu, a dialog or a drag is open, or within 5 s of the user's last input in that list. `[D]` The 5 s value is a starting value.
   - **R35.6 Not in view.** If the playing song is not in the list as shown (another Artist or Album selection, a search, another playlist), that list does not change. No filter, search or Library view changes.
 - **R36 (v1.11).** Type-to-find in lists.
-  - **R36.1 Lists.** The Artist list, the Album list, the Songs table, the playlist view, the Play queue, the Library tree (Tree mode) and the Playlists widget tree.
+  - **R36.1 Lists.** The Artist list, the Album list, the Songs table, the playlist view, the Play queue, the Library tree (Tree mode) and the Playlists widget list. `[D]` The narrow Playlists icon rail (R29) shows no names, so it has no type-to-find.
   - **R36.2 Trigger.** The list has keyboard focus and the user types a printable character with no Ctrl, Alt or Meta key. Shift is allowed.
   - **R36.3 Typed text.** Each character adds to the typed text. After 1 s with no character, the typed text resets. `[D]` The 1 s value is a starting value.
   - **R36.4 Match.** A row matches when its name starts with the typed text. The match ignores case. `[D]` It also ignores accents, as the R3 sort does. The search always starts at the top of the list as shown, and the first match wins. A repeated letter adds to the typed text: "zz" finds a name that starts with "zz".
-  - **R36.5 Name.** Artist and Album lists: the display name. Songs table: the value in the column the table is sorted by (the first sort key), or Title when the table has no column sort. Playlist view and Play queue: Title. Trees: the row label, on the rows shown now, at any level. A collapsed node does not open.
+  - **R36.5 Name.** Artist and Album lists: the display name. `[D]` The "All" row is not a name and never matches. Songs table: the value in the column the table is sorted by (the first sort key), or Title when the table has no column sort. Playlist view and Play queue: Title. Playlists widget: the playlist name. Library tree: the row label, on the rows shown now (expanded), at any level. A collapsed node does not open.
   - **R36.6 Space.** While the typed text is not empty, Space adds a space to it. With no typed text, Space works as R25 says. A focused column header keeps Space for its sort.
-  - **R36.7 Jump.** A match moves the active row and the selection as one Down key does, and scrolls the row into view. A multi-selection becomes the matched row. Keyboard focus stays in the list.
+  - **R36.7 Jump.** A match moves the active row and the selection as one Down key does, and scrolls the row into view, also when the row was out of view. A multi-selection becomes the matched row. Keyboard focus stays in the list. Exception, the same as for Down: a playlist picked while the Playlists widget and the Library widget share a tab group shows the Library, and focus moves to the playlist view (R12 v1.9).
   - **R36.8 No match.** The active row and the selection do not change. No sound and no status line text.
 
 ### Online and sidecars
@@ -558,7 +558,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 27. **Old arrangement `(v1.8)`:** a hand-corrupted or version 1 `layout.json` starts the app with the default preset and leaves `layout.json.bak`. (Replaces the v1.7 repair check.)
 28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The fetch for the next song in play order starts while the current song plays; when the current song plays long enough, the next song has its file before it starts (best effort). A song in an album folder that no source knows gets a marker and no second request when it plays again. A song outside an album folder gets no marker and no second request in the same app run.
 29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
-30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z, and "zz top" typed without a 1 s pause selects "ZZ Top". Playback does not toggle. "zzx" changes nothing. The same works in each R36.1 list.
+30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z. After a pause of more than 1 s, "zz top" typed without a 1 s pause selects "ZZ Top" and playback does not toggle. After another pause of more than 1 s, "zzx" leaves "ZZ Top" selected. The same works in each R36.1 list.
 
 ---
 
