@@ -1,6 +1,7 @@
 //! The library index (D14, D46). It lives in memory; SQLite (P5) is a rebuildable cache.
 //! Ids are session ids: monotonic, never reused. A removed track stays as a tombstone.
 
+mod find;
 mod group;
 mod query;
 mod title;

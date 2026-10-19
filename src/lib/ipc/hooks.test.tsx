@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { commands, type SongRow } from "./commands";
-import { ROW_CACHE_LIMIT, useCommand, useSongRows } from "./hooks";
+import { ROW_CACHE_LIMIT, useCommand, useCommandResult, useSongRows } from "./hooks";
 
 const song = (id: number): SongRow => ({
   id,
@@ -22,6 +22,26 @@ describe("useCommand", () => {
     await waitFor(() => expect(ok.result.current).toBe(5));
     const failed = renderHook(() => useCommand(() => Promise.reject(new Error("no shell")), 7, []));
     await waitFor(() => expect(failed.result.current).toBe(7));
+  });
+});
+
+describe("useCommandResult (D65)", () => {
+  it("is current only once the value for the latest inputs has loaded", async () => {
+    let finish: (value: string) => void = (value) => {
+      throw new Error(`no load for ${value}`);
+    };
+    const view = renderHook(
+      ({ query }) => useCommandResult(() => new Promise<string>((resolve) => (finish = resolve)), "none", [query]),
+      { initialProps: { query: "a" } },
+    );
+    expect(view.result.current).toEqual({ value: "none", current: false });
+    act(() => finish("rows for a"));
+    await waitFor(() => expect(view.result.current).toEqual({ value: "rows for a", current: true }));
+    // New inputs: the old value stays, but it is not current until the new load lands.
+    view.rerender({ query: "b" });
+    expect(view.result.current).toEqual({ value: "rows for a", current: false });
+    act(() => finish("rows for b"));
+    await waitFor(() => expect(view.result.current).toEqual({ value: "rows for b", current: true }));
   });
 });
 

@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.29, October 19, 2026 (requirements v1.11: phase P25, type-to-find in lists, Not started).
+**Version:** 1.30, October 19, 2026 (P25, type-to-find in lists, Done with exceptions).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24) and the v1.11 additions (P25).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -9,7 +9,7 @@
 - Status (October 12, 2026): P0 to P17 and P19 to P21 are Done or Done with exceptions. P18 stays In progress: B3 (Windows playlist interop) and B5 (manual Windows, Ubuntu desktop and Debian checks) need the owner. Section 2 has the details.
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
 - Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Done with exceptions: the manual Linux check P24-AC12 waits on the owner.
-- Requirements v1.11 adds P25 (type-to-find in lists). Not started.
+- Requirements v1.11 adds P25 (type-to-find in lists). Done with exceptions: the manual Linux walkthrough (P25.4) waits on the owner.
 - The plan has 26 phases (P0 to P25). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
@@ -94,7 +94,7 @@ A phase is Done when all of these are true:
 | P23 | Bar widgets and Windows build | P22 | Done with exceptions |
 | U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 | P24 | Automatic lyrics and selection follow | U8 | Done with exceptions |
-| P25 | Type-to-find in lists | P24 | Not started |
+| P25 | Type-to-find in lists | P24 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1190,6 +1190,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** none new.
 
+
 ---
 
 #### P20. Microphone ducking (October 12, 2026)
@@ -1450,6 +1451,65 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - The Settings label spans two lines of text in the switch name: tests and screen readers read the full name.
 
 **Follow-ups:** F-23 (new).
+
+#### P25. Type-to-find in lists (October 19, 2026)
+
+- **Status:** Done with exceptions. P25.1 to P25.5 are done. The manual Linux walkthrough (P25.4 rows in `docs/release-checklist.md`) is open (E2).
+- **Commits:** branch `clawd/great-lovelace-uuqcce`, from `main` after PR 27 (`ef84e45`). Messages start with `P25:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P25-AC1 | Pass | `crates/clawdio-core/src/library/find.rs` tests: prefix with case and accents, first match from the top, `zzx` none, the hit id; Album list (all and one artist); Songs table by Title, Album, Artist (tag artist), Track and Time, the second key ignored, a descending sort; tree rows at each level, a song outside the rows gives none; queue and playlist titles, a missing entry never matches; durations as the Time column. |
+| P25-AC2 | Pass | `src/lib/type-find.test.tsx`: text within 1 s, reset after 1 s, Ctrl, Alt and Meta, Shift, a repeated letter, `z` reply after the `zz` reply, a reply after a list change, an open menu or drag at key or reply time. |
+| P25-AC3 | Pass (Chromium) (E1) | Vitest: Space joins an active text with no toggle, toggles with no text, an active text in one list does not hold Space elsewhere; `keyboard.test.ts` column header case. `tests/e2e/type-find.spec.ts` P25-AC3: toggle, "zz top" with Space, Space sorts on the Title header. |
+| P25-AC4 | Pass (Chromium) (E1) | `type-find.spec.ts`: Artist list from "Chemical Brothers" (Z artist out of view before, in view after, Album list filters, "a" gives "Artist 00"), Album list, Songs table (three rows to one; Artist sort: "b" finds Beyoncé), playlist view (missing "Zzz" entry first), Play queue and Playlists list. Focus stays and the active row is the selected row in each. |
+| P25-AC5 | Pass (Chromium) (E1) | `type-find.spec.ts`: Tree song row out of view in an expanded album, no node opens; icon rail; Playlists in the Library tab group; row menu, Settings dialog, row drag; empty Artist list. |
+| P25-AC6 | Pass (Chromium) (E1) | `type-find.spec.ts` P25-AC6: a song change 1 s after a typed key does not move the selection; after 5 s the list follows again. |
+
+**Notes**
+
+- N1: `library_find` returns the row id with the index (`FindHit`). The webview takes a hit only when its shown row at that index has that id (`shownIndex`), so a queue or playlist edit on its way, or a library change, finds nothing. This adds to the D65 drop rule; the D65 list identity is unchanged.
+- N2: R36.5 names Title for the playlist view. A missing entry has no song and no Title, so its saved label never matches.
+- N3: the key must land on the list element. A focused column header inside the Songs table keeps its keys.
+- N4: with Playlists and Library in one tab group, the first match moves the focus to the playlist view (R36.7 exception, as Down). The next characters then find in that view.
+- N5: `menuDialogOrDrag` (in `src/lib/type-find.ts`) replaces the private `appBusy` of `src/widgets/follow.ts`; both rules use it.
+- N6: the e2e data gets `?find=1`: Chemical Brothers, twenty "Delta" artists, Zapp and ZZ Top, a "Find mix" playlist that ends with their songs, "Zapp jams" and "ZZ Top hits", and their songs at the end of the queue.
+- N7: TDD order: the tests were written with the code. Each one was then shown to fail on an assertion: `contains` in place of the prefix match failed 3 Rust tests; a hook that takes no key failed 9 Vitest and 8 Playwright tests.
+
+**Exceptions**
+
+- E1: WebKit is not installed in this environment. Playwright ran in Chromium with `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium`. CI runs Chromium and WebKit.
+- E2: the manual Linux walkthrough rows (P25.4) need a desktop session with a real music folder; this container has neither.
+- E3: the tests run as root here, so the read-only folder tests skip (as P24 E2). CI runs them.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 12, F3 0, F4 7. Source: own audit, the Rust, Vitest and Chromium runs (with `--repeat-each=15` for the new spec), DeepSource and Codex on the PR.
+
+- F2:
+  - `commands.ts` re-exported `FindList` and `TreeRow`, which nothing imported. Removed.
+  - The P25-AC4 spec focused the queue while the Library button still moved the focus to the search field a frame later (1 fail in 120 runs). The spec waits for the search field focus.
+  - The Tree spec read the selected rows, but a selected song also marks its album row selected (R28). The spec reads the active row.
+  - DeepSource: an empty error arrow in the hook, and empty or `await`-less async arrows in its test. The arrow states its purpose; the test uses one `flush` helper that returns a promise.
+  - Codex: a failed or dropped latest request let an older reply select a row. Only the reply to the latest request counts now, with a test.
+  - Codex: while new ids loaded, a find ran with the new query against the old shown ids. `useCommandResult` (behind `useCommand`) says when the ids match the inputs; the Artist, Album, Songs and Tree finds wait for it, with a test.
+  - Codex: a playlist edit that started after a find request let its reply set an old index. The reply checks `stale()` again when it lands, with a component test.
+  - Codex: the Playlists fold lowercased the whole name, so "ΟΣ" gave a final sigma and did not match "οσ" as the core does. Each character folds alone now, with a test.
+  - DeepSource: the e2e `libraryCommand` mock passed the complexity limit. It is back to its `main` form; `findCommand` answers `library_find`.
+  - Codex: a reply that landed after its list unmounted (a Library mode change) still set the selection. The hook drops pending replies on unmount, with a test.
+  - Codex: a reply that landed after the 1 s reset still moved the selection. The hook takes a reply only while its text is active, with a test.
+  - DeepSource (second run, issues outside the diff view): helpers used before their definition (`foldName`, `flush`, `findPlaylists`) and nested ternaries in the e2e mocks. The helpers move up; `treeName` and `findTracks` replace the ternaries.
+- F4:
+  - The Tree find sends every shown row: only expanded rows are shown, and D65 names this design.
+  - The Songs find sorts the list again in Rust for each key: the same cost as one sort change (UK4).
+  - A typed key between a row press and the drag start moves the selection: no row drag is open yet (R36, section 5).
+  - Space up after the 1 s reset: the keyup path never toggles, so no extra toggle.
+  - A missing playlist entry never matches (N2): R36.5 names Title.
+  - A held key repeats a letter into the text: R36.4 adds a repeated letter.
+  - Codex: committed IME text does not start a find. A list is not an editable element, so the browser starts no composition there and no text is committed; keys arrive as plain keys.
+
+**Follow-ups:** none.
 
 ## 3. Source documents and precedence
 
@@ -3223,6 +3283,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.30 (October 19, 2026):** P25 Done with exceptions (manual Linux walkthrough open). No F3 proposal.
 - **1.29 (October 19, 2026):** requirements v1.11 (R36, AC-30, owner decision 45). Added phase P25 (Not started) and D65.
 - **1.28 (October 15, 2026):** P24 Done with exceptions (P24-AC12 manual Linux check open). F-23 proposed.
 - **1.27 (October 15, 2026):** requirements v1.10 (R9.1 to R9.3, R35, AC-28, AC-29; owner decisions 41 to 44). Added phase P24, D60 to D64, K24 and K25. Section 6.11 adds the lyrics.ovh host for P24. The 1.26 entry, missing before, is added. Section 6.11 scopes the startup retry rule to artwork and metadata jobs and spaces LRCLIB requests by 500 ms.

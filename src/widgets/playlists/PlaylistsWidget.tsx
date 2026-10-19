@@ -11,6 +11,7 @@ import {
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type ImportBatch, type PlaylistRow, type RepairBatch } from "@/lib/ipc/commands";
 import { observeSize } from "@/lib/resize";
+import { firstMatch, useTypeFind } from "@/lib/type-find";
 import { revealLibrary } from "@/shell/layouts";
 import { useLibraryStore } from "@/store/library";
 import { playPlaylist, playlistTask, usePlaylistsStore } from "@/store/playlists";
@@ -131,8 +132,23 @@ export function PlaylistsWidget() {
     },
   ];
   const current = active === null ? undefined : rows[active];
+  // R36: the webview holds every playlist name, so it matches here (D65). A match shows the
+  // playlist as Down does (R36.7). The icon rail has no list, so no type-to-find (R36.1).
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const onType = useTypeFind({
+    list: rows,
+    find: (text) =>
+      firstMatch(
+        rows.map((row) => row.name),
+        text,
+      ),
+    onMatch: (index) => {
+      show(rows[index].id);
+      setReveal({ index });
+    },
+  });
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (menu.fromKey(event, current ? items(current) : null)) return;
+    if (onType(event) || menu.fromKey(event, current ? items(current) : null)) return;
     if (current && event.key === "Enter") {
       event.preventDefault();
       play(current);
@@ -190,6 +206,7 @@ export function PlaylistsWidget() {
             count={rows.length}
             rowHeight={rowHeight}
             activeIndex={active}
+            reveal={reveal}
             onMove={(index) => show(rows[index].id)}
             onKeyDown={onKeyDown}
             renderRow={(index, frame) => {

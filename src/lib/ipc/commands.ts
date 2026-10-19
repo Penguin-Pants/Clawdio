@@ -2,6 +2,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { AlbumRow } from "./bindings/AlbumRow";
 import type { ArtistRow } from "./bindings/ArtistRow";
+import type { FindHit } from "./bindings/FindHit";
+import type { FindList } from "./bindings/FindList";
 import type { FolderState } from "./bindings/FolderState";
 import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
@@ -27,6 +29,7 @@ import type { TreeArtist } from "./bindings/TreeArtist";
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
 export type { ImportBatch, MetadataPreview, MicDucking, RepairBatch, RepairReport, SortColumn, SortKey };
+export type { FindHit };
 
 export const commands = {
   libraryArtists: (query: string) => invoke<number[]>("library_artists", { query }),
@@ -38,6 +41,8 @@ export const commands = {
     invoke<number[]>("library_song_ids", { scope, query, sort }),
   libraryRows: (ids: number[]) => invoke<SongRow[]>("library_rows", { ids }),
   libraryTree: (query: string) => invoke<TreeArtist[]>("library_tree", { query }),
+  /** Type-to-find (R36, D65): the first row of the list as shown that starts with `text`, or null. */
+  libraryFind: (list: FindList, text: string) => invoke<FindHit | null>("library_find", { list, text }),
   /** The art file name of an album at 96 or 512 px, or null while it is made (P10.2). */
   albumArt: (album: number, size: 96 | 512) => invoke<string | null>("album_art", { album, size }),
   /** "Set cover" (P10.4): false when the user cancels. */

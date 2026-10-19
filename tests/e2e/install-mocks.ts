@@ -6,6 +6,7 @@ import app from "./data/app.json";
 import { library } from "./library-data";
 import { createPlayer } from "./mock-player";
 import { createPlaylists } from "./mock-playlists";
+import type { FindList } from "../../src/lib/ipc/bindings/FindList";
 import type { SortKey } from "../../src/lib/ipc/bindings/SortKey";
 
 const params = new URLSearchParams(window.location.search);
@@ -146,6 +147,21 @@ const player = withLibrary
       { status: "stopped", positionMs: 0, volume: 100, shuffle: false, repeat: "off", started: 0 },
     );
 
+/** The tracks of the queue or a playlist, from their owners as in Rust (D65); none for other lists. */
+function findTracks(list: FindList): (number | null)[] {
+  if (list.kind === "queue") return (player("queue_get", {}) as { entries: number[] }).entries;
+  if (list.kind !== "playlist") return [];
+  const entries = playlists("playlist_entries", { id: list.id }) as { track: number | null }[];
+  return entries.map((entry) => entry.track);
+}
+
+/** Type-to-find (D65): no match in an empty app. */
+function findCommand(args: Args): unknown {
+  if (!withLibrary) return null;
+  const list = args.list as FindList;
+  return library.find(list, args.text as string, findTracks(list));
+}
+
 function libraryCommand(command: string, args: Args): unknown {
   if (!withLibrary) {
     switch (command) {
@@ -269,7 +285,8 @@ mockIPC(
         const played = player(command, input);
         if (played !== undefined) return played;
         const listed = playlists(command, input);
-        return listed !== undefined ? listed : libraryCommand(command, input);
+        if (listed !== undefined) return listed;
+        return command === "library_find" ? findCommand(input) : libraryCommand(command, input);
       }
     }
   },

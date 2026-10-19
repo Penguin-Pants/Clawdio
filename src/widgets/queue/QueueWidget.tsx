@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { VirtualList } from "@/components/virtual-list";
 import { commands } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
+import { shownIndex, useTypeFind } from "@/lib/type-find";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { Row, SongCells, useRowHeight } from "../library/rows";
@@ -47,6 +48,17 @@ export function QueueWidget() {
       setReveal({ index });
     },
   );
+  // R36: Title in Rust (D65). The hit must name the shown entry, so a queue edit on its way
+  // finds nothing.
+  const onType = useTypeFind({
+    list: queue.entries,
+    find: (text) =>
+      commands.libraryFind({ kind: "queue" }, text).then((hit) => shownIndex(hit, (i) => queue.entries[i])),
+    onMatch: (index) => {
+      setSelected(index);
+      setReveal({ index });
+    },
+  });
   if (count === 0) {
     return (
       // An empty queue takes a row drag too (TB-12).
@@ -76,7 +88,7 @@ export function QueueWidget() {
           reveal={reveal}
           onMove={setSelected}
           onKeyDown={(event) => {
-            if (menu.fromKey(event, active === null ? null : items(active))) return;
+            if (onType(event) || menu.fromKey(event, active === null ? null : items(active))) return;
             if (event.key === "Delete" && active !== null) {
               event.preventDefault();
               removeEntry(active);

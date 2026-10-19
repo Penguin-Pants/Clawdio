@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
-import { useCommand, useRowCache, useSongRows } from "@/lib/ipc/hooks";
+import { useCommandResult, useRowCache, useSongRows } from "@/lib/ipc/hooks";
+import { shownIndex, useTypeFind } from "@/lib/type-find";
 import { selectSongs, useLibraryStore } from "@/store/library";
 import { useColumnsStore } from "@/store/columns";
 import { currentTrack, usePlayerStore } from "@/store/player";
@@ -193,7 +194,7 @@ export function ArtistList() {
   const selected = useLibraryStore((state) => state.selection.artist);
   const setSelection = useLibraryStore((state) => state.setSelection);
   const version = useLibraryStore((state) => state.version);
-  const ids = useCommand(() => commands.libraryArtists(search), NO_IDS, [search, version]);
+  const { value: ids, current } = useCommandResult(() => commands.libraryArtists(search), NO_IDS, [search, version]);
   const { row, request } = useRowCache(commands.libraryArtistRows, version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
@@ -203,6 +204,22 @@ export function ArtistList() {
   );
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ artist: id, album: null, song: null });
+  // R36: type-to-find; the "All" row is not a name, so a hit moves one down (D65).
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  // While new ids load, the shown ids are not the ones the query gives: no find (D65).
+  const onType = useTypeFind({
+    list: current ? ids : null,
+    find: (text) =>
+      current
+        ? commands
+            .libraryFind({ kind: "artists", query: search }, text)
+            .then((hit) => shownIndex(hit, (i) => ids[i], 1))
+        : null,
+    onMatch: (index) => {
+      select(idAt(index));
+      setReveal({ index });
+    },
+  });
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: id, album: null }));
   const items = (id: number | null) =>
     rowItems(play(id), () => addScope({ artist: id, album: null }), scopeSongs({ artist: id, album: null }));
@@ -221,8 +238,9 @@ export function ArtistList() {
         rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
+        reveal={reveal}
         onMove={(index) => select(idAt(index))}
-        onKeyDown={(event) => menu.fromKey(event, items(selected))}
+        onKeyDown={(event) => onType(event) || menu.fromKey(event, items(selected))}
         renderRow={(index, frame) => {
           const id = idAt(index);
           const rowMenu = items(id);
@@ -252,7 +270,11 @@ export function AlbumList() {
   const selected = useLibraryStore((state) => state.selection.album);
   const setSelection = useLibraryStore((state) => state.setSelection);
   const version = useLibraryStore((state) => state.version);
-  const ids = useCommand(() => commands.libraryAlbums(artist, search), NO_IDS, [artist, search, version]);
+  const { value: ids, current } = useCommandResult(() => commands.libraryAlbums(artist, search), NO_IDS, [
+    artist,
+    search,
+    version,
+  ]);
   const { row, request } = useRowCache(commands.libraryAlbumRows, version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
@@ -262,6 +284,20 @@ export function AlbumList() {
   );
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ album: id, song: null });
+  const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const onType = useTypeFind({
+    list: current ? ids : null,
+    find: (text) =>
+      current
+        ? commands
+            .libraryFind({ kind: "albums", artist, query: search }, text)
+            .then((hit) => shownIndex(hit, (i) => ids[i], 1))
+        : null,
+    onMatch: (index) => {
+      select(idAt(index));
+      setReveal({ index });
+    },
+  });
   // An album row plays the album from its first song (P6.5).
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
   const items = (id: number | null) =>
@@ -279,9 +315,10 @@ export function AlbumList() {
         rowHeight={rowHeight}
         onRange={onRange}
         activeIndex={selected === null ? 0 : ids.indexOf(selected) + 1}
+        reveal={reveal}
         onMove={(index) => select(idAt(index))}
         onKeyDown={(event) => {
-          if (menu.fromKey(event, items(selected))) return;
+          if (onType(event) || menu.fromKey(event, items(selected))) return;
           if (event.key === "Enter") {
             event.preventDefault();
             play(selected)?.();
@@ -338,13 +375,11 @@ export function SongTable({ view }: { view: ViewId }) {
   const columnState = useColumnsStore((state) => state.views[view]);
   const playing = usePlayingTrack();
   const sortKey = JSON.stringify(columnState.sort);
-  const ids = useCommand(() => commands.librarySongIds({ artist, album }, search, columnState.sort), NO_IDS, [
-    artist,
-    album,
-    search,
-    version,
-    sortKey,
-  ]);
+  const { value: ids, current } = useCommandResult(
+    () => commands.librarySongIds({ artist, album }, search, columnState.sort),
+    NO_IDS,
+    [artist, album, search, version, sortKey],
+  );
   const { row, request } = useSongRows(version);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
@@ -414,6 +449,20 @@ export function SongTable({ view }: { view: ViewId }) {
       setReveal({ index });
     },
   );
+  // R36: the first sort key's column, else Title, in Rust (D65). A match selects one row.
+  const onType = useTypeFind({
+    list: current ? ids : null,
+    find: (text) =>
+      current
+        ? commands
+            .libraryFind({ kind: "songs", scope: { artist, album }, query: search, sort: columnState.sort }, text)
+            .then((hit) => shownIndex(hit, (i) => ids[i]))
+        : null,
+    onMatch: (index) => {
+      select(index, "single");
+      setReveal({ index });
+    },
+  });
   // Stable, so it reads the ids of the latest sort, also when the count did not change.
   const focusBody = useStable(() => {
     listRef.current?.querySelector<HTMLElement>("[role='grid']")?.focus();
@@ -437,7 +486,7 @@ export function SongTable({ view }: { view: ViewId }) {
         reveal={reveal}
         onMove={(index, { shift }) => select(index, shift ? "range" : "single")}
         onKeyDown={(event) => {
-          if (menu.fromKey(event, active >= 0 ? items(active) : null)) return;
+          if (onType(event) || menu.fromKey(event, active >= 0 ? items(active) : null)) return;
           if (event.key === "Enter" && active >= 0) {
             event.preventDefault();
             playList(ids, active);
@@ -525,7 +574,7 @@ export function TreeList() {
   const setSelection = useLibraryStore((state) => state.setSelection);
   const version = useLibraryStore((state) => state.version);
   const playing = usePlayingTrack();
-  const tree = useCommand(() => commands.libraryTree(search), NO_TREE, [search, version]);
+  const { value: tree, current } = useCommandResult(() => commands.libraryTree(search), NO_TREE, [search, version]);
   const [openArtists, setOpenArtists] = useState(() => new Set<number>());
   const [openAlbums, setOpenAlbums] = useState(() => new Set<number>());
   const { row, request } = useSongRows(version);
@@ -589,6 +638,20 @@ export function TreeList() {
       setReveal({ index });
     },
   );
+  // R36: the labels of the shown rows at any level; a collapsed node does not open (D65).
+  const onType = useTypeFind({
+    list: current ? lines : null,
+    find: (text) =>
+      current
+        ? commands
+            .libraryFind({ kind: "tree", rows: lines.map((line) => ({ kind: line.kind, id: line.id })) }, text)
+            .then((hit) => shownIndex(hit, (i) => lines[i]?.id))
+        : null,
+    onMatch: (index) => {
+      select(lines[index]);
+      setReveal({ index });
+    },
+  });
   // A selection from another mode opens its artist and album, so it shows (R28, P6-AC2).
   const opened = useRef(false);
   useEffect(() => {
@@ -622,7 +685,7 @@ export function TreeList() {
   );
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const line = lines[active];
-    if (menu.fromKey(event, items(line))) return;
+    if (onType(event) || menu.fromKey(event, items(line))) return;
     if (!line) return;
     if (event.key === "Enter") {
       event.preventDefault();

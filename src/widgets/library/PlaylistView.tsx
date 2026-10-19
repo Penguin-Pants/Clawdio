@@ -3,6 +3,7 @@ import { Icon } from "@/components/icons";
 import { VirtualList } from "@/components/virtual-list";
 import { commands, type PlaylistEntry } from "@/lib/ipc/commands";
 import { useSongRows } from "@/lib/ipc/hooks";
+import { shownIndex, useTypeFind } from "@/lib/type-find";
 import { useLibraryStore } from "@/store/library";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { playPlaylist, removePlaylistEntry, usePlaylistsStore } from "@/store/playlists";
@@ -112,6 +113,21 @@ export function PlaylistView({ id }: { id: number }) {
       setReveal({ index });
     },
   );
+  // R36: Title in Rust; a missing entry has no title (D65). A list that is stale when the
+  // request goes or when the reply lands finds nothing: an edit can start in between.
+  const onType = useTypeFind({
+    list: entries,
+    find: (text) =>
+      stale()
+        ? null
+        : commands
+            .libraryFind({ kind: "playlist", id }, text)
+            .then((hit) => (stale() ? null : shownIndex(hit, (i) => entries[i]?.track))),
+    onMatch: (index) => {
+      setActive(index);
+      setReveal({ index });
+    },
+  });
   const remove = (index: number) => {
     if (stale()) return;
     removing.current = true;
@@ -164,7 +180,7 @@ export function PlaylistView({ id }: { id: number }) {
           reveal={reveal}
           onMove={setActive}
           onKeyDown={(event) => {
-            if (menu.fromKey(event, active === null ? null : items(active))) return;
+            if (onType(event) || menu.fromKey(event, active === null ? null : items(active))) return;
             if (active === null) return;
             if (event.key === "Enter") {
               event.preventDefault();

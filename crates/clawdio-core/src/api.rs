@@ -135,6 +135,62 @@ pub struct TreeArtist {
     pub albums: Vec<TreeAlbum>,
 }
 
+/// The kind of a Library tree row (R28).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum TreeRowKind {
+    Artist,
+    Album,
+    Song,
+}
+
+/// One shown row of the Library tree, for type-to-find (D65).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TreeRow {
+    pub kind: TreeRowKind,
+    pub id: u32,
+}
+
+/// The list of a type-to-find request (R36.1, D65): the identity the webview sends for the
+/// list's ids, or the shown tree rows. No "All" row: the webview adds its offset.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+#[ts(export)]
+pub enum FindList {
+    Artists {
+        query: String,
+    },
+    Albums {
+        artist: Option<u32>,
+        query: String,
+    },
+    Songs {
+        scope: SongScope,
+        query: String,
+        sort: Vec<SortKey>,
+    },
+    Tree {
+        rows: Vec<TreeRow>,
+    },
+    Playlist {
+        id: u32,
+    },
+    Queue,
+}
+
+/// The first row of a type-to-find match (R36.4): its index and its id (artist, album or
+/// track), so the webview can drop a hit on a list that changed in between (D65).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct FindHit {
+    pub index: u32,
+    pub id: u32,
+}
+
 /// The play queue: track ids in queue order and the index of the current entry.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
