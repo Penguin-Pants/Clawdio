@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.10, October 15, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.10.
+**Status:** Decision-complete. Version 1.11, October 19, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.11.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.11)` marks an item changed or added in version 1.11 (owner decision 45 in section 8).
 - `(v1.10)` marks an item changed or added in version 1.10 (owner decisions 41 to 44 in section 8).
 - `(v1.9)` marks an item changed in version 1.9 (owner decisions 39 and 40 in section 8).
 - `(v1.8)` marks an item changed or added in version 1.8 (the UI shell rework, owner decision 38 in section 8; the source is `docs/planning/ui-shell-rework.md`, called "the rework"). `(v1.7)` marks an item changed or added in version 1.7 (Library frame splitters and fixed-height bar widgets, owner decisions 29 to 37 in section 8). `(v1.6)` marks an item changed or added in version 1.6 (bulk import, missing-song repair and microphone ducking, owner decisions 17 to 28 in section 8). `(v1.5)` marks an item changed in version 1.5 (requirements review, section G, with owner decisions in section 8). `(v1.4)` marks an item changed in version 1.4. `(v1.3)` marks an item changed or added in version 1.3. The change log at the end lists each change. Items marked `(v1.1)` or `(v1.2)` changed in earlier versions.
@@ -134,7 +135,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - The app sends title, artist, album, artwork and position to the OS now-playing controls (Windows media controls, Linux MPRIS). `[D]`
   - `(v1.5)` The app accepts play, pause, toggle, next, previous and stop from the OS. If OS media controls cannot register, the app logs it and continues.
 - **R25 (v1.2) `[D]`.** Minimal keyboard navigation (the owner chose "minimal"; the keys are proposed).
-  - Space toggles play/pause (not while typing in search).
+  - Space toggles play/pause (not while typing in search). `(v1.11)` Not while a type-to-find text is active (R36.6).
   - Up and Down move through lists and the tree. Right expands. Left collapses.
   - Enter plays the selected song or album.
   - Ctrl+F focuses the search field in the Library header. `(v1.5)` Esc clears search and returns focus to the Library widget.
@@ -151,6 +152,15 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R35.4 Focus.** Keyboard focus never moves. If focus is in that list, its active row becomes the playing row.
   - **R35.5 Busy.** A list does not follow while a menu, a dialog or a drag is open, or within 5 s of the user's last input in that list. `[D]` The 5 s value is a starting value.
   - **R35.6 Not in view.** If the playing song is not in the list as shown (another Artist or Album selection, a search, another playlist), that list does not change. No filter, search or Library view changes.
+- **R36 (v1.11).** Type-to-find in lists.
+  - **R36.1 Lists.** The Artist list, the Album list, the Songs table, the playlist view, the Play queue, the Library tree (Tree mode) and the Playlists widget list. `[D]` The narrow Playlists icon rail (R29) shows no names, so it has no type-to-find.
+  - **R36.2 Trigger.** The list has keyboard focus and the user types a printable character with no Ctrl, Alt or Meta key. Shift is allowed.
+  - **R36.3 Typed text.** Each character adds to the typed text. After 1 s with no character, the typed text resets. `[D]` The 1 s value is a starting value.
+  - **R36.4 Match.** A row matches when its name starts with the typed text. The match ignores case. `[D]` It also ignores accents, as the R3 sort does. The search always starts at the top of the list as shown, and the first match wins. A repeated letter adds to the typed text: "zz" finds a name that starts with "zz".
+  - **R36.5 Name.** Artist and Album lists: the display name. `[D]` The "All" row is not a name and never matches. Songs table: the value in the column the table is sorted by (the first sort key), or Title when the table has no column sort. Playlist view and Play queue: Title. Playlists widget: the playlist name. Library tree: the row label, on the rows shown now (expanded), at any level. A collapsed node does not open.
+  - **R36.6 Space.** While the typed text is not empty, Space adds a space to it. With no typed text, Space works as R25 says. A focused column header keeps Space for its sort.
+  - **R36.7 Jump.** A match moves the active row and the selection as one Down key does, and scrolls the row into view, also when the row was out of view. A multi-selection becomes the matched row. Keyboard focus stays in the list. Exception, the same as for Down: a playlist picked while the Playlists widget and the Library widget share a tab group shows the Library, and focus moves to the playlist view (R12 v1.9).
+  - **R36.8 No match.** The active row and the selection do not change. No sound and no status line text.
 
 ### Online and sidecars
 
@@ -292,6 +302,7 @@ The closest open source player (Strawberry) has many features the owner does not
 - "Automatically scan the music library" means rescan, then match (R33.1). Matching against the library already existed (R14). `(v1.6)`
 - "Keep trying different services" is met by the R9.2 chain. The extra LRCLIB queries in R9.2 step 3 are examples. `(v1.10)`
 - "Focus or highlight moves to the playing song" means the selection (R35). Keyboard focus does not move. `(v1.10)`
+- "Like MusicBee" for type-to-find (R36) is a feel reference. It is not a specification to copy. "Chemical Brothers" and "ZZ Top" are examples. `(v1.11)`
 
 ---
 
@@ -319,6 +330,9 @@ These are out under the owner's "few features" rule.
 - Lyrics fetch for the whole library in the background (R9.1 fetches the playing and the next song only). `(v1.10)`
 - Lyrics services that need an API key or an account, for example Musixmatch or Genius. `(v1.10)`
 - The Artist and Album lists follow the playing song (R35.1). `(v1.10)`
+- Type-to-find filters a list. The Library search (R23) filters; R36 only moves the selection. `(v1.11)`
+- Type-to-find opens collapsed tree nodes, or matches text in the middle of a name or in other columns (R36.4, R36.5). `(v1.11)`
+- A type-to-find overlay that shows the typed text. `(v1.11)`
 
 ---
 
@@ -372,6 +386,11 @@ These are out under the owner's "few features" rule.
 - **Wrong song version from lyrics.ovh `(v1.10)`:** a live or remix version can give other lyrics. The owner accepts this risk. The user deletes the file and uses "Fetch lyrics" again.
 - **Online lookups turned off during a lyrics fetch `(v1.10)`:** R7 applies: queued fetches stop and in-flight requests abort. No marker is written.
 - **Playing song changes while a list is busy `(v1.10)`:** that list does not follow for this song change (R35.5). It follows at the next song change.
+- **Type-to-find in the Artist or Album list `(v1.11)`:** the new selection filters the other lists, as a Down key does (R36.7).
+- **Type-to-find and the selection follow `(v1.11)`:** a typed character is input in that list, so R35.5 applies.
+- **Type-to-find with an open menu, dialog or row drag `(v1.11)`:** the keys go to that control. No find.
+- **Type-to-find in an empty list `(v1.11)`:** nothing changes.
+- **Leading articles `(v1.11)`:** a name such as "The Chemical Brothers" matches "t", because names are folder names, unchanged (R3).
 
 ---
 
@@ -411,7 +430,10 @@ These are out under the owner's "few features" rule.
 - Playlist export UI (the files are already M3U8 and can be copied).
 - Bundled themes or a light/dark toggle.
 - `components` tokens in themes.
-- Accessibility work beyond platform defaults and R25.
+- Accessibility work beyond platform defaults, R25 and R36. `(v1.11)`
+- A setting for the R36 timeout. `(v1.11)`
+- A repeated letter that steps through the rows that start with it (R36.4). `(v1.11)`
+- Type-to-find that skips a leading "The". `(v1.11)`
 - Multiple music folders (likely the first growth request).
 - Light theme variant of the brand tokens.
 - Microphone ducking on Linux (PipeWire and PulseAudio). `(v1.6)`
@@ -497,6 +519,10 @@ Version 1.10 records owner decisions made on October 15, 2026:
 43. **Lyrics no match (R9.3):** a per-song marker in the sidecar. No automatic retry. "Fetch lyrics" retries.
 44. **Selection follows the playing song (R35):** the Songs list and the Play queue only, only when the list has a selection. The selection is replaced. Keyboard focus does not move. No follow while the user is busy in that list. A song that is not in the list as shown changes nothing.
 
+Version 1.11 records an owner decision made on October 19, 2026:
+
+45. **Type-to-find (R36):** every list and tree. Prefix match from the top of the list. A repeated letter adds to the text. Space adds to an active text. The sorted column, else Title. Visible tree rows only. A 1 s reset. No match changes nothing.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -532,6 +558,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 27. **Old arrangement `(v1.8)`:** a hand-corrupted or version 1 `layout.json` starts the app with the default preset and leaves `layout.json.bak`. (Replaces the v1.7 repair check.)
 28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The fetch for the next song in play order starts while the current song plays; when the current song plays long enough, the next song has its file before it starts (best effort). A song in an album folder that no source knows gets a marker and no second request when it plays again. A song outside an album folder gets no marker and no second request in the same app run.
 29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
+30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z. After a pause of more than 1 s, "zz top" typed without a 1 s pause selects "ZZ Top" and playback does not toggle. After another pause of more than 1 s, "zzx" leaves "ZZ Top" selected. The same works in each R36.1 list.
 
 ---
 
@@ -554,6 +581,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.11 (October 19, 2026):** type-to-find in lists, with owner decision 45 (section 8).
+  - **Added:** R36, one preference, three non-goals, five edge cases, three deferred ideas, acceptance check 30.
+  - **Changed:** R25 (Space during type-to-find), section 7 (accessibility beyond R25 and R36).
 - **1.10 (October 15, 2026):** automatic lyrics fetch and a selection that follows the playing song, with owner decisions 41 to 44 (section 8).
   - **Added:** R9.1, R9.2, R9.3, R35, two preferences, three non-goals, six edge cases, three deferred ideas, acceptance checks 28 and 29, the lyrics.ovh reference.
   - **Changed:** R7 (the service list), section 6 (network).
