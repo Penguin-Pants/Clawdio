@@ -566,7 +566,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
 | AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Done with exceptions (P24; P24-AC12 manual Linux check open) |
 | AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
-| AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.3 | P25-AC4 | E2E | Planned |
+| AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.2, P25.3 | P25-AC3, P25-AC4, P25-AC5 | E2E | Planned |
 
 ---
 

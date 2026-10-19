@@ -2995,7 +2995,7 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 - **P25-AC2** Hook: characters within 1 s add to the text; after 1 s the text resets; Ctrl, Alt or Meta with a letter does not start a find; Shift does; a repeated letter adds to the text; with the `z` reply resolved after the `zz` reply, the `zz` match stays; a reply after a search or sort change is dropped (Vitest).
 - **P25-AC3** Space: with an active text, Space adds a space and playback does not toggle; with no text, Space toggles playback; on a column header Space sorts (Vitest and Playwright).
 - **P25-AC4** Playwright (AC-30), with a pause of more than 1 s before each typed sequence: focus on "Chemical Brothers" in the Artist list, "z" selects the first Z artist, which was out of view, scrolls it into view and the Album list filters; "zz top" selects "ZZ Top"; "zzx" leaves "ZZ Top" selected; "a" never selects the "All" row; focus stays in the list. The same holds in the Album list, the Songs table (with and without a column sort), the playlist view, the Play queue and the Playlists widget list. In the Songs table with three rows selected, a match leaves only the matched row selected.
-- **P25-AC5** Playwright: in Tree mode, a find reaches a shown song row out of view in an expanded album and does not open a collapsed node. In the narrow Playlists icon rail, typed keys select nothing. With Playlists and Library in one tab group, a match shows the playlist in the Library, as Down does. With an open row menu or dialog, typed keys do not move the selection. An empty list does not change.
+- **P25-AC5** Playwright: in Tree mode, a find reaches a shown song row out of view in an expanded album and does not open a collapsed node. In the narrow Playlists icon rail, typed keys select nothing. With Playlists and Library in one tab group, a match shows the playlist in the Library, as Down does. With an open row menu or dialog, or during a row drag, typed keys do not move the selection. An empty list does not change.
 - **P25-AC6** Playwright: a typed character counts as input for R35.5: the list does not follow the playing song for 5 s.
 
 **Verification.** Rust unit tests (P25-AC1). Vitest (P25-AC2, P25-AC3). Playwright (P25-AC3 to P25-AC6). Manual Linux: the `docs/release-checklist.md` walkthrough (P25.4).
@@ -3067,7 +3067,7 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 | AC-27 | Old arrangement repaired at start | P23-AC5, P23-AC7 |
 | AC-28 | Automatic lyrics for the playing and the next song; no repeat after no match | P24-AC3, P24-AC4, P24-AC6, P24-AC12 |
 | AC-29 | Songs list and Play queue selection follow the playing song | P24-AC10, P24-AC11 |
-| AC-30 | Type-to-find in lists | P25-AC4 |
+| AC-30 | Type-to-find in lists | P25-AC3, P25-AC4, P25-AC5 |
 
 ---
 
