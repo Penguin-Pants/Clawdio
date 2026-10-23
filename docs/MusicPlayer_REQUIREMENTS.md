@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.11, October 19, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.11.
+**Status:** Decision-complete. Version 1.12, October 23, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.12.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.12)` marks an item changed or added in version 1.12 (owner decision 46 in section 8).
 - `(v1.11)` marks an item changed or added in version 1.11 (owner decision 45 in section 8).
 - `(v1.10)` marks an item changed or added in version 1.10 (owner decisions 41 to 44 in section 8).
 - `(v1.9)` marks an item changed in version 1.9 (owner decisions 39 and 40 in section 8).
@@ -161,6 +162,15 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R36.6 Space.** While the typed text is not empty, Space adds a space to it. With no typed text, Space works as R25 says. A focused column header keeps Space for its sort.
   - **R36.7 Jump.** A match moves the active row and the selection as one Down key does, and scrolls the row into view, also when the row was out of view. A multi-selection becomes the matched row. Keyboard focus stays in the list. Exception, the same as for Down: a playlist picked while the Playlists widget and the Library widget share a tab group shows the Library, and focus moves to the playlist view (R12 v1.9).
   - **R36.8 No match.** The active row and the selection do not change. No sound and no status line text.
+- **R37 (v1.12).** The Library selection restores at startup.
+  - **R37.1 Saved items.** The Artist selection, the Album selection and the active song row (the Songs table in Columns and Top/bottom modes, the song rows in Tree mode). "All" and "nothing selected" are saved values too. The other rows of a multi-selection are not saved.
+  - **R37.2 Save.** The selection saves automatically with the R27 state. `[D]` After a crash, the last saved selection restores.
+  - **R37.3 Restore.** At startup the saved selection applies in the saved Library mode (Columns, Top/bottom or Tree). Each restored row scrolls into view. The search text is not saved, so the lists start with no filter.
+  - **R37.4 Tree mode.** The nodes open as after a mode switch (R28): the artist and album of the restored row open. A restored artist or album row (no song) opens too, so its albums or songs show. All other nodes stay closed.
+  - **R37.5 Focus.** Keyboard focus does not move. It starts where it starts with no saved selection.
+  - **R37.6 Missing.** A saved artist, album or song that is not in the library does not restore. The levels above it restore. That level and the levels below it become "All" (Artist and Album lists) or no selection (Songs). No message. Example: the artist exists and the album is gone; the artist is selected, the Album list shows "All" and no song is selected.
+  - **R37.7 Not in view.** A saved song that is in the library but not in the Songs list as shown (for example, it moved to another album) does not restore. No song is selected.
+  - **R37.8 Follow.** A restored song is a selected row for R35.2, so the Songs list follows the next song change.
 
 ### Online and sidecars
 
@@ -302,6 +312,8 @@ The closest open source player (Strawberry) has many features the owner does not
 - "Automatically scan the music library" means rescan, then match (R33.1). Matching against the library already existed (R14). `(v1.6)`
 - "Keep trying different services" is met by the R9.2 chain. The extra LRCLIB queries in R9.2 step 3 are examples. `(v1.10)`
 - "Focus or highlight moves to the playing song" means the selection (R35). Keyboard focus does not move. `(v1.10)`
+- "Highlighted" in the R37 request means the selection, as for R35. Keyboard focus does not move. `(v1.12)`
+- The file that holds the saved selection (R37) is an implementation choice. `(v1.12)`
 - "Like MusicBee" for type-to-find (R36) is a feel reference. It is not a specification to copy. "Chemical Brothers" and "ZZ Top" are examples. `(v1.11)`
 
 ---
@@ -333,6 +345,8 @@ These are out under the owner's "few features" rule.
 - Type-to-find filters a list. The Library search (R23) filters; R36 only moves the selection. `(v1.11)`
 - Type-to-find opens collapsed tree nodes, or matches text in the middle of a name or in other columns (R36.4, R36.5). `(v1.11)`
 - A type-to-find overlay that shows the typed text. `(v1.11)`
+- Restore at startup of the search text, the open playlist view, the Tree expand state (other than the R37.4 nodes), scroll positions (other than the restored row in view), the Play queue selection or the Playlists widget selection (R37). `(v1.12)`
+- Keyboard focus on the restored row at startup (R37.5). `(v1.12)`
 
 ---
 
@@ -390,6 +404,10 @@ These are out under the owner's "few features" rule.
 - **Type-to-find and the selection follow `(v1.11)`:** a typed character is input in that list, so R35.5 applies.
 - **Type-to-find with an open menu, dialog or row drag `(v1.11)`:** the keys go to that control. No find.
 - **Type-to-find in an empty list `(v1.11)`:** nothing changes.
+- **Saved selection before the library is ready `(v1.12)`:** the restore waits for the library, as the R27 queue restore does. If the user selects a row first, the user's selection wins and the saved one is dropped.
+- **Music folder changed `(v1.12)`:** the saved selection belongs to the old folder. It is dropped. Nothing is selected.
+- **Saved selection that cannot be read `(v1.12)`:** it is ignored and logged. Nothing is selected. The rest of the R27 state still restores.
+- **Reset layout `(v1.12)`:** the selection does not change. It is not part of the arrangement (R29).
 - **Leading articles `(v1.11)`:** a name such as "The Chemical Brothers" matches "t", because names are folder names, unchanged (R3).
 
 ---
@@ -434,6 +452,7 @@ These are out under the owner's "few features" rule.
 - A setting for the R36 timeout. `(v1.11)`
 - A repeated letter that steps through the rows that start with it (R36.4). `(v1.11)`
 - Type-to-find that skips a leading "The". `(v1.11)`
+- Restore of the search text, the open playlist view and the Tree expand state at startup (R37). `(v1.12)`
 - Multiple music folders (likely the first growth request).
 - Light theme variant of the brand tokens.
 - Microphone ducking on Linux (PipeWire and PulseAudio). `(v1.6)`
@@ -523,6 +542,10 @@ Version 1.11 records an owner decision made on October 19, 2026:
 
 45. **Type-to-find (R36):** every list and tree. Prefix match from the top of the list. A repeated letter adds to the text. Space adds to an active text. The sorted column, else Title. Visible tree rows only. A 1 s reset. No match changes nothing.
 
+Version 1.12 records an owner decision made on October 23, 2026:
+
+46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens the restored row's artist and album, as a mode switch does. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored. The owner confirmed the section 5 rules for a library that is not ready, a changed music folder and a saved selection that cannot be read (October 23, 2026).
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -559,6 +582,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 28. **Automatic lyrics `(v1.10)`:** with Online lookups on, playing a song with no lyrics saves a lyrics file next to it and shows it without a click. The fetch for the next song in play order starts while the current song plays; when the current song plays long enough, the next song has its file before it starts (best effort). A song in an album folder that no source knows gets a marker and no second request when it plays again. A song outside an album folder gets no marker and no second request in the same app run.
 29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
 30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z. After a pause of more than 1 s, "zz top" typed without a 1 s pause selects "ZZ Top" and playback does not toggle. After another pause of more than 1 s, "zzx" leaves "ZZ Top" selected. The same works in each R36.1 list.
+31. **Selection restore `(v1.12)`:** in Columns mode, select an artist, one of its albums and one song, then quit and start the app. The three rows show as selected and in view, and keyboard focus is where it is at a start with no saved selection. Quit, remove that album's folder and start: the artist is selected, the Album list shows "All" and no song is selected. In Tree mode, a restored song row shows inside its opened artist and album nodes, and all other nodes are closed.
 
 ---
 
@@ -581,6 +605,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.12 (October 23, 2026):** the Library selection restores at startup, with owner decision 46 (section 8).
+  - **Added:** R37, two preferences, two non-goals, four edge cases, one deferred idea, acceptance check 31.
 - **1.11 (October 19, 2026):** type-to-find in lists, with owner decision 45 (section 8).
   - **Added:** R36, one preference, three non-goals, five edge cases, three deferred ideas, acceptance check 30.
   - **Changed:** R25 (Space during type-to-find), section 7 (accessibility beyond R25 and R36).
