@@ -163,7 +163,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R36.7 Jump.** A match moves the active row and the selection as one Down key does, and scrolls the row into view, also when the row was out of view. A multi-selection becomes the matched row. Keyboard focus stays in the list. Exception, the same as for Down: a playlist picked while the Playlists widget and the Library widget share a tab group shows the Library, and focus moves to the playlist view (R12 v1.9).
   - **R36.8 No match.** The active row and the selection do not change. No sound and no status line text.
 - **R37 (v1.12).** The Library selection restores at startup.
-  - **R37.1 Saved items.** The Artist selection, the Album selection and the active row of the Songs table. "All" and "nothing selected" are saved values too. The other rows of a multi-selection are not saved.
+  - **R37.1 Saved items.** The Artist selection, the Album selection and the active song row (the Songs table in Columns and Top/bottom modes, the song rows in Tree mode). "All" and "nothing selected" are saved values too. The other rows of a multi-selection are not saved.
   - **R37.2 Save.** The selection saves automatically with the R27 state. `[D]` After a crash, the last saved selection restores.
   - **R37.3 Restore.** At startup the saved selection applies in the saved Library mode (Columns, Top/bottom or Tree). Each restored row scrolls into view. The search text is not saved, so the lists start with no filter.
   - **R37.4 Tree mode.** Only the artist and album nodes above the restored row open. All other nodes stay closed.

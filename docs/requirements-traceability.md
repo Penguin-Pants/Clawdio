@@ -194,7 +194,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R36-6 | Space adds to an active text; otherwise R25; a column header keeps Space | §2 R36.6 | P25.2 | P25-AC3 | UT, E2E | Done (P25, D65) |
 | R36-7 | A match moves the active row and the selection as Down does and scrolls it into view; focus stays, except the Down tab-group case | §2 R36.7 | P25.3 | P25-AC4 | E2E | Done (P25) |
 | R36-8 | No match changes nothing; no sound, no status text | §2 R36.8 | P25.3 | P25-AC4 | E2E | Done (P25) |
-| R37-1 | Saved items: Artist selection, Album selection and the active Songs row; "All" and nothing are values; other multi-selected rows are not saved | §2 R37.1 | P26.1, P26.3 | P26-AC1, P26-AC5 | UT, E2E | Planned (D66) |
+| R37-1 | Saved items: Artist selection, Album selection and the active song row (Songs table or Tree song row); "All" and nothing are values; other multi-selected rows are not saved | §2 R37.1 | P26.1, P26.3 | P26-AC1, P26-AC5 | UT, E2E | Planned (D66) |
 | R37-2 | The selection saves automatically with the R27 state; a crash restores the last saved selection | §2 R37.2 | P26.1, P26.2 | P26-AC1, P26-AC2 | UT, IT | Planned (D66) |
 | R37-3 | At startup the selection applies in the saved Library mode; each restored row scrolls into view; the search text is not restored | §2 R37.3 | P26.3 | P26-AC3, P26-AC5 | E2E | Planned (D66) |
 | R37-4 | Tree mode opens only the artist and album nodes above the restored row | §2 R37.4 | P26.3 | P26-AC4 | E2E | Planned (D66) |
