@@ -1,8 +1,8 @@
 # Clawdio Build Plan
 
-**Version:** 1.30, October 19, 2026 (P25, type-to-find in lists, Done with exceptions).
+**Version:** 1.31, October 23, 2026 (requirements v1.12: P26, Library selection restore, Not started).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24) and the v1.11 additions (P25).
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25) and the v1.12 additions (P26).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
@@ -10,7 +10,8 @@
 - Requirements v1.7 adds P22 (Library frame splitters, Done with exceptions) and P23 (bar widgets and Windows build, Done with exceptions: the owner's Windows check P23-AC7 remains).
 - Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Done with exceptions: the manual Linux check P24-AC12 waits on the owner.
 - Requirements v1.11 adds P25 (type-to-find in lists). Done with exceptions: the manual Linux walkthrough (P25.4) waits on the owner.
-- The plan has 26 phases (P0 to P25). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.12 adds P26 (Library selection restore). Not started.
+- The plan has 27 phases (P0 to P26). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -95,6 +96,7 @@ A phase is Done when all of these are true:
 | U0 to U8 | UI shell rework (transport band, docking, splitters, Library table) and the owner follow-ups (U8) | P23 | Done with exceptions (U0 to U8; open: UQ3, UQ4, UQ5). Plan: `docs/planning/ui-shell-rework-build-plan.md`. Source: `docs/planning/ui-shell-rework.md`. |
 | P24 | Automatic lyrics and selection follow | U8 | Done with exceptions |
 | P25 | Type-to-find in lists | P24 | Done with exceptions |
+| P26 | Library selection restore | P25 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1654,6 +1656,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D63 | Selection follow (R35) lives in the webview. Each list (Songs list, playlist view, Tree song rows, Play queue) reads the current song from the player store. The Play queue uses the current entry index (`queue.current`), not the track id, because an entry can repeat a track. The playlist view can repeat a track too (R12): when the playing track is in the playlist more than once, the view follows by index only when the queue came from this playlist (the player store keeps the source playlist id when the playlist view starts playback; any queue edit and any edit of that playlist clear it); comparing ids is not enough, because an edit can restore the same sequence. The queue index then maps to the playlist row through the list of rows that are not missing, because `playlistQueue` skips missing entries. Otherwise the view does not change. The other lists use the track id. Tree mode has no separate filter: its selection is the row's artist, album and song, so a Tree follow sets the selection the same way a click on that song row does; a later switch to Columns shows that song's album, as after a click. Lists follow only while the player is playing or paused: a queue edit while stopped moves no selection. On a change it checks R35.2 (a selected row is in the list as shown: the selected ids meet the shown row ids, because a search or filter keeps a hidden selection in the store), R35.5 (no menu, dialog or drag open, and no pointer, key, wheel or scroll input in that list for 5 s) and R35.6 (the track is in the list as shown). Then it selects that one row, sets the active row and scrolls it into view, without a call to `focus()`. | The lists already hold their selection and the playing track (`usePlayingTrack`, `src/widgets/library/lists.tsx`). No IPC change. |
 | D64 | Notice version (R7 v1.10): `settings.json` gets `online_notice_version` (absent reads as 1). Version 2 names lyrics.ovh. With Online lookups on and a version below 2, the updated notice shows at the next start, with "Keep on" and "Turn off". Until the user answers, no request goes to lyrics.ovh; the services the user already accepted continue. A chain that reaches the blocked lyrics.ovh step with no result ends as an error: no marker. "Keep on" checks the D61 rule again, so the playing and the next song run the chain again. | The R7 notice names the services the user agrees to. An existing user must see the new service before the app sends song names to it. |
 | D65 | Type-to-find (R36). One shared hook in `src/lib/` holds the typed text, the 1 s reset (R36.3) and the R36.2 and R36.6 key rules; `lib/keyboard.ts` `isPlaybackSpace` asks it, so Space joins an active text and toggles playback otherwise (D17). Lists whose names the webview does not hold ask the core (D14 rows for the visible window only). Artist, Album, Songs table, playlist view and Play queue: one command takes the list identity the webview already sends for its id list (scope, query, sort, or the playlist or queue) and the typed text, and returns the index of the first match or none; the webview adds the offset of the "All" row, which never matches. Library tree: the webview holds song ids only, so it sends the kind and id of each shown row in order and the core returns the first matching index. The Playlists widget holds every playlist name, so it matches in the webview. No paths cross IPC (D13). The core matches with the R3 sort normalization (case, accents). Each request carries a sequence number; a response whose typed text or list (search, sort, edit, expand state) is no longer current is dropped, so a slow `z` reply cannot replace a later `zz` match. A match scrolls through the `VirtualList` `reveal` prop, because `onMove` alone does not scroll. | R36.4 searches the whole list; D14 keeps names out of the webview. One hook keeps the timeout and Space rule in one place. |
+| D66 | Selection restore (R37). The core saves and resolves the selection; the webview applies it. `state.json` gets an optional `librarySelection` field: the artist name, the album as artist name and album name, and the song as a path relative to the music folder (the R27 path form). Each one is null for "All" or no selection. Exact names, not session ids (D46) and not the fold keys, because `artist_ids` and `album_ids` in the index key on the exact names. The field has a serde default and its own lenient read: a missing or malformed field gives no selection and a log line, and the queue still restores. `STATE_VERSION` stays 1, because `state::load` drops a file of another version, and the saved queue with it. One command takes the three ids on each selection change (D13: ids only); the core maps them to names and the path and marks the state dirty, so the existing saver writes it. Resolve follows `StateStore::try_restore`: before a complete traversal a missing level waits; after it, R37.6 drops that level and the levels below it. A saved song whose track is not under the restored artist and album is dropped (R37.7). A selection change from the user before the restore drops the saved selection, as `user_first` does for the queue; `new_folder` drops it too. The restore marks the selection ready before it answers, so the webview's echo of the restored selection is saved, not taken as a user change. The webview asks for the resolved selection with one command at startup and again on each `library-changed` event while the answer is "pending". It then sets the store selection (the song becomes the only selected song and the anchor), opens the Tree path (R37.4) and reveals each row through `VirtualList` `reveal`, with no call to `focus()`. The restore is not user input for R35.5. | One file and one restore path serve R27 and R37. Names and paths survive a restart; session ids do not. |
 
 ### 5.3 Owner confirmations
 
@@ -2027,7 +2030,7 @@ P0 foundation -> P1 brand assets -> P2 themed shell -> P3 GATE (Milestone 0)
   -> P19 bulk import and repair -> P20 microphone ducking -> P21 release readiness again
   -> P22 Library frame splitters -> P23 bar widgets and Windows build
   -> U0 to U8 UI shell rework -> P24 automatic lyrics and selection follow
-  -> P25 type-to-find in lists
+  -> P25 type-to-find in lists -> P26 Library selection restore
 ```
 
 - **Brand and design early.** Tokens and focus styles come in P0, brand assets in P1 and the themed shell in P2. Every later widget is built on them. P17 is an audit of what exists, not a styling pass.
@@ -3060,6 +3063,33 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 **Verification.** Rust unit tests (P25-AC1). Vitest (P25-AC2, P25-AC3). Playwright (P25-AC3 to P25-AC6). Manual Linux: the `docs/release-checklist.md` walkthrough (P25.4).
 
+### P26. Library selection restore
+
+**Objective.** At startup the Library shows the Artist, Album and Song selection that it had when the app last closed.
+
+**Scope.** R37. R27 (the saved state holds the selection). Requirements section 3 (v1.12 items), section 4 (v1.12 non-goals), section 5 (v1.12 edge cases). AC-31. D25. D46. D63. D66.
+
+**Depends on.** P25.
+
+**Tasks.**
+
+- **P26.1** Core (D66) in `crates/clawdio-core/src/state.rs`: a `SavedSelection` type (artist name, album as artist and album name, song path; each optional) as an optional `librarySelection` field of `PlaybackState` with a serde default and a lenient read. A capture function that maps the three ids to names and a path through the index. A resolve function that maps them back to ids with the `complete` rule of `resolve`, the R37.6 level rule and the R37.7 album check.
+- **P26.2** Shell in `src-tauri/src/persist.rs` and `src-tauri/src/commands/`: the pending selection in `StateStore`, dropped by a user selection change before the restore and by `new_folder`. Command `library_selection_save` (three ids) and command `library_selection_restored` (the resolved ids, or pending, or none). ts-rs bindings (D15). No paths cross IPC (D13).
+- **P26.3** Webview in `src/store/library.ts` and `src/widgets/library/lists.tsx`: send each selection change to `library_selection_save`. At startup and on each `library-changed` event while pending, ask `library_selection_restored` and apply the answer once: set the selection, open only the Tree path to the restored row (R37.4), reveal each restored row and do not move focus (R37.5). The restore does not count as R35.5 input.
+- **P26.4** Docs: an AC-31 row in the `docs/release-checklist.md` walkthrough.
+- **P26.5** Tests: Rust unit tests for P26.1, Rust integration tests for P26.2, Vitest for the store and Playwright with mocked IPC for the lists.
+
+**Acceptance criteria.**
+
+- **P26-AC1** Core: the selection round-trips as names and a relative path, never ids or an absolute path. A version 1 `state.json` without the field restores its queue and no selection. A malformed field restores the queue and no selection, with a log line. A missing artist gives no selection. A missing album keeps the artist. A missing song keeps the artist and the album. A song under another album is dropped. Before a complete traversal a missing level waits (unit tests).
+- **P26-AC2** Shell: a user selection change before the restore drops the saved selection; a new music folder drops it; the restore answers pending until it resolves; the echo of the restored selection does not drop it (integration tests).
+- **P26-AC3** Playwright (AC-31), Columns and Top/bottom modes: a saved artist, album and song restore as selected; a song that starts out of view scrolls into view; keyboard focus equals the focus of a start with no saved selection; a saved album that is missing gives the artist selected, "All" in the Album list and no song.
+- **P26-AC4** Playwright, Tree mode: the artist and album nodes above the restored song open, all other nodes stay closed and the song row is in view.
+- **P26-AC5** Playwright: with three songs selected, only the active song restores. A restored song follows the next song change at once (R37.8, no R35.5 wait). Reset layout does not change the selection. The search text and the playlist view do not restore.
+- **P26-AC6** Manual Linux: the AC-31 walkthrough in `docs/release-checklist.md` (P26.4).
+
+**Verification.** Rust unit tests (P26-AC1). Rust integration tests (P26-AC2). Playwright (P26-AC3 to P26-AC5). Manual Linux (P26-AC6).
+
 ---
 
 ## 9. Risks
@@ -3128,6 +3158,7 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 | AC-28 | Automatic lyrics for the playing and the next song; no repeat after no match | P24-AC3, P24-AC4, P24-AC6, P24-AC12 |
 | AC-29 | Songs list and Play queue selection follow the playing song | P24-AC10, P24-AC11 |
 | AC-30 | Type-to-find in lists | P25-AC3, P25-AC4, P25-AC5 |
+| AC-31 | Library selection restores at startup | P26-AC3, P26-AC4, P26-AC6 |
 
 ---
 
@@ -3283,6 +3314,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.31 (October 23, 2026):** requirements v1.12 (R37, AC-31, owner decision 46). Added phase P26 (Not started) and D66.
 - **1.30 (October 19, 2026):** P25 Done with exceptions (manual Linux walkthrough open). No F3 proposal.
 - **1.29 (October 19, 2026):** requirements v1.11 (R36, AC-30, owner decision 45). Added phase P25 (Not started) and D65.
 - **1.28 (October 15, 2026):** P24 Done with exceptions (P24-AC12 manual Linux check open). F-23 proposed.
