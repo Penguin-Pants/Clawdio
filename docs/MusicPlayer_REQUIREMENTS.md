@@ -166,7 +166,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R37.1 Saved items.** The Artist selection, the Album selection and the active song row (the Songs table in Columns and Top/bottom modes, the song rows in Tree mode). "All" and "nothing selected" are saved values too. The other rows of a multi-selection are not saved.
   - **R37.2 Save.** The selection saves automatically with the R27 state. `[D]` After a crash, the last saved selection restores.
   - **R37.3 Restore.** At startup the saved selection applies in the saved Library mode (Columns, Top/bottom or Tree). Each restored row scrolls into view. The search text is not saved, so the lists start with no filter.
-  - **R37.4 Tree mode.** Only the artist and album nodes above the restored row open. All other nodes stay closed.
+  - **R37.4 Tree mode.** The nodes open as after a mode switch (R28): the artist and album of the restored row open. A restored artist or album row (no song) opens too, so its albums or songs show. All other nodes stay closed.
   - **R37.5 Focus.** Keyboard focus does not move. It starts where it starts with no saved selection.
   - **R37.6 Missing.** A saved artist, album or song that is not in the library does not restore. The levels above it restore. That level and the levels below it become "All" (Artist and Album lists) or no selection (Songs). No message. Example: the artist exists and the album is gone; the artist is selected, the Album list shows "All" and no song is selected.
   - **R37.7 Not in view.** A saved song that is in the library but not in the Songs list as shown (for example, it moved to another album) does not restore. No song is selected.
@@ -345,7 +345,7 @@ These are out under the owner's "few features" rule.
 - Type-to-find filters a list. The Library search (R23) filters; R36 only moves the selection. `(v1.11)`
 - Type-to-find opens collapsed tree nodes, or matches text in the middle of a name or in other columns (R36.4, R36.5). `(v1.11)`
 - A type-to-find overlay that shows the typed text. `(v1.11)`
-- Restore at startup of the search text, the open playlist view, the Tree expand state (other than the path to the restored row), scroll positions (other than the restored row in view), the Play queue selection or the Playlists widget selection (R37). `(v1.12)`
+- Restore at startup of the search text, the open playlist view, the Tree expand state (other than the R37.4 nodes), scroll positions (other than the restored row in view), the Play queue selection or the Playlists widget selection (R37). `(v1.12)`
 - Keyboard focus on the restored row at startup (R37.5). `(v1.12)`
 
 ---
@@ -544,7 +544,7 @@ Version 1.11 records an owner decision made on October 19, 2026:
 
 Version 1.12 records an owner decision made on October 23, 2026:
 
-46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens only the path to the restored row. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored.
+46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens the restored row's artist and album, as a mode switch does. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored.
 
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 

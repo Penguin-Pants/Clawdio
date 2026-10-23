@@ -197,7 +197,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R37-1 | Saved items: Artist selection, Album selection and the active song row (Songs table or Tree song row); "All" and nothing are values; other multi-selected rows are not saved | §2 R37.1 | P26.1, P26.3 | P26-AC1, P26-AC5 | UT, E2E | Planned (D66) |
 | R37-2 | The selection saves automatically with the R27 state; a crash restores the last saved selection | §2 R37.2 | P26.1, P26.2 | P26-AC1, P26-AC2 | UT, IT | Planned (D66) |
 | R37-3 | At startup the selection applies in the saved Library mode; each restored row scrolls into view; the search text is not restored | §2 R37.3 | P26.3 | P26-AC3, P26-AC5 | E2E | Planned (D66) |
-| R37-4 | Tree mode opens only the artist and album nodes above the restored row | §2 R37.4 | P26.3 | P26-AC4 | E2E | Planned (D66) |
+| R37-4 | Tree mode opens the restored row's artist and album, as a mode switch does; other nodes stay closed | §2 R37.4 | P26.3 | P26-AC4 | E2E | Planned (D66) |
 | R37-5 | Keyboard focus does not move at the restore | §2 R37.5 | P26.3 | P26-AC3 | E2E | Planned (D66) |
 | R37-6 | A missing level and the levels below it become "All" or no selection; the levels above restore; no message | §2 R37.6 | P26.1 | P26-AC1, P26-AC3 | UT, E2E | Planned (D66) |
 | R37-7 | A saved song not in the Songs list as shown does not restore | §2 R37.7 | P26.1 | P26-AC1 | UT | Planned (D66) |
@@ -533,7 +533,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-43 | Lyrics no match: per-song marker; no automatic retry | §8.43 | P24.4 | P24-AC3 | IT | Done (P24) |
 | DEC-44 | Selection follows: Songs list and Play queue; only with a selection; no focus move | §8.44 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24) |
 | DEC-45 | Type-to-find: every list and tree; prefix from the top; Space joins an active text; sorted column, else Title; 1 s reset | §8.45 | P25 | P25-AC1 to P25-AC6 | UT, E2E | Done (P25) |
-| DEC-46 | Selection restore: Artist, Album and active Song at startup; missing level clears it and those below; Tree opens the path only; focus does not move | §8.46 | P26 | P26-AC1 to P26-AC6 | UT, IT, E2E, MAN-L | Planned (D66) |
+| DEC-46 | Selection restore: Artist, Album and active Song at startup; missing level clears it and those below; Tree opens the row's artist and album; focus does not move | §8.46 | P26 | P26-AC1 to P26-AC6 | UT, IT, E2E, MAN-L | Planned (D66) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -576,7 +576,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Done with exceptions (P24; P24-AC12 manual Linux check open) |
 | AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
 | AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.2, P25.3 | P25-AC3, P25-AC4, P25-AC5 | E2E | Done (P25) |
-| AC-31 | Selection restore: Columns rows restore in view; a missing album gives the artist and "All"; Tree opens the path only | §9.31 | P26.3, P26.4 | P26-AC3, P26-AC4, P26-AC6 | E2E, MAN-L | Planned (D66) |
+| AC-31 | Selection restore: Columns rows restore in view; a missing album gives the artist and "All"; Tree opens the row's artist and album | §9.31 | P26.3, P26.4 | P26-AC3, P26-AC4, P26-AC6 | E2E, MAN-L | Planned (D66) |
 
 ---
 
