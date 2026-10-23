@@ -404,9 +404,9 @@ These are out under the owner's "few features" rule.
 - **Type-to-find and the selection follow `(v1.11)`:** a typed character is input in that list, so R35.5 applies.
 - **Type-to-find with an open menu, dialog or row drag `(v1.11)`:** the keys go to that control. No find.
 - **Type-to-find in an empty list `(v1.11)`:** nothing changes.
-- **Saved selection before the library is ready `(v1.12)` `[D]`:** the restore waits for the library, as the R27 queue restore does. If the user selects a row first, the user's selection wins and the saved one is dropped.
-- **Music folder changed `(v1.12)` `[D]`:** the saved selection belongs to the old folder. It is dropped. Nothing is selected.
-- **Saved selection that cannot be read `(v1.12)` `[D]`:** it is ignored and logged. Nothing is selected. The rest of the R27 state still restores.
+- **Saved selection before the library is ready `(v1.12)`:** the restore waits for the library, as the R27 queue restore does. If the user selects a row first, the user's selection wins and the saved one is dropped.
+- **Music folder changed `(v1.12)`:** the saved selection belongs to the old folder. It is dropped. Nothing is selected.
+- **Saved selection that cannot be read `(v1.12)`:** it is ignored and logged. Nothing is selected. The rest of the R27 state still restores.
 - **Reset layout `(v1.12)`:** the selection does not change. It is not part of the arrangement (R29).
 - **Leading articles `(v1.11)`:** a name such as "The Chemical Brothers" matches "t", because names are folder names, unchanged (R3).
 
@@ -544,7 +544,7 @@ Version 1.11 records an owner decision made on October 19, 2026:
 
 Version 1.12 records an owner decision made on October 23, 2026:
 
-46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens the restored row's artist and album, as a mode switch does. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored.
+46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens the restored row's artist and album, as a mode switch does. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored. The owner confirmed the section 5 rules for a library that is not ready, a changed music folder and a saved selection that cannot be read (October 23, 2026).
 
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
