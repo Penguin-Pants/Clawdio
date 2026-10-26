@@ -853,7 +853,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - **Status:** Done.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `074034d`. Messages start with `P14:`.
-- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.46 (0.23.45 until RUSTSEC-2026-0349) with the `ring` provider, `tokio` 1.53.2, `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
+- **Packages:** `reqwest` 0.13.5 with `rustls-no-provider`, `rustls` 0.23.46 (0.23.45 until RUSTSEC-2026-0349; `rustls-webpki` 0.103.16 since RUSTSEC-2026-0382) with the `ring` provider, `tokio` 1.53.3 (1.53.2 until RUSTSEC-2026-0386), `tokio-util` 0.7.20; dev: `httpmock` 0.8.3.
 
 | Criterion | Result | Evidence |
 |---|---|---|
