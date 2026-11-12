@@ -2,12 +2,14 @@
 //! visible window only.
 
 use clawdio_core::api::{
-    AlbumRow, ArtistRow, FindHit, FindList, SongRow, SongScope, SortKey, TreeArtist,
+    AlbumRow, ArtistRow, FindHit, FindList, LibrarySelectionIds, SelectionRestore, SongRow,
+    SongScope, SortKey, TreeArtist,
 };
 use clawdio_core::error::CoreError;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::{lock_error, CommandResult};
+use crate::persist::StateStore;
 use crate::player::PlayerHandle;
 use crate::state::{Library, Playlists};
 
@@ -110,4 +112,22 @@ pub async fn library_find(
     };
     let index = library.0.read().map_err(|_| lock_error())?;
     Ok(index.find_title(&tracks, &text))
+}
+
+/// A Library selection change (R37.2): the three ids, which Rust saves as names and a path
+/// with the R27 state (D13, D66).
+#[tauri::command]
+pub fn library_selection_save(
+    app: AppHandle,
+    store: State<'_, StateStore>,
+    selection: LibrarySelectionIds,
+) {
+    store.save_selection(&app, selection);
+}
+
+/// The saved selection to restore at startup (R37.3): pending, none, or the ids. The webview
+/// also listens to `library-selection-restored`, which follows the resolve.
+#[tauri::command]
+pub fn library_selection_restored(store: State<'_, StateStore>) -> SelectionRestore {
+    store.selection_answer()
 }

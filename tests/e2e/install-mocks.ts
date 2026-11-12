@@ -98,6 +98,26 @@ function backup(key: string, counter: string): null {
   return count(counter);
 }
 
+/**
+ * The saved Library selection (R37): "?restore=pending" answers pending at mount, and
+ * "?restore=1,2,3" (artist, album, song; "-" for "All" or no song) answers that selection.
+ * No parameter answers none. `window.e2eHoldRestore` holds the reply until
+ * `window.e2eReleaseRestore`. Tests read the last save in `data-selection-save`.
+ */
+function selectionRestored(): unknown {
+  const value = params.get("restore");
+  const id = (text: string | undefined) => (text === undefined || text === "-" ? null : Number(text));
+  const parts = value?.split(",");
+  const answer =
+    value === null
+      ? { kind: "none" }
+      : value === "pending"
+        ? { kind: "pending" }
+        : { kind: "selection", selection: { artist: id(parts?.[0]), album: id(parts?.[1]), song: id(parts?.[2]) } };
+  if (!window.e2eHoldRestore) return answer;
+  return new Promise((resolve) => (window.e2eReleaseRestore = () => resolve(answer)));
+}
+
 /** The settings, layout and window commands, by name. */
 const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
   settings_get: () => ({ ...settings }),
@@ -128,6 +148,11 @@ const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
   "plugin:window|destroy": () => {
     document.body.dataset.destroyed = "true";
     return null;
+  },
+  library_selection_restored: () => selectionRestored(),
+  library_selection_save: (args) => {
+    document.body.dataset.selectionSave = JSON.stringify(args.selection);
+    return count("selectionSaves");
   },
   cancel_job: () => null,
   open_log_folder: () => null,

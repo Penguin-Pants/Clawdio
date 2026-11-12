@@ -20,6 +20,7 @@ import { restoreColumns, watchColumns } from "./columns-persistence";
 import { UNKNOWN_COMPONENT, restoreLayout, watchLayout } from "./persistence";
 import { GroupActions, LibraryTab, WidgetTab } from "./WidgetTab";
 import { WIDGET_IDS, WIDGETS, type WidgetId } from "./widgets";
+import { markArranged } from "@/store/selection-restore";
 
 /** Dock theme: every chrome color comes from token variables (P2.10, src/styles/dockview-theme.css). */
 const THEME: DockviewTheme = {
@@ -64,6 +65,7 @@ async function startArrangement(api: DockviewApi, container: HTMLElement | null)
   const mode = await commands.measureMode().catch(() => null);
   if (mode) {
     applyMeasureLayout(mode, api);
+    markArranged();
     // The measurement scripts wait for this signal before the idle period (P3.5, D28).
     waitForPopulated(async () => !(await commands.scanRunning())).then(() => commands.measureReady(), console.error);
     return;
@@ -75,6 +77,8 @@ async function startArrangement(api: DockviewApi, container: HTMLElement | null)
     api.layout(size.width, size.height, true);
     applySideWidths(api);
   }
+  // The saved Library mode is set: a held selection restore applies in it (R37.3).
+  markArranged();
   const watcher = watchLayout(api);
   // The Songs column state is a file of its own (PS-6, UD13). The watcher starts first, so an
   // edit made while the file loads is saved too.

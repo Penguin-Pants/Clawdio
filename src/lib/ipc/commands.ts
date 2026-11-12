@@ -7,6 +7,7 @@ import type { FindList } from "./bindings/FindList";
 import type { FolderState } from "./bindings/FolderState";
 import type { JobProgress } from "./bindings/JobProgress";
 import type { LibraryMode } from "./bindings/LibraryMode";
+import type { LibrarySelectionIds } from "./bindings/LibrarySelectionIds";
 import type { Lyrics } from "./bindings/Lyrics";
 import type { MetadataPreview } from "./bindings/MetadataPreview";
 import type { MicDucking } from "./bindings/MicDucking";
@@ -19,6 +20,7 @@ import type { ImportReport } from "./bindings/ImportReport";
 import type { RepairBatch } from "./bindings/RepairBatch";
 import type { RepairReport } from "./bindings/RepairReport";
 import type { RepeatMode } from "./bindings/RepeatMode";
+import type { SelectionRestore } from "./bindings/SelectionRestore";
 import type { SettingsView } from "./bindings/SettingsView";
 import type { SongRow } from "./bindings/SongRow";
 import type { SongScope } from "./bindings/SongScope";
@@ -28,6 +30,7 @@ import type { TreeArtist } from "./bindings/TreeArtist";
 
 export type { AlbumRow, ArtistRow, ImportReport, LibraryMode, Lyrics, PlayerSnapshot, PlaylistEntry, PlaylistRow };
 export type { FolderState, JobProgress, QueueSnapshot, RepeatMode, SettingsView, SongRow, SongScope, TreeArtist };
+export type { LibrarySelectionIds, SelectionRestore };
 export type { ImportBatch, MetadataPreview, MicDucking, RepairBatch, RepairReport, SortColumn, SortKey };
 export type { FindHit };
 
@@ -65,6 +68,10 @@ export const commands = {
   /** Backs up a `columns.json` that failed validation as `columns.json.bak`. */
   columnsBackup: () => invoke<void>("columns_backup"),
   playerState: () => invoke<PlayerSnapshot>("player_state"),
+  /** A Library selection change (R37.2): Rust saves it with the R27 state (D66). */
+  librarySelectionSave: (selection: LibrarySelectionIds) => invoke<void>("library_selection_save", { selection }),
+  /** The saved selection to restore at startup: pending, none or the ids (R37.3, D66). */
+  librarySelectionRestored: () => invoke<SelectionRestore>("library_selection_restored"),
   playlistsList: () => invoke<PlaylistRow[]>("playlists_list"),
   playlistEntries: (id: number) => invoke<PlaylistEntry[]>("playlist_entries", { id }),
   /** The message for a new playlist name, or null when it is valid (R12, D21). */

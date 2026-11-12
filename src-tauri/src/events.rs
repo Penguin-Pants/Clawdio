@@ -20,6 +20,8 @@ pub const ART_READY: &str = "art-ready";
 pub const PLAYLISTS_CHANGED: &str = "playlists-changed";
 /// The playing song or its lyrics source changed (P13.3).
 pub const LYRICS_CHANGED: &str = "lyrics-changed";
+/// The saved Library selection resolved, or a new music folder dropped it (R37, D66).
+pub const LIBRARY_SELECTION_RESTORED: &str = "library-selection-restored";
 
 /// Emits an event and logs a failure instead of failing the caller.
 pub fn emit<R: tauri::Runtime, S: serde::Serialize + Clone>(
