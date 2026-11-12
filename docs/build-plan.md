@@ -1540,9 +1540,11 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 1, F3 0, F4 6. Source: own audit and the test runs.
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 1, F4 6. Source: own audit, the test runs and Codex on the PR.
 
 - F2: `cargo fmt` changed one expression in `persist.rs`. Fixed before commit.
+- F2 (Codex): the startup mode commands ran before `LyricsState` was managed. A mode command announces songs, and with Online lookups on, `lyrics::auto_enabled` read the missing state and stopped the player thread. `restore_modes` now runs after every managed state the player events read, before the startup scan.
+- F3: CI `licenses` fails on RUSTSEC-2026-0459 (bundled SQLite in `libsqlite3-sys` 0.38.2 through `rusqlite` 0.40.2). Not from this diff: `Cargo.lock` is unchanged. Fix proposed to the owner: `rusqlite` 0.41 (section 11).
 - F4:
   - The startup `SetShuffle` runs on an empty queue: `Queue::replace` in the queue restore refills the shuffle pool.
   - The startup mode announce comes before `StateStore` is managed: `Latest` already starts with the saved modes.
@@ -1550,6 +1552,8 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - An older app version reads a file with the new keys: `PlaybackState` does not deny unknown fields.
   - `capture` returns the modes off: its one caller (`save_now`) sets them, and its doc comment says so.
   - A `null` mode: the lenient read gives off, as for any unreadable value.
+
+**Follow-ups:** F-24 (new).
 
 ## 3. Source documents and precedence
 
@@ -3230,6 +3234,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
 | F-23 | Count the running "Fetch lyrics" requests and hide the status line progress only when the last one ends. | Two clicks on two songs: the first to end hides "Fetching lyrics" while the second still runs (P15 behavior, kept by P24). | P24 review |
+| F-24 | Upgrade `rusqlite` to 0.41 (`libsqlite3-sys` 0.39, SQLite 3.54) and check the MSRV against `rust-toolchain.toml`. | CI `cargo deny` fails on RUSTSEC-2026-0459 for every branch, `main` included. | P27 review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
@@ -3375,7 +3380,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
-- **1.32 (November 12, 2026):** requirements v1.13 (R27 modes, AC-32, owner decision 47). Added phase P27 (Done with exceptions, P27-AC3 manual Linux check open). D25 changed: the shuffle and repeat modes are saved. No F3 proposal.
+- **1.32 (November 12, 2026):** requirements v1.13 (R27 modes, AC-32, owner decision 47). Added phase P27 (Done with exceptions, P27-AC3 manual Linux check open). D25 changed: the shuffle and repeat modes are saved. F-24 proposed.
 - **1.31 (October 23, 2026):** requirements v1.12 (R37, AC-31, owner decision 46). Added phase P26 (Not started) and D66.
 - **1.30 (October 19, 2026):** P25 Done with exceptions (manual Linux walkthrough open). No F3 proposal.
 - **1.29 (October 19, 2026):** requirements v1.11 (R36, AC-30, owner decision 45). Added phase P25 (Not started) and D65.
