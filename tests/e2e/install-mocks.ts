@@ -138,7 +138,12 @@ const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
     sessionStorage.setItem(LAYOUT_KEY, args.json as string);
     return count("layoutSaves");
   },
-  columns_load: () => sessionStorage.getItem(COLUMNS_KEY),
+  // `e2eHoldColumns` holds the reply until `e2eReleaseColumns` (selection-restore.spec.ts).
+  columns_load: () => {
+    const text = sessionStorage.getItem(COLUMNS_KEY);
+    if (!window.e2eHoldColumns) return text;
+    return new Promise((resolve) => (window.e2eReleaseColumns = () => resolve(text)));
+  },
   columns_save: (args) => {
     sessionStorage.setItem(COLUMNS_KEY, args.json as string);
     return count("columnsSaves");
@@ -204,8 +209,13 @@ function libraryCommand(command: string, args: Args): unknown {
     }
   }
   switch (command) {
-    case "library_artists":
-      return library.artists(args.query as string).map((artist) => artist.id);
+    case "library_artists": {
+      // `e2eArtistLimit` cuts the list; `e2eHoldArtists` holds the reply (selection-restore.spec.ts).
+      const ids = library.artists(args.query as string).map((artist) => artist.id);
+      const shown = window.e2eArtistLimit === undefined ? ids : ids.slice(0, window.e2eArtistLimit);
+      if (!window.e2eHoldArtists) return shown;
+      return new Promise((resolve) => (window.e2eReleaseArtists = () => resolve(shown)));
+    }
     case "library_artist_rows":
       return library.artistRows(args.ids as number[]);
     case "library_albums":

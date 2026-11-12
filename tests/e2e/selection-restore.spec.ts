@@ -96,6 +96,51 @@ test("P26-AC3: a user selection while the reply is in flight stays, and a folder
   await expect(selected(list(page, "Artists"))).toHaveText("All");
 });
 
+test("P26-AC3: a restore that lands while the lists reload after the scan is not cleared by the old rows", async ({
+  page,
+}) => {
+  // The cache held five artists; the scan finds Artist 15 and resolves the selection.
+  await page.addInitScript(() => (window.e2eArtistLimit = 5));
+  await open(page, "pending");
+  await expect(option(page, "Artists", "Artist 04")).toBeVisible();
+  await page.evaluate(async () => {
+    window.e2eArtistLimit = undefined;
+    window.e2eHoldArtists = true;
+    await window.e2e.libraryChanged();
+    await window.e2e.selectionRestored({ kind: "selection", selection: { artist: 15, album: 46, song: 466 } });
+  });
+  await page.evaluate(() => {
+    window.e2eHoldArtists = false;
+    window.e2eReleaseArtists?.();
+  });
+  await expect(selected(list(page, "Artists"))).toHaveText("Artist 15");
+  await expect(selected(songsGrid(page))).toContainText("Song 7 of Album B15");
+  await expect
+    .poll(() => page.evaluate(() => document.body.dataset.selectionSave))
+    .toBe(JSON.stringify({ artist: 15, album: 46, song: 466 }));
+});
+
+test("P26-AC3: the restore waits for the saved column sort, so the song shows in its sorted place", async ({
+  page,
+}) => {
+  // Save a Title sort, descending: "Song 1 of Album A0" (id 0) moves from the top to far down.
+  await open(page, null);
+  const title = songsGrid(page).getByRole("columnheader", { name: "Title", exact: true });
+  await title.click();
+  await title.click();
+  await expect(title).toHaveAttribute("aria-sort", "descending");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("e2e-columns") ?? "")).toContain("desc");
+  await page.addInitScript(() => (window.e2eHoldColumns = true));
+  await open(page, "-,-,0");
+  await expect(option(page, "Artists", "Artist 00")).toBeVisible();
+  // Give a restore that does not wait the time to apply and reveal in the default order.
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.e2eReleaseColumns?.());
+  await expect(title).toHaveAttribute("aria-sort", "descending");
+  await expect(selected(songsGrid(page))).toContainText("Song 1 of Album A0");
+  await expect(selected(songsGrid(page))).toBeInViewport();
+});
+
 test("P26-AC3: with a saved Top/bottom mode the restore applies in that mode", async ({ page }) => {
   await open(page, "15,46,466", "Top/bottom");
   await expect(library(page).getByRole("button", { name: "Top/bottom" })).toHaveAttribute("aria-pressed", "true");

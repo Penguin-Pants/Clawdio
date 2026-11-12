@@ -46,6 +46,10 @@ const hooks = {
   },
   setLyrics,
   retagSong,
+  /** Sends `library-changed`, like the end of a scan. */
+  libraryChanged(): Promise<void> {
+    return emit("library-changed");
+  },
   /** Sends `library-selection-restored`, like Rust after the resolve or a new folder (R37). */
   selectionRestored(answer: unknown): Promise<void> {
     return emit("library-selection-restored", answer);
@@ -75,6 +79,16 @@ declare global {
     e2eSlowRemove?: boolean;
     /** Releases the held `playlist_remove_entry` reply. */
     e2eReleaseRemove?: () => void;
+    /** Holds the mocked `columns_load` reply until `e2eReleaseColumns` (selection-restore.spec.ts). */
+    e2eHoldColumns?: boolean;
+    /** Releases the held `columns_load` reply. */
+    e2eReleaseColumns?: () => void;
+    /** Cuts the mocked `library_artists` reply to this many artists (selection-restore.spec.ts). */
+    e2eArtistLimit?: number;
+    /** Holds the mocked `library_artists` reply until `e2eReleaseArtists`. */
+    e2eHoldArtists?: boolean;
+    /** Releases the held `library_artists` reply. */
+    e2eReleaseArtists?: () => void;
     /** Holds the mocked `library_selection_restored` reply until `e2eReleaseRestore` (selection-restore.spec.ts). */
     e2eHoldRestore?: boolean;
     /** Releases the held `library_selection_restored` reply. */

@@ -241,11 +241,12 @@ export function ArtistList() {
   const items = (id: number | null) =>
     rowItems(play(id), () => addScope({ artist: id, album: null }), scopeSongs({ artist: id, album: null }));
   // A search that hides the selected artist selects "All", so no hidden row filters the lists.
+  // Only the ids of the current inputs count: older ids can miss a restored artist (R37).
   useEffect(() => {
-    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
+    if (current && ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
       setSelection({ artist: null, album: null, song: null });
     }
-  }, [ids, selected, setSelection]);
+  }, [current, ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -321,10 +322,12 @@ export function AlbumList() {
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
   const items = (id: number | null) =>
     id === null ? null : albumItems(id, row(id)?.name, play(id), () => addScope({ artist: null, album: id }));
-  // A search or an artist change that hides the selected album selects "All".
+  // A search or an artist change that hides the selected album selects "All". Only the ids of
+  // the current inputs count (R37).
   useEffect(() => {
-    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
-  }, [ids, selected, setSelection]);
+    if (current && ids !== NO_IDS && selected !== null && !ids.includes(selected))
+      setSelection({ album: null, song: null });
+  }, [current, ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
