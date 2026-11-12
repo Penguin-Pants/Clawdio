@@ -232,8 +232,13 @@ function libraryCommand(command: string, args: Args): unknown {
       );
     case "library_rows":
       return library.rows(args.ids as number[]);
-    case "library_tree":
-      return library.tree(args.query as string);
+    case "library_tree": {
+      // `e2eArtistLimit` and `e2eHoldArtists` act on the tree too (selection-restore.spec.ts).
+      const tree = library.tree(args.query as string);
+      const shown = window.e2eArtistLimit === undefined ? tree : tree.slice(0, window.e2eArtistLimit);
+      if (!window.e2eHoldArtists) return shown;
+      return new Promise((resolve) => (window.e2eReleaseArtists = () => resolve(shown)));
+    }
     case "album_art": {
       // Tests count the art requests (P10-AC7).
       const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];

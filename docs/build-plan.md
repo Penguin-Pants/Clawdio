@@ -1527,7 +1527,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P26-AC1 | Pass | `crates/clawdio-core/src/state.rs` tests: round trip as names and a relative path (the JSON is checked), a file without the field, two malformed fields, a missing song, album and artist (each by removing the last tracks, so the groups are tombstoned), groups never in the index, a song under another album, a song under "All" in each shape, a missing level waits before a complete traversal. |
 | P26-AC2 | Pass | `src-tauri/src/persist.rs` tests: pending until the resolve and one event after it, also when the resolve waits for the end of the scan; a user selection before the restore drops only the saved selection (the waiting queue is written from the file and still restores); a queue edit first drops only the saved queue; queue ready and selection waiting writes the waiting selection from the file; a save after the restore resolves after a reload; the echo does not drop the restore; a new music folder emits none and the next save writes no selection. |
 | P26-AC3 | Pass (Chromium) (E2) | `tests/e2e/selection-restore.spec.ts`: Columns rows selected and in view, the echo saved as the same ids; an album and a song out of view scroll into view; "All" ancestors; focus equals a start with no restore; a pending answer then the event; a user selection while the reply is held; a none answer stops a later answer; a saved Top/bottom mode; a restore while the lists reload after the scan keeps its rows; a restore waits for the saved column sort. `src/store/selection-restore.test.ts`: a user selection before the ask, in flight and while held; a none answer at each point; the ask only after the listener registers. |
-| P26-AC4 | Pass (Chromium) (E2) | `selection-restore.spec.ts`: Tree song, album and artist restores open only their nodes and show the row; a restore after the tree loaded opens the nodes too. |
+| P26-AC4 | Pass (Chromium) (E2) | `selection-restore.spec.ts`: Tree song, album and artist restores open only their nodes and show the row; a restore after the tree loaded opens the nodes too, also while the tree reloads after the scan. |
 | P26-AC5 | Pass (Chromium) (E2) | `selection-restore.spec.ts`: a restored song follows Next at once (no 5 s wait); Reset layout keeps the selection; the search starts empty. The store saves only the active song (`selection.song`). |
 | P26-AC6 | Not run (E1) | AC-31 and AC-33 walkthroughs need a desktop session. |
 | P26-AC7 | Pass | `state.rs` test of `playing_selection`; `persist.rs` tests: the current song wins, the selection waits while the queue waits, a queue edit first gives the saved selection. |
@@ -1537,7 +1537,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N1: TDD order: the tests were written with the code. Each one was then shown to fail: the live-group check and the R37.7 album check removed failed 2 core tests; the playing-song rule, the per-part save and the user-first drop each failed 1 to 2 shell tests; a controller without the user-change rule failed 1 Vitest test; no reveal failed 4 Playwright tests; no restore open failed the Tree-after-load test.
 - N2: the mocked `library_selection_restored` answers from `?restore=`; `window.e2eHoldRestore` holds the reply. The P26-AC3 token cases run in Vitest with a fake listener, and two of them also in Playwright.
 - N3: `persist::StateStore` locks in the order `pending`, `selection`, `latest`; `save_now` releases each before the next.
-- N4: validation set: `npm run check` (415 tests), `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace`, the bindings check (the two new bindings committed) and `npm run test:e2e` (234 tests, Chromium) pass. The new spec passed every run with `--repeat-each=15`.
+- N4: validation set: `npm run check` (415 tests), `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace`, the bindings check (the two new bindings committed) and `npm run test:e2e` (235 tests, Chromium) pass. The new spec passed every run with `--repeat-each=15`.
 
 **Exceptions**
 
@@ -1546,10 +1546,11 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 6. Source: own audit, the test runs and Codex on the PR.
+**TWO-PASS REVIEW:** F1 0, F2 4, F3 0, F4 6. Source: own audit, the test runs and Codex on the PR.
 
 - F2 (Codex): `markArranged` ran before `restoreColumns`, so a saved column sort that loaded late moved the revealed song out of view. The restore now applies after the column restore, with a Playwright test that holds `columns_load`.
 - F2 (Codex): the "hidden selection becomes All" effects of the Artist and Album lists read ids of older inputs, so a restore that landed while the lists reloaded after the scan was cleared and saved. The effects now act only on current ids, with a Playwright test that holds `library_artists`.
+- F2 (Codex): the Tree restore-open effect ran on a tree of older inputs, so an album restore that landed while the tree reloaded after the scan found no owner, opened nothing and was marked done. The effect now waits for the current tree, with a Playwright test that holds `library_tree`.
 - F2: the new Vitest file typed the default answer as `number` ids, so `tsc` refused a `null` artist. The test types it as `LibrarySelectionIds`.
 - F4:
   - The Tree reveal waits until the restored row shows; a row that never shows leaves the reveal armed, and the next selected row scrolls into view once. That row is the user's own, already in view.

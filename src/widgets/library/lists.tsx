@@ -712,13 +712,14 @@ export function TreeList() {
     openSelection(tree, selection, setOpenArtists, setOpenAlbums);
   }, [tree, selection]);
   // A restored selection opens the same nodes (R37.4), also when the tree had loaded before.
+  // Only the tree of the current inputs counts: an older one can miss the restored album.
   const restoreSeq = useLibraryStore((state) => state.restoreSeq);
   const restoreOpened = useRef(0);
   useEffect(() => {
-    if (restoreSeq === restoreOpened.current || tree === NO_TREE) return;
+    if (restoreSeq === restoreOpened.current || !current || tree === NO_TREE) return;
     restoreOpened.current = restoreSeq;
     openSelection(tree, useLibraryStore.getState().selection, setOpenArtists, setOpenAlbums);
-  }, [tree, restoreSeq]);
+  }, [current, tree, restoreSeq]);
   const onRange = useCallback(
     (start: number, end: number) =>
       request(

@@ -189,6 +189,26 @@ test("P26-AC4: a restore that resolves after the tree has loaded opens the nodes
   await expect(expanded(page)).toHaveCount(2);
 });
 
+test("P26-AC4: an album restore that lands while the tree reloads after the scan opens its nodes", async ({ page }) => {
+  await page.addInitScript(() => (window.e2eArtistLimit = 5));
+  await open(page, "pending", "Tree");
+  await expect(tree(page).getByRole("treeitem", { name: "Artist 04", exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    window.e2eArtistLimit = undefined;
+    window.e2eHoldArtists = true;
+    await window.e2e.libraryChanged();
+    await window.e2e.selectionRestored({ kind: "selection", selection: { artist: 15, album: 46, song: null } });
+  });
+  await page.evaluate(() => {
+    window.e2eHoldArtists = false;
+    window.e2eReleaseArtists?.();
+  });
+  const album = tree(page).getByRole("treeitem", { name: "Album B15", exact: true });
+  await expect(album).toHaveAttribute("aria-selected", "true");
+  await expect(album).toBeInViewport();
+  await expect(expanded(page)).toHaveCount(2);
+});
+
 test("P26-AC5: a restored song follows the next song change at once", async ({ page }) => {
   // The test queue plays "Song 4 of Album A0" (id 3) paused.
   await open(page, "0,0,3");
