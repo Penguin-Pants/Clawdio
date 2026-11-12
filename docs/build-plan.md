@@ -1,8 +1,8 @@
 # Clawdio Build Plan
 
-**Version:** 1.31, October 23, 2026 (requirements v1.12: P26, Library selection restore, Not started).
+**Version:** 1.32, November 12, 2026 (requirements v1.13: P27, shuffle and repeat restore, Done with exceptions; P26 Not started).
 **Status:** In execution. Section 2 gives the phase status.
-**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25) and the v1.12 additions (P26).
+**Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25), the v1.12 additions (P26) and the v1.13 additions (P27).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
 
 **Bottom line**
@@ -11,7 +11,8 @@
 - Requirements v1.10 adds P24 (automatic lyrics fetch and a selection that follows the playing song). Done with exceptions: the manual Linux check P24-AC12 waits on the owner.
 - Requirements v1.11 adds P25 (type-to-find in lists). Done with exceptions: the manual Linux walkthrough (P25.4) waits on the owner.
 - Requirements v1.12 adds P26 (Library selection restore). Not started.
-- The plan has 27 phases (P0 to P26). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.13 adds P27 (shuffle and repeat restore). Done with exceptions: the manual Linux check P27-AC3 waits on the owner. P27 depends on P25, not P26: the owner asked for it first.
+- The plan has 28 phases (P0 to P27). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -97,6 +98,7 @@ A phase is Done when all of these are true:
 | P24 | Automatic lyrics and selection follow | U8 | Done with exceptions |
 | P25 | Type-to-find in lists | P24 | Done with exceptions |
 | P26 | Library selection restore | P25 | Not started |
+| P27 | Shuffle and repeat restore | P25 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -341,7 +343,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - **Status:** Done with exceptions.
 - **Commits:** branch `clawd/determined-ramanujan-3gm3n1`, from `e896960`. Messages start with `P4:`.
-- **Packages:** `walkdir` 2.5.0, `lofty` 0.25.4, `rusqlite` 0.40.2 (`bundled`), `tempfile` 3.27.0, `rodio` 0.22.2, `symphonia` 0.5.5, `tauri-plugin-log` 2.10.1, `tauri-plugin-dialog` 2.8.2, `tauri-plugin-opener` 2.7.1, `@tauri-apps/plugin-log` 2.10.1. Dev only: Tauri feature `test`.
+- **Packages:** `walkdir` 2.5.0, `lofty` 0.25.4, `rusqlite` 0.41.1 (`bundled`; 0.40.2 until RUSTSEC-2026-0459), `tempfile` 3.27.0, `rodio` 0.22.2, `symphonia` 0.5.5, `tauri-plugin-log` 2.10.1, `tauri-plugin-dialog` 2.8.2, `tauri-plugin-opener` 2.7.1, `@tauri-apps/plugin-log` 2.10.1. Dev only: Tauri feature `test`.
 
 | Criterion | Result | Evidence |
 |---|---|---|
@@ -1513,6 +1515,46 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** none.
 
+#### P27. Shuffle and repeat restore (November 12, 2026)
+
+- **Status:** Done with exceptions. P27.1 to P27.3 are done. P27-AC3 (manual Linux) is open (E1).
+- **Commits:** branch `clawd/vibrant-dirac-9ib3vy`, from `main` at `6fb42ec`. Messages start with `P27:`.
+- **Packages:** none new.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P27-AC1 | Pass | `crates/clawdio-core/src/state.rs` tests: the modes round trip, a file without them, a file with `"shuffle":"yes"` and `"repeat":"twice"`. |
+| P27-AC2 | Pass | `src-tauri/src/persist.rs` tests: the saved modes reach the player while `B/b.mp3` waits; a mode change saves with the queue; an exit before the player applies the modes keeps them. |
+| P27-AC3 | Not run (E1) | AC-32 needs a desktop session. |
+
+**Notes**
+
+- N1: the webview needs no change. `usePlayerStore.load` reads `player_state` at mount, and the player thread handles the startup mode commands before that read.
+- N2: TDD order: the tests were written with the code. Each one was then shown to fail: without the lenient read, 1 core test failed; without the `Latest` modes and `restore_modes`, the 3 new shell tests failed.
+- N3: validation set: `npm run check` (409 tests), `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace`, the bindings check and `npm run test:e2e` (221 tests, Chromium) pass.
+
+**Exceptions**
+
+- E1: P27-AC3 needs a desktop session with a real music folder; this container has neither.
+- E2: WebKit is not installed in this environment. Playwright ran in Chromium. CI runs Chromium and WebKit.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 2, F3 1, F4 6. Source: own audit, the test runs and Codex on the PR.
+
+- F2: `cargo fmt` changed one expression in `persist.rs`. Fixed before commit.
+- F2 (Codex): the startup mode commands ran before `LyricsState` was managed. A mode command announces songs, and with Online lookups on, `lyrics::auto_enabled` read the missing state and stopped the player thread. `restore_modes` now runs after every managed state the player events read, before the startup scan.
+- F3: CI `licenses` fails on RUSTSEC-2026-0459 (bundled SQLite in `libsqlite3-sys` 0.38.2 through `rusqlite` 0.40.2). Not from this diff: `Cargo.lock` is unchanged. The owner approved F-24: `rusqlite` 0.41.1 (`libsqlite3-sys` 0.39.1, SQLite 3.54.1), MSRV 1.89 under the 1.97 toolchain, no API change; `cargo deny`, `cargo about`, `NOTICE` and the validation set pass.
+- F4:
+  - The startup `SetShuffle` runs on an empty queue: `Queue::replace` in the queue restore refills the shuffle pool.
+  - The startup mode announce comes before `StateStore` is managed: `Latest` already starts with the saved modes.
+  - The announce sets `Latest.volume` to 100 before the restore: nothing is written before the restore resolves, and the restore sets the saved volume.
+  - An older app version reads a file with the new keys: `PlaybackState` does not deny unknown fields.
+  - `capture` returns the modes off: its one caller (`save_now`) sets them, and its doc comment says so.
+  - A `null` mode: the lenient read gives off, as for any unreadable value.
+
+**Follow-ups:** F-24 (new, done in the same PR).
+
 ## 3. Source documents and precedence
 
 | Source | Role | Authority |
@@ -1615,7 +1657,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D22 | Apple XML: import each playlist in the file that has no `Master` key and no `Distinguished Kind` key. One `.m3u8` per playlist. | R14. Library-wide system playlists are not user playlists. |
 | D23 | Heart buttons on song rows are pointer targets (`tabIndex = -1`). Keyboard users use the Now playing heart. | Section 7 defers accessibility work beyond platform defaults and R25. Buttons inside listbox options break the listbox pattern. |
 | D24 | Enter on a playlist row plays the playlist, like a double-click. | R25 Enter rule and R12 double-click rule. |
-| D25 | Saved playback state holds the queue, current entry, position and volume. Shuffle and repeat are not saved. From P26, `state.json` also holds the R37 Library selection (D66); it is not playback state. | R27 lists exactly these four items. R37 adds the selection. |
+| D25 | Saved playback state holds the queue, current entry, position and volume. From P27 (requirements v1.13) it also holds the shuffle and repeat modes: optional `shuffle` and `repeat` fields with a serde default and a lenient read (an unreadable value is off, logged, and the queue still restores); `STATE_VERSION` stays 1. The modes restore at startup before the queue restore, because they do not depend on the library. From P26, `state.json` also holds the R37 Library selection (D66); it is not playback state. | R27 lists these items; v1.13 adds the modes. R37 adds the selection. |
 | D26 | `.lrc` and `.txt` files are read as UTF-8 (BOM removed), with a Windows-1252 fallback. | Same rule as legacy `.m3u` in R14. |
 | D27 | Thumbnails: 96 px JPEG for album rows. Display art: 512 px JPEG for Now playing and the OS panel. Cache key: album folder relative path, source size and modified time. | R5, R19, R20. |
 | D28 | R20 memory method. Windows: sum of the private working set of the app process tree (includes WebView2 processes). Linux: sum of PSS of the app process tree (includes WebKit processes). Idle: 60 s after the library loads, no playback, window visible. Median of 3 runs. | R20 says "across all processes" but names no metric. |
@@ -1727,7 +1769,7 @@ Versions were checked against crates.io, npm and project sources on October 11, 
 | Decode | `symphonia` | =0.5.5 | MPL-2.0, NOTICE entry |
 | Tags | `lofty` | 0.25.4 | USLT maps to `ItemKey::UnsyncLyrics` |
 | Media keys | `souvlaki` | 0.8.3 | Windows needs the HWND |
-| Cache | `rusqlite` (`bundled`) | 0.40.2 | SQLite 3.53.2 |
+| Cache | `rusqlite` (`bundled`) | 0.41.1 | SQLite 3.54.1 (`libsqlite3-sys` 0.39.1; 3.53.2 until RUSTSEC-2026-0459) |
 | Images | `image` (`jpeg`, `png` only) | 0.25.10 | Thumbnails, Set cover conversion |
 | Text | `unicode-normalization` | 0.1.25 | D4 |
 | Traversal | `walkdir` | 2.5.0 | Junctions listed, not entered |
@@ -3090,6 +3132,28 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 **Verification.** Rust unit tests (P26-AC1). Rust integration tests (P26-AC2). Playwright (P26-AC3 to P26-AC5). Manual Linux (P26-AC6).
 
+### P27. Shuffle and repeat restore
+
+**Objective.** At startup the shuffle and repeat modes are what they were when the app last closed.
+
+**Scope.** R27 (v1.13 modes). Requirements section 5 (v1.13 edge case). AC-32. D25.
+
+**Depends on.** P25. The owner asked for it before P26.
+
+**Tasks.**
+
+- **P27.1** Core in `crates/clawdio-core/src/state.rs`: optional `shuffle` and `repeat` fields of `PlaybackState`, each with a serde default and a lenient read. `STATE_VERSION` stays 1.
+- **P27.2** Shell in `src-tauri/src/persist.rs` and `src-tauri/src/lib.rs`: `Latest` holds the modes from the player snapshot and starts with the saved modes; `StateStore::restore_modes` sends them to the player at startup, before the queue restore; `save_now` writes them.
+- **P27.3** Docs: `docs/file-formats.md` (`state.json` keys, example, rules).
+
+**Acceptance criteria.**
+
+- **P27-AC1** Core: the modes round-trip through the file. A file without them keeps its queue and starts with both off. A file with unreadable modes keeps its queue and starts with both off (unit tests).
+- **P27-AC2** Shell: the saved modes reach the player at startup while the saved queue still waits for the scan; a mode change saves with the queue; an exit before the player applies the saved modes keeps them (integration tests).
+- **P27-AC3** Manual Linux: AC-32.
+
+**Verification.** Rust unit tests (P27-AC1). Rust integration tests (P27-AC2). Manual Linux (P27-AC3).
+
 ---
 
 ## 9. Risks
@@ -3159,6 +3223,7 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 | AC-29 | Songs list and Play queue selection follow the playing song | P24-AC10, P24-AC11 |
 | AC-30 | Type-to-find in lists | P25-AC3, P25-AC4, P25-AC5 |
 | AC-31 | Library selection restores at startup | P26-AC3, P26-AC4, P26-AC6 |
+| AC-32 | Shuffle and repeat modes survive a restart | P27-AC2, P27-AC3 |
 
 ---
 
@@ -3169,6 +3234,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | ID | Proposal | Reason | Raised by |
 |---|---|---|---|
 | F-23 | Count the running "Fetch lyrics" requests and hide the status line progress only when the last one ends. | Two clicks on two songs: the first to end hides "Fetching lyrics" while the second still runs (P15 behavior, kept by P24). | P24 review |
+| F-24 | Done (owner approved, November 12, 2026): `rusqlite` 0.41.1 (`libsqlite3-sys` 0.39.1, SQLite 3.54.1). | CI `cargo deny` failed on RUSTSEC-2026-0459 for every branch, `main` included. | P27 review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
@@ -3314,6 +3380,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.32 (November 12, 2026):** requirements v1.13 (R27 modes, AC-32, owner decision 47). Added phase P27 (Done with exceptions, P27-AC3 manual Linux check open). D25 changed: the shuffle and repeat modes are saved. F-24 proposed and done (`rusqlite` 0.41.1 for RUSTSEC-2026-0459).
 - **1.31 (October 23, 2026):** requirements v1.12 (R37, AC-31, owner decision 46). Added phase P26 (Not started) and D66.
 - **1.30 (October 19, 2026):** P25 Done with exceptions (manual Linux walkthrough open). No F3 proposal.
 - **1.29 (October 19, 2026):** requirements v1.11 (R36, AC-30, owner decision 45). Added phase P25 (Not started) and D65.

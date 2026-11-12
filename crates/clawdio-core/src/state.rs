@@ -1,10 +1,13 @@
 //! `state.json` (P9.1, R27, D25): the queue as paths relative to the music folder, the
-//! current entry, the position and the volume. Shuffle and repeat are not saved.
+//! current entry, the position and the volume. From P27 (R27 v1.13) also the shuffle and
+//! repeat modes.
 
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::api::RepeatMode;
 use crate::atomic::write_atomic;
 use crate::library::{LibraryIndex, TrackId};
 
@@ -22,6 +25,26 @@ pub struct PlaybackState {
     pub position_ms: u32,
     /// From 0 to 100.
     pub volume: u8,
+    /// R27 (v1.13). A file without it, or with a value that cannot be read, gives off.
+    #[serde(default, deserialize_with = "lenient")]
+    pub shuffle: bool,
+    /// R27 (v1.13). A file without it, or with a value that cannot be read, gives off.
+    #[serde(default, deserialize_with = "lenient")]
+    pub repeat: RepeatMode,
+}
+
+/// Reads an optional field. A value that cannot be read gives the default and a log line,
+/// so one bad field does not drop the saved queue.
+fn lenient<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: DeserializeOwned + Default,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_else(|error| {
+        log::warn!("state: a field cannot be read: {error}; using the default");
+        T::default()
+    }))
 }
 
 /// Reads `state.json`. A missing file gives None; a corrupt file or another version gives
@@ -106,7 +129,7 @@ pub fn resolve(state: &PlaybackState, index: &LibraryIndex, complete: bool) -> O
 }
 
 /// The state to save: queue ids as paths. An id with no track (removed by a rescan) is left
-/// out, and the current index follows.
+/// out, and the current index follows. The modes are off; the caller sets them.
 pub fn capture(
     ids: &[TrackId],
     current: Option<usize>,
@@ -135,6 +158,8 @@ pub fn capture(
             0
         },
         volume,
+        shuffle: false,
+        repeat: RepeatMode::Off,
     }
 }
 
@@ -174,6 +199,8 @@ mod tests {
             current,
             position_ms,
             volume: 60,
+            shuffle: false,
+            repeat: RepeatMode::Off,
         }
     }
 
@@ -187,6 +214,44 @@ mod tests {
         let saved = state(&["A/a.mp3", "B/b.ogg"], Some(1), 42_000);
         save(dir.path(), &saved).unwrap();
         assert_eq!(load(dir.path()), Some(saved));
+    }
+
+    #[test]
+    fn the_shuffle_and_repeat_modes_round_trip_through_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        for (shuffle, repeat) in [(true, RepeatMode::One), (false, RepeatMode::All)] {
+            let saved = PlaybackState {
+                shuffle,
+                repeat,
+                ..state(&["A/a.mp3"], Some(0), 1_000)
+            };
+            save(dir.path(), &saved).unwrap();
+            let loaded = load(dir.path()).unwrap();
+            assert_eq!(loaded.shuffle, shuffle);
+            assert_eq!(loaded.repeat, repeat);
+        }
+    }
+
+    #[test]
+    fn a_file_without_the_modes_keeps_its_queue_and_starts_with_the_modes_off() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = r#"{"version":1,"queue":["A/a.mp3"],"current":0,"positionMs":7,"volume":40}"#;
+        std::fs::write(dir.path().join(STATE_FILE), old).unwrap();
+        let loaded = load(dir.path()).unwrap();
+        assert_eq!(loaded.queue, ["A/a.mp3"]);
+        assert!(!loaded.shuffle);
+        assert_eq!(loaded.repeat, RepeatMode::Off);
+    }
+
+    #[test]
+    fn a_mode_that_cannot_be_read_is_off_and_the_queue_stays() {
+        let dir = tempfile::tempdir().unwrap();
+        let bad = r#"{"version":1,"queue":["A/a.mp3"],"current":0,"positionMs":7,"volume":40,"shuffle":"yes","repeat":"twice"}"#;
+        std::fs::write(dir.path().join(STATE_FILE), bad).unwrap();
+        let loaded = load(dir.path()).unwrap();
+        assert_eq!(loaded.queue, ["A/a.mp3"]);
+        assert!(!loaded.shuffle);
+        assert_eq!(loaded.repeat, RepeatMode::Off);
     }
 
     #[test]

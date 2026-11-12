@@ -54,7 +54,7 @@ Rules:
 
 ## `state.json`
 
-Location: the config folder, next to `settings.json`. Source: `crates/clawdio-core/src/state.rs` and `src-tauri/src/persist.rs` (P9.1, R27, D25).
+Location: the config folder, next to `settings.json`. Source: `crates/clawdio-core/src/state.rs` and `src-tauri/src/persist.rs` (P9.1, P27, R27, D25).
 
 The app writes the file atomically, as compact JSON.
 
@@ -65,18 +65,19 @@ The app writes the file atomically, as compact JSON.
 | `current` | integer or `null` | The current entry, an index into `queue`. |
 | `positionMs` | integer | The position in the current entry, in milliseconds. |
 | `volume` | integer | From 0 to 100. |
-
-Shuffle and repeat are not saved (D25).
+| `shuffle` | boolean | The shuffle mode (P27). Optional: a missing or unreadable value is `false`. |
+| `repeat` | string | The repeat mode: `"off"`, `"all"` or `"one"` (P27). Optional: a missing or unreadable value is `"off"`. |
 
 Example:
 
 ```json
-{"version":1,"queue":["Artist/Album/01 Song.mp3","Artist/Album/02 Song.ogg"],"current":1,"positionMs":83000,"volume":80}
+{"version":1,"queue":["Artist/Album/01 Song.mp3","Artist/Album/02 Song.ogg"],"current":1,"positionMs":83000,"volume":80,"shuffle":false,"repeat":"one"}
 ```
 
 Rules:
 
-- Saving: 2 s after a queue or state change (play, pause, seek, track change, volume, queue edit), and at exit with the last position. Position ticks alone do not start a save. An unchanged state is not written again.
+- Saving: 2 s after a queue or state change (play, pause, seek, track change, volume, shuffle, repeat, queue edit), and at exit with the last position. Position ticks alone do not start a save. An unchanged state is not written again.
+- At start the shuffle and repeat modes apply at once; they do not wait for the library. A file from before P27 (no mode keys) keeps its queue and starts with both modes off. The version stays `1`.
 - At start the queue comes back paused at the saved position, after the cache loads. Entries not in the library wait until the startup scan ends a complete traversal; then those still missing are dropped with no message. When the current entry went, the next remaining entry is current at position 0.
 - Nothing is saved before the restore resolves. A queue change by the user before that drops the saved queue.
 - With the music folder missing, nothing is dropped and the file is not written.

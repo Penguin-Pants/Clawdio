@@ -1,13 +1,14 @@
 //! Playback state persistence (P9.1, R27): restore `state.json` at startup and save it 2 s
 //! after a change and on exit. Nothing is saved until the restore has resolved, and nothing
-//! is written while the music folder is missing.
+//! is written while the music folder is missing. The shuffle and repeat modes (P27) restore
+//! at once: they do not wait for the library.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use clawdio_core::api::{PlayerSnapshot, QueueSnapshot};
+use clawdio_core::api::{PlayerSnapshot, QueueSnapshot, RepeatMode};
 use clawdio_core::state::{self, PlaybackState};
 use tauri::{AppHandle, Manager, Runtime};
 
@@ -23,6 +24,8 @@ struct Latest {
     queue: QueueSnapshot,
     position_ms: u32,
     volume: u8,
+    shuffle: bool,
+    repeat: RepeatMode,
     /// A change since the last save, and when it came.
     dirty_since: Option<Instant>,
     stop: bool,
@@ -45,17 +48,34 @@ impl StateStore {
     /// Reads `state.json` from the config folder.
     pub fn load(config: PathBuf) -> Self {
         let pending = state::load(&config);
+        let (shuffle, repeat) = pending.as_ref().map_or((false, RepeatMode::Off), |saved| {
+            (saved.shuffle, saved.repeat)
+        });
         StateStore {
             written: Mutex::new(pending.clone()),
             config,
             pending: Mutex::new(pending),
             ready: AtomicBool::new(false),
+            // The saved modes are the latest state already, so an exit before the player
+            // applies them saves the same modes, not off.
             latest: Mutex::new(Latest {
                 volume: 100,
+                shuffle,
+                repeat,
                 ..Latest::default()
             }),
             changed: Condvar::new(),
         }
+    }
+
+    /// Sends the saved shuffle and repeat modes to the player (P27, R27 v1.13). They do not
+    /// depend on the library, so they apply at startup before the queue restore.
+    pub fn restore_modes(&self, player: &PlayerHandle) {
+        let Ok(latest) = self.latest.lock() else {
+            return;
+        };
+        player.send(Command::SetShuffle(latest.shuffle));
+        player.send(Command::SetRepeat(latest.repeat));
     }
 
     fn update(&self, change: impl FnOnce(&mut Latest)) {
@@ -91,6 +111,8 @@ impl StateStore {
         self.update(|latest| {
             latest.position_ms = player.position_ms;
             latest.volume = player.volume;
+            latest.shuffle = player.shuffle;
+            latest.repeat = player.repeat;
         });
     }
 
@@ -164,7 +186,7 @@ impl StateStore {
         let Ok(mut written) = self.written.lock() else {
             return;
         };
-        let (ids, current, position_ms, volume) = {
+        let (ids, current, position_ms, volume, shuffle, repeat) = {
             let Ok(mut latest) = self.latest.lock() else {
                 return;
             };
@@ -176,6 +198,8 @@ impl StateStore {
                 latest.queue.current.map(|index| index as usize),
                 latest.position_ms,
                 latest.volume,
+                latest.shuffle,
+                latest.repeat,
             )
         };
         if !self.ready.load(Ordering::SeqCst) {
@@ -196,7 +220,11 @@ impl StateStore {
             let Ok(index) = library.0.read() else {
                 return;
             };
-            state::capture(&ids, current, position_ms, volume, &index)
+            PlaybackState {
+                shuffle,
+                repeat,
+                ..state::capture(&ids, current, position_ms, volume, &index)
+            }
         };
         if written.as_ref() == Some(&state) {
             return;
@@ -303,6 +331,8 @@ mod tests {
             current: Some(1),
             position_ms: 5_000,
             volume: 70,
+            shuffle: true,
+            repeat: RepeatMode::One,
         };
         state::save(config, &saved).unwrap();
         let app = mock_app();
@@ -383,6 +413,49 @@ mod tests {
         store.try_restore(app.handle(), true);
         store.flush(app.handle());
         assert_eq!(state::load(config.path()).unwrap().queue, ["A/a.mp3"]);
+    }
+
+    #[test]
+    fn the_saved_modes_reach_the_player_at_startup_before_the_queue_restore() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3"]);
+        let store = app.state::<StateStore>();
+        let player = app.state::<PlayerHandle>();
+        store.restore_modes(&player);
+        let state = player.state();
+        assert!(state.shuffle);
+        assert_eq!(state.repeat, RepeatMode::One);
+        assert!(player.queue().entries.is_empty(), "B/b.mp3 still waits");
+    }
+
+    #[test]
+    fn a_mode_change_is_saved_with_the_queue() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3", "B/b.mp3"]);
+        let store = app.state::<StateStore>();
+        store.try_restore(app.handle(), false);
+        store.player(&PlayerSnapshot {
+            shuffle: false,
+            repeat: RepeatMode::All,
+            ..snapshot(70)
+        });
+        store.flush(app.handle());
+        let saved = state::load(config.path()).unwrap();
+        assert!(!saved.shuffle);
+        assert_eq!(saved.repeat, RepeatMode::All);
+        assert_eq!(saved.queue, ["A/a.mp3", "B/b.mp3"]);
+    }
+
+    #[test]
+    fn an_exit_before_the_player_applies_the_saved_modes_keeps_them() {
+        let (config, music) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let app = app(config.path(), Some(music.path()), &["A/a.mp3", "B/b.mp3"]);
+        let store = app.state::<StateStore>();
+        store.try_restore(app.handle(), false);
+        store.flush(app.handle());
+        let saved = state::load(config.path()).unwrap();
+        assert!(saved.shuffle);
+        assert_eq!(saved.repeat, RepeatMode::One);
     }
 
     #[test]

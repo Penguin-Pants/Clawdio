@@ -154,6 +154,9 @@ pub fn run() -> tauri::Result<()> {
             app.manage(window::MiniState::default());
             app.manage(commands::metadata::MetadataFills::default());
             app.manage(state::Playlists::default());
+            // The saved shuffle and repeat modes (P27) apply before the scan, and after every
+            // state the player events read (the lyrics state): a mode command announces songs.
+            app.state::<persist::StateStore>().restore_modes(&player);
             app.manage(player);
             let window = window::create_main(app.handle())?;
             // Media keys and the OS now-playing panel (P8). A failure is logged only.
