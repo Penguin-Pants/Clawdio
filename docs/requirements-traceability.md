@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.24, October 23, 2026 (requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
-**Plan:** `docs/build-plan.md` v1.31. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.25, November 12, 2026 (requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Plan:** `docs/build-plan.md` v1.32. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 424 | 271 | 60 | 30 | 5 | 5 | 38 | 15 | 0 |
+| Requirements | 429 | 275 | 61 | 30 | 5 | 5 | 38 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -40,7 +40,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.12)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.13)
 
 Rows that the UI shell rework replaces keep their v1.7 text with the status Superseded (v1.8); section 7 holds the rows that replace them.
 
@@ -180,6 +180,8 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R27-1 | Remember queue, current song, position and volume in the OS config folder | §2 R27 | P9.1 | P9-AC1 | IT | Done (P9, D25) |
 | R27-2 | Restore at startup paused; drop missing entries silently | §2 R27 | P9.1 | P9-AC1, P9-AC10 | IT | Done (P9) |
 | R27-3 | State uses paths relative to the music folder; folder path stored as set, except in portable mode | §2 R27 | P9.1, P4.1 | P9-AC7, P4-AC4 | UT, MAN-W | Planned |
+| R27-4 | Remember the shuffle and repeat modes with the R27 state (v1.13) | §2 R27 | P27.1, P27.2 | P27-AC1, P27-AC2 | UT, IT | Done (P27, D25) |
+| R27-5 | The modes restore at startup at once, without the library; an unreadable mode starts off and the rest restores (v1.13) | §2 R27 | P27.1, P27.2 | P27-AC1, P27-AC2 | UT, IT | Done (P27) |
 | R35-1 | Lists that follow: Songs list (table, Tree song rows, playlist view) and Play queue; not Artist or Album | §2 R35.1 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, D63) |
 | R35-2 | A list follows only when it has a selected row | §2 R35.2 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
 | R35-3 | The playing song becomes the only selected row; the list scrolls to it | §2 R35.3 | P24.8 | P24-AC10 | E2E | Done (P24, D63) |
@@ -429,6 +431,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | E-46 | Wrong song version from lyrics.ovh: risk accepted; delete the file and fetch again | §5 | P24.2 | P24-AC2 | REV | Done (P24, README note) |
 | E-47 | Lookups turned off during a lyrics fetch: R7 cancel, no marker | §5 | P24.5 | P24-AC7 | IT | Done (P24) |
 | E-48 | A busy list skips that song change and follows at the next one | §5 | P24.8 | P24-AC11 | E2E | Done (P24, D63) |
+| E-49 | Shuffle or repeat changed before the saved queue restores: the user's mode wins and saves once the restore resolves (v1.13) | §5 | P27.2 | P27-AC2 | IT | Done (P27) |
 
 ### 1.11 Section 6: constraints
 
@@ -534,6 +537,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-44 | Selection follows: Songs list and Play queue; only with a selection; no focus move | §8.44 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24) |
 | DEC-45 | Type-to-find: every list and tree; prefix from the top; Space joins an active text; sorted column, else Title; 1 s reset | §8.45 | P25 | P25-AC1 to P25-AC6 | UT, E2E | Done (P25) |
 | DEC-46 | Selection restore: Artist, Album and active Song at startup; missing level clears it and those below; Tree opens the row's artist and album; focus does not move | §8.46 | P26 | P26-AC1 to P26-AC6 | UT, IT, E2E, MAN-L | Planned (D66) |
+| DEC-47 | Mode restore: shuffle and repeat save with the R27 state and restore at startup | §8.47 | P27 | P27-AC1 to P27-AC3 | UT, IT, MAN-L | Done (P27; manual Linux check open) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -577,6 +581,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
 | AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.2, P25.3 | P25-AC3, P25-AC4, P25-AC5 | E2E | Done (P25) |
 | AC-31 | Selection restore: Columns rows restore in view; a missing album gives the artist and "All"; Tree opens the row's artist and album | §9.31 | P26.3, P26.4 | P26-AC3, P26-AC4, P26-AC6 | E2E, MAN-L | Planned (D66) |
+| AC-32 | Mode restore: shuffle on and repeat one survive a restart; both off survive a restart | §9.32 | P27.2, P27.3 | P27-AC2, P27-AC3 | IT, MAN-L | Done with exceptions (P27; P27-AC3 manual Linux check open) |
 
 ---
 

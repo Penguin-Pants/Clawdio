@@ -130,8 +130,11 @@ pub fn run() -> tauri::Result<()> {
                 settings.mic_ducking != clawdio_core::api::MicDucking::Off,
             ));
 
-            // The saved queue waits for the library; the saver starts now (P9.1).
-            app.manage(persist::StateStore::load(dirs.config.clone()));
+            // The saved queue waits for the library; the saved shuffle and repeat modes apply
+            // now (P27); the saver starts now (P9.1).
+            let store = persist::StateStore::load(dirs.config.clone());
+            store.restore_modes(&player);
+            app.manage(store);
             persist::StateStore::spawn_saver(app.handle().clone());
             // Online lookups (P14): the gate follows the stored switch; lyrics.ovh waits for
             // the notice that names it (D64).

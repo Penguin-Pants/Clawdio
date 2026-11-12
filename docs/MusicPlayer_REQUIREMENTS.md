@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.12, October 23, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.12.
+**Status:** Decision-complete. Version 1.13, November 12, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.13.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.13)` marks an item changed or added in version 1.13 (owner decision 47 in section 8).
 - `(v1.12)` marks an item changed or added in version 1.12 (owner decision 46 in section 8).
 - `(v1.11)` marks an item changed or added in version 1.11 (owner decision 45 in section 8).
 - `(v1.10)` marks an item changed or added in version 1.10 (owner decisions 41 to 44 in section 8).
@@ -143,8 +144,9 @@ The closest open source player (Strawberry) has many features the owner does not
   - F6 and Shift+F6 move focus between visible widgets.
   - `(v1.5)` Delete removes the selected entry from the Play queue or from a playlist, without confirmation.
   - Keyboard focus is always visible.
-- **R27 (v1.1).** Remember queue, current song, position and volume.
+- **R27 (v1.1).** Remember queue, current song, position and volume. `(v1.13)` Also the shuffle mode and the repeat mode.
   - The app saves them in the OS config directory.
+  - `(v1.13)` At startup the shuffle and repeat modes restore at once. They do not wait for the library. `[D]` A mode that cannot be read starts off; the rest of the state still restores. The shuffle run (R6) starts again: entries played before the restart can play again.
   - `[D]` At startup it restores them and starts paused. It drops queue entries that no longer exist in the library without a message. `(v1.5)` State stores paths relative to the music folder root. The music folder path is stored as set, except in portable mode (R18.1).
 - **R35 (v1.10).** The selection follows the playing song.
   - **R35.1 Lists.** The Library Songs list (the Songs table in Columns and Top/bottom modes, the song rows in Tree mode and the playlist view) and the Play queue. The Artist and Album lists do not follow.
@@ -407,6 +409,7 @@ These are out under the owner's "few features" rule.
 - **Saved selection before the library is ready `(v1.12)`:** the restore waits for the library, as the R27 queue restore does. If the user selects a row first, the user's selection wins and the saved one is dropped.
 - **Music folder changed `(v1.12)`:** the saved selection belongs to the old folder. It is dropped. Nothing is selected.
 - **Saved selection that cannot be read `(v1.12)`:** it is ignored and logged. Nothing is selected. The rest of the R27 state still restores.
+- **Shuffle or repeat changed before the saved queue restores `(v1.13)`:** the user's mode wins. It saves once the R27 restore resolves.
 - **Reset layout `(v1.12)`:** the selection does not change. It is not part of the arrangement (R29).
 - **Leading articles `(v1.11)`:** a name such as "The Chemical Brothers" matches "t", because names are folder names, unchanged (R3).
 
@@ -546,6 +549,10 @@ Version 1.12 records an owner decision made on October 23, 2026:
 
 46. **Selection restore (R37):** the Artist, Album and Song selection restores at startup. The layout already restores (R29) and does not change. Only the active song of a multi-selection. A missing level clears that level and the levels below it, with no message. Tree mode opens the restored row's artist and album, as a mode switch does. Keyboard focus does not move. The search text, the playlist view and the other list states are not restored. The owner confirmed the section 5 rules for a library that is not ready, a changed music folder and a saved selection that cannot be read (October 23, 2026).
 
+Version 1.13 records an owner decision made on November 12, 2026:
+
+47. **Mode restore (R27):** the shuffle and repeat modes save with the R27 state and restore at startup. This replaces the earlier rule that they are not saved.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -583,6 +590,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 29. **Selection follows `(v1.10)`:** with one song selected in the Songs list and one entry selected in the Play queue, Next moves both selections to the new song. Keyboard focus stays where it was. With a search that hides the new song, the Songs list does not change.
 30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z. After a pause of more than 1 s, "zz top" typed without a 1 s pause selects "ZZ Top" and playback does not toggle. After another pause of more than 1 s, "zzx" leaves "ZZ Top" selected. The same works in each R36.1 list.
 31. **Selection restore `(v1.12)`:** in Columns mode, select an artist, one of its albums and one song, then quit and start the app. The three rows show as selected and in view, and keyboard focus is where it is at a start with no saved selection. Quit, remove that album's folder and start: the artist is selected, the Album list shows "All" and no song is selected. In Tree mode, a restored song row shows inside its opened artist and album nodes, and all other nodes are closed.
+32. **Mode restore `(v1.13)`:** turn on shuffle and set repeat to one, then quit and start the app. Shuffle is on and repeat shows one. Turn shuffle off and set repeat to off, quit and start: both show off.
 
 ---
 
@@ -605,6 +613,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.13 (November 12, 2026):** the shuffle and repeat modes save and restore, with owner decision 47 (section 8).
+  - **Changed:** R27 (the modes are saved).
+  - **Added:** one edge case, acceptance check 32.
 - **1.12 (October 23, 2026):** the Library selection restores at startup, with owner decision 46 (section 8).
   - **Added:** R37, two preferences, two non-goals, four edge cases, one deferred idea, acceptance check 31.
 - **1.11 (October 19, 2026):** type-to-find in lists, with owner decision 45 (section 8).
