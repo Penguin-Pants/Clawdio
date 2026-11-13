@@ -4,7 +4,8 @@ import { expect, expectNoMotion, openMenu, closeMenu, SONG_ROWS, songsGrid, test
 test("TB-14: Compact rows use the compact row token, survive a reload and keep the album rows", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await page.evaluate(() => window.e2e.show("queue"));
   const height = () =>
     songsGrid(page)
       .locator(SONG_ROWS)
@@ -16,7 +17,7 @@ test("TB-14: Compact rows use the compact row token, survive a reload and keep t
       return Number.parseFloat(style.getPropertyValue(variable)) * Number.parseFloat(style.fontSize);
     }, name);
   expect(await height()).toBe(await token("--size-row-regular"));
-  const album = await widget(page, "library")
+  const album = await widget(page, "album")
     .getByRole("listbox", { name: "Albums" })
     .getByRole("option")
     .nth(1)
@@ -28,7 +29,7 @@ test("TB-14: Compact rows use the compact row token, survive a reload and keep t
   await expect.poll(height).toBe(await token("--size-row-compact"));
   const queueRow = widget(page, "queue").getByRole("option").first();
   expect((await queueRow.boundingBox())?.height).toBe(await token("--size-row-compact"));
-  const albumAfter = await widget(page, "library")
+  const albumAfter = await widget(page, "album")
     .getByRole("listbox", { name: "Albums" })
     .getByRole("option")
     .nth(1)

@@ -108,25 +108,22 @@ The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D1
 | text.primary outline or bar on state.selected, surface | 11.75, 16.13 | non-text 3.0 | Pass |
 | state.selected on surface (fill alone) | 1.37 | needs the left bar | Bar required |
 
-## Dock chrome
+## Grid chrome
 
-`src/styles/dockview-theme.css` styles the docking library (Dockview) with token variables only (requirements R17, R30). It sets the `--dv-*` variables of `dockview-react/dist/styles/dockview.css` and adds the splitter line and the active tab underline. The theme sets no layout.
+`src/shell/GridShell.tsx` draws the snap grid (requirements R38, P29) with token classes only (requirements R17, R30). Dockview and its theme file are gone (P29.5).
 
 | Part | State | Token |
 |---|---|---|
-| Widget body (group background) | | `colors.bg.surface` |
-| Widget header (tab bar), 32 px high | | `colors.bg.elevated`, bottom border `colors.border.default` |
-| Tab title | Active tab | `colors.text.primary` with a 2 px `colors.text.primary` underline |
-| Tab title | Inactive tab | `colors.text.muted`, no underline |
-| Tab close control | Hover | `colors.bg.hover` |
-| Splitter | At rest | 1 px `colors.border.default` |
-| Splitter | Hover | 1 px `colors.border.strong` and a resize cursor |
-| Splitter | Dragging | 2 px `colors.border.strong` |
-| Drop zone | Drag over | `colors.bg.hover` overlay (85 % opacity) |
-| Drop zone | Active target | 2 px `colors.brand.red` border |
-| Focus ring on a tab | Keyboard focus | 2 px `colors.brand.red`, drawn inside the tab |
+| Widget body | | `colors.bg.surface` |
+| Cell gaps and empty cells | | `colors.border.default` |
+| Widget header, 24 px high (a 16 px strip at the left of a one-row widget) | | bottom (or right) border `colors.border.default` |
+| Widget title | | `colors.text.secondary` |
+| Drag grip | Unlocked | `colors.text.muted`; hidden while the layout is locked |
+| Drop preview | Allowed | 2 px dashed `colors.text.secondary` outline, 10 % fill |
+| Drop preview | Refused | 2 px `colors.brand.red` outline, 20 % fill |
+| Focus ring on a header | Keyboard focus | 2 px `colors.brand.red`, drawn inside the header |
 
-Red shows in the dock only on the active drop target and on focus rings.
+Red shows in the grid only on a refused drop preview and on focus rings.
 
 ## Magic UI components
 

@@ -53,13 +53,13 @@ const { SongTable } = await import("./lists");
 
 beforeEach(() => {
   installControlledLayout();
-  useLibraryStore.setState({ mode: "topBottom", search: "", selection: EMPTY_SELECTION });
+  useLibraryStore.setState({ search: "", selection: EMPTY_SELECTION });
 });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Songs table rows (PF-1)", () => {
   it("a container resize renders no row again; a new active row renders two", async () => {
-    const { container } = render(<SongTable view="songs.topBottom" />);
+    const { container } = render(<SongTable view="songs.columns" />);
     const grid = container.querySelector<HTMLElement>("[role='grid']");
     if (!grid) throw new Error("no grid");
     await act(async () => {
@@ -85,7 +85,7 @@ describe("Songs table rows (PF-1)", () => {
 describe("Library playback (P24.8)", () => {
   it("a library play ends a pending playlist source, so the same ids do not claim it", async () => {
     usePlayerStore.getState().expectPlaylist(3, IDS);
-    const { container } = render(<SongTable view="songs.topBottom" />);
+    const { container } = render(<SongTable view="songs.columns" />);
     const grid = container.querySelector<HTMLElement>("[role='grid']");
     if (!grid) throw new Error("no grid");
     act(() => {

@@ -92,18 +92,13 @@
  */
 .app-shell {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "header" "transport" "dock" "status";
-}
-
-.app-shell[data-transport="bottom"] {
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  grid-template-areas: "header" "dock" "transport" "status";
+  grid-template-areas: "header" "dock" "status";
 }
 
 /*
- * Mini player (UD19, TR-9): the window shows the band only. The dock stays mounted, inert and
+ * Mini player (UD19, TR-9): the window shows the band only. The grid stays mounted, inert and
  * off screen at its last size, so its layout and its saves do not change.
  */
 .app-shell[data-mini] {

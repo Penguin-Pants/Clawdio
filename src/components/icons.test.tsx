@@ -30,10 +30,10 @@ describe("overridesFromFiles", () => {
     expect(
       overridesFromFiles({
         "../../assets/branding/ui-icons/menu.svg": "/a.svg",
-        "../../assets/branding/ui-icons/topBottom.svg": "/b.svg",
+        "../../assets/branding/ui-icons/search.svg": "/b.svg",
         "../../assets/branding/ui-icons/unknown.svg": "/c.svg",
       }),
-    ).toEqual({ menu: "/a.svg", topBottom: "/b.svg" });
+    ).toEqual({ menu: "/a.svg", search: "/b.svg" });
   });
 
   it("names every icon the README lists", () => {

@@ -44,7 +44,7 @@ P7-AC12, P11-AC8).
 | F6, Shift+F6 | Move focus between visible widgets in reading order | Pass: Library, Now playing, Transport controls and back | Not run |
 | Delete | Remove the selected Play queue entry | Pass | Not run |
 | Delete | Remove the selected playlist entry | Pass: the entry left `Mix.m3u8` on disk | Not run |
-| Ctrl+Shift+L | Reset layout | Pass: the Columns layout with the default widgets | Not run |
+| Ctrl+Shift+L | Reset layout | Pass: the Columns layout with the default widgets. From P29 it applies the Default preset (Playwright P29-AC3); not run in the app. | Not run |
 | Letters (R36, P25.4) | Type-to-find: in the Artist list with "Chemical Brothers" selected, "z" selects the first Z artist and scrolls it into view; after a 1 s pause "zz top" selects "ZZ Top" and playback does not toggle; after a pause "zzx" changes nothing. The same in the Album list, the Songs table (with and without a column sort), the playlist view, the Play queue, the Tree and the Playlists list | Not run: P25 (October 19, 2026) had no desktop session with a real music folder. Playwright P25-AC3 to P25-AC6 pass in Chromium. | Not run |
 | Space (R36.6) | With a typed name active, Space adds a space; with none, Space toggles play and pause | Not run (as above) | Not run |
 
@@ -171,10 +171,10 @@ P21 (October 12, 2026) ran the checks again on the P20 head `907a0e4`. Rows that
 | AC-8 Missing folder | Pass (manual Linux) | Not run |
 | AC-9 Cache rebuild | Pass (manual Linux and auto) | Auto pass; manual not run |
 | AC-10 Device unplugged | Not run: no device in the container (unit test passes) | Not run |
-| AC-11 Docking per mode | Pass (Playwright Chromium and WebKit) | Not run in the app |
-| AC-12 Layouts, tabs | Pass (Playwright) | Not run in the app |
+| AC-11 Docking per mode | Superseded by AC-34 (requirements v1.16, P29) | Superseded |
+| AC-12 Layouts, tabs | Superseded by AC-34: no tabs (R38.12) | Superseded |
 | AC-13 Hidden Transport, media keys, Reset | Pass: keys (Playwright), MPRIS (`playerctl`), Ctrl+Shift+L | Not run: media keys need a Windows desktop |
-| AC-14 Library cannot close, mode switch | Pass (Playwright) | Not run in the app |
+| AC-14 Library cannot close, mode switch | Superseded: Songs and Transport controls cannot hide; the presets replace the modes (R38.7, R38.8; Playwright P29-AC3) | Not run in the app |
 | AC-15 Brand swap | Pass (above) | Not run |
 | AC-16 Reduced motion | Pass (Playwright emulation); GNOME setting not run | Not run |
 | AC-17 Portable copy to another drive | Exception: data in `data/` checked; drive letters are Windows only | Not run |
@@ -185,8 +185,9 @@ P21 (October 12, 2026) ran the checks again on the P20 head `907a0e4`. Rows that
 | AC-22 Bulk import and repair | Pass (auto: P19-AC1 to P19-AC6, P19-AC9; Playwright P19-AC7) | Auto pass (CI); manual with the owner's playlists not run (P19-AC8) |
 | AC-23 Microphone ducking | Not applicable: Windows only (D53) | Not verified (owner decision at P20): the P20.0 probe showed the signal follows Handy and a WhatsApp call, and two overlapping users; the app itself was not run. Unit tests pass (P20-AC1, P20-AC7). |
 | AC-24 No microphone use by the app | Not applicable: Windows only | Not verified (owner decision at P20). The detector reads audio sessions only and opens no capture stream (D54, code review P20-AC6). |
-| AC-25 Library frames | Pass (auto: P22-AC1 to P22-AC4, Playwright Chromium) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |
-| AC-26 Bar widgets | Pass (auto: P23-AC1, P23-AC3, P23-AC4, P23-AC6, Playwright Chromium) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |
-| AC-27 Old arrangement repaired | Pass (auto: P23-AC2, P23-AC5) | Not run: the owner checks the P23.5 package, Release run 38377951211, artifact `windows`, installer 5.18 MiB (P23-AC7) |
+| AC-25 Library frames | Superseded by AC-34 (requirements v1.16, P29); earlier: Pass (auto: P22-AC1 to P22-AC4, Playwright Chromium) | Superseded |
+| AC-26 Bar widgets | Superseded by AC-34 (requirements v1.16, P29); earlier: Pass (auto: P23-AC1, P23-AC3, P23-AC4, P23-AC6, Playwright Chromium) | Superseded |
+| AC-27 Old arrangement repaired | Superseded by AC-34 (requirements v1.16, P29); earlier: Pass (auto: P23-AC2, P23-AC5) | Superseded |
+| AC-34 Snap grid (P29, R38) | Pass (auto: P29-AC1 to P29-AC5, Playwright Chromium, November 13, 2026). Manual not run: no desktop session in the container. Walkthrough: apply Default; drag Songs one cell left and widen it to full width under Now playing; drag Album onto Artist: Artist moves down and nothing passes row 12; resize the window: the shape stays; restart: the arrangement restores; focus a widget header and move it with Alt+arrow, resize it with Alt+Shift+arrow; turn on Lock layout and repeat: nothing moves. | Not run: no Windows machine (P29-AC7) |
 | AC-31 Selection restore (P26.4) | Not run: P26 (November 12, 2026) had no desktop session with a real music folder. Playwright P26-AC3 to P26-AC5 pass in Chromium. Walkthrough: in Columns mode select an artist, an album and a song, clear the queue, quit and start; the rows are selected and in view. Remove the album folder, start: the artist is selected and the Album list shows "All". In Tree mode the restored row shows in its opened artist and album only. | Not run |
 | AC-33 Current song at startup (P26.4) | Not run (same reason). Play a song, select another artist, quit and start: the playing song, its artist and its album are selected and in view. | Not run |

@@ -2,7 +2,7 @@ import { commands } from "@/lib/ipc/commands";
 import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
 import { findTextActive } from "./type-find";
 
-/** Reset layout shortcut (D17, R29). */
+/** Reset layout shortcut (D17, R38.8). */
 export const RESET_SHORTCUT_LABEL = "Ctrl+Shift+L";
 
 /** The letter of a key event, so shortcuts follow the keyboard layout (AZERTY, Dvorak). */
@@ -60,13 +60,16 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
 }
 
 /**
- * Visible widget bodies in reading order: top to bottom, then left to right (P2.12). A widget
- * in a hidden tab has no layout box, so it is skipped.
+ * Visible widget bodies in reading order of their grid cells: top to bottom, then left to right
+ * (P2.12, R38.2). A widget with no layout box is skipped.
  */
 export function widgetRegions(root: ParentNode = document): HTMLElement[] {
   return (
     [...root.querySelectorAll<HTMLElement>("[data-widget]")]
-      .map((element) => ({ element, rect: element.getBoundingClientRect() }))
+      .map((element) => ({
+        element,
+        rect: (element.closest("[data-grid-item]") ?? element).getBoundingClientRect(),
+      }))
       // A widget in an inert container (the dock while the mini player shows, UD19) is skipped.
       .filter(({ element, rect }) => rect.width > 0 && rect.height > 0 && !element.closest("[inert]"))
       .sort((a, b) => Math.round(a.rect.top) - Math.round(b.rect.top) || a.rect.left - b.rect.left)
@@ -74,10 +77,16 @@ export function widgetRegions(root: ParentNode = document): HTMLElement[] {
   );
 }
 
-/** The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. */
+/**
+ * The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. A focused widget
+ * header sits beside its region in the grid item, so the item decides (R38.10).
+ */
 export function nextRegion(regions: HTMLElement[], active: Element | null, backward: boolean): HTMLElement | undefined {
   if (regions.length === 0) return undefined;
-  const current = regions.findIndex((region) => active !== null && region.contains(active));
+  const item = active?.closest("[data-grid-item]") ?? null;
+  const current = regions.findIndex(
+    (region) => active !== null && (region.contains(active) || (item !== null && item.contains(region))),
+  );
   if (current === -1) return backward ? regions[regions.length - 1] : regions[0];
   const step = backward ? -1 : 1;
   return regions[(current + step + regions.length) % regions.length];
@@ -94,8 +103,7 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
   }
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
     const region = nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey);
-    // The widget becomes the active dock panel, so the Layout menu acts on it (UD17). Dockview
-    // can move focus while it activates a panel, so the region takes focus after it.
+    // The widget becomes the active one, so the Layout menu acts on it (R38.10).
     if (region?.dataset.widget) activateWidget(region.dataset.widget);
     region?.focus();
     return true;

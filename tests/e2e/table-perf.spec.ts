@@ -13,7 +13,6 @@ const SIZE = 50_000;
 const MAX_GAP_MS = { chromium: 100, webkit: 150 } as const;
 /** `VirtualList` overscan on each side, plus the kept active row. */
 const OVERSCAN_ROWS = 2 * 8 + 1;
-const DOCK_SASH = ".dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash:not([data-frame-group] *)";
 
 declare global {
   interface Window {
@@ -59,8 +58,7 @@ async function stopFrames(page: Page): Promise<{ max: number; frames: number; ph
 test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", async ({ page, browserName }) => {
   test.setTimeout(120_000);
   await page.goto(`/?data=library&size=${SIZE}`);
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  await widget(page, "library").getByRole("button", { name: "Top/bottom" }).click();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   const grid = songsGrid(page);
   await expect(grid.locator(SONG_ROWS).first()).toBeVisible();
   await expect(grid).toHaveAttribute("aria-rowcount", String(SIZE + 1));
@@ -91,10 +89,12 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
   await phase(page, "column");
   const from = await center(divider);
   await drag(page, from, { x: from.x + 60, y: from.y });
-  await phase(page, "dock");
-  const sash = page.locator(DOCK_SASH).first();
-  const at = await center(sash);
-  await drag(page, at, { x: at.x - 80, y: at.y });
+  // A grid resize: the Songs widget two cells narrower (R38.5).
+  await phase(page, "grid");
+  const edge = page.locator("[data-grid-item='songs'] [data-resize='e']");
+  const at = await center(edge);
+  await drag(page, at, { x: at.x - 200, y: at.y });
+  await expect.poll(() => page.evaluate(() => window.e2e.layout().songs.w)).toBeLessThan(10);
   await page.waitForTimeout(200);
   const frames = await stopFrames(page);
   const phases = Object.entries(frames.phases)

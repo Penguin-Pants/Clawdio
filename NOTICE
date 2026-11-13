@@ -393,9 +393,6 @@ THIRD_PARTY_LICENSES_WEB.txt. The texts of the assets follow the tables.
 | clsx | 2.1.1 | MIT | lukeed/clsx |
 | cn | 0.4.0 | MIT | https://github.com/shadcn-ui/cn |
 | csstype | 3.2.3 | MIT | https://github.com/frenic/csstype |
-| dockview | 8.5.1 | MIT | https://github.com/dockview/dockview |
-| dockview-core | 8.5.1 | MIT | https://github.com/dockview/dockview |
-| dockview-react | 8.5.1 | MIT | https://github.com/dockview/dockview |
 | lucide-react | 1.55.0 | ISC | https://github.com/lucide-icons/lucide |
 | react | 19.3.0 | MIT | https://github.com/react/react |
 | react-dom | 19.3.0 | MIT | https://github.com/react/react |

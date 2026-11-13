@@ -6,7 +6,6 @@ import {
   expectNoSeriousViolations,
   openApp,
   openMenu,
-  tab,
   test,
   tokenRgb,
   widget,
@@ -15,12 +14,11 @@ import { grayProfile } from "./gray";
 
 const RED_TOKENS = ["--color-brand-red", "--color-state-red-hover", "--color-state-red-active"];
 
-test("P2-AC7: dock chrome colors come from tokens and no red shows at rest", async ({ page }) => {
+test("P2-AC7: grid chrome colors come from tokens and no red shows at rest", async ({ page }) => {
   await openApp(page);
   const surface = await tokenRgb(page, "--color-bg-surface");
-  const elevated = await tokenRgb(page, "--color-bg-elevated");
   const border = await tokenRgb(page, "--color-border-default");
-  const primary = await tokenRgb(page, "--color-text-primary");
+  const secondary = await tokenRgb(page, "--color-text-secondary");
   const style = (selector: string, property: string, pseudo?: string) =>
     page
       .locator(selector)
@@ -29,24 +27,19 @@ test("P2-AC7: dock chrome colors come from tokens and no red shows at rest", asy
         property,
         pseudo ?? null,
       ] as const);
-  expect(await style(".dv-groupview", "background-color")).toBe(surface);
-  expect(await style(".dv-tabs-and-actions-container", "background-color")).toBe(elevated);
-  expect(await style(".dv-tabs-and-actions-container", "border-bottom-color")).toBe(border);
-  expect(await style(".dv-tab.dv-active-tab", "color")).toBe(primary);
-  expect(
-    await style(
-      ".dv-split-view-container > .dv-view-container > .dv-view:not(:first-child)",
-      "background-color",
-      "::before",
-    ),
-  ).toBe(border);
+  expect(await style("[data-grid-item]", "background-color")).toBe(surface);
+  // The 1 px gaps between cells show the border token (R38.1).
+  expect(await style("[data-grid]", "background-color")).toBe(border);
+  expect(await style("[data-widget-header]:not([class*='w-4'])", "border-bottom-color")).toBe(border);
+  expect(await style("[data-slot='widget-title']", "color")).toBe(secondary);
 
   const reds = await Promise.all(RED_TOKENS.map((token) => tokenRgb(page, token)));
   const found = await page.evaluate((colors) => {
     const hits: string[] = [];
     for (const element of document.querySelectorAll("body *")) {
-      // Transport indicators are red by D10 (3) and P7.7: the play ring, slider ranges and thumbs.
-      if (element.closest("[data-widget='transport']")) continue;
+      // Transport indicators are red by D10 (3) and P7.7: the play ring, slider ranges and thumbs,
+      // in the band and in the Now playing card that Default shows (R38.8).
+      if (element.closest("[data-widget='transport'], [data-widget='nowPlaying']")) continue;
       const style = getComputedStyle(element);
       const values = [
         style.color,
@@ -94,10 +87,7 @@ test("P2-AC13: hover and focus 140 ms, menus and dialogs 200 ms, no transition o
   const duration = (locator: Locator, property: "transitionDuration" | "animationDuration") =>
     locator.evaluate((element, name) => getComputedStyle(element)[name], property);
   expect(await duration(page.getByRole("button", { name: "Menu" }), "transitionDuration")).toBe("0.14s");
-  expect(await duration(widget(page, "library").getByRole("button", { name: "Tree" }), "transitionDuration")).toBe(
-    "0.14s",
-  );
-  expect(await duration(widget(page, "library").getByRole("searchbox"), "transitionDuration")).toBe("0.14s");
+  expect(await duration(widget(page, "search").getByRole("searchbox"), "transitionDuration")).toBe("0.14s");
   for (const locator of await widget(page, "transport").locator("[data-slot='time'], [data-slot='seek-track']").all()) {
     expect(await duration(locator, "transitionDuration")).toBe("0s");
   }
@@ -141,12 +131,11 @@ async function focusContrast(locator: Locator): Promise<number> {
 
 test("P2-AC14: focus indicators reach 3:1 against the adjacent color", async ({ page }) => {
   await openApp(page);
-  const library = widget(page, "library");
   const targets: [string, Locator][] = [
     ["button", page.getByRole("button", { name: "Menu" })],
-    ["input", library.getByRole("searchbox")],
-    ["toggle", library.getByRole("button", { name: "Tree" })],
-    ["tab", tab(page, "Library")],
+    ["input", widget(page, "search").getByRole("searchbox")],
+    ["widget header", page.locator("[data-widget-header='songs']")],
+    ["side header", page.locator("[data-widget-header='search']")],
   ];
   for (const [kind, locator] of targets) {
     await page.keyboard.press("Shift");
@@ -160,36 +149,18 @@ test("P2-AC14: focus indicators reach 3:1 against the adjacent color", async ({ 
   await expect(item).toHaveCount(1);
   expect(await focusContrast(item), "menu item").toBeGreaterThanOrEqual(3);
   await page.keyboard.press("Escape");
-
-  await page.setViewportSize({ width: 350, height: 700 });
-  const select = library.getByRole("combobox", { name: "Library mode" });
-  await select.focus();
-  await page.keyboard.press("Enter");
-  await page.keyboard.press("ArrowDown");
-  const option = page.locator("[role='option']:focus");
-  await expect(option).toHaveCount(1);
-  expect(await focusContrast(option), "select item").toBeGreaterThanOrEqual(3);
 });
 
-test("P2-AC15: the pressed mode, the active tab and the highlighted menu item show in grayscale", async ({ page }) => {
+test("P2-AC15: the highlighted menu item shows in grayscale", async ({ page }) => {
   await openApp(page);
   await page.evaluate(() => {
     document.documentElement.style.filter = "grayscale(1)";
   });
-  const library = widget(page, "library");
-  const pressed = await grayProfile(page, library.getByRole("button", { name: "Columns" }));
-  const unpressed = await grayProfile(page, library.getByRole("button", { name: "Tree" }));
-  expect(pressed.bottom - unpressed.bottom).toBeGreaterThan(100);
-
-  // The default preset has Lyrics as the inactive tab beside Play queue.
-  const active = await grayProfile(page, tab(page, "Play queue"));
-  const inactive = await grayProfile(page, tab(page, "Lyrics"));
-  expect(active.bottom - inactive.bottom).toBeGreaterThan(100);
 
   await page.getByRole("button", { name: "Menu" }).focus();
   await page.keyboard.press("Enter");
   await page.keyboard.press("ArrowDown");
-  // Disabled items (Library) can take keyboard focus and show at half opacity; the check is
+  // Disabled items can take keyboard focus and show at half opacity; the check is
   // about an enabled item.
   const highlighted = page.locator("[role^='menuitem'][data-highlighted]");
   for (let step = 0; step < 5 && (await highlighted.getAttribute("data-disabled")) !== null; step += 1) {

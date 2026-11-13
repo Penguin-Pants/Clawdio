@@ -6,7 +6,7 @@ import { band, expect, test, widget } from "./test-base";
 async function open(page: Page, rootPx = 16) {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await page.evaluate((px) => (document.documentElement.style.fontSize = `${px}px`), rootPx);
 }
 
@@ -43,8 +43,8 @@ test("TR-9: the art enters the mini player with the compact band height and leav
   expect((await calls(page)).at(-1)?.on).toBe(false);
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(page.locator("[data-shell]")).not.toHaveAttribute("data-mini", "");
-  await expect(widget(page, "library")).toBeVisible();
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "songs")).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
 });
 
 for (const [scale, px] of [

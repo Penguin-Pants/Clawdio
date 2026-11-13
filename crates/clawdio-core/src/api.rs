@@ -28,7 +28,8 @@ impl From<crate::error::CoreError> for IpcError {
     }
 }
 
-/// Library widget modes (R28).
+/// Measurement arrangement names (P3.1). They keep the old Library mode names (R28) for the
+/// measurement scripts: `tree` and `columns` apply those presets, `topBottom` applies Default (R38.8).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

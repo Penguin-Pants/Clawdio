@@ -40,16 +40,18 @@ export interface ColumnState {
   sort: SortKey[];
 }
 
-/** The two Songs views (UD8): the table of Columns mode and of Top/bottom mode. */
-export type ViewId = "songs.columns" | "songs.topBottom";
-export const VIEW_IDS: readonly ViewId[] = ["songs.columns", "songs.topBottom"];
+/**
+ * The Songs view (UD8). One Songs widget remains (R38.3); its id keeps the saved `columns.json`
+ * state of the old Columns mode table.
+ */
+export type ViewId = "songs.columns";
+export const VIEW_IDS: readonly ViewId[] = ["songs.columns"];
 
 const defaultWidths = Object.fromEntries(COLUMN_IDS.map((id) => [id, COLUMNS[id].width])) as Record<ColumnId, number>;
 
 export const DEFAULT_COLUMNS: Record<ViewId, ColumnState> = {
-  // Columns mode shows the Album list beside the table, so Album starts hidden there.
+  // The presets show the Album widget beside the table, so Album starts hidden.
   "songs.columns": { order: [...COLUMN_IDS], widths: defaultWidths, hidden: ["album"], sort: [] },
-  "songs.topBottom": { order: [...COLUMN_IDS], widths: defaultWidths, hidden: [], sort: [] },
 };
 
 /** The visible columns in order. */
@@ -141,7 +143,7 @@ function isColumn(value: unknown): value is ColumnId {
  */
 export function parseColumnState(
   value: unknown,
-  defaults: ColumnState = DEFAULT_COLUMNS["songs.topBottom"],
+  defaults: ColumnState = DEFAULT_COLUMNS["songs.columns"],
 ): { state: ColumnState; warnings: string[] } | null {
   if (!isObject(value)) return null;
   const warnings: string[] = [];

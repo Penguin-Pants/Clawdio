@@ -1,33 +1,26 @@
-// U1: the transport band (SH-1 to SH-5, TR-1 to TR-8, TH-1, rework Phase 1 accept).
+// U1: the transport band (TR-1 to TR-8, rework Phase 1 accept) as the Transport controls grid
+// widget (R38.2): it fills its cells, so its height is one row of the grid (R38.1).
 import type { Page } from "@playwright/test";
 import { band, center, expect, expectNoMotion, expectNoSeriousViolations, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await expect(band(page)).toContainText("Song 4 of Album A0");
 }
 
-/** The computed px value of a size token at the current root font size. */
-function tokenPx(page: Page, name: string): Promise<number> {
-  return page.evaluate((variable) => {
-    const probe = document.createElement("div");
-    probe.style.height = `var(${variable})`;
-    document.body.append(probe);
-    const value = probe.getBoundingClientRect().height;
-    probe.remove();
-    return value;
-  }, name);
+/** The px height of the band's grid cells. */
+async function cellHeight(page: Page): Promise<number> {
+  const box = await page.locator("[data-grid-item='transport']").boundingBox();
+  if (!box) throw new Error("no transport cells");
+  return box.height;
 }
 
 /** The band's box, its size class and whether anything inside it wraps or overflows. */
 async function bandState(page: Page) {
   return band(page).evaluate((element) => {
     const box = element.getBoundingClientRect();
-    const style = getComputedStyle(element);
-    const inner = element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
     const children = [...element.children].filter((child) => getComputedStyle(child).position !== "absolute");
-    const tallest = Math.max(...children.map((child) => child.getBoundingClientRect().height));
     const tops = children.map((child) => {
       const rect = child.getBoundingClientRect();
       return Math.round(rect.top + rect.height / 2);
@@ -38,7 +31,6 @@ async function bandState(page: Page) {
       height: box.height,
       overflowY: element.scrollHeight - element.clientHeight,
       overflowX: element.scrollWidth - element.clientWidth,
-      emptyY: inner - tallest,
       oneRow: Math.max(...tops) - Math.min(...tops) <= 1,
     };
   });
@@ -55,20 +47,18 @@ test("U1-AC2: the size class follows the band width at 1280, 1100 and 800 px", a
   await page.setViewportSize({ width: 1280, height: 800 });
   await openLibrary(page);
   await expect(band(page)).toHaveAttribute("data-size", "xl");
-  expect((await bandState(page)).width).toBe(1280);
   await page.setViewportSize({ width: 1100, height: 800 });
   await expect(band(page)).toHaveAttribute("data-size", "lg");
-  const regular = await tokenPx(page, "--size-transport-bar");
   await page.setViewportSize({ width: 800, height: 560 });
   await expect(band(page)).toHaveAttribute("data-size", "md");
   const state = await bandState(page);
-  expect(state.height).toBe(regular);
+  expect(state.height).toBeCloseTo(await cellHeight(page), 0);
   expect(state.oneRow).toBe(true);
   expect(state.overflowY).toBeLessThanOrEqual(0);
   await expect(band(page).getByRole("button", { name: "Play", exact: true })).toBeVisible();
 });
 
-test("U1-AC2, rework Phase 1 accept: from 800 to 2560 px the band never wraps, never changes height and keeps Play", async ({
+test("U1-AC2, rework Phase 1 accept: from 800 to 2560 px the band never wraps, keeps its row height and keeps Play", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 800, height: 600 });
@@ -76,7 +66,8 @@ test("U1-AC2, rework Phase 1 accept: from 800 to 2560 px the band never wraps, n
   const height = (await bandState(page)).height;
   for (const width of [800, 900, 1024, 1199, 1200, 1600, 1920, 2560]) {
     await page.setViewportSize({ width, height: 600 });
-    await expect.poll(async () => (await bandState(page)).width).toBe(width);
+    // The full-width band: the window less its grip strip.
+    await expect.poll(async () => width - (await bandState(page)).width).toBeLessThan(24);
     const state = await bandState(page);
     expect(state.height, `${width} px`).toBe(height);
     expect(state.oneRow, `${width} px wraps`).toBe(true);
@@ -94,7 +85,7 @@ test("TR-2, TR-3: at 600 and 400 px the band shows SM and XS, the progress line 
   await expect(band(page).getByRole("progressbar", { name: "Playback position" })).toBeVisible();
   await expect(band(page).getByRole("slider", { name: "Seek" })).toHaveCount(0);
   await expect(band(page).getByRole("button", { name: "Previous" })).toBeVisible();
-  expect((await bandState(page)).height).toBe(await tokenPx(page, "--size-transport-bar-compact"));
+  expect((await bandState(page)).oneRow).toBe(true);
   await band(page).getByRole("button", { name: "More" }).click();
   for (const name of ["Seek…", "Stop", "Volume…"]) await expect(page.getByRole("menuitem", { name })).toBeVisible();
   for (const name of ["Shuffle", "Play queue"])
@@ -151,17 +142,19 @@ test("TR-5 to TR-8: text ellipsis, no overlap with the dock, opaque background, 
     await expect(text).toHaveCSS("white-space", "nowrap");
   }
   await expect(band(page).locator("[data-slot='now-playing'] img")).toBeVisible();
-  // SH-2, TR-6: the band is outside the dock, and their boxes do not intersect.
-  await expect(page.locator(".dv-dockview [data-widget='transport']")).toHaveCount(0);
+  // TR-6, R38.2: the band is a grid widget, and no other widget's box intersects it.
   const bandBox = await band(page).boundingBox();
-  const dockBox = await page.locator("main").boundingBox();
-  if (!bandBox || !dockBox) throw new Error("no box");
-  expect(dockBox.y).toBeGreaterThanOrEqual(bandBox.y + bandBox.height - 0.5);
-  // SH-3: the dock takes the window less the header, the band and the status line.
+  if (!bandBox) throw new Error("no box");
+  for (const item of await page.locator("[data-grid-item]:not([data-grid-item='transport'])").all()) {
+    const box = await item.boundingBox();
+    if (box) expect(box.y).toBeGreaterThanOrEqual(bandBox.y + bandBox.height - 0.5);
+  }
+  // SH-3, R38.1: the grid takes the window less the header and the status line.
   const chrome = await page.evaluate(() =>
     ["header", "footer"].map((selector) => document.querySelector(selector)?.getBoundingClientRect().height ?? 0),
   );
-  expect(Math.abs(dockBox.height - (800 - chrome[0] - chrome[1] - bandBox.height))).toBeLessThanOrEqual(1);
+  const gridBox = await page.locator("[data-grid]").boundingBox();
+  expect(Math.abs((gridBox?.height ?? 0) - (800 - chrome[0] - chrome[1]))).toBeLessThanOrEqual(1);
   // TR-7: opaque.
   const alpha = await band(page).evaluate((element) => {
     const color = getComputedStyle(element).backgroundColor;
@@ -183,17 +176,12 @@ test("TR-5 to TR-8: text ellipsis, no overlap with the dock, opaque background, 
 });
 
 for (const percent of [100, 125, 140]) {
-  test(`TH-1: at a ${percent}% root font the band takes the token height and its content fits`, async ({ page }) => {
+  test(`TH-1, R38.1: at a ${percent}% root font the band fills its row and its content fits`, async ({ page }) => {
     await openLibrary(page);
     await page.evaluate((value) => {
       document.documentElement.style.fontSize = `${value}%`;
     }, percent);
-    // The band follows the change without a reload.
-    const expected = await tokenPx(page, "--size-transport-bar");
-    expect(expected).toBeCloseTo((56 * percent) / 100, 0);
-    await expect.poll(async () => (await bandState(page)).height).toBeCloseTo(expected, 0);
-    // The size class follows the new rem width one frame after the height (UD4, observeSize).
-    await expect.poll(async () => (await bandState(page)).emptyY).toBeLessThanOrEqual(4);
+    await expect.poll(async () => (await bandState(page)).height).toBeCloseTo(await cellHeight(page), 0);
     const state = await bandState(page);
     expect(state.overflowY).toBeLessThanOrEqual(0);
     expect(state.oneRow).toBe(true);

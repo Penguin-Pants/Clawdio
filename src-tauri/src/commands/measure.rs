@@ -1,5 +1,6 @@
-//! Measurement mode (P3.1): `CLAWDIO_MEASURE_MODE` names a Library mode. The UI then shows all
-//! six widgets in that mode and does not save the arrangement. Release builds keep it.
+//! Measurement mode (P3.1): `CLAWDIO_MEASURE_MODE` names an arrangement (`tree`, `columns` or
+//! `topBottom`). The UI applies that preset (`topBottom`: Default), shows every hidden widget
+//! where it fits (R38.7) and does not save the arrangement. Release builds keep it.
 
 use clawdio_core::api::LibraryMode;
 
@@ -30,7 +31,7 @@ pub fn scan_running() -> bool {
     crate::jobs::scan_running()
 }
 
-/// Called by the UI when all six widgets show data. With `CLAWDIO_MEASURE_READY` set, it writes
+/// Called by the UI when the measured widgets show data. With `CLAWDIO_MEASURE_READY` set, it writes
 /// that file, so the measurement scripts start the idle period from a populated UI.
 #[tauri::command]
 pub fn measure_ready() -> Result<(), clawdio_core::api::IpcError> {

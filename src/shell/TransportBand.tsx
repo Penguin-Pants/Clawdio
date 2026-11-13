@@ -1,8 +1,10 @@
-import { useRef } from "react";
+import { type RefObject, useLayoutEffect, useRef, useState } from "react";
 import { IconButton } from "@/components/icon-button";
+import { observeSize } from "@/lib/resize";
+import { useTokenPx } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/ui";
-import { focusLibrarySearch, setWidgetVisible } from "./layouts";
+import { focusLibrarySearch, setWidgetVisible, useGridStore } from "./layouts";
 import { NowPlayingDisplay } from "./transport/NowPlayingDisplay";
 import { OverflowMenu } from "./transport/OverflowMenu";
 import {
@@ -19,7 +21,7 @@ import { VolumePopover, VolumeSlider } from "./transport/VolumeControl";
 import { type SizeClass, atLeast, useSizeClass } from "./use-size-class";
 
 function QueueToggle() {
-  const shown = useUiStore((state) => state.visibleWidgets.includes("queue"));
+  const shown = useGridStore((state) => state.layout.queue !== undefined);
   return (
     <IconButton
       icon="queue"
@@ -32,17 +34,35 @@ function QueueToggle() {
   );
 }
 
-function Slot({ id, size, mini }: { id: SlotId; size: SizeClass; mini: boolean }) {
+/**
+ * True while the band is shorter than the band token (UD1): a one-row Transport controls widget
+ * in a short window (R38.1). Measured once per frame of resizes (PF-2).
+ */
+function useShortBand(ref: RefObject<HTMLDivElement | null>): boolean {
+  const regular = useTokenPx("--size-transport-bar");
+  const [short, setShort] = useState(false);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setShort(element.offsetHeight > 0 && element.offsetHeight < regular);
+    return observeSize(element, (entry) =>
+      setShort((entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height) < regular),
+    );
+  }, [ref, regular]);
+  return short;
+}
+
+function Slot({ id, size, mini, tight }: { id: SlotId; size: SizeClass; mini: boolean; tight: boolean }) {
   switch (id) {
     case "previous":
       return <PreviousButton />;
     case "playPause":
-      return <PlayPauseButton compact={!atLeast(size, "md")} />;
+      return <PlayPauseButton compact={tight} />;
     case "next":
       return <NextButton />;
     case "nowPlaying":
       // In the mini player the art is the exit button: a menu does not fit a band-high window (UD19).
-      return <NowPlayingDisplay art={mini || atLeast(size, "md")} className="max-w-64 min-w-0 shrink" />;
+      return <NowPlayingDisplay art={mini || atLeast(size, "md")} small={tight} className="max-w-64 min-w-0 shrink" />;
     case "seek":
       return <SeekBar className="min-w-32 flex-1" />;
     case "stop":
@@ -69,17 +89,16 @@ function Slot({ id, size, mini }: { id: SlotId; size: SizeClass; mini: boolean }
 }
 
 /**
- * The transport band (SH-2, TR-1 to TR-8): a fixed band outside the dock, full width, with a
- * height from the size tokens (UD1, UD3). Its content follows its own width (UD4): slots that do
- * not fit move to the More menu, and play or pause always shows. The user's slot order and hidden
- * set (TR-10) apply first. With slots before the play controls, the band has three zones and the
- * play controls sit in the middle (owner decision after U7). `data-widget` makes it an F6 region
- * (P2.12).
+ * The transport band (TR-1 to TR-8), the body of the Transport controls grid widget (R38.2) and
+ * of the mini player (UD19). It fills its cell height. Its content follows its own width (UD4):
+ * slots that do not fit move to the More menu, and play or pause always shows. The user's slot
+ * order and hidden set (TR-10) apply first. With slots before the play controls, the band has
+ * three zones and the play controls sit in the middle (owner decision after U7). The region and
+ * its name come from the grid widget or the mini player.
  */
 export function TransportBand() {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const size = useSizeClass(ref);
-  const position = useUiStore((state) => state.transportPosition);
   const slots = useUiStore((state) => state.transportSlots);
   const mini = useUiStore((state) => state.mini);
   // The user's order and hidden set first, then the size class rule (UD20, UD4). In the mini
@@ -87,28 +106,26 @@ export function TransportBand() {
   const hidden = mini ? slots.hidden.filter((id) => id !== "nowPlaying") : slots.hidden;
   const { band, overflow } = layoutSlots(size, slots.order, hidden);
   const compact = !atLeast(size, "md");
+  // A grid row shorter than the band token takes the compact padding and play button (R38.1).
+  const short = useShortBand(ref);
+  const tight = compact || short;
   const zones = bandZones(band);
   const centered = zones.left.length > 0;
-  const slot = (id: SlotId) => <Slot key={id} id={id} size={size} mini={mini} />;
+  const slot = (id: SlotId) => <Slot key={id} id={id} size={size} mini={mini} tight={tight} />;
   const more = overflow.length > 0 && <OverflowMenu slots={overflow} />;
   return (
-    <section
+    <div
       ref={ref}
-      aria-label="Transport controls"
-      data-widget="transport"
+      data-band=""
       data-size={size}
-      tabIndex={-1}
       className={cn(
-        "relative min-w-0 items-center gap-2 overflow-hidden bg-bg-surface px-2 whitespace-nowrap text-text-primary [grid-area:transport] focus-visible:-outline-offset-2",
+        "relative size-full min-w-0 items-center gap-2 overflow-hidden bg-bg-surface px-2 whitespace-nowrap text-text-primary",
         // Equal side zones put the play controls in the middle of the band. A side zone never
         // gets less than its content, so a long custom side moves the controls off center and
         // clips nothing.
         centered ? "grid grid-cols-[minmax(min-content,1fr)_auto_minmax(min-content,1fr)] content-center" : "flex",
-        compact ? "h-(--size-transport-bar-compact) py-1" : "h-(--size-transport-bar) py-2",
-        // An inset line, not a border, so the token height holds the content exactly (TH-1).
-        position === "top"
-          ? "shadow-[inset_0_-1px_0_var(--color-border)]"
-          : "shadow-[inset_0_1px_0_var(--color-border)]",
+        // A short row centers the content with no padding, so nothing scrolls (R38.1).
+        short ? "py-0" : compact ? "py-1" : "py-2",
       )}
     >
       {centered ? (
@@ -132,6 +149,6 @@ export function TransportBand() {
         </>
       )}
       {compact && <ProgressLine />}
-    </section>
+    </div>
   );
 }

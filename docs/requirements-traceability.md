@@ -1,6 +1,6 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.28, November 13, 2026 (requirements v1.16 rows for R38, AC-34 and DEC-50, mapped to P29; R5, R28, R28.1 and R29 rows stay until P29 marks them Superseded (v1.16); earlier: requirements v1.15 R21 rows and DEC-49, mapped to P28; earlier: P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Version:** 1.29, November 13, 2026 (P29 Status column filled: R38, AC-34 and DEC-50; R5, R28, R28.1 and R29 rows marked Superseded (v1.16) where R38 replaces them; earlier: requirements v1.16 rows for R38, AC-34 and DEC-50, mapped to P29; R5, R28, R28.1 and R29 rows stay until P29 marks them Superseded (v1.16); earlier: requirements v1.15 R21 rows and DEC-49, mapped to P28; earlier: P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
 **Plan:** `docs/build-plan.md` v1.35. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
@@ -90,45 +90,45 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 
 | ID | Requirement | Source | Tasks | Criteria | Verify | Status |
 |---|---|---|---|---|---|---|
-| R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Done (P2) |
-| R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Done (P2) |
+| R5-1 | Widgets can be docked, resized, moved and hidden | §2 R5 | P2.1, P2.2 | P2-AC2, P2-AC4 | E2E | Superseded (v1.16: R38, P29) |
+| R5-2 | Library widget is mandatory | §2 R5 | P2.2, P2.3 | P2-AC3 | E2E | Superseded (v1.16: R38.7, Songs and Transport controls cannot hide; P29) |
 | R5-3 | Transport controls: movable, hideable; play/pause, stop, previous, next, shuffle, repeat; seek and volume; elapsed and total time | §2 R5 | P2.2, P7.7 | P2-AC4, P7-AC9 | E2E, MAN-L | Superseded (v1.8: section 7 SH-2, TR-1 to TR-8) |
 | R5-4 | Now playing: art, title, artist, album, heart | §2 R5 | P7.8, P10.3, P11.7 | P10-AC4, P11-AC5 | E2E | Done (P11) |
 | R5-5 | Playlists widget: movable, hideable | §2 R5 | P2.2, P11.5 | P2-AC4 | E2E | Done (P11) |
 | R5-6 | Play queue widget: movable, hideable | §2 R5 | P2.2, P7.9 | P2-AC4, P7-AC7 | E2E | Done (P7) |
 | R5-7 | Lyrics widget: movable, hideable | §2 R5 | P2.2, P13.4 | P2-AC4, P13-AC5 | E2E | Done (P13) |
-| R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Done (P6) |
+| R5-8 | Search is a field in the Library header, not a widget | §2 R5 | P2.8, P6.2 | P2-AC5, P6-AC3 | E2E | Superseded (v1.16: R38.2, the Search widget; P29) |
 | R5-9 | Status line fixed at the bottom: "Ready", progress with cancel, no pause | §2 R5 | P2.7, P5.4, P14.6 | P5-AC6, P14-AC12 | E2E, MAN-L | Done (P14, D18) |
 | R5-10 | Menu button fixed top-right: Widgets, Layouts, Settings, Rescan | §2 R5 | P2.5, P2.6 | P2-AC4, P2-AC6 | E2E | Done (P2, C14) |
 | R5-11 | Album art in Now playing and album rows; cover file order, then embedded; bad cover logged; thumbnails in cache | §2 R5 | P10.1, P10.2, P10.3 | P10-AC1, P10-AC2, P10-AC3 | UT, IT | Done (P10, D27) |
 | R5-12 | Song row shows the tag artist when it differs from the folder artist | §2 R5 | P6.4 | P6-AC7 | E2E | Done (P6) |
 | R5-13 | Transport controls and Now playing are bar widgets with a fixed height (R29.1) | §2 R5 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: section 7 SH-2, TR-11) |
-| R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
-| R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Done (P2) |
-| R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
-| R28-4 | Columns mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
-| R28-5 | Top/bottom mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Done (P6) |
-| R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Done (P6) |
-| R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Done (P6) |
-| R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Done (P2) |
-| R28.1-1 | Columns: splitters between Artist and Album and between Album and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
-| R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22, D56) |
-| R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Done (P22) |
-| R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Done (P22, D56) |
+| R28-1 | One Library widget with a mode switch and the search field in its header | §2 R28 | P2.8 | P2-AC5 | E2E | Superseded (v1.16: R38.3, separate widgets; P29) |
+| R28-2 | Narrow widget: the switch becomes a dropdown with the current mode | §2 R28 | P2.8 | P2-AC5 | E2E | Superseded (v1.16: R38.12, no mode switch; P29) |
+| R28-3 | Tree mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Superseded (v1.16: R38.8, Tree preset; P29) |
+| R28-4 | Columns mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Superseded (v1.16: R38.8, Columns preset; P29) |
+| R28-5 | Top/bottom mode | §2 R28 | P3.3, P6.3 | P6-AC1 | E2E | Superseded (v1.16: R38.8, Default preset; P29) |
+| R28-6 | "All" rows; Artist filters Album; Album filters Songs; no selection shows all | §2 R28 | P6.3 | P6-AC1 | E2E | Done (P6; P29: R38.3 on the separate widgets, P29-AC5) |
+| R28-7 | Mode switch keeps selection and search text | §2 R28 | P2.8, P6.3 | P2-AC5, P6-AC2 | E2E | Superseded (v1.16: R38.3, one shared selection and search; P29-AC5) |
+| R28-8 | Library can move and resize; cannot hide or close | §2 R28 | P2.3 | P2-AC3 | E2E | Superseded (v1.16: R38.2, R38.7; P29) |
+| R28.1-1 | Columns: splitters between Artist and Album and between Album and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Superseded (v1.16: R38.12; P29) |
+| R28.1-2 | Top/bottom: splitters between Artist and Album and between the top row and Songs | §2 R28.1 | P22.1 | P22-AC3 | E2E | Superseded (v1.16: R38.12; P29) |
+| R28.1-3 | Tree mode: one frame, no splitter | §2 R28.1 | P22.1 | P22-AC3 | E2E | Superseded (v1.16: R38.12; P29) |
+| R28.1-4 | Frame minimums; the small-window clamp also applies to frames | §2 R28.1 | P22.4 | P22-AC4 | E2E | Superseded (v1.16: R38.12; P29) |
 | R28.1-5 | Mouse only; frame splitters look and behave like dock splitters | §2 R28.1 | P22.1 | P22-AC4 | E2E | Superseded (v1.8: section 7 SP-3) |
-| R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Done (P22) |
-| R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Done (P22, D55) |
+| R28.1-6 | Sizes per mode; a mode switch keeps them | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Superseded (v1.16: R38.12; P29) |
+| R28.1-7 | Frame sizes are part of the arrangement; auto-save and restore | §2 R28.1 | P22.3 | P22-AC2, P22-AC3 | UT, E2E | Superseded (v1.16: R38.12; P29) |
 | R28.1-8 | Reset layout and built-in layouts restore the default sizes of all modes | §2 R28.1 | P22.2 | P22-AC1, P22-AC3 | UT, E2E | Superseded (v1.8: section 7 DK-9; presets restore the default sizes) |
-| R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Done (P2, D8) |
+| R29-1 | Drag-and-drop docking by header; splitters resize | §2 R29 | P2.1 | P2-AC2 | E2E, MAN-L | Superseded (v1.16: R38.4, R38.5; P29) |
 | R29-2 | No floating panels or pop-outs; tabbed groups allowed and round-trip | §2 R29 | P2.1, P9.3 | P2-AC2, P9-AC3 | E2E | Superseded (v1.8: section 7 DK-3, floating groups) |
 | R29-3 | Built-in layouts Columns (default), Tree, Top/bottom; they cannot change | §2 R29 | P2.4 | P2-AC1, P2-AC4 | E2E, REV | Superseded (v1.8: section 7 DK-9, presets) |
 | R29-4 | Default arrangement: Library main; Now playing and Transport in a bottom bar; others hidden | §2 R29 | P2.4 | P2-AC1 | E2E | Superseded (v1.8: section 7 DK-8, default preset) |
 | R29-5 | User-saved named layouts | §2 R29 | none | none | REV | Deferred |
-| R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9) |
-| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9) |
-| R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17) |
-| R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Done (P2) |
-| R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Done (P9) |
+| R29-6 | Arrangement: one JSON file per machine, no window size, versioned; unknown version ignored and logged; import and export deferred | §2 R29 | P9.2, P9.3, P9.4 | P9-AC4, P9-AC8 | UT | Done (P9; P29: version 3, R38.11) |
+| R29-7 | Auto-save and restore; applying a layout replaces the arrangement | §2 R29 | P9.3, P2.4 | P9-AC2, P2-AC4, P9-AC11 | E2E, MAN-L | Done (P9; P29: R38.11) |
+| R29-8 | Reset layout from the menu and a documented shortcut; no layout hides the menu or status line | §2 R29 | P2.4, P2.6, P2.12, P18.6 | P2-AC4, P2-AC6, P9-AC5 | E2E | Done (P18, D17; P29: Reset applies Default, R38.8) |
+| R29-9 | Non-drag path: menu shows and hides widgets, switches mode, applies layouts | §2 R29 | P2.6 | P2-AC4 | E2E | Superseded (v1.16: R38.7, R38.10; P29) |
+| R29-10 | Corrupt file, unknown widget, layout without Library | §2 R29 | P9.4 | P9-AC4 | UT | Superseded (v1.16: R38.11; P29) |
 | R29.1-1 | Bar widget fixed height: measured content plus header, also under text scaling; no splitter changes it | §2 R29.1 | P23.1 | P23-AC4, P23-AC6 | E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
 | R29.1-2 | Top or bottom edge drop: full-width row at the fixed height; others get the rest | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
 | R29.1-3 | Side drops refused except the two bar widgets in one row; row takes the taller height | §2 R29.1 | P23.1, P23.2 | P23-AC1, P23-AC4 | UT, E2E | Superseded (v1.8: R29.1 removed; section 7 SH-2) |
@@ -205,7 +205,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R37-7 | A saved song not in the Songs list as shown does not restore | §2 R37.7 | P26.1 | P26-AC1 | UT | Done (P26, D66) |
 | R37-8 | A restored song is a selected row for R35.2 | §2 R37.8 | P26.3 | P26-AC5 | E2E | Done (P26, D66) |
 | R37-9 | At startup a current song from the R27 restore wins: the Library selects it, its artist and its album; the saved selection applies only when no song is current (v1.14) | §2 R37.9 | P26.1, P26.2, P26.3 | P26-AC1, P26-AC2, P26-AC7 | UT, IT, E2E | Done (P26, D66) |
-| R38 | Snap grid: 12 x 12, fills and scales; every widget (Library parts, Search, Transport) moves and resizes in cells; push never past row 12, shrink or refuse; minimum sizes; presets replace modes; keyboard path; layout.json version 3 with backup | §2 R38 | P29.0 to P29.6 | P29-AC1 to P29-AC7 | UT, E2E, MEAS, MAN-L, MAN-W | Planned |
+| R38 | Snap grid: 12 x 12, fills and scales; every widget (Library parts, Search, Transport) moves and resizes in cells; push never past row 12, shrink or refuse; minimum sizes; presets replace modes; keyboard path; layout.json version 3 with backup | §2 R38 | P29.0 to P29.6 | P29-AC1 to P29-AC7 | UT, E2E, MEAS, MAN-L, MAN-W | Done with exceptions (P29: P29-AC7 manual not run; WebKit e2e not run here) |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
@@ -543,7 +543,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-47 | Mode restore: shuffle and repeat save with the R27 state and restore at startup | §8.47 | P27 | P27-AC1 to P27-AC3 | UT, IT, MAN-L | Done (P27; manual Linux check open) |
 | DEC-48 | Current song at startup: the Library selects the restored current song, its artist and its album; the saved selection only without a current song | §8.48 | P26 | P26-AC1, P26-AC2, P26-AC7 | UT, IT, E2E, MAN-L | Done with exceptions (P26; P26-AC6 manual Linux check open) |
 | DEC-49 | Release: one click on `main`, the portable zip only, version from the repository, release notes required; installer and Linux packages deferred | §8.49 | P28 | P28-AC1 to P28-AC3 | REV, CI | Done with exceptions (P28; P28-AC3 owner run open) |
-| DEC-50 | Snap grid replaces the docking shell; Library parts, Search and Transport become grid widgets; tabs and floating groups removed | §8.50 | P29 | P29-AC1 to P29-AC7 | UT, E2E, MAN-L | Planned |
+| DEC-50 | Snap grid replaces the docking shell; Library parts, Search and Transport become grid widgets; tabs and floating groups removed | §8.50 | P29 | P29-AC1 to P29-AC7 | UT, E2E, MAN-L | Done with exceptions (P29) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -566,10 +566,10 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-8 | Startup with the folder missing loses no data; Change folder works | §9.8 | P5.10, P9.1 | P5-AC12, P9-AC10 | IT, MAN-L | Done (P9) |
 | AC-9 | Deleting the cache restores library and playlists with no new lookups for "no match" albums | §9.9 | P5.8, P14.3, P9.1, P11.2 | P5-AC8, P14-AC8, P9-AC10, P11-AC11 | IT | Done (P14) |
 | AC-10 | Unplugging the device stops playback with a message; Play resumes on the default device | §9.10 | P7.4 | P7-AC4 | MAN-L, MAN-W | Planned |
-| AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Done (P9) |
-| AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Done (P9) |
+| AC-11 | In each mode, dock, resize, hide and show widgets; arrangement survives a restart | §9.11 | P2.1, P9.3 | P2-AC2, P9-AC2 | E2E, MAN-L | Superseded (v1.16: AC-34) |
+| AC-12 | Each built-in layout applies; a tabbed group survives a restart | §9.12 | P2.4, P9.3 | P2-AC4, P9-AC3 | E2E, MAN-L | Superseded (v1.16: AC-34, no tabs) |
 | AC-13 | Transport hidden: keys and media keys work; Reset layout restores | §9.13 | P7.11, P8.2, P2.4 | P7-AC5, P8-AC4, P9-AC5 | E2E, MAN-W | Planned |
-| AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Done (P6) |
+| AC-14 | Library cannot close; mode switch keeps selection and search | §9.14 | P2.3, P2.8, P6.3 | P2-AC3, P2-AC5, P6-AC2 | E2E | Superseded (v1.16: R38.7, R38.8; P29-AC3) |
 | AC-15 | Replacing tokens and the icon source and rebuilding changes theme and icon with no other code change | §9.15 | P1.6, P18.8 | P1-AC5, P18-AC9 | MAN-L | Done (P18) |
 | AC-16 | With reduce motion on, no animation plays (Magic UI clause applies only if components are named) | §9.16 | P0.7, P17.3 | P2-AC8, P17-AC3 | E2E, MAN-L, MAN-W | Planned |
 | AC-17 | Portable folder and music folder copied to another drive: settings, arrangement, queue survive | §9.17 | P4.1, P9.1 | P9-AC7, P18-AC10 | MAN-W | Planned |
@@ -580,16 +580,16 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-22 | Several files in one picker action and the owner's playlist folder import; other-format entries match; repair fixes earlier imports | §9.22 | P19.3, P19.5, P21.2 | P19-AC8, P21-AC2 | MAN-W | Auto pass (P19, P21); manual Windows not run (P19-AC8) |
 | AC-23 | Ducking with Handy and one call app, both modes | §9.23 | P20.2, P20.3 | P20-AC4 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
 | AC-24 | No microphone use by the app in Windows privacy settings | §9.24 | P20.2 | P20-AC5 | MAN-W | Not verified (P20 owner decision; P21: no Windows machine) |
-| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
-| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
-| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Auto pass (P22, P23); Windows build ready (run 38377951211); manual Windows open (P23-AC7) |
+| AC-25 | Library frames: drag, sizes per mode survive a switch and a restart; Reset restores | §9.25 | P22.1, P22.2, P22.3, P23.5 | P22-AC3, P23-AC7 | E2E, MAN-W | Superseded (v1.16: AC-34) |
+| AC-26 | Transport at the top edge is a full-width fixed-height row; side and tab drops refused; bar widgets share a row | §9.26 | P23.1, P23.2, P23.5 | P23-AC4, P23-AC7 | E2E, MAN-W | Superseded (v1.16: AC-34) |
+| AC-27 | Saved arrangement with Transport in a tab group: Transport moves to the bottom bar; log names the repair | §9.27 | P23.3, P23.5 | P23-AC5, P23-AC7 | E2E, MAN-W | Superseded (v1.16: AC-34) |
 | AC-28 | Automatic lyrics for the playing and next song; no second request after no match | §9.28 | P24.2, P24.4, P24.5 | P24-AC3, P24-AC6, P24-AC12 | IT, MAN-L | Done with exceptions (P24; P24-AC12 manual Linux check open) |
 | AC-29 | Songs list and Play queue selection follow Next; focus stays; a hidden song changes nothing | §9.29 | P24.8 | P24-AC10, P24-AC11 | E2E | Done (P24, Chromium; WebKit in CI) |
 | AC-30 | Type-to-find: "z" and "zz top" select the match; Space does not toggle; no match changes nothing | §9.30 | P25.2, P25.3 | P25-AC3, P25-AC4, P25-AC5 | E2E | Done (P25) |
 | AC-31 | Selection restore: Columns rows restore in view; a missing album gives the artist and "All"; Tree opens the row's artist and album | §9.31 | P26.3, P26.4 | P26-AC3, P26-AC4, P26-AC6 | E2E, MAN-L | Done with exceptions (P26, D66; P26-AC6 manual Linux check open) |
 | AC-32 | Mode restore: shuffle on and repeat one survive a restart; both off survive a restart | §9.32 | P27.2, P27.3 | P27-AC2, P27-AC3 | IT, MAN-L | Done with exceptions (P27; P27-AC3 manual Linux check open) |
 | AC-33 | Current song at startup: the playing song, its artist and its album are selected and in view; with no current song the saved artist is selected | §9.33 | P26.3, P26.4 | P26-AC7, P26-AC6 | E2E, MAN-L | Done with exceptions (P26; P26-AC6 manual Linux check open) |
-| AC-34 | Snap grid: art top right with Songs full width below; push stops at row 12; scales with the window; restores; keyboard move and resize | §9.34 | P29.4 | P29-AC3, P29-AC4, P29-AC7 | E2E, MAN-L, MAN-W | Planned |
+| AC-34 | Snap grid: art top right with Songs full width below; push stops at row 12; scales with the window; restores; keyboard move and resize | §9.34 | P29.4 | P29-AC3, P29-AC4, P29-AC7 | E2E, MAN-L, MAN-W | Auto pass (P29-AC3, P29-AC4); manual Linux and Windows not run (P29-AC7) |
 
 ---
 
