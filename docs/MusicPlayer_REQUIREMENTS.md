@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.15, November 13, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes. Version 1.14 restores the Library to the current song at startup. Version 1.15 releases the Windows portable zip only, with one click.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.15.
+**Status:** Decision-complete. Version 1.16, November 13, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes. Version 1.14 restores the Library to the current song at startup. Version 1.15 releases the Windows portable zip only, with one click. Version 1.16 replaces the docking shell with a snap grid.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.16.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.16)` marks an item changed or added in version 1.16 (owner decision 50 in section 8). R38 supersedes the R5 widget placement rules, R28, R28.1 and R29 where they differ.
 - `(v1.15)` marks an item changed or added in version 1.15 (owner decision 49 in section 8).
 - `(v1.14)` marks an item changed or added in version 1.14 (owner decision 48 in section 8).
 - `(v1.13)` marks an item changed or added in version 1.13 (owner decision 47 in section 8).
@@ -109,6 +110,19 @@ The closest open source player (Strawberry) has many features the owner does not
   - `[D]` **Non-drag path:** the menu button offers show and hide for each widget, switching the Library mode and applying presets `(v1.8)`, and float, dock, collapse and restore for the active widget. Moving a widget needs drag in v1.
   - `[D]` Corrupt layout file: back it up, log it and load the default preset `(v1.8)`. Unknown widget in a layout: ignore that widget. Layout without the Library widget: apply the default preset.
 - **R29.1 (v1.7).** Removed in v1.8: its bar-widget rules (a fixed natural height for Transport controls and Now playing, no side drops, no tabbing, repair of old arrangements) no longer apply. R5 now defines the transport band and the Now playing card. `(v1.8)`
+- **R38 (v1.16).** Snap grid layout. It supersedes the docking shell (R29), the Library modes and its frame splitters (R28, R28.1) and the fixed transport band and search field (R5) where they differ.
+  - **R38.1 Grid.** The whole area between the header and the status line is a grid of 12 columns and 12 rows. The grid always fills that area: rows and columns are equal shares of its height and width, so widgets scale with the window. The page never scrolls; lists scroll inside their widgets.
+  - **R38.2 Widgets.** Each widget takes a rectangle of whole cells. Widgets never overlap. Empty cells are allowed. The widgets: Transport controls (the band of R5 as a grid widget), Search, Artist, Album, Songs, Tree, Playlists, Play queue, Lyrics and Now playing. Each widget is in the grid at most once.
+  - **R38.3 Library parts.** Artist, Album, Songs and Tree are separate widgets. Search filters all of them. An Artist selection filters Album and Songs; an Album selection filters Songs. "All" rows, multi-select, type-to-find (R36), the selection follow (R35) and the selection restore (R37) apply as before. The Songs table keeps the R28 table rules (columns, sort, multi-select, drag, density). `[D]` The playlist view (R12 v1.9) shows in the Songs widget. `[D]` A Tree selection filters Songs as an Album selection does.
+  - **R38.4 Move.** The user drags a widget by its header. A preview shows the target cells. On drop, widgets in those cells move down. A move never pushes a widget below row 12: the widgets in that column shrink toward their minimum size to make room. If they still do not fit, the drop is refused and the preview shows red.
+  - **R38.5 Resize.** The user drags a widget's corner or edge. Sizes snap to whole cells. A resize stops at the widget's minimum size and at the grid edge, and pushes widgets as a move does.
+  - **R38.6 Minimum sizes `[D]`.** Transport controls 4 x 1. Search 2 x 1. Songs 3 x 2. Now playing 2 x 3. Every other widget 2 x 2.
+  - **R38.7 Show and hide.** The menu button lists every widget. Showing a widget puts it in the first free area that fits its minimum size, else the show is refused with a status line message. `[D]` Songs and Transport controls cannot be hidden, so the song list and the play controls never disappear.
+  - **R38.8 Presets.** "Default", "Tree" and "Columns" replace the Library modes and the v1.8 presets. Default: Transport 12 x 1 at row 1; Playlists 2 x 11 at the left; Search 7 x 1, then Artist 3 x 4 and Album 4 x 4 below it; Now playing 3 x 5 at the right; Songs 10 x 6 at the bottom. Tree and Columns are the same with Tree in place of Artist and Album, or Artist, Album and Songs side by side. Presets cannot be changed. Reset layout applies Default.
+  - **R38.9 Lock layout.** As R29: it stops moves and resizes.
+  - **R38.10 Keyboard path.** With a widget's header focused, Alt+arrow keys move it one cell and Alt+Shift+arrow keys resize it one cell, with the same push and minimum rules. The menu also offers move and resize for the active widget.
+  - **R38.11 Save.** The arrangement saves automatically to `layout.json` (a new version) and restores at startup. A file of an older version, or one that fails validation, is backed up as `layout.json.bak` and the Default preset loads. Unknown widgets are ignored. A file without Songs or Transport controls adds them where they fit, else loads Default.
+  - **R38.12 Removed.** Tabbed groups, floating groups, the Library mode switch, the Library frame splitters and the transport position setting.
 - **R30 (v1.4).** UI framework: React, Tailwind CSS v4 and shadcn/ui components. Magic UI (https://github.com/magicuidesign/magicui) is optional.
   - `[D]` A Magic UI component may be copied into the repo only when a named component serves a function in R5, R6 or R29. The docs (R17) list the copied components. If the list is empty, Motion is not a dependency. Decorative effects (backgrounds, marquees, shimmer, confetti) are out under the "few features" rule.
   - `[D]` Every animation honors the OS "reduce motion" setting. Animations never block input.
@@ -566,6 +580,10 @@ Version 1.15 records an owner decision made on November 13, 2026:
 
 49. **Release (R21):** one click in GitHub Actions on `main` builds the Windows portable zip and drafts its release, as in the owner's JoyFox repository: the version comes from the repository, a version with a release is refused, and release notes are required. The release ships only the portable zip. The installer, the AppImage and the `.deb` are deferred.
 
+Version 1.16 records an owner decision made on November 13, 2026:
+
+50. **Snap grid (R38):** the dock becomes a 12 x 12 grid that fills the window and scales with it. Every widget, including Artist, Album, Songs, Tree, Search and the transport band, moves by drag and resizes by corner in whole cells. A drop pushes widgets down but never past row 12; widgets shrink to their minimum, else the drop is refused. The Library modes become presets. Tabbed and floating groups are removed. Old layouts load the Default preset with a backup. Reason: the owner wants album art in the top right with Songs at full width below, which a split dock cannot do.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -605,6 +623,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 31. **Selection restore `(v1.12)`:** in Columns mode, select an artist, one of its albums and one song, then quit and start the app. The three rows show as selected and in view, and keyboard focus is where it is at a start with no saved selection. Quit, remove that album's folder and start: the artist is selected, the Album list shows "All" and no song is selected. In Tree mode, a restored song row shows inside its opened artist and album nodes, and all other nodes are closed.
 32. **Mode restore `(v1.13)`:** turn on shuffle and set repeat to one, then quit and start the app. Shuffle is on and repeat shows one. Turn shuffle off and set repeat to off, quit and start: both show off.
 33. **Current song at startup `(v1.14)`:** play a song, select another artist, then quit and start the app. The Library selects the playing song, its artist and its album, and the song row is in view. Clear the Play queue, select an artist, quit and start: that artist is selected.
+34. **Snap grid `(v1.16)`:** apply Default. Drag Now playing to the top right and Songs to full width below it; both snap to cells and no widget overlaps. Drag Album onto Artist: Artist moves down and nothing passes row 12. Resize the window: the arrangement keeps its shape. Restart: the arrangement restores. With the keyboard, move and resize a widget one cell.
 
 ---
 
@@ -627,6 +646,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.16 (November 13, 2026):** a snap grid replaces the docking shell, with owner decision 50 (section 8).
+  - **Added:** R38, acceptance check 34.
+  - **Superseded by R38 where they differ:** R5 (transport band and search placement), R28 (modes), R28.1, R29 (docking, tabs, floating groups, presets, transport position).
 - **1.15 (November 13, 2026):** one-click release of the Windows portable zip, with owner decision 49 (section 8).
   - **Changed:** R21 (the release ships the portable zip only).
   - **Added:** one deferred idea (the other release packages).
