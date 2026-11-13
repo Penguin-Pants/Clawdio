@@ -1589,7 +1589,9 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 0, F3 1, F4 4. Source: own audit and the guard run.
+**TWO-PASS REVIEW:** F1 0, F2 1, F3 1, F4 4. Source: own audit, the guard run and Codex on the PR.
+
+- F2 (Codex): Windows runners check out with `core.autocrlf=true`, so `prettier --check` in `npm run check` failed on CRLF files before the build. The job sets `core.autocrlf false` before checkout. Reproduced locally: a CRLF checkout fails `prettier --check docs/release.md`, an LF checkout passes.
 
 - F3: F-25 (section 11): `scripts/appimage-libs.sh` and the `--appimage-libs` option of `scripts/notice.mjs` lost their only caller, the old Linux release job.
 - F4:

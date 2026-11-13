@@ -21,6 +21,9 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       name: ${{ steps.version.outputs.name }}
     steps:
+      # Windows runners check out with CRLF; Prettier in `npm run check` expects LF.
+      - name: Check out with LF line endings
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
