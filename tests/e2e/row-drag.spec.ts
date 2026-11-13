@@ -5,8 +5,10 @@ import { center, expect, SONG_ROWS, songsGrid, test, widget } from "./test-base"
 async function open(page: Page) {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await expect(playlist(page, "Mix 2")).toBeVisible();
+  // Default hides the Play queue (R38.8).
+  await page.evaluate(() => window.e2e.show("queue"));
 }
 
 const rows = (page: Page) => songsGrid(page).locator(SONG_ROWS);
@@ -113,13 +115,8 @@ test("TB-12: Escape keeps a multi-selection when the pointer comes up on the sou
 
 test("TB-12: a rail playlist button takes a drop", async ({ page }) => {
   await open(page);
-  const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
-  const box = await sash.boundingBox();
-  if (!box) throw new Error("no separator");
-  await page.mouse.move(box.x + box.width / 2, box.y + 200);
-  await page.mouse.down();
-  await page.mouse.move(box.x - 120, box.y + 200, { steps: 10 });
-  await page.mouse.up();
+  // Two cells in an 800 px window are under the rail width (UD18).
+  await page.setViewportSize({ width: 800, height: 560 });
   const rail = widget(page, "playlists").getByRole("navigation", { name: "Playlists" });
   const mix = rail.getByRole("button", { name: "Mix 2" });
   await expect(mix).toBeVisible();

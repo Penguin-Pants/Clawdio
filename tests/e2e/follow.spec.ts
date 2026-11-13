@@ -2,7 +2,7 @@
 // the Play queue follow the playing song. The player moves through the mocked IPC, so no click
 // moves the focus; the page clock passes the 5 s input rule (R35.5).
 import type { Locator, Page } from "@playwright/test";
-import { expect, openMenu, songsGrid, test, widget } from "./test-base";
+import { libraryArea, expect, openMenu, preset, songsGrid, test, widget } from "./test-base";
 
 const queue = (page: Page) => widget(page, "queue").getByRole("listbox", { name: "Play queue" });
 const selectedRows = (list: Locator) => list.locator("[aria-selected='true']");
@@ -19,8 +19,11 @@ const idle = (page: Page) => page.clock.fastForward(5_100);
 async function open(page: Page) {
   await page.clock.install();
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await expect(widget(page, "transport")).toContainText("Song 4 of Album A0");
+  // Default hides the Play queue (R38.8).
+  await page.evaluate(() => window.e2e.show("queue"));
+  await expect(queue(page)).toBeVisible();
 }
 
 const focused = (page: Page) => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
@@ -91,10 +94,12 @@ test("P24-AC10: the queue follows the entry that plays, and a queue edit while s
   await expect(queue(page).getByRole("option").nth(1)).toHaveAttribute("aria-selected", "true");
 });
 
-test("P24-AC10: Tree mode follows a song in another open album; Columns then shows its album", async ({ page }) => {
+test("P24-AC10: the Tree widget follows a song in another open album; Columns then shows its album", async ({
+  page,
+}) => {
   await open(page);
-  const library = widget(page, "library");
-  await library.getByRole("button", { name: "Tree" }).click();
+  const library = libraryArea(page);
+  await preset(page, "Tree");
   const tree = library.getByRole("tree", { name: "Library" });
   await tree.getByRole("treeitem", { name: "Artist 00", exact: true }).click();
   await tree.getByRole("treeitem", { name: "Album A0", exact: true }).click();
@@ -107,7 +112,7 @@ test("P24-AC10: Tree mode follows a song in another open album; Columns then sho
   await expect(songRows).toHaveCount(1);
   await expect(songRows).toContainText("Song 6 of Album B0");
   await expect(tree.getByRole("treeitem", { name: "Album B0", exact: true })).toHaveAttribute("aria-selected", "true");
-  await library.getByRole("button", { name: "Columns" }).click();
+  await preset(page, "Columns");
   await expect(library.getByRole("listbox", { name: "Albums" }).getByRole("option", { selected: true })).toContainText(
     "Album B0",
   );
@@ -122,7 +127,7 @@ async function playlistWith(page: Page, id: number, name: string, tracks: number
   await widget(page, "playlists")
     .getByRole("option", { name: new RegExp(name) })
     .click();
-  return widget(page, "library").getByRole("listbox", { name: `Songs in ${name}` });
+  return widget(page, "songs").getByRole("listbox", { name: `Songs in ${name}` });
 }
 
 test("P24-AC10: the playlist view follows the row that plays, also with a missing entry before it", async ({
@@ -134,7 +139,7 @@ test("P24-AC10: the playlist view follows the row that plays, also with a missin
   await send(page, "playlist_add", { id: 0, tracks: [7, 7] });
   await page.evaluate(() => window.e2e.show("playlists"));
   await widget(page, "playlists").getByRole("option", { name: /Mix 1/ }).click();
-  const view = widget(page, "library").getByRole("listbox", { name: "Songs in Mix 1" });
+  const view = widget(page, "songs").getByRole("listbox", { name: "Songs in Mix 1" });
   await expect(view.getByRole("option")).toHaveCount(3);
   await view.getByRole("option").nth(1).dblclick();
   await view.getByRole("option").nth(0).click();
@@ -264,7 +269,7 @@ test("P24-AC11: a hidden song or a hidden selection leaves the Songs list as it 
   page,
 }) => {
   await open(page);
-  const library = widget(page, "library");
+  const library = libraryArea(page);
   const songs = songsGrid(page);
   const artists = library.getByRole("listbox", { name: "Artists" });
   const albums = library.getByRole("listbox", { name: "Albums" });

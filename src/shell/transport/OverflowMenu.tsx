@@ -13,7 +13,7 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { commands } from "@/lib/ipc/commands";
 import { usePlayerStore } from "@/store/player";
 import { useUiStore } from "@/store/ui";
-import { focusLibrarySearch, setWidgetVisible } from "../layouts";
+import { focusLibrarySearch, setWidgetVisible, useGridStore } from "../layouts";
 import { setMiniPlayer } from "../mini";
 import { NEXT_REPEAT, REPEAT_LABELS } from "./PlayControls";
 import { SeekBar } from "./SeekBar";
@@ -32,7 +32,7 @@ type PopupSlot = "seek" | "volume";
 export function OverflowMenu({ slots, bandItems = true }: { slots: SlotId[]; bandItems?: boolean }) {
   const enabled = usePlaybackEnabled();
   const player = usePlayerStore((state) => state.player);
-  const queueShown = useUiStore((state) => state.visibleWidgets.includes("queue"));
+  const queueShown = useGridStore((state) => state.layout.queue !== undefined);
   const mini = useUiStore((state) => state.mini);
   const openDialog = useUiStore((state) => state.openDialog);
   const [open, setOpen] = useState(false);

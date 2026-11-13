@@ -1,13 +1,15 @@
 // U5 (TR-11): the Now playing card shares the player state with the band (rework 5.10).
 import type { Page } from "@playwright/test";
-import { band, expect, tab, test, widget } from "./test-base";
+import { band, expect, header, layoutOf, test, widget } from "./test-base";
 
 async function openCard(page: Page) {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  // The default preset hides Now playing (UD6).
-  await page.evaluate(() => window.e2e.show("nowPlaying"));
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  // One cell narrower: 2 cells, under 320 px at 1280 px (R38.10).
+  await header(page, "nowPlaying").focus();
+  await page.keyboard.press("Alt+Shift+ArrowLeft");
+  await expect.poll(() => page.evaluate(() => window.e2e.layout().nowPlaying.w)).toBe(2);
   await expect(widget(page, "nowPlaying")).toBeVisible();
   return widget(page, "nowPlaying");
 }
@@ -54,21 +56,24 @@ test("TR-11: below 320 px Stop, Shuffle and Repeat move to the card's More menu"
   await expect(page.getByRole("menuitem", { name: "Customize transport bar…" })).toHaveCount(0);
 });
 
-test("TR-11: the card docks like any widget and has a minimum size", async ({ page }) => {
+test("TR-11, R38.6: the card is a grid widget that stops at its 2 x 3 minimum", async ({ page }) => {
   const card = await openCard(page);
-  const box = await card.boundingBox();
-  expect(box?.width).toBeGreaterThanOrEqual(220 - 1);
-  expect(box?.height).toBeGreaterThanOrEqual(240 - 40);
-  await expect(tab(page, "Now playing")).toBeVisible();
+  await header(page, "nowPlaying").focus();
+  for (let step = 0; step < 3; step += 1) await page.keyboard.press("Alt+Shift+ArrowUp");
+  await page.keyboard.press("Alt+Shift+ArrowLeft");
+  expect((await layoutOf(page)).nowPlaying).toMatchObject({ w: 2, h: 3 });
+  await expect(header(page, "nowPlaying")).toBeVisible();
+  await expect(card).toBeVisible();
 });
 
 test("TR-11: wider than 320 px the card shows Stop, Shuffle and Repeat itself", async ({ page }) => {
   const card = await openCard(page);
-  const sash = page
-    .getByRole("separator", { name: /^Resize Playlists, Now playing and Library$|^Resize Playlists/ })
-    .first();
-  await sash.focus();
-  for (let step = 0; step < 4; step += 1) await page.keyboard.press("Shift+ArrowRight");
+  // One cell left, then two cells wider: 4 cells at 1280 px (R38.10).
+  await header(page, "nowPlaying").focus();
+  await page.keyboard.press("Alt+ArrowLeft");
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  expect((await layoutOf(page)).nowPlaying.w).toBe(4);
   await expect.poll(async () => (await card.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(320);
   await expect(card.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   await expect(card.getByRole("button", { name: "Shuffle" })).toBeVisible();

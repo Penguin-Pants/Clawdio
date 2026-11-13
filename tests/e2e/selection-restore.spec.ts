@@ -3,24 +3,25 @@
 // song). Ids in the test library: Artist 15 is 15, its Album B15 is 46, and "Song 7 of Album
 // B15" is 466 (album id * 10 + track - 1).
 import type { Locator, Page } from "@playwright/test";
-import { expect, songsGrid, test, widget } from "./test-base";
+import { libraryArea, expect, preset, songsGrid, test, widget } from "./test-base";
 
-const library = (page: Page) => widget(page, "library");
+const library = (page: Page) => libraryArea(page);
 const list = (page: Page, name: string) => library(page).getByRole("listbox", { name });
 const option = (page: Page, listName: string, name: string) =>
   list(page, listName).getByRole("option", { name, exact: true });
 const selected = (locator: Locator) => locator.locator("[aria-selected='true']");
 const tree = (page: Page) => library(page).getByRole("tree", { name: "Library" });
 
-/** Opens the library app with a restore answer, after an optional saved Library mode. */
-async function open(page: Page, restore: string | null, mode?: "Tree" | "Top/bottom") {
+/** Opens the library app with a restore answer, after an optional saved preset (R38.8). */
+async function open(page: Page, restore: string | null, mode?: "Tree" | "Columns") {
   if (mode) {
     await page.goto("/?data=library");
-    await library(page).getByRole("button", { name: mode }).click();
-    const value = mode === "Tree" ? "tree" : "topBottom";
+    await preset(page, mode);
     await expect
-      .poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("e2e-layout") ?? "{}").libraryMode))
-      .toBe(value);
+      .poll(() =>
+        page.evaluate(() => Object.keys(JSON.parse(sessionStorage.getItem("e2e-layout") ?? "{}").widgets ?? {})),
+      )
+      .toContain(mode === "Tree" ? "tree" : "queue");
   }
   await page.goto(`/?data=library${restore === null ? "" : `&restore=${restore}`}`);
 }
@@ -31,7 +32,9 @@ const focused = (page: Page) =>
     return element ? `${element.tagName}:${element.getAttribute("aria-label") ?? ""}` : null;
   });
 
-test("P26-AC3: a saved artist, album and song restore as selected and in view in Columns mode", async ({ page }) => {
+test("P26-AC3: a saved artist, album and song restore as selected and in view in the Default preset", async ({
+  page,
+}) => {
   await open(page, "15,46,466");
   await expect(selected(list(page, "Artists"))).toHaveText("Artist 15");
   await expect(option(page, "Artists", "Artist 15")).toBeInViewport();
@@ -141,9 +144,9 @@ test("P26-AC3: the restore waits for the saved column sort, so the song shows in
   await expect(selected(songsGrid(page))).toBeInViewport();
 });
 
-test("P26-AC3: with a saved Top/bottom mode the restore applies in that mode", async ({ page }) => {
-  await open(page, "15,46,466", "Top/bottom");
-  await expect(library(page).getByRole("button", { name: "Top/bottom" })).toHaveAttribute("aria-pressed", "true");
+test("P26-AC3: with a saved Columns preset the restore applies in that arrangement", async ({ page }) => {
+  await open(page, "15,46,466", "Columns");
+  await expect(widget(page, "queue")).toBeVisible();
   await expect(selected(list(page, "Artists"))).toHaveText("Artist 15");
   await expect(option(page, "Artists", "Artist 15")).toBeInViewport();
   await expect(selected(songsGrid(page))).toContainText("Song 7 of Album B15");
@@ -152,7 +155,7 @@ test("P26-AC3: with a saved Top/bottom mode the restore applies in that mode", a
 /** The tree rows that are open. */
 const expanded = (page: Page) => tree(page).locator("[aria-expanded='true']");
 
-test("P26-AC4: Tree mode opens a restored song's artist and album only, and shows the row", async ({ page }) => {
+test("P26-AC4: the Tree widget opens a restored song's artist and album only, and shows the row", async ({ page }) => {
   await open(page, "15,46,466", "Tree");
   const song = tree(page).getByRole("treeitem", { name: /Song 7 of Album B15/ });
   await expect(song).toHaveAttribute("aria-selected", "true");
@@ -162,7 +165,7 @@ test("P26-AC4: Tree mode opens a restored song's artist and album only, and show
   await expect(expanded(page).nth(1)).toContainText("Album B15");
 });
 
-test("P26-AC4: Tree mode opens a restored album and its artist, or a restored artist alone", async ({ page }) => {
+test("P26-AC4: the Tree widget opens a restored album and its artist, or a restored artist alone", async ({ page }) => {
   await open(page, "15,46,-", "Tree");
   const album = tree(page).getByRole("treeitem", { name: "Album B15", exact: true });
   await expect(album).toHaveAttribute("aria-selected", "true");

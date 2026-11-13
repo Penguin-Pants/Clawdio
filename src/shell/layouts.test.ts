@@ -1,268 +1,94 @@
-import type { DockviewApi } from "dockview-react";
+// R38.7 to R38.10: show, hide, presets, lock and the keyboard path on the grid store.
 import { beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_FRAMES, useLibraryStore } from "@/store/library";
-import { useCollapseStore } from "@/store/collapse";
 import { useUiStore } from "@/store/ui";
+import { isValidLayout } from "./grid/engine";
 import {
+  NO_ROOM,
+  activateWidget,
+  activeWidget,
   applyMeasureLayout,
   applyPreset,
-  attachDock,
-  defaultArrangement,
-  guardLibrary,
-  isReplacing,
+  commitRect,
+  moveWidgetBy,
   resetLayout,
-  revealLibrary,
+  resizeWidgetBy,
   setWidgetVisible,
-  visibleWidgets,
+  useGridStore,
 } from "./layouts";
+import { PRESETS } from "./presets";
+import { DEFAULT_SLOTS } from "./transport/slots";
+import { WIDGET_IDS, minOf } from "./widgets";
 
-interface Added {
-  id: string;
-  tabComponent?: string;
-  minimumWidth?: number;
-  minimumHeight?: number;
-  initialWidth?: number;
-  inactive?: boolean;
-  position?: unknown;
-}
-
-/** A dock stand-in that records panels in order. It implements the calls layouts.ts makes. */
-function dockStandIn() {
-  const panels: Added[] = [];
-  const removeListeners: ((panel: { id: string }) => void)[] = [];
-  const remove = (id: string) => {
-    const index = panels.findIndex((panel) => panel.id === id);
-    if (index === -1) return;
-    panels.splice(index, 1);
-    for (const listener of removeListeners) listener({ id });
-  };
-  const api = {
-    addPanel: (options: Added) => {
-      if (panels.some((panel) => panel.id === options.id)) throw new Error(`duplicate ${options.id}`);
-      panels.push(options);
-    },
-    getPanel: (id: string) => {
-      const panel = panels.find((added) => added.id === id);
-      return panel && { ...panel, api: { setActive: () => {} } };
-    },
-    removePanel: (panel: { id: string }) => remove(panel.id),
-    clear: () => [...panels].forEach((panel) => remove(panel.id)),
-    onDidRemovePanel: (listener: (panel: { id: string }) => void) => {
-      removeListeners.push(listener);
-      return { dispose: () => removeListeners.splice(removeListeners.indexOf(listener), 1) };
-    },
-  };
-  return { api: api as unknown as DockviewApi, panels, remove };
-}
+const layout = () => useGridStore.getState().layout;
 
 beforeEach(() => {
-  useLibraryStore.setState({ mode: "columns" });
-  attachDock(null);
+  resetLayout();
+  useUiStore.setState({ message: null });
 });
 
-describe("defaultArrangement: the default preset (DK-8, UD6)", () => {
-  it("adds Library, Playlists left at 240 px, Play queue right at 280 px and Lyrics as its inactive tab", () => {
-    const { api, panels } = dockStandIn();
-    defaultArrangement(api);
-    expect(panels.map((panel) => [panel.id, panel.position, panel.initialWidth, panel.inactive])).toEqual([
-      ["library", undefined, undefined, undefined],
-      ["playlists", { referencePanel: "library", direction: "left" }, 240, undefined],
-      ["queue", { referencePanel: "library", direction: "right" }, 280, undefined],
-      ["lyrics", { referencePanel: "queue", direction: "within" }, undefined, true],
-    ]);
-    expect(api.getPanel("nowPlaying")).toBeUndefined();
+describe("grid layout operations (R38.7 to R38.10)", () => {
+  it("applies presets and Reset layout applies Default, unlocked, with the default band slots", () => {
+    applyPreset("tree");
+    expect(layout()).toEqual(PRESETS.tree.layout);
+    useUiStore.getState().setLocked(true);
+    useUiStore.getState().setTransportSlots({ order: [...DEFAULT_SLOTS.order].reverse(), hidden: [] });
+    resetLayout();
+    expect(layout()).toEqual(PRESETS.default.layout);
+    expect(useUiStore.getState().locked).toBe(false);
+    expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
   });
 
-  it("gives each panel its registry minimum and the Library tab variant (D33, P2.3)", () => {
-    const { api, panels } = dockStandIn();
-    defaultArrangement(api);
-    expect(panels.map((panel) => [panel.id, panel.tabComponent, panel.minimumWidth, panel.minimumHeight])).toEqual([
-      ["library", "library", 320, 240],
-      ["playlists", "widget", 56, 160],
-      ["queue", "widget", 200, 160],
-      ["lyrics", "widget", 200, 160],
-    ]);
-  });
-});
-
-describe("applyPreset and resetLayout (P2.4, UD6)", () => {
-  it("a preset replaces the arrangement and keeps the Library mode", () => {
-    const { api } = dockStandIn();
-    defaultArrangement(api);
-    useLibraryStore.setState({ mode: "tree" });
-    useCollapseStore.setState({ sizes: { g1: { axis: "width", size: 320 } } });
-    applyPreset("compact", api);
-    expect(visibleWidgets(api)).toEqual(["library"]);
-    expect(useLibraryStore.getState().mode).toBe("tree");
-    // New groups can reuse ids: the old collapse sizes go with the old arrangement.
-    expect(useCollapseStore.getState().sizes).toEqual({});
+  it("hides and shows a widget; Songs and Transport controls cannot hide", () => {
+    setWidgetVisible("artist", false);
+    expect(layout().artist).toBeUndefined();
+    expect(setWidgetVisible("artist", true)).toBe(true);
+    expect(layout().artist).toEqual(PRESETS.default.layout.artist);
+    setWidgetVisible("songs", false);
+    setWidgetVisible("transport", false);
+    expect(layout().songs).toBeDefined();
+    expect(layout().transport).toBeDefined();
   });
 
-  it("reset applies the default preset, Columns, the band at the top and unlocked (UD6)", () => {
-    const { api } = dockStandIn();
-    useLibraryStore.setState({ mode: "tree" });
-    useUiStore.setState({ transportPosition: "bottom", locked: true });
-    resetLayout(api);
-    expect(useUiStore.getState()).toMatchObject({ transportPosition: "top", locked: false });
-    expect(useLibraryStore.getState().mode).toBe("columns");
-    expect(visibleWidgets(api)).toEqual(["library", "playlists", "queue", "lyrics"]);
+  it("shows Play queue in the full Default grid by shrinking others", () => {
+    expect(setWidgetVisible("queue", true)).toBe(true);
+    expect(isValidLayout(layout(), minOf)).toBe(true);
   });
 
-  it("keeps exactly one Library over 20 applications with the guard on", async () => {
-    const { api, panels } = dockStandIn();
-    guardLibrary(api);
-    defaultArrangement(api);
-    const presets = ["appleMusicClassic", "musicBee", "compact"] as const;
-    for (let index = 0; index < 20; index += 1) applyPreset(presets[index % 3], api);
-    await Promise.resolve();
-    expect(panels.filter((panel) => panel.id === "library")).toHaveLength(1);
+  it("moves and resizes by one cell (R38.10) and refuses with a message", () => {
+    expect(moveWidgetBy("nowPlaying", 0, 1)).toBe(true);
+    expect(layout().nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 5 });
+    expect(resizeWidgetBy("nowPlaying", 0, -1)).toBe(true);
+    expect(layout().nowPlaying.h).toBe(4);
+    // At the minimum, a smaller size changes nothing.
+    resizeWidgetBy("nowPlaying", 0, -1);
+    expect(resizeWidgetBy("nowPlaying", 0, -1)).toBe(false);
+    // A widget at the grid edge does not move past it.
+    expect(moveWidgetBy("transport", 0, -1)).toBe(false);
+    useGridStore.setState({ layout: { songs: { x: 0, y: 0, w: 3, h: 12 }, transport: { x: 3, y: 0, w: 9, h: 12 } } });
+    expect(moveWidgetBy("songs", 1, 0)).toBe(false);
+    expect(useUiStore.getState().message).toBe(NO_ROOM);
   });
 
-  it("clears the replacing flag even when building fails", () => {
-    const { api } = dockStandIn();
-    const failing = {
-      ...api,
-      addPanel: () => {
-        throw new Error("boom");
-      },
-    } as unknown as DockviewApi;
-    expect(() => applyPreset("compact", failing)).toThrow("boom");
-    expect(isReplacing()).toBe(false);
+  it("Lock layout stops moves, resizes and drops (R38.9)", () => {
+    useUiStore.getState().setLocked(true);
+    expect(moveWidgetBy("nowPlaying", 0, 1)).toBe(false);
+    expect(resizeWidgetBy("nowPlaying", 0, -1)).toBe(false);
+    expect(commitRect("nowPlaying", { x: 9, y: 2, w: 3, h: 5 })).toBe(false);
+    expect(layout()).toEqual(PRESETS.default.layout);
   });
 
-  it("does nothing without a dock", () => {
-    expect(() => resetLayout()).not.toThrow();
+  it("tracks the active widget for the menu while it is in the grid", () => {
+    activateWidget("album");
+    expect(activeWidget()).toBe("album");
+    setWidgetVisible("album", false);
+    expect(activeWidget()).toBeNull();
+    activateWidget("unknown");
+    expect(useGridStore.getState().active).toBe("album");
   });
 
-  it("a preset restores the frame sizes of all modes (R28.1 v1.8)", () => {
-    const { api } = dockStandIn();
-    useLibraryStore.getState().setFrames("columns", [0.6, 0.2, 0.2]);
-    applyPreset("musicBee", api);
-    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
-  });
-
-  it("reset restores the frame sizes of all modes (P22-AC1)", () => {
-    const { api } = dockStandIn();
-    useLibraryStore.getState().setFrames("top", [0.9, 0.1]);
-    resetLayout(api);
-    expect(useLibraryStore.getState().frames).toEqual(DEFAULT_FRAMES);
-  });
-});
-
-describe("applyMeasureLayout (P3.1)", () => {
-  it("shows all five dock widgets in the given mode, Lyrics in its own group", () => {
-    const { api, panels } = dockStandIn();
-    guardLibrary(api);
-    defaultArrangement(api);
-    applyMeasureLayout("topBottom", api);
-    expect(visibleWidgets(api)).toEqual(["library", "nowPlaying", "playlists", "queue", "lyrics"]);
-    expect(panels.find((panel) => panel.id === "lyrics")?.position).toEqual({
-      referencePanel: "queue",
-      direction: "below",
-    });
-    expect(useLibraryStore.getState().mode).toBe("topBottom");
-  });
-});
-
-describe("setWidgetVisible (R29 non-drag path)", () => {
-  it("puts each widget back where the default preset has it, and hides it again", () => {
-    const { api, panels } = dockStandIn();
-    defaultArrangement(api);
-    const cases = [
-      ["queue", { referencePanel: "lyrics", direction: "within" }],
-      ["lyrics", { referencePanel: "queue", direction: "within" }],
-      ["playlists", { referencePanel: "library", direction: "left" }],
-      ["nowPlaying", { referencePanel: "playlists", direction: "below" }],
-    ] as const;
-    for (const [id, position] of cases) {
-      setWidgetVisible(id, false, api);
-      setWidgetVisible(id, true, api);
-      expect(panels.at(-1)).toMatchObject({ id, position });
-    }
-    for (const id of ["nowPlaying", "playlists", "queue", "lyrics"] as const) setWidgetVisible(id, false, api);
-    setWidgetVisible("queue", true, api);
-    expect(panels.at(-1)?.position).toEqual({ referencePanel: "library", direction: "right" });
-    setWidgetVisible("nowPlaying", true, api);
-    expect(panels.at(-1)?.position).toEqual({ referencePanel: "library", direction: "left" });
-  });
-
-  it("never hides Library (R28)", () => {
-    const { api } = dockStandIn();
-    defaultArrangement(api);
-    setWidgetVisible("library", false, api);
-    expect(api.getPanel("library")).toBeDefined();
-  });
-});
-
-describe("guardLibrary (P2.3)", () => {
-  it("re-adds Library when a user action removes it", () => {
-    const { api, remove } = dockStandIn();
-    const tasks: (() => void)[] = [];
-    guardLibrary(api, (task) => tasks.push(task));
-    defaultArrangement(api);
-    remove("library");
-    expect(api.getPanel("library")).toBeUndefined();
-    tasks.forEach((task) => task());
-    expect(api.getPanel("library")).toBeDefined();
-  });
-
-  it("does not re-add Library after a move put it back", () => {
-    const { api, remove, panels } = dockStandIn();
-    const tasks: (() => void)[] = [];
-    guardLibrary(api, (task) => tasks.push(task));
-    defaultArrangement(api);
-    remove("library");
-    panels.push({ id: "library" });
-    tasks.forEach((task) => task());
-    expect(panels.filter((panel) => panel.id === "library")).toHaveLength(1);
-  });
-
-  it("stays off while a layout replaces the arrangement", () => {
-    const { api } = dockStandIn();
-    const tasks: (() => void)[] = [];
-    guardLibrary(api, (task) => tasks.push(task));
-    defaultArrangement(api);
-    applyPreset("musicBee", api);
-    expect(tasks).toEqual([]);
-  });
-});
-
-describe("revealLibrary (R12 v1.9, UD17)", () => {
-  /** A dock with a Library panel and an active panel, each in a named group. */
-  function revealStandIn(libraryVisible: boolean, activeGroup: string) {
-    const calls: string[] = [];
-    const panel = (id: string, group: string) => ({ id, group, api: { setActive: () => calls.push(id) } });
-    const library = { ...panel("library", "a"), api: { ...panel("library", "a").api, isVisible: libraryVisible } };
-    const active = panel("playlists", activeGroup);
-    const api = { getPanel: (id: string) => (id === "library" ? library : undefined), activePanel: active };
-    return { api: api as unknown as DockviewApi, calls };
-  }
-
-  it("brings a hidden Library tab to the front and keeps the widget in another group active", () => {
-    const { api, calls } = revealStandIn(false, "b");
-    revealLibrary(api);
-    expect(calls).toEqual(["library", "playlists"]);
-  });
-
-  it("leaves Library active when the active widget is a tab of the same group", () => {
-    const { api, calls } = revealStandIn(false, "a");
-    revealLibrary(api);
-    expect(calls).toEqual(["library"]);
-  });
-
-  it("moves the focus to the shown playlist when the active widget is a tab of the same group", () => {
-    const { api } = revealStandIn(false, "a");
-    document.body.innerHTML =
-      '<button id="from">pick</button><section data-widget="library"><div data-playlist-view="1"><div role="listbox" tabindex="0"></div></div></section>';
-    document.getElementById("from")?.focus();
-    revealLibrary(api);
-    expect(document.activeElement?.getAttribute("role")).toBe("listbox");
-    document.body.innerHTML = "";
-  });
-
-  it("does nothing when Library already shows", () => {
-    const { api, calls } = revealStandIn(true, "b");
-    revealLibrary(api);
-    expect(calls).toEqual([]);
+  it.each(["tree", "columns", "topBottom"] as const)("the %s measurement layout shows every widget (P3.1)", (mode) => {
+    applyMeasureLayout(mode);
+    expect(Object.keys(layout()).sort()).toEqual([...WIDGET_IDS].sort());
+    expect(isValidLayout(layout(), minOf)).toBe(true);
   });
 });

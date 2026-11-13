@@ -5,7 +5,7 @@ import { band, expect, test, widget } from "./test-base";
 async function open(page: Page) {
   await page.setViewportSize({ width: 1600, height: 800 });
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
 }
 
 const left = async (page: Page, selector: string) =>

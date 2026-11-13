@@ -1,273 +1,143 @@
-import type { AddPanelPositionOptions, DockviewApi, IDockviewPanel, Position } from "dockview-react";
-import { type LibraryMode, useLibraryStore } from "@/store/library";
-import { useCollapseStore } from "@/store/collapse";
+import { create } from "zustand";
+import type { LibraryMode } from "@/lib/ipc/commands";
+import { useLibraryStore } from "@/store/library";
 import { useUiStore } from "@/store/ui";
-import { DEFAULT_PRESET, type PresetId, buildPreset } from "./presets";
+import { GRID, type Layout, type Rect, hide, moveTo, place, resizeTo, show } from "./grid/engine";
+import { DEFAULT_PRESET, PRESETS, type PresetId } from "./presets";
 import { DEFAULT_SLOTS } from "./transport/slots";
-import { WIDGET_IDS, WIDGETS, type WidgetId, isWidgetId } from "./widgets";
+import { WIDGETS, type WidgetId, isWidgetId, minOf } from "./widgets";
 
-/** Reset layout sets this Library mode (UD6). */
-export const RESET_MODE: LibraryMode = "columns";
-
-let dock: DockviewApi | null = null;
-let replacing = false;
-
-/** Sets the dock that the menu and the keyboard act on. */
-export function attachDock(api: DockviewApi | null): void {
-  dock = api;
+interface GridState {
+  /** The widget rectangles in cells (R38.2). A widget that is not in it is hidden. */
+  layout: Layout;
+  /** The widget the menu's move and resize act on: the last one clicked or focused (R38.10). */
+  active: WidgetId | null;
 }
 
-export function getDock(): DockviewApi | null {
-  return dock;
+export const useGridStore = create<GridState>()(() => ({
+  layout: PRESETS[DEFAULT_PRESET].layout,
+  active: null,
+}));
+
+/** The status line text of a refused show, move or resize (R38.4, R38.7). */
+export const NO_ROOM = "Not enough room in the grid";
+
+function setLayout(layout: Layout): void {
+  useGridStore.setState({ layout });
 }
 
-/** True while a layout replaces the arrangement, so the Library guard stays off (P2.3). */
-export function isReplacing(): boolean {
-  return replacing;
+/** True when the widget is in the grid. */
+export function isShown(id: WidgetId, layout: Layout = useGridStore.getState().layout): boolean {
+  return layout[id] !== undefined;
 }
 
-/** Optional initial size and activation of a new panel. */
-export interface AddOptions {
-  width?: number;
-  height?: number;
-  /** Add the panel without making it the active tab of its group. */
-  inactive?: boolean;
+/** Replaces the arrangement with a preset (R38.8). The lock and the band slots stay. */
+export function applyPreset(id: PresetId): void {
+  setLayout(PRESETS[id].layout);
 }
 
-/** Adds a widget panel with its registry title, tab and minimum size (D33). */
-export function addWidget(
-  api: DockviewApi,
-  id: WidgetId,
-  position?: AddPanelPositionOptions,
-  options: AddOptions = {},
-): void {
-  const widget = WIDGETS[id];
-  api.addPanel({
-    id,
-    component: id,
-    title: widget.title,
-    tabComponent: widget.hideable ? "widget" : "library",
-    minimumWidth: widget.minWidth,
-    minimumHeight: widget.minHeight,
-    initialWidth: options.width,
-    initialHeight: options.height,
-    inactive: options.inactive,
-    position,
-  });
-}
-
-/** The default arrangement: the default preset (DK-8, UD6). */
-export function defaultArrangement(api: DockviewApi): void {
-  buildPreset(DEFAULT_PRESET, api);
-}
-
-/** Clears the dock and builds a new arrangement. The Library guard is off meanwhile (P2.3). */
-export function replaceArrangement(api: DockviewApi, build: (api: DockviewApi) => void): void {
-  replacing = true;
-  // New groups can reuse ids, so the old collapse sizes go with the old arrangement (UD25).
-  useCollapseStore.setState({ sizes: {} });
-  try {
-    api.clear();
-    build(api);
-  } finally {
-    replacing = false;
-  }
-}
-
-/**
- * Replaces the arrangement with a preset (DK-9, UD6) and restores the default frame sizes of all
- * modes (R28.1 v1.8). The Library mode, the band position and the lock stay.
- */
-export function applyPreset(id: PresetId, api: DockviewApi | null = dock): void {
-  if (!api) return;
-  replaceArrangement(api, (target) => buildPreset(id, target));
-  useLibraryStore.getState().resetFrames();
-}
-
-/**
- * The measurement arrangement (P3.1): the default preset plus every widget it hides (Now
- * playing), so all five dock widgets and the band are in the page, in the given Library mode.
- * Lyrics leaves the Play queue tab group, so its body mounts too. It is not saved.
- */
-export function applyMeasureLayout(mode: LibraryMode, api: DockviewApi | null = dock): void {
-  if (!api) return;
-  replaceArrangement(api, (target) => {
-    defaultArrangement(target);
-    setWidgetVisible("lyrics", false, target);
-    addWidget(target, "lyrics", { referencePanel: "queue", direction: "below" });
-    setWidgetVisible("nowPlaying", true, target);
-  });
-  useLibraryStore.getState().setMode(mode);
-}
-
-/**
- * Reset layout (DK-7, UD6): the default preset, Columns mode, the default frame sizes, the band
- * at the top, unlocked and the default band slots (UD20).
- */
-export function resetLayout(api: DockviewApi | null = dock): void {
-  if (!api) return;
-  applyPreset(DEFAULT_PRESET, api);
-  useLibraryStore.getState().setMode(RESET_MODE);
-  useUiStore.getState().setTransportPosition("top");
+/** Reset layout (R38.8, R29): the Default preset, unlocked and the default band slots (UD20). */
+export function resetLayout(): void {
+  applyPreset(DEFAULT_PRESET);
   useUiStore.getState().setLocked(false);
   useUiStore.getState().setTransportSlots(DEFAULT_SLOTS);
 }
 
 /**
- * Where a shown widget goes, by the default preset (UD6): Playlists left of Library; Play queue
- * and Lyrics as tabs together, else right of Library; Now playing below Playlists, else left of
- * Library.
+ * Shows or hides a widget (R38.7). Songs and Transport controls cannot be hidden. A show that
+ * finds no room is refused with a status line message. Returns true when the widget shows now.
  */
-function showPosition(api: DockviewApi, id: WidgetId): AddPanelPositionOptions {
-  const partner = id === "queue" ? "lyrics" : id === "lyrics" ? "queue" : null;
-  if (partner && api.getPanel(partner)) return { referencePanel: partner, direction: "within" };
-  if (id === "nowPlaying" && api.getPanel("playlists")) return { referencePanel: "playlists", direction: "below" };
-  if (id === "playlists" || id === "nowPlaying") return { referencePanel: "library", direction: "left" };
-  return { referencePanel: "library", direction: "right" };
-}
-
-/** Shows or hides a hideable widget (R29 non-drag path). Library cannot be hidden. */
-export function setWidgetVisible(id: WidgetId, visible: boolean, api: DockviewApi | null = dock): void {
-  if (!api || !WIDGETS[id].hideable) return;
-  const panel = api.getPanel(id);
-  if (visible && !panel) {
-    addWidget(api, id, showPosition(api, id));
-  } else if (!visible && panel) {
-    api.removePanel(panel);
+export function setWidgetVisible(id: WidgetId, visible: boolean): boolean {
+  const { layout } = useGridStore.getState();
+  if (!visible) {
+    if (WIDGETS[id].hideable && layout[id]) setLayout(hide(layout, id));
+    return layout[id] !== undefined && !WIDGETS[id].hideable;
   }
-}
-
-/** True when the widget's group floats over the dock (DK-3). */
-export function isFloating(panel: IDockviewPanel | undefined): boolean {
-  return panel?.group.api.location.type === "floating";
-}
-
-/** The widget of the active dock panel (a click or F6 sets it), or null. */
-export function activeWidget(api: DockviewApi | null = dock): WidgetId | null {
-  const id = api?.activePanel?.id;
-  return id !== undefined && isWidgetId(id) ? id : null;
-}
-
-/** Makes a widget the active dock panel, so the Layout menu acts on it (UD17). */
-export function activateWidget(id: string, api: DockviewApi | null = dock): void {
-  if (isWidgetId(id)) api?.getPanel(id)?.api.setActive();
-}
-
-/** The initial size of a new floating group: the widget minimum, at least 360 x 320. */
-const FLOAT_WIDTH = 360;
-const FLOAT_HEIGHT = 320;
-
-/** Floats a docked widget in its own group over the dock (DK-3, UD17). */
-export function floatWidget(id: WidgetId, api: DockviewApi | null = dock): void {
-  const panel = api?.getPanel(id);
-  if (!api || !panel || isFloating(panel)) return;
-  const width = Math.max(FLOAT_WIDTH, WIDGETS[id].minWidth);
-  const height = Math.max(FLOAT_HEIGHT, WIDGETS[id].minHeight);
-  api.addFloatingGroup(panel, {
-    width,
-    height,
-    x: Math.max(0, (api.width - width) / 2),
-    y: Math.max(0, (api.height - height) / 2),
-  });
-}
-
-const DIRECTION_TO_POSITION: Record<string, Position> = {
-  left: "left",
-  right: "right",
-  above: "top",
-  below: "bottom",
-  within: "center",
-};
-
-/**
- * Docks a floating widget's group where the default preset puts the widget (UD17), next to a
- * docked reference widget. With no docked reference it goes right of Library, and Library goes
- * left of the first docked group. With nothing docked, the group becomes the grid.
- */
-export function dockWidget(id: WidgetId, api: DockviewApi | null = dock): void {
-  const panel = api?.getPanel(id);
-  if (!api || !panel || !isFloating(panel)) return;
-  const docked = (other: IDockviewPanel | undefined) => other !== undefined && other !== panel && !isFloating(other);
-  const { referencePanel, direction } = showPosition(api, id) as { referencePanel?: string; direction?: string };
-  const reference = referencePanel === undefined ? undefined : api.getPanel(referencePanel);
-  const library = api.getPanel("library");
-  const firstDocked = api.groups.find((group) => group !== panel.group && group.api.location.type === "grid");
-  if (reference && docked(reference)) {
-    panel.group.api.moveTo({ group: reference.group, position: DIRECTION_TO_POSITION[direction ?? "right"] });
-  } else if (library && docked(library)) {
-    panel.group.api.moveTo({ group: library.group, position: "right" });
-  } else if (firstDocked) {
-    panel.group.api.moveTo({ group: firstDocked, position: id === "library" ? "left" : "right" });
-  } else {
-    panel.group.api.moveTo({ position: "left" });
+  if (layout[id]) return true;
+  const next = show(layout, id, minOf);
+  if (!next) {
+    useUiStore.getState().showMessage(`${NO_ROOM}: ${WIDGETS[id].title} is hidden`);
+    return false;
   }
-}
-
-/** The widgets in the dock, in registry order. */
-export function visibleWidgets(api: DockviewApi): WidgetId[] {
-  return WIDGET_IDS.filter((id) => api.getPanel(id) !== undefined);
+  setLayout(next);
+  return true;
 }
 
 /**
- * Re-adds Library when any path removes it (P2.3). The check runs after the current task,
- * because a move between groups also fires a remove event. It is off while a layout replaces
- * the arrangement.
+ * Puts a widget at `rect` after a drag (R38.4, R38.5). A refused drop changes nothing. Locked
+ * layouts refuse every change (R38.9). Returns true when the layout changed.
  */
-export function guardLibrary(
-  api: DockviewApi,
-  schedule: (task: () => void) => void = queueMicrotask,
-): { dispose: () => void } {
-  return api.onDidRemovePanel((panel) => {
-    if (panel.id !== "library" || replacing) return;
-    schedule(() => {
-      if (!replacing && !api.getPanel("library")) addWidget(api, "library", { direction: "left" });
-    });
-  });
+export function commitRect(id: WidgetId, rect: Rect): boolean {
+  if (useUiStore.getState().locked) return false;
+  const next = place(useGridStore.getState().layout, id, rect, minOf);
+  if (next) setLayout(next);
+  return next !== null;
+}
+
+/** The layout a drop would give, for the preview (R38.4); null shows the refused preview. */
+export function previewRect(id: WidgetId, rect: Rect): Layout | null {
+  return place(useGridStore.getState().layout, id, rect, minOf);
+}
+
+/** Moves a widget one or more cells (R38.10). A refused move says so in the status line. */
+export function moveWidgetBy(id: WidgetId, dx: number, dy: number): boolean {
+  const { layout } = useGridStore.getState();
+  const rect = layout[id];
+  if (!rect || useUiStore.getState().locked) return false;
+  const x = Math.min(GRID - rect.w, Math.max(0, rect.x + dx));
+  const y = Math.min(GRID - rect.h, Math.max(0, rect.y + dy));
+  if (x === rect.x && y === rect.y) return false;
+  const next = moveTo(layout, id, x, y, minOf);
+  if (!next) useUiStore.getState().showMessage(NO_ROOM);
+  else setLayout(next);
+  return next !== null;
+}
+
+/** Resizes a widget by one or more cells from its top left cell (R38.10). */
+export function resizeWidgetBy(id: WidgetId, dw: number, dh: number): boolean {
+  const { layout } = useGridStore.getState();
+  const rect = layout[id];
+  if (!rect || useUiStore.getState().locked) return false;
+  const next = resizeTo(layout, id, rect.w + dw, rect.h + dh, minOf);
+  const same = next?.[id].w === rect.w && next?.[id].h === rect.h;
+  if (!next) useUiStore.getState().showMessage(NO_ROOM);
+  else if (!same) setLayout(next);
+  return next !== null && !same;
+}
+
+/** The widget the menu acts on, when it is still in the grid. */
+export function activeWidget(): WidgetId | null {
+  const { active, layout } = useGridStore.getState();
+  return active !== null && layout[active] ? active : null;
+}
+
+/** Makes a widget the active one (a click, a focus or F6). */
+export function activateWidget(id: string): void {
+  if (isWidgetId(id) && useGridStore.getState().active !== id) useGridStore.setState({ active: id });
 }
 
 /**
- * Brings a Library tab that another tab hides to the front of its group, so a picked playlist
- * shows (R12 v1.9). A widget in another group stays the active one and keeps the focus, so its
- * keys and the Layout menu still act on it (UD17). A widget in the same group goes behind the
- * Library, so the focus moves to the shown playlist (AX-1).
+ * The measurement arrangement (P3.1): a preset by the measured mode name, then every hidden
+ * widget shown where it fits, so the measured app mounts every widget it can. It is not saved.
  */
-export function revealLibrary(api: DockviewApi | null = dock, doc: Document = document): void {
-  const panel = api?.getPanel("library");
-  if (!api || !panel || panel.api.isVisible) return;
-  const active = api.activePanel;
-  const focused = doc.activeElement;
-  panel.api.setActive();
-  if (active && active.group !== panel.group) {
-    active.api.setActive();
-    // The tab switch can drop the focus; the keys stay where they were.
-    if (focused instanceof HTMLElement && focused.isConnected && doc.activeElement !== focused) {
-      focused.focus({ preventScroll: true });
-    }
-  } else if (focused instanceof HTMLElement && focused !== doc.body) {
-    // The playlist view mounts after the switch: wait a few frames for its list, else take the
-    // Library region.
-    const focusView = (framesLeft: number) => {
-      const list = doc.querySelector<HTMLElement>('[data-widget="library"] [data-playlist-view] [role="listbox"]');
-      if (list) list.focus();
-      else if (framesLeft > 0) requestAnimationFrame(() => focusView(framesLeft - 1));
-      else doc.querySelector<HTMLElement>('[data-widget="library"]')?.focus();
-    };
-    focusView(10);
-  }
+export function applyMeasureLayout(mode: LibraryMode): void {
+  const preset: PresetId = mode === "tree" ? "tree" : mode === "columns" ? "columns" : "default";
+  let layout = PRESETS[preset].layout;
+  for (const id of Object.keys(WIDGETS) as WidgetId[]) layout = show(layout, id, minOf) ?? layout;
+  setLayout(layout);
 }
 
 /**
- * Ctrl+F (R25): activates the Library tab when it shares a group, leaves a shown playlist for
- * the library (R12 v1.9), then focuses the search field. A tab that was hidden mounts its body after the switch, so the focus waits up to a
- * few frames for the field. Returns false when there is no Library.
+ * Ctrl+F (R25): shows the Search widget when it is hidden, leaves a shown playlist for the
+ * library (R12 v1.9), then focuses the search field. A widget that mounts now gets its field a
+ * few frames later. Returns false when the Search widget cannot show.
  */
 export function focusLibrarySearch(doc: Document = document): boolean {
-  const panel = getDock()?.getPanel("library");
-  if (!panel && !doc.querySelector('[data-widget="library"]')) return false;
-  panel?.api.setActive();
+  if (!setWidgetVisible("search", true)) return false;
   useLibraryStore.getState().showPlaylist(null);
+  activateWidget("search");
   const focusField = (framesLeft: number) => {
-    const field = doc.querySelector<HTMLInputElement>('[data-widget="library"] input[type="search"]');
+    const field = doc.querySelector<HTMLInputElement>('[data-widget="search"] input[type="search"]');
     if (field) {
       field.focus();
       field.select();

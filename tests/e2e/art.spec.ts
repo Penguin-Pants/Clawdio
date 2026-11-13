@@ -5,12 +5,12 @@ import { expect, SONG_ROWS, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   // Now playing is hidden in the default preset (UD6).
   await page.evaluate(() => window.e2e.show("nowPlaying"));
 }
 
-const albums = (page: Page) => widget(page, "library").getByRole("listbox", { name: "Albums" });
+const albums = (page: Page) => widget(page, "album").getByRole("listbox", { name: "Albums" });
 
 async function artRequests(page: Page): Promise<number[]> {
   return JSON.parse((await page.locator("body").getAttribute("data-art-requests")) ?? "[]");
@@ -22,18 +22,18 @@ test("P10-AC4: albums with art show it; an album with none shows the placeholder
   await expect(withArt.locator("img")).toHaveAttribute("src", /album\.jpg$/);
   await expect(widget(page, "nowPlaying").locator("img")).toHaveAttribute("src", /album\.jpg$/);
 
-  await widget(page, "library").getByRole("searchbox", { name: "Search" }).fill("lemonade");
+  await widget(page, "search").getByRole("searchbox", { name: "Search" }).fill("lemonade");
   const none = albums(page).getByRole("option", { name: /Lemonade/ });
   await expect(none.locator("[data-slot='art-placeholder-mark']")).toBeVisible();
   await expect(none.locator("img")).toHaveCount(0);
-  await widget(page, "library").getByRole("grid", { name: "Songs" }).locator(SONG_ROWS).first().dblclick();
+  await widget(page, "songs").getByRole("grid", { name: "Songs" }).locator(SONG_ROWS).first().dblclick();
   await expect(widget(page, "nowPlaying")).toContainText("Pray You Catch Me");
   await expect(widget(page, "nowPlaying").locator("[data-slot='art-placeholder-mark']")).toBeVisible();
 });
 
 test("P10.2: art made after the first request shows on art-ready", async ({ page }) => {
   await openLibrary(page);
-  await widget(page, "library")
+  await widget(page, "artist")
     .getByRole("listbox", { name: "Artists" })
     .getByRole("option", { name: "Artist 05" })
     .click();

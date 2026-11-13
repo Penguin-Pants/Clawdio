@@ -3,7 +3,7 @@ import { MESSAGE_MS, useUiStore } from "./ui";
 
 beforeEach(() => {
   vi.useFakeTimers();
-  useUiStore.setState({ jobs: [], job: null, message: null, settingsOpen: false, visibleWidgets: [] });
+  useUiStore.setState({ jobs: [], job: null, message: null, settingsOpen: false });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -57,10 +57,9 @@ describe("ui store (P2.7, D18)", () => {
     expect(useUiStore.getState().job).toBeNull();
   });
 
-  it("sets the lock and the transport band position (DK-5, SH-6)", () => {
-    useUiStore.setState({ locked: false, transportPosition: "top" });
+  it("sets the lock (R38.9)", () => {
+    useUiStore.setState({ locked: false });
     useUiStore.getState().setLocked(true);
-    useUiStore.getState().setTransportPosition("bottom");
-    expect(useUiStore.getState()).toMatchObject({ locked: true, transportPosition: "bottom" });
+    expect(useUiStore.getState().locked).toBe(true);
   });
 });

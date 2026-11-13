@@ -17,7 +17,7 @@ const valid = () =>
   JSON.stringify({
     version: 1,
     density: "regular",
-    views: { "songs.columns": DEFAULT_COLUMNS["songs.columns"], "songs.topBottom": DEFAULT_COLUMNS["songs.topBottom"] },
+    views: { "songs.columns": DEFAULT_COLUMNS["songs.columns"] },
   });
 
 beforeEach(() => {
@@ -56,10 +56,10 @@ describe("columns.json (PS-6, UD13)", () => {
   });
 
   it("restores a valid file into the store", async () => {
-    const changed = { ...DEFAULT_COLUMNS["songs.topBottom"], hidden: ["album" as const] };
-    const text = JSON.stringify({ version: 1, density: "regular", views: { "songs.topBottom": changed } });
+    const changed = { ...DEFAULT_COLUMNS["songs.columns"], hidden: ["artist" as const] };
+    const text = JSON.stringify({ version: 1, density: "regular", views: { "songs.columns": changed } });
     await restoreColumns(async () => text, vi.fn());
-    expect(useColumnsStore.getState().views["songs.topBottom"].hidden).toEqual(["album"]);
+    expect(useColumnsStore.getState().views["songs.columns"].hidden).toEqual(["artist"]);
   });
 
   it("keeps a column edit the user made while the file loaded", async () => {

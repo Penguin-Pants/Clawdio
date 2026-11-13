@@ -14,7 +14,8 @@ import {
   visibleColumns,
 } from "./columns";
 
-const base = DEFAULT_COLUMNS["songs.topBottom"];
+// The defaults with every column shown.
+const base = { ...DEFAULT_COLUMNS["songs.columns"], hidden: [] };
 
 describe("column model (UD9)", () => {
   it("has # first and fixed, Title flexible, and the TB-6 minimums", () => {

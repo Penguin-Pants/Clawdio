@@ -1,5 +1,5 @@
 // P4-AC1, P4-AC2: the first-run notice and the no-folder state.
-import { expect, openMenu, test, widget } from "./test-base";
+import { libraryArea, expect, openMenu, test, widget } from "./test-base";
 
 test("P4-AC1: the notice names the services and the files, and the choice persists", async ({ page }) => {
   await page.goto("/?first=1");
@@ -23,7 +23,7 @@ test("P4-AC1: the notice names the services and the files, and the choice persis
   await expect(notice).toHaveCount(0);
 
   await page.reload();
-  await expect(widget(page, "library")).toBeVisible();
+  await expect(widget(page, "songs")).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Online lookups" })).toHaveCount(0);
   await openMenu(page);
   await page.getByRole("menuitem", { name: "Settings" }).click();
@@ -74,7 +74,7 @@ test("P24-AC1: a user with lookups on from before v1.10 sees the updated notice 
   await notice.getByRole("button", { name: "Keep on" }).click();
   await expect(notice).toHaveCount(0);
   await page.reload();
-  await expect(widget(page, "library")).toBeVisible();
+  await expect(widget(page, "songs")).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Online lookups" })).toHaveCount(0);
   await openMenu(page);
   await page.getByRole("menuitem", { name: "Settings" }).click();
@@ -97,7 +97,7 @@ test("P4-AC2: with no folder the Library asks for one, Transport is disabled and
 }) => {
   await page.goto("/?first=1");
   await page.getByRole("dialog", { name: "Online lookups" }).getByRole("button", { name: "Keep off" }).click();
-  const library = widget(page, "library");
+  const library = libraryArea(page);
   await expect(library.getByRole("heading", { name: "Choose your music folder" })).toBeVisible();
   const heading = await library.getByRole("heading").evaluate((element) => getComputedStyle(element).fontSize);
   expect(heading).toBe("24px");
@@ -107,7 +107,7 @@ test("P4-AC2: with no folder the Library asks for one, Transport is disabled and
   await expect(widget(page, "transport")).toContainText("Nothing playing");
 
   await library.getByRole("button", { name: "Choose music folder" }).click();
-  await expect(page.locator("[data-library-body]")).toBeVisible();
+  await expect(widget(page, "songs").getByRole("grid", { name: "Songs" })).toBeVisible();
   // The queue is still empty, so Transport stays disabled (P7.7).
   await expect(widget(page, "transport").getByRole("button", { name: "Play", exact: true })).toBeDisabled();
 });

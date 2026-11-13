@@ -6,8 +6,10 @@ import { expect, SONG_ROWS, test, widget } from "./test-base";
 
 async function openLibrary(page: Page) {
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await expect(widget(page, "transport")).toContainText("Song 4 of Album A0");
+  // Default hides the Play queue (R38.8).
+  await page.evaluate(() => window.e2e.show("queue"));
 }
 
 /** The player commands the app sent, in order. */
@@ -21,7 +23,7 @@ const slider = (page: Page, name: string) => transport(page).getByRole("slider",
 
 test("P7-AC5: Space toggles playback with focus in the Library", async ({ page }) => {
   await openLibrary(page);
-  await widget(page, "library").getByRole("grid", { name: "Songs" }).focus();
+  await widget(page, "songs").getByRole("grid", { name: "Songs" }).focus();
   await page.keyboard.press("Space");
   expect(await calls(page)).toEqual(["player_toggle"]);
   await page.keyboard.press("Space");
@@ -40,7 +42,7 @@ test("P7-AC5: after a click on Next, Space toggles and does not press Next again
 
 test("P7-AC5: Space types a space in the search field", async ({ page }) => {
   await openLibrary(page);
-  const field = widget(page, "library").getByRole("searchbox", { name: "Search" });
+  const field = widget(page, "search").getByRole("searchbox", { name: "Search" });
   await field.click();
   await page.keyboard.type("a b");
   await expect(field).toHaveValue("a b");
@@ -51,7 +53,7 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
   await openLibrary(page);
   const queue = widget(page, "queue");
   await expect(queue).toContainText("50 songs");
-  const songs = widget(page, "library").getByRole("grid", { name: "Songs" });
+  const songs = widget(page, "songs").getByRole("grid", { name: "Songs" });
   await songs.getByRole("row", { name: /Song 2 of Album B0/ }).click({ button: "right" });
   const menu = page.getByRole("menu");
   await expect(menu.getByRole("menuitem", { name: "Add to playlist" })).toHaveAttribute("aria-haspopup", "menu");
@@ -61,7 +63,7 @@ test("P7-AC7: Add to queue appends and says so; Play replaces the queue", async 
   await expect(queue.getByRole("option", { name: /Playing.*Song 4 of Album A0/ })).toBeVisible();
 
   // With Album A0 selected, the Songs list holds its 10 songs: Play makes them the queue.
-  await widget(page, "library")
+  await widget(page, "album")
     .getByRole("listbox", { name: "Albums" })
     .getByRole("option", { name: /Album A0/ })
     .click();

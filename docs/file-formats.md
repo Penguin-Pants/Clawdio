@@ -88,78 +88,53 @@ Rules:
 
 ## `layout.json`
 
-Location: the config folder. Source: `src/shell/persistence.ts` (content) and `crates/clawdio-core/src/layout.rs` (storage) (P9.2 to P9.4, R29).
+Location: the config folder. Source: `src/shell/persistence.ts` (content) and `crates/clawdio-core/src/layout.rs` (storage) (P9.2 to P9.4, R38.11, P29.1).
 
 The app writes the file atomically. It refuses text that is not one JSON object or is larger than 1 MB.
 
-On load, a file that fails validation (not JSON, an unknown `version`, no `dock`, an unknown `libraryMode`, a dock that cannot load, or no Library widget) is renamed to `layout.json.bak` (an older backup is replaced), one line goes to the log, and the default preset loads (PS-4). A version 1 file (the app before the UI shell rework, with a `transport` dock panel) is not migrated: it is backed up the same way, with the log line `layout: version 1 backed up as layout.json.bak`.
+On load, a file that fails validation is renamed to `layout.json.bak` (an older backup is replaced), one line goes to the log, and the Default preset loads (R38.11). A version 1 file (a `transport` dock panel) or version 2 file (the Dockview arrangement, P23 to P28) is not migrated: it is backed up the same way.
 
 | Key | Type | Meaning |
 |---|---|---|
-| `version` | integer | Schema version, `2` (UI shell rework UD5). |
-| `transport` | string | Transport band position: `top` (default) or `bottom` (SH-6). Another value loads as `top` with a log line. |
-| `locked` | boolean | Lock layout (DK-5). Another value loads as `false` with a log line. |
-| `libraryMode` | string | `tree`, `columns` or `topBottom`. |
-| `libraryFrames` | object | Optional (P22.3, D55). Library frame sizes as fractions that add up to 1. `columns`: Artist, Album and Songs. `topBottom.top`: Artist and Album. `topBottom.rows`: the top row and Songs. A file without it loads with the defaults: Columns 0.25, 0.25, 0.5; Top/bottom 0.5, 0.5 and 0.5, 0.5. |
+| `version` | integer | Schema version, `3` (R38.11). |
+| `locked` | boolean | Lock layout (R38.9). Another value loads as `false` with a log line. |
 | `transportSlots` | object | Optional (TR-10, UD20). The band slot `order` (array of `previous`, `playPause`, `next`, `nowPlaying`, `seek`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) and the `hidden` slots. `previous`, `playPause` and `next` stay together in that order (a split group joins at its first slot); `playPause` cannot be hidden. A file without it loads the default order (`nowPlaying`, `seek`, `previous`, `playPause`, `next`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) with `search` hidden. A file that holds the default order from before requirements v1.9 (`previous` first) loads the new default. |
-| `collapsed` | object | Optional (PS-5, UD25). Collapsed groups by Dockview group id: `{ "axis": "width" or "height", "size": <px before the collapse> }`. `size` is a positive number. Restore returns a group to that size after a restart. A file without it has no collapsed group. A value that is not an object restores nothing; a bad entry is ignored; both write a log line. An entry for a group that is not in the dock grid is dropped. |
-| `dock` | object | The Dockview arrangement (`toJSON`): the grid of groups with their sizes, the panels with their widget ids, titles and minimum sizes, the active group, and `floatingGroups` (DK-3): each floating group's panels and its position and size over the dock. A floating group outside a smaller window moves back inside. |
+| `widgets` | object | The shown widgets by id, each a rectangle of whole cells `{ "x", "y", "w", "h" }` in the 12 x 12 grid, 0-based from the top left (R38.2). Ids: `transport`, `search`, `artist`, `album`, `songs`, `tree`, `playlists`, `queue`, `lyrics`, `nowPlaying`. A widget that is not in the object is hidden. |
 
-The file holds no window size: that is in `settings.json` only (P9-AC8). The grid `width` and `height` are the dock size when saved; the app fits the grid to the current window at start.
+The file holds no window size: that is in `settings.json` only (P9-AC8). The cells scale with the window (R38.1), so the arrangement keeps its shape at any window size.
 
-Example (shortened):
+Example (the Default preset):
 
 ```json
 {
-  "version": 2,
-  "transport": "top",
+  "version": 3,
   "locked": false,
   "transportSlots": {
     "order": ["nowPlaying", "seek", "previous", "playPause", "next", "stop", "shuffle", "repeat", "volume", "queue", "search"],
     "hidden": ["search"]
   },
-  "collapsed": {},
-  "libraryMode": "tree",
-  "libraryFrames": { "columns": [0.25, 0.25, 0.5], "topBottom": { "top": [0.5, 0.5], "rows": [0.5, 0.5] } },
-  "dock": {
-    "grid": {
-      "root": {
-        "type": "branch",
-        "data": [
-          { "type": "leaf", "data": { "views": ["library"], "activeView": "library", "id": "1" }, "size": 430 },
-          { "type": "leaf", "data": { "views": ["queue"], "activeView": "queue", "id": "2" }, "size": 200 },
-          { "type": "leaf", "data": { "views": ["nowPlaying"], "activeView": "nowPlaying", "id": "3" }, "size": 112 }
-        ],
-        "size": 1200
-      },
-      "width": 1200,
-      "height": 742,
-      "orientation": "VERTICAL"
-    },
-    "panels": {
-      "library": { "id": "library", "contentComponent": "library", "tabComponent": "library", "title": "Library" },
-      "nowPlaying": { "id": "nowPlaying", "contentComponent": "nowPlaying", "tabComponent": "widget", "title": "Now playing" },
-      "queue": { "id": "queue", "contentComponent": "queue", "tabComponent": "widget", "title": "Play queue" }
-    },
-    "activeGroup": "2"
+  "widgets": {
+    "transport": { "x": 0, "y": 0, "w": 12, "h": 1 },
+    "search": { "x": 2, "y": 1, "w": 7, "h": 1 },
+    "artist": { "x": 2, "y": 2, "w": 3, "h": 4 },
+    "album": { "x": 5, "y": 2, "w": 4, "h": 4 },
+    "songs": { "x": 2, "y": 6, "w": 10, "h": 6 },
+    "playlists": { "x": 0, "y": 1, "w": 2, "h": 11 },
+    "nowPlaying": { "x": 9, "y": 1, "w": 3, "h": 5 }
   }
 }
 ```
 
-Rules (P9.4), each with one warning in `app.log`:
+Rules (R38.11), each with one warning in `app.log`:
 
-1. Not JSON, another `version`, no `dock` object, or a missing or unknown `libraryMode`: the file is backed up and the default preset applies (Reset layout: Columns mode, the band at the top, unlocked, the default band slots).
-2. A widget id this version does not know: its panel is removed; the rest stays. (Version 2 has no `transport` widget: the transport band is not a dock panel.)
-3. No Library panel: the file is backed up and the default preset applies.
-4. Any error while the dock loads: the file is backed up and the default preset applies.
-5. A bad `transport` or `locked` value: that key takes its default; the rest loads.
+1. Not JSON, not an object, another `version`, or no `widgets` object: the file is backed up and Reset layout applies (Default, unlocked, the default band slots).
+2. A widget id this version does not know: it is ignored; the rest loads.
+3. A rectangle that is not exactly four whole numbers, leaves the grid, is smaller than the widget minimum (R38.6) or overlaps another widget: the file is backed up and Reset layout applies.
+4. No `songs` or no `transport`: the widget is added where it fits (as a show, R38.7). When it does not fit, the file is backed up and Reset layout applies.
+5. A bad `locked` value: `false`; the rest loads.
 6. `transportSlots`: an unknown slot id is dropped with one warning and a missing slot goes at the end. A hidden `playPause`, or a value that is not an object with `order` and `hidden` arrays, gives the default slots with one warning. The rest loads.
-7. `collapsed`: an entry with a bad axis or size is ignored with one warning; an entry of a group the dock does not have is dropped. A value that is not an object gives no collapsed group with one warning.
-8. `libraryFrames` (D55): an invalid `columns` or `topBottom` entry, or one with an unknown property, gives that mode its default sizes. An unknown mode key is ignored. A value that is not an object gives the defaults of all modes. The dock and the other mode still load.
 
-Reset layout and each built-in layout restore the default frame sizes of all modes (R28.1).
-
-Saving: 500 ms after a layout, Library mode, frame size, band position, lock, band slot or collapse change, and at once when the window closes. The mini player (TR-9) is not saved: the app always starts in the normal window. The measurement layout (P3.1) is not saved.
+Saving: 500 ms after a widget, lock or band slot change, and at once when the window closes. The mini player (TR-9) is not saved: the app always starts in the normal window. The measurement layout (P3.1) is not saved.
 
 ## `columns.json`
 
@@ -171,10 +146,10 @@ The Songs table column state, apart from the layout: Reset layout does not chang
 |---|---|---|
 | `version` | integer | Schema version, `1`. |
 | `density` | string | Row density (TB-14): `regular` (default) or `compact` (View, Compact rows). Compact rows apply to the Songs table, the Tree, the Play queue and playlist entries; album rows keep their height. |
-| `views` | object | One entry per Songs view: `songs.columns` (Columns mode) and `songs.topBottom` (Top/bottom mode). Tree mode has no table. |
+| `views` | object | One entry per Songs view. Since P29 one Songs widget exists (R38.3): `songs.columns`. An older file's `songs.topBottom` is an unknown view: it is ignored. The Tree widget has no table. |
 | `views.*.order` | array of strings | Column ids in order: `track`, `title`, `artist`, `album`, `duration`. `track` (#) is always first. |
 | `views.*.widths` | object | Width in px per column id. Minimums: `track` 40, `title` 120, `artist` 80, `album` 80, `duration` 56. Title takes the spare width over its saved width. |
-| `views.*.hidden` | array of strings | Hidden column ids. `track` and `title` cannot hide. Default: `album` in `songs.columns`, none in `songs.topBottom`. |
+| `views.*.hidden` | array of strings | Hidden column ids. `track` and `title` cannot hide. Default: `album`. |
 | `views.*.sort` | array | Up to two `{ "column": <id>, "descending": <boolean> }` keys: a header click sets the first, Shift+click adds or flips the second (TB-13). Empty: the R4 default order. |
 
 Example:
@@ -188,12 +163,6 @@ Example:
       "order": ["track", "title", "artist", "album", "duration"],
       "widths": { "track": 48, "title": 240, "artist": 160, "album": 160, "duration": 64 },
       "hidden": ["album"],
-      "sort": []
-    },
-    "songs.topBottom": {
-      "order": ["track", "title", "album", "artist", "duration"],
-      "widths": { "track": 48, "title": 240, "artist": 200, "album": 160, "duration": 64 },
-      "hidden": [],
       "sort": [{ "column": "title", "descending": false }]
     }
   }

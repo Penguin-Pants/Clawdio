@@ -33,7 +33,7 @@ export { expect };
 /** Opens the app and waits for the default arrangement. */
 export async function openApp(page: Page): Promise<void> {
   await page.goto("/");
-  await expect(page.locator('[data-widget="library"]')).toBeVisible();
+  await expect(page.locator('[data-widget="songs"]')).toBeVisible();
 }
 
 /** The widget body region. */
@@ -41,14 +41,19 @@ export function widget(page: Page, id: string): Locator {
   return page.locator(`[data-widget="${id}"]`);
 }
 
-/** The dock tab of a widget, found by its title. */
-export function tab(page: Page, title: string): Locator {
-  return page.locator(".dv-tab", { hasText: title });
+/** The grid item of a widget: its header, body and resize handles (R38.2). */
+export function gridItem(page: Page, id: string): Locator {
+  return page.locator(`[data-grid-item="${id}"]`);
 }
 
-/** The group element that holds a widget. */
-export function group(page: Page, id: string): Locator {
-  return page.locator(".dv-groupview", { has: page.locator(`[data-widget="${id}"]`) });
+/** The header of a widget: the drag handle and the keyboard path (R38.4, R38.10). */
+export function header(page: Page, id: string): Locator {
+  return page.locator(`[data-widget-header="${id}"]`);
+}
+
+/** The cells of each widget in the grid, from the app's grid store. */
+export function layoutOf(page: Page): Promise<Record<string, { x: number; y: number; w: number; h: number }>> {
+  return page.evaluate(() => window.e2e.layout());
 }
 
 export async function openMenu(page: Page): Promise<void> {
@@ -70,37 +75,35 @@ export async function closeMenu(page: Page): Promise<void> {
   }
 }
 
-/** Shows or hides a widget from the menu; does nothing when it already is that way. */
-export async function setWidgetShown(page: Page, name: string, shown: boolean): Promise<void> {
+/** Opens the View submenu of the menu button (R38.7). */
+export async function openViewMenu(page: Page): Promise<void> {
   await openMenu(page);
-  const item = page.getByRole("menuitemcheckbox", { name, exact: true });
-  if ((await item.getAttribute("aria-checked")) !== String(shown)) await item.click();
-  if (await page.getByRole("menu").isVisible()) await closeMenu(page);
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await expect(page.getByRole("menu")).toHaveCount(2);
 }
 
-/** Runs an item of a group's "Widget options" menu (Float, Dock, Collapse, Restore; UD17, UD25). */
-export async function groupAction(page: Page, id: string, title: string, name: string): Promise<void> {
-  await group(page, id)
-    .getByRole("button", { name: `${title} options` })
-    .click();
-  await page.getByRole("menuitem", { name, exact: true }).click();
-  await expect(page.getByRole("menu")).toHaveCount(0);
+/** Shows or hides a widget from the menu; does nothing when it already is that way. */
+export async function setWidgetShown(page: Page, name: string, shown: boolean): Promise<void> {
+  await openViewMenu(page);
+  const item = page.getByRole("menuitemcheckbox", { name, exact: true });
+  if ((await item.getAttribute("aria-checked")) !== String(shown)) await item.click();
+  await closeMenu(page);
 }
 
 /** The body rows of the Songs table (UD8): the header row has no `aria-selected`. */
 export const SONG_ROWS = "[role='row'][aria-selected]";
 
-/** The Songs table of the Library (a grid since U4). */
+/** The Songs table of the Songs widget (a grid since U4). */
 export function songsGrid(page: Page): Locator {
-  return page.locator('[data-widget="library"]').getByRole("grid", { name: "Songs" });
+  return page.locator('[data-widget="songs"]').getByRole("grid", { name: "Songs" });
 }
 
-/** The transport band (SH-2): the fixed band outside the dock. */
+/** The transport band: the Transport controls widget, or the mini player (R38.2, UD19). */
 export function band(page: Page): Locator {
-  return page.locator('[data-widget="transport"]');
+  return page.locator("[data-band]");
 }
 
-/** Drags with the pointer from one point to another in small steps (the dock uses pointer drag). */
+/** Drags with the pointer from one point to another in small steps (the grid uses pointer events). */
 export async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
@@ -149,4 +152,19 @@ export async function expectNoSeriousViolations(page: Page): Promise<void> {
     .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
     .map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
   expect(serious).toEqual([]);
+}
+
+/**
+ * The grid that holds the Library widgets (Search, Artist, Album, Songs, Tree; R38.3). The list
+ * names are unique in it, so tests find a list without naming its widget.
+ */
+export function libraryArea(page: Page): Locator {
+  return page.locator("[data-grid]");
+}
+
+/** Applies a preset from the menu: Default, Tree or Columns (R38.8). */
+export async function preset(page: Page, name: "Default" | "Tree" | "Columns"): Promise<void> {
+  await openMenu(page);
+  await page.getByRole("menuitem", { name, exact: true }).click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
 }

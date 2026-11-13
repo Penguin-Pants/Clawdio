@@ -1,59 +1,48 @@
-import type { DockviewApi } from "dockview-react";
-import { addWidget } from "./layouts";
-
-/** Pixel widths of the side groups in the presets (UD6, SP-4: sidebars use pixels). */
-export const SIDEBAR_WIDTH = 240;
-export const RIGHT_WIDTH = 280;
+import type { Layout } from "./grid/engine";
 
 /**
- * "Apple Music classic", the default preset (DK-8, UD6): Playlists at the left, Library in the
- * center, Play queue and Lyrics as tabs in one group at the right with Play queue active, Now
- * playing hidden. First run and Reset layout apply it.
+ * The fixed presets (R38.8, owner answer November 13, 2026 for Columns), in cells from the top
+ * left (0-based). Each fills the 12 x 12 grid. Presets cannot be changed.
  */
-function appleMusicClassic(api: DockviewApi): void {
-  addWidget(api, "library");
-  addWidget(api, "playlists", { referencePanel: "library", direction: "left" }, { width: SIDEBAR_WIDTH });
-  addWidget(api, "queue", { referencePanel: "library", direction: "right" }, { width: RIGHT_WIDTH });
-  addWidget(api, "lyrics", { referencePanel: "queue", direction: "within" }, { inactive: true });
-}
-
-/** "MusicBee style" (DK-9, UD6): Playlists at the left top, Now playing below it, Play queue at the right. */
-function musicBee(api: DockviewApi): void {
-  addWidget(api, "library");
-  addWidget(api, "playlists", { referencePanel: "library", direction: "left" }, { width: SIDEBAR_WIDTH });
-  addWidget(api, "nowPlaying", { referencePanel: "playlists", direction: "below" });
-  addWidget(api, "queue", { referencePanel: "library", direction: "right" }, { width: RIGHT_WIDTH });
-}
-
-/** "Compact" (DK-9, UD6): Library only. */
-function compact(api: DockviewApi): void {
-  addWidget(api, "library");
-}
-
-export const PRESET_IDS = ["appleMusicClassic", "musicBee", "compact"] as const;
-export type PresetId = (typeof PRESET_IDS)[number];
-
-export const PRESETS: Record<PresetId, { title: string; build: (api: DockviewApi) => void }> = {
-  appleMusicClassic: { title: "Apple Music classic", build: appleMusicClassic },
-  musicBee: { title: "MusicBee style", build: musicBee },
-  compact: { title: "Compact", build: compact },
+const SHARED: Layout = {
+  transport: { x: 0, y: 0, w: 12, h: 1 },
+  playlists: { x: 0, y: 1, w: 2, h: 11 },
+  search: { x: 2, y: 1, w: 7, h: 1 },
+  nowPlaying: { x: 9, y: 1, w: 3, h: 5 },
 };
 
-export const DEFAULT_PRESET: PresetId = "appleMusicClassic";
+/** Default: Artist and Album under Search, Now playing at the right, Songs full width below. */
+const DEFAULT: Layout = {
+  ...SHARED,
+  artist: { x: 2, y: 2, w: 3, h: 4 },
+  album: { x: 5, y: 2, w: 4, h: 4 },
+  songs: { x: 2, y: 6, w: 10, h: 6 },
+};
 
-/** Builds a preset into an empty dock, with its pixel widths and Library as the active panel. */
-export function buildPreset(id: PresetId, api: DockviewApi): void {
-  PRESETS[id].build(api);
-  applySideWidths(api);
-  api.getPanel("library")?.api.setActive();
-}
+/** Tree: Default with Tree in place of Artist and Album. */
+const TREE: Layout = {
+  ...SHARED,
+  tree: { x: 2, y: 2, w: 7, h: 4 },
+  songs: { x: 2, y: 6, w: 10, h: 6 },
+};
 
-/**
- * Sets the side groups to their preset pixel widths once the dock has a size. A preset that
- * runs before the first layout keeps Dockview's initial widths; the start path calls this again.
- */
-export function applySideWidths(api: DockviewApi): void {
-  if (!(api.width > 0)) return;
-  api.getPanel("playlists")?.group.api.setSize({ width: SIDEBAR_WIDTH });
-  api.getPanel("queue")?.group.api.setSize({ width: RIGHT_WIDTH });
-}
+/** Columns: Artist, Album and Songs side by side under Search; Play queue under Now playing. */
+const COLUMNS: Layout = {
+  ...SHARED,
+  artist: { x: 2, y: 2, w: 2, h: 10 },
+  album: { x: 4, y: 2, w: 2, h: 10 },
+  songs: { x: 6, y: 2, w: 3, h: 10 },
+  queue: { x: 9, y: 6, w: 3, h: 6 },
+};
+
+export const PRESET_IDS = ["default", "tree", "columns"] as const;
+export type PresetId = (typeof PRESET_IDS)[number];
+
+export const PRESETS: Record<PresetId, { title: string; layout: Layout }> = {
+  default: { title: "Default", layout: DEFAULT },
+  tree: { title: "Tree", layout: TREE },
+  columns: { title: "Columns", layout: COLUMNS },
+};
+
+/** First run and Reset layout apply it (R38.8). */
+export const DEFAULT_PRESET: PresetId = "default";

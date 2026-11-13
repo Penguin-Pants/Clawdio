@@ -78,12 +78,12 @@ export function PlaylistView({ id }: { id: number }) {
   );
   const play = (index: number) => void playPlaylist(id, index, entries).catch(() => {});
   // The list goes away when the last entry goes or a read fails, after the menu or the key put
-  // the focus back on it: the focus moves to the Library region instead of the page (AX-1).
+  // the focus back on it: the focus moves to the Songs region instead of the page (AX-1).
   const noList = loaded === "failed" || (Array.isArray(loaded) && loaded.length === 0);
   useEffect(() => {
     const focused = document.activeElement;
     if (noList && (focused === null || focused === document.body)) {
-      listRef.current?.closest<HTMLElement>('[data-widget="library"]')?.focus();
+      listRef.current?.closest<HTMLElement>('[data-widget="songs"]')?.focus();
     }
   }, [noList]);
   /**

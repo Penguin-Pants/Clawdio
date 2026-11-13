@@ -11,7 +11,7 @@ import { info } from "@/lib/log";
 import { startPerfProbe } from "@/lib/perf";
 import { observeSize } from "@/lib/resize";
 import { AppHeader } from "@/shell/AppHeader";
-import { DockShell } from "@/shell/DockShell";
+import { GridShell } from "@/shell/GridShell";
 import { useMiniWindow } from "@/shell/mini";
 import { StatusLine } from "@/shell/StatusLine";
 import { TransportBand } from "@/shell/TransportBand";
@@ -21,19 +21,18 @@ import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 
 /**
- * The app shell: four fixed zones in a grid (plan section 5.1, SH-1): header strip, transport
- * band, dock and status line. The dock row is `minmax(0, 1fr)` (SH-3), so no list pushes the
- * band off screen, and the page never scrolls (SH-4). `data-transport` swaps the band and the
- * dock rows (SH-6). No layout hides the header, the band or the status line (R29). The mini player
- * (UD19) shows the band only: the dock stays mounted, inert and off screen at its last size.
+ * The app shell: three fixed zones (plan section 5.1, SH-1): header strip, the snap grid and the
+ * status line. The grid row is `minmax(0, 1fr)` (SH-3) and the grid fills it (R38.1), so the page
+ * never scrolls (SH-4). No layout hides the header or the status line (R29). The mini player
+ * (UD19) shows the transport band only: the grid stays mounted, inert and off screen at its last
+ * size.
  */
 export function App() {
-  const transportPosition = useUiStore((state) => state.transportPosition);
   const mini = useUiStore((state) => state.mini);
   useMiniWindow();
   const shellRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
-  // The dock size before the mini player, kept as CSS variables so the off-screen dock keeps it.
+  // The grid size before the mini player, kept as CSS variables so the off-screen grid keeps it.
   useEffect(() => {
     const shell = shellRef.current;
     const main = mainRef.current;
@@ -77,14 +76,22 @@ export function App() {
       <div
         ref={shellRef}
         data-shell=""
-        data-transport={transportPosition}
         data-mini={mini ? "" : undefined}
         className="app-shell h-screen overflow-hidden bg-bg-canvas"
       >
         {!mini && <AppHeader />}
-        <TransportBand />
+        {mini && (
+          <section
+            aria-label="Transport controls"
+            data-widget="transport"
+            tabIndex={-1}
+            className="[grid-area:transport]"
+          >
+            <TransportBand />
+          </section>
+        )}
         <main ref={mainRef} inert={mini} className="relative flex min-h-0 min-w-0 flex-col [grid-area:dock]">
-          <DockShell />
+          <GridShell />
         </main>
         {!mini && <StatusLine />}
       </div>

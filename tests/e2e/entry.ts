@@ -3,42 +3,27 @@ import { retagSong, setLyrics } from "./install-mocks";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import "../../src/main";
-import { addWidget, getDock, replaceArrangement, setWidgetVisible } from "../../src/shell/layouts";
-import { WIDGET_IDS, type WidgetId } from "../../src/shell/widgets";
+import { setWidgetVisible, useGridStore } from "../../src/shell/layouts";
+import type { Layout } from "../../src/shell/grid/engine";
+import type { WidgetId } from "../../src/shell/widgets";
 
-function dock() {
-  const api = getDock();
-  if (!api) throw new Error("e2e: no dock");
-  return api;
-}
-
-/** Test hooks. They act on the real dock of the running app. */
+/** Test hooks. They act on the grid of the running app. */
 const hooks = {
-  /** Shows a hideable widget where the default preset puts it (Now playing is hidden by default). */
+  /** Shows a hidden widget where it fits (R38.7). */
   show(id: WidgetId): void {
-    setWidgetVisible(id, true, dock());
+    setWidgetVisible(id, true);
   },
   /** Hides a hideable widget. */
   hide(id: WidgetId): void {
-    setWidgetVisible(id, false, dock());
+    setWidgetVisible(id, false);
   },
-  /** Clears the dock and stacks all five dock widgets in one column (P2-AC6 clamp case). */
-  stackAll(): void {
-    replaceArrangement(dock(), (api) =>
-      WIDGET_IDS.forEach((id, index) =>
-        addWidget(api, id, index === 0 ? undefined : { referencePanel: WIDGET_IDS[index - 1], direction: "below" }),
-      ),
-    );
+  /** The widget cells now (R38.2). */
+  layout(): Layout {
+    return useGridStore.getState().layout;
   },
-  /** The minimum size the dock applies to the group of each widget (D33, D45 clamp). */
-  groupMinimums(): Record<string, { width: number; height: number }> {
-    const result: Record<string, { width: number; height: number }> = {};
-    for (const group of dock().groups) {
-      for (const panel of group.panels) {
-        result[panel.id] = { width: group.minimumWidth, height: group.minimumHeight };
-      }
-    }
-    return result;
+  /** Sets the widget cells, as a saved file would (tests only). */
+  setLayout(layout: Layout): void {
+    useGridStore.setState({ layout });
   },
   /** Sends the window close request, like the close button (P9-AC11). */
   closeRequest(): Promise<void> {
@@ -57,10 +42,6 @@ const hooks = {
   /** Sends a command to the mocked IPC with no click, so the focus stays where it is (R35.4). */
   invoke(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
     return invoke(command, args);
-  },
-  /** Adds a widget as a tab in the group of another widget. */
-  addAsTab(id: WidgetId, reference: WidgetId): void {
-    addWidget(dock(), id, { referencePanel: reference, direction: "within" });
   },
 };
 

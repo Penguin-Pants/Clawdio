@@ -1,16 +1,26 @@
-// U4: the Songs table (TB-2 to TB-11, PS-6, AX-1) on the mocked library. Top/bottom mode
-// shows every column; Columns mode starts with Album hidden (UD8).
+// U4: the Songs table (TB-2 to TB-11, PS-6, AX-1) on the mocked library. The table starts with
+// Album hidden (UD8); `openTable` shows every column through a saved `columns.json`.
 import type { Locator, Page } from "@playwright/test";
-import { band, drag, expect, openMenu, closeMenu, SONG_ROWS, songsGrid, test, widget } from "./test-base";
+import { DEFAULT_COLUMNS } from "../../src/widgets/library/columns";
+import { band, drag, expect, preset, SONG_ROWS, songsGrid, test, widget } from "./test-base";
 
-async function openTable(page: Page, mode: "Columns" | "Top/bottom" = "Top/bottom") {
+async function openTable(page: Page, allColumns = true) {
+  if (allColumns) {
+    await page.addInitScript(
+      (state) => {
+        if (sessionStorage.getItem("e2e-columns")) return;
+        sessionStorage.setItem(
+          "e2e-columns",
+          JSON.stringify({ version: 1, density: "regular", views: { "songs.columns": state } }),
+        );
+      },
+      { ...DEFAULT_COLUMNS["songs.columns"], hidden: [] },
+    );
+  }
   await page.goto("/?data=library");
-  await expect(widget(page, "library").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
-  if (mode !== "Columns") await setMode(page, mode);
+  await expect(widget(page, "artist").getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
   await expect(songsGrid(page).locator(SONG_ROWS).first()).toBeVisible();
 }
-
-const setMode = (page: Page, name: string) => widget(page, "library").getByRole("button", { name }).click();
 const header = (page: Page, name: string) => songsGrid(page).getByRole("columnheader", { name, exact: true });
 const headers = (page: Page) => songsGrid(page).getByRole("columnheader");
 const rows = (page: Page) => songsGrid(page).locator(SONG_ROWS);
@@ -74,7 +84,8 @@ test("TB-3: a divider double-click and the header menu auto-size columns", async
   await expect.poll(() => width(header(page, "Time"))).toBeLessThan(164);
   await (await headerMenu(page, "Time")).getByRole("menuitem", { name: "Reset columns" }).click();
   await expect.poll(() => width(header(page, "Time"))).toBe(64);
-  expect(await width(header(page, "Album"))).toBe(160);
+  // Reset columns restores the defaults: Album hidden again (UD8).
+  await expect(header(page, "Album")).toHaveCount(0);
 });
 
 test("TB-4: a header drag reorders columns and # never moves", async ({ page }) => {
@@ -188,30 +199,25 @@ test("TB-13: Shift+click adds a second sort key; the mock gets both keys and the
   await expect(songsGrid(page).locator("[data-slot='sort-rank']")).toHaveCount(0);
 });
 
-test("TB-9 and PS-6: column state is per view, survives a reload and is apart from the layout", async ({ page }) => {
-  await openTable(page);
+test("TB-9 and PS-6: column state survives a reload and is apart from the layout", async ({ page }) => {
+  await openTable(page, false);
+  // The default state hides Album (UD8).
+  await expect(header(page, "Album")).toHaveCount(0);
   await dragDivider(page, "Artist", 40);
   await expect.poll(() => width(header(page, "Artist"))).toBe(200);
-  await setMode(page, "Columns");
-  // The Columns view keeps its own state: Album hidden, Artist at its default.
-  await expect(header(page, "Album")).toHaveCount(0);
-  expect(await width(header(page, "Artist"))).toBe(160);
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("e2e-columns"))).toContain('"artist":200');
-
   await page.reload();
-  await expect(header(page, "Artist")).toBeVisible();
-  await setMode(page, "Top/bottom");
   await expect.poll(() => width(header(page, "Artist"))).toBe(200);
-  // Reset layout does not touch column state (PS-6).
+  // Reset layout and a preset do not touch column state (PS-6).
   await page.keyboard.press("Control+Shift+L");
-  await setMode(page, "Top/bottom");
+  await preset(page, "Columns");
   await expect.poll(() => width(header(page, "Artist"))).toBe(200);
   const saved = await page.evaluate(() => [
     sessionStorage.getItem("e2e-columns"),
     sessionStorage.getItem("e2e-layout"),
   ]);
   expect(JSON.parse(saved[0] ?? "{}")).toMatchObject({ version: 1, density: "regular" });
-  expect(saved[1] ?? "").not.toContain("songs.topBottom");
+  expect(saved[1] ?? "").not.toContain("songs.columns");
 });
 
 test("PS-6: a bad columns file is backed up and the defaults stay", async ({ page }) => {
@@ -299,13 +305,11 @@ test("AX-1: the header works by keyboard only", async ({ page }) => {
   await expect(songsGrid(page).locator("[role='row'][aria-selected='true']")).toHaveCount(1);
 });
 
-test("UD8: Tree mode shows no table header", async ({ page }) => {
+test("UD8: the Tree widget shows no table header", async ({ page }) => {
   await openTable(page);
-  await openMenu(page);
-  await page.getByRole("menuitemradio", { name: "Tree" }).click();
-  await closeMenu(page);
-  await expect(widget(page, "library").getByRole("tree", { name: "Library" })).toBeVisible();
-  await expect(widget(page, "library").getByRole("columnheader")).toHaveCount(0);
+  await preset(page, "Tree");
+  await expect(widget(page, "tree").getByRole("tree", { name: "Library" })).toBeVisible();
+  await expect(widget(page, "tree").getByRole("columnheader")).toHaveCount(0);
 });
 
 test("AX-1: Space on a header sorts, and Down then selects the first row of the new order", async ({ page }) => {

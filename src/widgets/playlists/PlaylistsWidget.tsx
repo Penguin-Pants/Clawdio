@@ -12,7 +12,6 @@ import { VirtualList } from "@/components/virtual-list";
 import { commands, type ImportBatch, type PlaylistRow, type RepairBatch } from "@/lib/ipc/commands";
 import { observeSize } from "@/lib/resize";
 import { firstMatch, useTypeFind } from "@/lib/type-find";
-import { revealLibrary } from "@/shell/layouts";
 import { useLibraryStore } from "@/store/library";
 import { playPlaylist, playlistTask, usePlaylistsStore } from "@/store/playlists";
 import { useUiStore } from "@/store/ui";
@@ -48,7 +47,7 @@ export const RAIL_WIDTH = 140;
 
 /**
  * The icon rail (SP-5, UD18): one button per playlist, the heart for Favorites, with the name as
- * the tooltip and the accessible name. A button shows the playlist in the Library (R12 v1.9);
+ * the tooltip and the accessible name. A button shows the playlist in the Songs widget (R12 v1.9);
  * Enter and double-click also play it, as in the list (R25).
  */
 function PlaylistRail({
@@ -86,7 +85,7 @@ function PlaylistRail({
 
 /**
  * Playlists widget (R12 v1.9, P11.5): the playlists in natural name order. A click shows the
- * playlist's songs in the Library; Enter and double-click play it (R25). The shown playlist is
+ * playlist's songs in the Songs widget; Enter and double-click play it (R25). The shown playlist is
  * the selected row.
  */
 export function PlaylistsWidget() {
@@ -97,10 +96,8 @@ export function PlaylistsWidget() {
   const busyText = usePlaylistsStore((state) => state.busy);
   const shown = useLibraryStore((state) => state.playlist);
   const showPlaylist = useLibraryStore((state) => state.showPlaylist);
-  const show = (id: number) => {
-    showPlaylist(id);
-    revealLibrary();
-  };
+  // The Songs widget is always in the grid (R38.7), so the playlist shows there at once.
+  const show = (id: number) => showPlaylist(id);
   const listRef = useRef<HTMLDivElement>(null);
   const menu = useRowMenu(listRef);
   // The rail shows below RAIL_WIDTH, measured once per frame of resizes (UD24).
@@ -111,7 +108,7 @@ export function PlaylistsWidget() {
     if (!element) return;
     return observeSize(element, (entry) => setRail(entry.contentRect.width < RAIL_WIDTH));
   }, []);
-  // The active row is the playlist the Library shows.
+  // The active row is the playlist the Songs widget shows.
   const found = rows.findIndex((row) => row.id === shown);
   const active = found >= 0 ? found : null;
 

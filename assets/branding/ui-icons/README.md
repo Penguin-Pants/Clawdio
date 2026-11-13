@@ -17,7 +17,6 @@ The names come from `src/components/icons.tsx`:
 | Name | Use |
 |---|---|
 | `close` | Close control in widget headers |
-| `columns` | Columns Library mode |
 | `grip` | Drag grip in widget headers |
 | `heart` | Favorites |
 | `menu` | Menu button |
@@ -30,8 +29,6 @@ The names come from `src/components/icons.tsx`:
 | `search` | Search field |
 | `shuffle` | Shuffle |
 | `stop` | Stop |
-| `topBottom` | Top/bottom Library mode |
-| `tree` | Tree Library mode |
 | `volume` | Volume |
 
 ## Windows high contrast

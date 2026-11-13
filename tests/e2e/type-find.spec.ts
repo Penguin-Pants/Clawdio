@@ -1,9 +1,9 @@
 // P25-AC3 to P25-AC6 (R36, AC-30, D65): type-to-find in each list, on the mocked IPC with the
 // "?find=1" names. The page clock makes the 1 s reset (R36.3) and the 5 s follow rule exact.
 import type { Locator, Page } from "@playwright/test";
-import { drag, expect, songsGrid, test, widget } from "./test-base";
+import { libraryArea, expect, songsGrid, test, widget } from "./test-base";
 
-const library = (page: Page) => widget(page, "library");
+const library = (page: Page) => libraryArea(page);
 const artists = (page: Page) => library(page).getByRole("listbox", { name: "Artists" });
 const albums = (page: Page) => library(page).getByRole("listbox", { name: "Albums" });
 const queue = (page: Page) => widget(page, "queue").getByRole("listbox", { name: "Play queue" });
@@ -24,6 +24,8 @@ async function open(page: Page) {
   await page.clock.install();
   await page.goto("/?data=library&find=1");
   await expect(artists(page).getByRole("option", { name: "Artist 00", exact: true })).toBeVisible();
+  // Default hides the Play queue (R38.8).
+  await page.evaluate(() => window.e2e.show("queue"));
 }
 
 /** A row that is not rendered (virtualized) or not in the viewport. */
@@ -151,11 +153,21 @@ test("P25-AC3: Space toggles playback with no typed text, joins an active text a
   await expect(title).toHaveAttribute("aria-sort", "ascending");
 });
 
-test("P25-AC5: in Tree mode a find reaches a shown song out of view and does not open a collapsed node", async ({
+test("P25-AC5: in the Tree widget a find reaches a shown song out of view and does not open a collapsed node", async ({
   page,
 }) => {
   await open(page);
-  await library(page).getByRole("button", { name: "Tree" }).click();
+  // A tall Tree widget, as the old Tree mode had: the whole height under Search.
+  await page.evaluate(() =>
+    window.e2e.setLayout({
+      transport: { x: 0, y: 0, w: 12, h: 1 },
+      playlists: { x: 0, y: 1, w: 2, h: 11 },
+      search: { x: 2, y: 1, w: 7, h: 1 },
+      tree: { x: 2, y: 2, w: 7, h: 10 },
+      nowPlaying: { x: 9, y: 1, w: 3, h: 5 },
+      songs: { x: 9, y: 6, w: 3, h: 6 },
+    }),
+  );
   const tree = library(page).getByRole("tree", { name: "Library" });
   // The active row: a selected song also marks its album row selected (R28).
   const active = tree.locator("[data-active]");
@@ -180,33 +192,15 @@ test("P25-AC5: in Tree mode a find reaches a shown song out of view and does not
 });
 
 test("P25-AC5: the narrow Playlists icon rail selects nothing on typed keys", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
+  // Two cells in an 800 px window are under the rail width (UD18).
+  await page.setViewportSize({ width: 800, height: 560 });
   await open(page);
-  const sash = page.getByRole("separator", { name: "Resize Playlists and Library" });
-  const box = await sash.boundingBox();
-  if (!box) throw new Error("no separator");
-  await drag(page, { x: box.x + box.width / 2, y: box.y + 200 }, { x: box.x - 120, y: box.y + 200 });
   const rail = widget(page, "playlists").getByRole("navigation", { name: "Playlists" });
   await expect(rail).toBeVisible();
   await rail.getByRole("button", { name: "Find mix" }).focus();
   await typeNew(page, "z");
   await expect(library(page).getByRole("listbox", { name: /^Songs in/ })).toHaveCount(0);
   await expect(rail.getByRole("button", { name: "Find mix" })).toBeFocused();
-});
-
-test("P25-AC5: with Playlists a tab of the Library group, a match shows the playlist and focuses it", async ({
-  page,
-}) => {
-  await open(page);
-  await page.evaluate(() => {
-    window.e2e.hide("playlists");
-    window.e2e.addAsTab("playlists", "library");
-  });
-  await playlists(page).focus();
-  // As for Down, the focus moves to the playlist view (R36.7, R12 v1.9).
-  await typeNew(page, "z");
-  await expect(view(page, "Zapp jams")).toBeVisible();
-  await expect(view(page, "Zapp jams")).toBeFocused();
 });
 
 test("P25-AC5: an open row menu or dialog, a row drag and an empty list take no find", async ({ page }) => {
