@@ -90,6 +90,23 @@ describe("nextRegion", () => {
     expect(nextRegion(list, inner, false)).toBe(c);
     expect(nextRegion([], a, false)).toBeUndefined();
   });
+  it("counts a focused widget header as its widget's region (R38.10)", () => {
+    const items = ["a", "b", "c"].map((id) => {
+      const item = document.createElement("div");
+      item.dataset.gridItem = id;
+      const header = document.createElement("div");
+      header.tabIndex = 0;
+      const region = document.createElement("section");
+      region.dataset.widget = id;
+      item.append(header, region);
+      document.body.append(item);
+      return { header, region };
+    });
+    const list = items.map((item) => item.region);
+    expect(nextRegion(list, items[1].header, false)).toBe(items[2].region);
+    expect(nextRegion(list, items[1].header, true)).toBe(items[0].region);
+    items.forEach(({ region }) => region.parentElement?.remove());
+  });
 });
 
 describe("handleGlobalKey", () => {

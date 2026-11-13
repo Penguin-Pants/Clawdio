@@ -77,10 +77,16 @@ export function widgetRegions(root: ParentNode = document): HTMLElement[] {
   );
 }
 
-/** The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. */
+/**
+ * The region F6 (or Shift+F6 when `backward`) moves to. It wraps at both ends. A focused widget
+ * header sits beside its region in the grid item, so the item decides (R38.10).
+ */
 export function nextRegion(regions: HTMLElement[], active: Element | null, backward: boolean): HTMLElement | undefined {
   if (regions.length === 0) return undefined;
-  const current = regions.findIndex((region) => active !== null && region.contains(active));
+  const item = active?.closest("[data-grid-item]") ?? null;
+  const current = regions.findIndex(
+    (region) => active !== null && (region.contains(active) || (item !== null && item.contains(region))),
+  );
   if (current === -1) return backward ? regions[regions.length - 1] : regions[0];
   const step = backward ? -1 : 1;
   return regions[(current + step + regions.length) % regions.length];

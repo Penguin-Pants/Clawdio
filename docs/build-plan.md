@@ -1580,7 +1580,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P29-AC3 | Pass (Chromium) | `tests/e2e/grid.spec.ts` (drag and resize snap, preview, refused red preview, the AC-34 arrangement, window resize keeps the cells, restart restores), `presets.spec.ts`, `persistence.spec.ts`, `layouts.spec.ts`. |
 | P29-AC4 | Pass (Chromium) | `grid.spec.ts`: Alt+arrow and Alt+Shift+arrow by one cell, the focus stays on the header with a visible ring, the menu "Arrange" path, Lock layout stops drag, handles and keys; `lock.spec.ts`. |
 | P29-AC5 | Pass (Chromium) | `follow.spec.ts` (R35), `type-find.spec.ts` (R36), `selection-restore.spec.ts` (R37) on the separate widgets; `library.spec.ts` "a Tree selection filters Songs"; `playlists.spec.ts` "a playlist pick shows in Songs". |
-| P29-AC6 | Pending | Bundle: JS 675 to 627 kB, CSS 68.5 to 62.8 kB (D67). Linux memory (`scripts/measure-memory.sh`, release build, 50,000 tracks, Xvfb container): running at commit time; first Tree run 314 MB. A follow-up commit records the medians. |
+| P29-AC6 | Pass | Linux, `scripts/measure-memory.sh` in this container (Xvfb, release build without bundles, 50,000 tracks, 2,000 covers, 3 runs each): medians Tree 288 MB, Columns 292 MB, Default (`topBottom`) 288 MB; gate value 292 MB, under the 468 MB Linux target (D49) and under P21's 315 MB container value. Between 200 and 300 MB, so the owner is told the number (R20). The measured build preceded the last review fixes (handles, memo, icons, F6), which add no memory. Bundle: JS 675 to 627 kB, CSS 68.5 to 62.8 kB (D67). Windows not measured (no `measure/**` push, B8). |
 | P29-AC7 | Not run (E1) | Needs a desktop session on Linux and Windows. Walkthrough in `docs/release-checklist.md` (AC-34). |
 
 **Validation:** `npm run check` (378 unit tests), `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, the bindings check (`LibraryMode.ts` doc comment regenerated and committed) and `npm run test:e2e` in Chromium (206 tests) pass.
@@ -1599,10 +1599,10 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 2, F2 5, F3 1, F4 4.
+**TWO-PASS REVIEW:** F1 2, F2 7, F3 1, F4 4. Source: own audit, the e2e runs and Codex on the PR (two F2).
 
 - F1 (fixed): the playlist view moved the focus to the removed Library region when its list went away (AX-1); it now focuses the Songs region. In the mini player the grid's Transport region and the mini band both carried `data-widget="transport"`, so F6 found two regions; the grid copy drops it while mini.
-- F2 (fixed): a show in the full Default grid cut the transport band from the left (D69 now cuts only bottoms and rights and grows the shown widget); the band overflowed a 41 px row (D71); the right and bottom resize handles covered list scrollbars (D71); every drag step rendered every widget body, the 50,000-row table included (items are memoized now); the three Library mode icons lost their last caller and were removed with their override names.
+- F2 (fixed): a show in the full Default grid cut the transport band from the left (D69 now cuts only bottoms and rights and grows the shown widget); the band overflowed a 41 px row (D71); the right and bottom resize handles covered list scrollbars (D71); every drag step rendered every widget body, the 50,000-row table included (items are memoized now); the three Library mode icons lost their last caller and were removed with their override names. Codex: F6 from a focused widget header jumped to the first widget, because the header is beside its region (`nextRegion` now resolves the grid item; unit test); `scripts/ui-shots.mjs` waited for the removed `library` widget (now Artist).
 - F3: F-26 (section 11): rename the Rust `LibraryMode` measurement type.
 - F4:
   - Grid gap color for empty cells: the border token marks free room; `check:sources` (D34) passes.

@@ -115,7 +115,7 @@ async function run(root, folder) {
         const page = await browser.newPage({ viewport: { width: shot.width, height: shot.height } });
         await page.emulateMedia({ reducedMotion: "reduce" });
         await page.goto(`${PREVIEW_URL}/?data=library`);
-        await page.locator('[data-widget="library"] [role="option"]').nth(1).waitFor();
+        await page.locator('[data-widget="artist"] [role="option"]').nth(1).waitFor();
         // Thumbnails and fonts load after the rows; the image waits for them.
         await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready);
