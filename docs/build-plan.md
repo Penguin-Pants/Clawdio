@@ -1590,6 +1590,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 - N1: Default fills all 144 cells and hides Play queue, Lyrics and Tree (R38.8). E2e tests that need the queue show it first.
 - N2: the band fills its row. In the 800 x 560 window a row is about 41 px, under the 56 px band token, so the band uses its compact play button and art there (D71). The TH-1 test now checks that the band fills its row at 100, 125 and 140 % text.
 - N3: the default window (1200 px) gives the band 1184 px (the grip strip takes 16 px): size class LG, not XL. Only the Search slot needs XL, and it is hidden by default.
+- N5: CI WebKit put the band 0.998 in the 800 px viewport: WebKit rounds the edge of the last fractional column past the viewport by part of a pixel. `layouts.spec.ts` allows a 0.99 ratio for grid widgets and checks that the page scrolls in neither direction.
 - N4: tests removed with the features (Edits rule 6): `docking`, `floating`, `frames`, `splitters` and `resize` specs; the clamp, splitter, preset (Dockview), layout and Library widget unit tests; the old layout fixture files. Tests for tabbed groups were removed from `playlists`, `type-find`, `library` and `audit` specs.
 
 **Exceptions**

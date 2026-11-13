@@ -66,16 +66,19 @@ test("P2-AC6, R38.1: at 800 x 560 every widget is in view and nothing scrolls th
   await page.setViewportSize({ width: 800, height: 560 });
   await openApp(page);
   for (const name of ["Play queue", "Lyrics", "Tree"]) await setWidgetShown(page, name, true);
-  for (const locator of [
-    page.locator("header"),
-    page.getByRole("button", { name: "Menu" }),
-    band(page),
-    page.locator("footer"),
-  ]) {
+  for (const locator of [page.locator("header"), page.getByRole("button", { name: "Menu" }), page.locator("footer")]) {
     await expect(locator).toBeInViewport({ ratio: 1 });
   }
-  for (const item of await page.locator("[data-grid-item]").all()) await expect(item).toBeInViewport({ ratio: 1 });
-  expect(await page.evaluate(() => document.scrollingElement?.scrollHeight)).toBe(560);
+  // The 12 tracks are fractions of the width: WebKit can round the last column's edge past the
+  // viewport by part of a pixel (ratio 0.998 for the band). The page itself never scrolls.
+  for (const locator of [band(page), ...(await page.locator("[data-grid-item]").all())]) {
+    await expect(locator).toBeInViewport({ ratio: 0.99 });
+  }
+  const scroll = await page.evaluate(() => ({
+    width: document.scrollingElement?.scrollWidth,
+    height: document.scrollingElement?.scrollHeight,
+  }));
+  expect(scroll).toEqual({ width: 800, height: 560 });
   // Each widget header shows.
   for (const header of await page.locator("[data-widget-header]").all()) await expect(header).toBeVisible();
 });
