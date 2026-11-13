@@ -1598,7 +1598,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - A run on another branch: the job condition skips it, and the release job needs that job.
   - The checks run again on Windows although CI ran them on `main`: JoyFox does the same, and it catches a Windows-only break before a release.
 
-**Follow-ups:** F-25 (new).
+**Follow-ups:** F-25 (closed: the owner keeps the tooling).
 
 #### P27. Shuffle and repeat restore (November 12, 2026)
 
@@ -3343,7 +3343,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 |---|---|---|---|
 | F-23 | Count the running "Fetch lyrics" requests and hide the status line progress only when the last one ends. | Two clicks on two songs: the first to end hides "Fetching lyrics" while the second still runs (P15 behavior, kept by P24). | P24 review |
 | F-24 | Done (owner approved, November 12, 2026): `rusqlite` 0.41.1 (`libsqlite3-sys` 0.39.1, SQLite 3.54.1). | CI `cargo deny` failed on RUSTSEC-2026-0459 for every branch, `main` included. | P27 review |
-| F-25 | Delete `scripts/appimage-libs.sh` and the `--appimage-libs` option of `scripts/notice.mjs`, or keep them while the Linux packages are deferred (R21 v1.15). | The P28 release builds no AppImage, so nothing calls them (AGENTS.md Edits rule 7). | P28 review |
+| F-25 | Closed (owner, November 13, 2026): keep `scripts/appimage-libs.sh` and the `--appimage-libs` option of `scripts/notice.mjs` while the Linux packages are deferred (R21 v1.15), so they can return without rework. | The P28 release builds no AppImage, so nothing calls them (AGENTS.md Edits rule 7). | P28 review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
