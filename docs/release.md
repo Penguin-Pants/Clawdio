@@ -9,6 +9,12 @@ How to publish a release. The release ships the Windows portable zip only (R21 v
 - **Every version needs its release notes** in `docs/release-notes/<version>.md`. The workflow stops when the file is missing.
 - **The workflow runs on `main` only.** A run on another branch does nothing.
 
+The version in the requirements document (for example, v1.15) is a document
+revision, not the app version. Read the app version from
+`src-tauri/tauri.conf.json`. Release `0.1.0` needs
+`docs/release-notes/0.1.0.md`. `npm run check` checks the version
+files, their lock files and the notes for the current app version before merge.
+
 ## Steps
 
 1. **Release PR.** Set the new version in the four files, run `npm install` and `cargo check` so the lock files follow, and add `docs/release-notes/<version>.md`. Merge the PR into `main` once CI is green.
@@ -24,5 +30,6 @@ How to publish a release. The release ships the Windows portable zip only (R21 v
 ## When a run fails
 
 - **Version mismatch, existing release or missing notes:** fix it in a PR and run the workflow again.
+- **After a fix is merged:** start a new run on `main`. Re-running a failed job uses the old commit, so it does not include the fix.
 - **A check or the build fails:** the run makes no release. Fix the cause in a PR and run again.
 - **A draft exists but is wrong:** delete the draft (no tag exists until it is published) and run again.

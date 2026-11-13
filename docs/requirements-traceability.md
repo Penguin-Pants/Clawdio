@@ -329,7 +329,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R21-1 | Windows per-user installer, no admin | §2 R21 | P18.1 | P18-AC3 | MAN-W | Deferred (v1.15) |
 | R21-2 | Windows portable zip with the `portable` marker | §2 R21 | P18.2 | P18-AC4 | MAN-W | Planned |
 | R21-3 | Linux AppImage (built on the R22 baseline) and `.deb` | §2 R21 | P18.3 | P18-AC1, P18-AC5 | CI, MAN-L | Deferred (v1.15) |
-| R21-4 | One click on `main` builds the portable zip and drafts its release; the version comes from the repository; an existing release or missing notes stop it (v1.15) | §2 R21 | P28.1, P28.2 | P28-AC1, P28-AC2, P28-AC3 | REV, CI | Done with exceptions (P28; P28-AC3 owner run open) |
+| R21-4 | One click on `main` builds the portable zip and drafts its release; the version comes from the repository; an existing release or missing notes stop it (v1.15) | §2 R21 | P28.1, P28.2 | P28-AC1, P28-AC2, P28-AC3 | REV, CI | Done with exceptions (P28; missing 0.1.0 notes fixed with CI regression checks; P28-AC3 fresh run and Windows check open) |
 | R22-1 | Windows 10 or later; WebView2 required; installer downloads it | §2 R22 | P18.1 | P18-AC3 | MAN-W | Planned |
 | R22-2 | Portable build shows an error with a download link when WebView2 is missing | §2 R22 | P18.2 | P18-AC4 | MAN-W | Planned (D38) |
 | R22-3 | Linux glibc baseline: AppImage glibc 2.35; `.deb` for Debian 12 and Ubuntu 22.04 | §2 R22 | P18.3 | P18-AC5 | MAN-L | Planned |

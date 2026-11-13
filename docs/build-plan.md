@@ -1581,11 +1581,14 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - N1: the old workflow ran on `v*` tags and built the installer and the Linux packages; v1.15 defers them. `measure.yml` still builds the installer for the R20 size measurement.
 - N2: GitHub has the draft release `v0.1.0-rc.1` from an earlier tag run. The guard checks `v<version>` only, so `0.1.0` can still be released.
-- N3: the first run needs `docs/release-notes/0.1.0.md`, or a new version with its notes.
+- N3: the first run failed at the version guard because `docs/release-notes/0.1.0.md` was missing ([run 43407845741](https://github.com/Penguin-Pants/Clawdio/actions/runs/43407845741)). All four version files agreed on `0.1.0`. The notes are now present. `scripts/release.test.ts` checks version agreement, both lock files and nonempty notes in `npm run check`, so CI catches an incomplete release before dispatch. The requirements revision v1.15 is not the app version. A fresh run on `main` is needed after merge; a rerun uses the old commit.
+- N4: release repair validation (November 13, 2026): the new notes assertion failed before the fix and all 8 release tests pass after it. `npm run check` passes (423 tests), as do `cargo fmt --all --check`, `cargo test -p clawdio-core` and the generated bindings check. The actual workflow guard passes locally with the release lookup simulated as absent and writes `version=0.1.0` and `name=Clawdio`. No Windows executable was built locally.
+- N5: release repair two-pass review: F1 1 fixed, F2 0, F3 0, F4 3. F1: missing release notes fixed and covered by CI. F4: version drift rejected because all manifests and lock files agree; a required version bump rejected because `0.1.0` follows the earlier prerelease; removing the guard rejected because R21 requires notes. Audit and challenge covered correctness, scope, security, accessibility, performance and docs. Only tests and docs change; the app and its permissions do not change.
 
 **Exceptions**
 
 - E1: P28-AC3 needs a workflow run on `main` and a Windows machine.
+- E2: release repair environment: workspace Clippy is blocked by missing GLib/GObject development packages; workspace tests need the same GTK dependencies and did not run. The core tests pass. `npm run test:e2e` built the frontend but browser launches failed because Playwright browsers are absent; the run was stopped. Full workspace and browser checks remain for CI. The owner authorized committing the repair and opening a PR with these validation gaps recorded.
 
 **Blockers:** none.
 
