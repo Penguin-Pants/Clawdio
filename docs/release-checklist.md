@@ -1,5 +1,7 @@
 # Release checklist
 
+The release procedure is `docs/release.md`. From requirements v1.15 the release ships the Windows portable zip only; rows below about the installer and the Linux packages record earlier checks.
+
 Manual and interop checks that the release (P18, and P21 after v1.6) repeats or completes. Each phase adds its
 rows when it runs a check. A row names the check, the date, the platform and the result.
 

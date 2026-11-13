@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.33, November 12, 2026 (requirements v1.14: P26, Library selection restore with the current song first, Done with exceptions).
+**Version:** 1.34, November 13, 2026 (requirements v1.15: P28, one-click Windows portable release, Done with exceptions).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25), the v1.12 additions (P26) and the v1.13 additions (P27).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -12,7 +12,8 @@
 - Requirements v1.11 adds P25 (type-to-find in lists). Done with exceptions: the manual Linux walkthrough (P25.4) waits on the owner.
 - Requirements v1.12 adds P26 (Library selection restore); v1.14 adds R37.9 (the current song wins). Done with exceptions: the manual Linux walkthrough P26-AC6 waits on the owner.
 - Requirements v1.13 adds P27 (shuffle and repeat restore). Done with exceptions: the manual Linux check P27-AC3 waits on the owner. P27 depends on P25, not P26: the owner asked for it first.
-- The plan has 28 phases (P0 to P27). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.15 adds P28 (one-click Windows portable release). Done with exceptions: the first release run waits on the owner.
+- The plan has 29 phases (P0 to P28). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P28 comes from requirements v1.15. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -99,6 +100,7 @@ A phase is Done when all of these are true:
 | P25 | Type-to-find in lists | P24 | Done with exceptions |
 | P26 | Library selection restore | P25 | Done with exceptions |
 | P27 | Shuffle and repeat restore | P25 | Done with exceptions |
+| P28 | One-click Windows portable release | P27 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1561,6 +1563,42 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
   - Lock order in `persist.rs` (N3): no path holds `latest` and then takes `pending`.
 
 **Follow-ups:** none.
+
+#### P28. One-click Windows portable release (November 13, 2026)
+
+- **Status:** Done with exceptions. P28.1 and P28.2 are done. P28-AC3 waits on the owner (E1).
+- **Commits:** branch `clawd/vibrant-dirac-9ib3vy`, from `main` at `36207ec`. Messages start with `P28:`.
+- **Packages:** none new.
+- **Source:** the owner's JoyFox repository (`.github/workflows/release.yml`, `docs/release.md`): a manual run on `main`, the version from the repository, a refused existing release, required release notes and a draft release.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P28-AC1 | Pass | The guard step ran locally with a stand-in `gh`: an existing release, missing notes and a `package.json` version of 0.1.1 each stop the run with an error; with the notes present it writes `version=0.1.0` and `name` to the output. |
+| P28-AC2 | Pass | The workflow parses as YAML. Validation set: `npm run check`, `cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace` and the bindings check and `npm run test:e2e` (235 tests, Chromium) pass. |
+| P28-AC3 | Not run (E1) | Needs a run in GitHub Actions. |
+
+**Notes**
+
+- N1: the old workflow ran on `v*` tags and built the installer and the Linux packages; v1.15 defers them. `measure.yml` still builds the installer for the R20 size measurement.
+- N2: GitHub has the draft release `v0.1.0-rc.1` from an earlier tag run. The guard checks `v<version>` only, so `0.1.0` can still be released.
+- N3: the first run needs `docs/release-notes/0.1.0.md`, or a new version with its notes.
+
+**Exceptions**
+
+- E1: P28-AC3 needs a workflow run on `main` and a Windows machine.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 0, F3 1, F4 4. Source: own audit and the guard run.
+
+- F3: F-25 (section 11): `scripts/appimage-libs.sh` and the `--appimage-libs` option of `scripts/notice.mjs` lost their only caller, the old Linux release job.
+- F4:
+  - `gh release view` on a draft: the run token can read drafts, so a drafted version is refused too.
+  - Product name in the workflow: D34 covers `src/`, `crates/` and `src-tauri/src/` only; the workflow reads the name from `tauri.conf.json` anyway.
+  - A run on another branch: the job condition skips it, and the release job needs that job.
+  - The checks run again on Windows although CI ran them on `main`: JoyFox does the same, and it catches a Windows-only break before a release.
+
+**Follow-ups:** F-25 (new).
 
 #### P27. Shuffle and repeat restore (November 12, 2026)
 
@@ -3202,6 +3240,27 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 **Verification.** Rust unit tests (P27-AC1). Rust integration tests (P27-AC2). Manual Linux (P27-AC3).
 
+### P28. One-click Windows portable release
+
+**Objective.** One click in GitHub Actions on `main` builds the Windows portable zip and drafts its GitHub release, as in the owner's JoyFox repository.
+
+**Scope.** R21 (v1.15). R18.1. Owner decision 49. F-20.
+
+**Depends on.** P27.
+
+**Tasks.**
+
+- **P28.1** `.github/workflows/release.yml`: `workflow_dispatch` on `main` only. A version guard: the version of `tauri.conf.json` equals `package.json` and both `Cargo.toml` files, `v<version>` has no release, and `docs/release-notes/<version>.md` exists. Then `npm run check`, `cargo test --workspace`, `tauri build --no-bundle`, the portable zip (executable, `portable` marker, license files) and `SHA256SUMS-windows.txt`. A second job drafts the release `v<version>` on the built commit with the notes file. No installer, AppImage or `.deb`.
+- **P28.2** `docs/release.md`: the procedure (release PR, run, check, publish) and what to do when a run fails.
+
+**Acceptance criteria.**
+
+- **P28-AC1** The version guard stops on a version mismatch, an existing release and missing notes, and passes otherwise (local run of the guard script with a stand-in `gh`).
+- **P28-AC2** The workflow file parses, and the validation set passes.
+- **P28-AC3** Owner: the first run on `main` drafts `v<version>` with the zip and the checksums, and the zip starts in portable mode on Windows.
+
+**Verification.** Script run (P28-AC1). Validation set (P28-AC2). Owner run (P28-AC3).
+
 ---
 
 ## 9. Risks
@@ -3284,6 +3343,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 |---|---|---|---|
 | F-23 | Count the running "Fetch lyrics" requests and hide the status line progress only when the last one ends. | Two clicks on two songs: the first to end hides "Fetching lyrics" while the second still runs (P15 behavior, kept by P24). | P24 review |
 | F-24 | Done (owner approved, November 12, 2026): `rusqlite` 0.41.1 (`libsqlite3-sys` 0.39.1, SQLite 3.54.1). | CI `cargo deny` failed on RUSTSEC-2026-0459 for every branch, `main` included. | P27 review |
+| F-25 | Delete `scripts/appimage-libs.sh` and the `--appimage-libs` option of `scripts/notice.mjs`, or keep them while the Linux packages are deferred (R21 v1.15). | The P28 release builds no AppImage, so nothing calls them (AGENTS.md Edits rule 7). | P28 review |
 | F-22 | `playlist_remove_entry` takes the expected entry (track id or saved label) with the index, and refuses the removal when the entry at that index differs. | The playlist view removes by index. U8 blocks a removal from each `playlists-changed` until fresh entries land, but a change that the core makes before its event reaches the webview can still move the index. A check in the core closes that window. | U8 PR 24 review |
 | F-21 | Mini player menus: grow the mini window while a band menu (More, volume) is open, or open those menus as a native popup, so they fit. | In the mini player (TR-9, UD19) the window is one band high, so a webview menu cannot show inside it. U5 keeps the art visible as the exit button; Seek, Volume and the other More items need the normal window. | U5 review |
 | F-01 | Windows code signing | Fewer SmartScreen warnings (K16). No source requires it. | Planning |
@@ -3297,7 +3357,7 @@ Phases add items here under AGENTS.md class F3. Items are proposals only.
 | F-15 | `commands/settings.rs` `io_error` sends the error text to the webview. A failed `settings.json` write (disk full, read-only folder) prints the temp file path, so a config path reaches the webview against D13. Log the full error and return a fixed message, as `layout_save` does. | Found in the P9 review; the code is from P4. | P9 review |
 | F-14 | Send the MPRIS `Seeked` signal when the app seeks: patch or replace souvlaki's MPRIS part (K2 fallback). | souvlaki 0.8.3 sends `Seeked` only for a D-Bus `Seek`. GNOME's panel extrapolates the position, so after a seek in the app it shows the old position until the next update. `playerctl position` reads the property and is correct. | P8 review |
 | F-13 | `library_tree` returns ids only. The webview fetches artist and album names for the visible rows, or loads tree children when a node opens. | Tree mode keeps every artist and album name in the webview (6,000 rows with the 50,000-track fixture), against D14. P6.1 defines `library_tree` as the full structure. | Codex review of `e896960` |
-| F-20 | `release.yml`: fail when the tag `vX.Y.Z` differs from the version in `tauri.conf.json` and `Cargo.toml`. | A wrong tag names the packages and the draft release with different versions. | P18 review |
+| F-20 | Done in P28 (November 13, 2026): the release takes its version from `tauri.conf.json` and stops when `package.json` or a `Cargo.toml` differs; no tag is pushed by hand. | A wrong tag names the packages and the draft release with different versions. | P18 review |
 
 The deferred ideas in section 7 of the requirements are not repeated here. They stay deferred.
 
@@ -3429,6 +3489,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.34 (November 13, 2026):** requirements v1.15 (R21 release change, owner decision 49). Added phase P28 (Done with exceptions: the first release run is open). F-20 done. F-25 proposed.
 - **1.33 (November 12, 2026):** requirements v1.14 (R37.9, AC-33, owner decision 48). P26 Done with exceptions (P26-AC6 manual Linux walkthrough open). P26 adds P26-AC7 and a D66 note. No F3 proposal.
 - **1.32 (November 12, 2026):** requirements v1.13 (R27 modes, AC-32, owner decision 47). Added phase P27 (Done with exceptions, P27-AC3 manual Linux check open). D25 changed: the shuffle and repeat modes are saved. F-24 proposed and done (`rusqlite` 0.41.1 for RUSTSEC-2026-0459).
 - **1.31 (October 23, 2026):** requirements v1.12 (R37, AC-31, owner decision 46). Added phase P26 (Not started) and D66.
