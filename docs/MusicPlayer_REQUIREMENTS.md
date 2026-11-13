@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.14, November 12, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes. Version 1.14 restores the Library to the current song at startup.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.14.
+**Status:** Decision-complete. Version 1.15, November 13, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes. Version 1.14 restores the Library to the current song at startup. Version 1.15 releases the Windows portable zip only, with one click.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.15.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.15)` marks an item changed or added in version 1.15 (owner decision 49 in section 8).
 - `(v1.14)` marks an item changed or added in version 1.14 (owner decision 48 in section 8).
 - `(v1.13)` marks an item changed or added in version 1.13 (owner decision 47 in section 8).
 - `(v1.12)` marks an item changed or added in version 1.12 (owner decision 46 in section 8).
@@ -295,6 +296,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - **Milestone 0 (before feature work):** a footprint spike. It includes the docking code and every widget populated with test data: the Library widget in all three modes with a virtualized 50,000-track list, 2,000 art thumbnails, Play queue, Playlists, Lyrics, Now playing, Transport controls and Search. Measure memory across all processes on Windows and Linux. `(v1.4)` The spike uses the real UI stack (React, Tailwind, shadcn/ui, docking library, and Motion only if R30 names a component).
   - `[D]` If idle memory is more than 50% over target (above 300 MB), stop. The owner decides whether to switch to a native UI or cut layout freedom.
 - **R21 (v1.5).** Distribution: Windows per-user installer (no admin), Windows portable zip (the executable plus the `portable` marker file, R18.1), Linux AppImage and `.deb`. Build the AppImage on the R22 baseline system.
+  - `(v1.15)` The release ships the Windows portable zip only. The owner starts a release with one click in GitHub Actions on `main`. The release takes its version from the app configuration. It stops when that version already has a release or has no release notes, and it drafts the GitHub release. The Windows installer, the AppImage and the `.deb` are deferred (section 7).
 - **R22 (v1.5) `[D]`.** Minimum OS: Windows 10 or later. The WebView2 Runtime must be present. It ships with Windows 10 from version 1803 and with Windows 11. The installer downloads it if missing. The portable build must show an error with a download link if it is missing. Linux: glibc-based distributions only. AppImage: glibc 2.35 or later (built on Ubuntu 22.04). `.deb`: Debian 12, Ubuntu 22.04 or later, which ship WebKitGTK 4.1. The owner may tighten these.
 - **R23 (v1.1) `[D]`.** The app writes a log file to the OS log directory, with size-based rotation. Settings has an "Open log folder" command. Every "skip and log" event goes there (scan, playlists, sidecars, lookups, layouts).
 
@@ -437,6 +439,7 @@ These are out under the owner's "few features" rule.
 
 ## 7. Deferred ideas
 
+- Release packages other than the Windows portable zip: the Windows installer, the AppImage and the `.deb` (R21). `(v1.15)`
 - Gapless playback (the engine must allow it later).
 - Synced lyrics line highlighting.
 - Volume normalization (ReplayGain).
@@ -559,6 +562,10 @@ Version 1.14 records an owner decision made on November 12, 2026:
 
 48. **Current song at startup (R37.9):** when a song is current after the R27 restore, the Library selects it, its artist and its album. The saved selection (R37) applies only when no song is current.
 
+Version 1.15 records an owner decision made on November 13, 2026:
+
+49. **Release (R21):** one click in GitHub Actions on `main` builds the Windows portable zip and drafts its release, as in the owner's JoyFox repository: the version comes from the repository, a version with a release is refused, and release notes are required. The release ships only the portable zip. The installer, the AppImage and the `.deb` are deferred.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -620,6 +627,9 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.15 (November 13, 2026):** one-click release of the Windows portable zip, with owner decision 49 (section 8).
+  - **Changed:** R21 (the release ships the portable zip only).
+  - **Added:** one deferred idea (the other release packages).
 - **1.14 (November 12, 2026):** the Library shows the current song at startup, with owner decision 48 (section 8).
   - **Added:** R37.9, acceptance check 33.
 - **1.13 (November 12, 2026):** the shuffle and repeat modes save and restore, with owner decision 47 (section 8).

@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.26, November 12, 2026 (P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
-**Plan:** `docs/build-plan.md` v1.33. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.27, November 13, 2026 (requirements v1.15 R21 rows and DEC-49, mapped to P28; earlier: P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Plan:** `docs/build-plan.md` v1.34. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 432 | 284 | 65 | 20 | 5 | 5 | 38 | 15 | 0 |
+| Requirements | 434 | 284 | 65 | 20 | 5 | 5 | 40 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -40,7 +40,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.14)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.15)
 
 Rows that the UI shell rework replaces keep their v1.7 text with the status Superseded (v1.8); section 7 holds the rows that replace them.
 
@@ -326,9 +326,10 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R20-4 | AppImage exempt from the size target | §2 R20 | P18.3 | P18-AC2 | CI | Planned |
 | R20-5 | Milestone 0 spike before feature work with full test data | §2 R20 | P3.1, P3.3, P3.4, P3.7 | P3-AC1 | MEAS | Done (P3, B2) |
 | R20-6 | Over 300 MB: stop; the owner decides | §2 R20 | P3.8 | P3-AC4 | MEAS | Done (P3, D49) |
-| R21-1 | Windows per-user installer, no admin | §2 R21 | P18.1 | P18-AC3 | MAN-W | Planned |
+| R21-1 | Windows per-user installer, no admin | §2 R21 | P18.1 | P18-AC3 | MAN-W | Deferred (v1.15) |
 | R21-2 | Windows portable zip with the `portable` marker | §2 R21 | P18.2 | P18-AC4 | MAN-W | Planned |
-| R21-3 | Linux AppImage (built on the R22 baseline) and `.deb` | §2 R21 | P18.3 | P18-AC1, P18-AC5 | CI, MAN-L | Planned |
+| R21-3 | Linux AppImage (built on the R22 baseline) and `.deb` | §2 R21 | P18.3 | P18-AC1, P18-AC5 | CI, MAN-L | Deferred (v1.15) |
+| R21-4 | One click on `main` builds the portable zip and drafts its release; the version comes from the repository; an existing release or missing notes stop it (v1.15) | §2 R21 | P28.1, P28.2 | P28-AC1, P28-AC2, P28-AC3 | REV, CI | Done with exceptions (P28; P28-AC3 owner run open) |
 | R22-1 | Windows 10 or later; WebView2 required; installer downloads it | §2 R22 | P18.1 | P18-AC3 | MAN-W | Planned |
 | R22-2 | Portable build shows an error with a download link when WebView2 is missing | §2 R22 | P18.2 | P18-AC4 | MAN-W | Planned (D38) |
 | R22-3 | Linux glibc baseline: AppImage glibc 2.35; `.deb` for Debian 12 and Ubuntu 22.04 | §2 R22 | P18.3 | P18-AC5 | MAN-L | Planned |
@@ -540,6 +541,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-46 | Selection restore: Artist, Album and active Song at startup; missing level clears it and those below; Tree opens the row's artist and album; focus does not move | §8.46 | P26 | P26-AC1 to P26-AC6 | UT, IT, E2E, MAN-L | Done with exceptions (P26, D66; P26-AC6 manual Linux check open) |
 | DEC-47 | Mode restore: shuffle and repeat save with the R27 state and restore at startup | §8.47 | P27 | P27-AC1 to P27-AC3 | UT, IT, MAN-L | Done (P27; manual Linux check open) |
 | DEC-48 | Current song at startup: the Library selects the restored current song, its artist and its album; the saved selection only without a current song | §8.48 | P26 | P26-AC1, P26-AC2, P26-AC7 | UT, IT, E2E, MAN-L | Done with exceptions (P26; P26-AC6 manual Linux check open) |
+| DEC-49 | Release: one click on `main`, the portable zip only, version from the repository, release notes required; installer and Linux packages deferred | §8.49 | P28 | P28-AC1 to P28-AC3 | REV, CI | Done with exceptions (P28; P28-AC3 owner run open) |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
