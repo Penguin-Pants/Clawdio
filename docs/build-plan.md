@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.34, November 13, 2026 (requirements v1.15: P28, one-click Windows portable release, Done with exceptions).
+**Version:** 1.35, November 13, 2026 (requirements v1.16: P29, snap grid layout, Not started).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25), the v1.12 additions (P26) and the v1.13 additions (P27).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -13,7 +13,8 @@
 - Requirements v1.12 adds P26 (Library selection restore); v1.14 adds R37.9 (the current song wins). Done with exceptions: the manual Linux walkthrough P26-AC6 waits on the owner.
 - Requirements v1.13 adds P27 (shuffle and repeat restore). Done with exceptions: the manual Linux check P27-AC3 waits on the owner. P27 depends on P25, not P26: the owner asked for it first.
 - Requirements v1.15 adds P28 (one-click Windows portable release). Done with exceptions: the first release run waits on the owner.
-- The plan has 29 phases (P0 to P28). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P28 comes from requirements v1.15. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Requirements v1.16 adds P29 (snap grid layout). Not started.
+- The plan has 30 phases (P0 to P29). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P28 comes from requirements v1.15. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -101,6 +102,7 @@ A phase is Done when all of these are true:
 | P26 | Library selection restore | P25 | Done with exceptions |
 | P27 | Shuffle and repeat restore | P25 | Done with exceptions |
 | P28 | One-click Windows portable release | P27 | Done with exceptions |
+| P29 | Snap grid layout | P28 | Not started |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -3266,6 +3268,36 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 **Verification.** Script run (P28-AC1). Validation set (P28-AC2). Owner run (P28-AC3).
 
+### P29. Snap grid layout
+
+**Objective.** Replace the docking shell with the R38 snap grid, so every widget, the Library parts included, moves and resizes freely in whole cells.
+
+**Scope.** R38. R5, R28, R28.1 and R29 where R38 supersedes them. R35, R36 and R37 on the new widgets. AC-34.
+
+**Depends on.** P28.
+
+**Tasks (outline; the phase start details them).**
+
+- **P29.0** Grid engine choice: a maintained MIT grid library (for example react-grid-layout) or own code, checked against R38.4 (push, never past row 12, shrink, refuse) and R38.10 (keyboard). Measure the footprint (R20). Owner question if no library fits.
+- **P29.1** Layout model and `layout.json` version 3: widget rectangles, validation, the R38.11 migration and backup. Presets Default, Tree and Columns.
+- **P29.2** Split the Library widget into Artist, Album, Songs and Tree widgets and a Search widget, with one shared selection and search store. Move the playlist view into Songs.
+- **P29.3** The transport band as a grid widget; remove the transport position setting.
+- **P29.4** Move, resize, push and refuse with a drop preview; Lock layout; the keyboard path; the menu: show, hide, presets, Reset layout.
+- **P29.5** Remove Dockview, the frame splitters, the mode switch, tabbed and floating groups, and their tests (Edits rule 6).
+- **P29.6** Docs: `docs/design.md` layout sections, `docs/file-formats.md` (`layout.json` version 3), the release checklist.
+
+**Acceptance criteria (draft).**
+
+- **P29-AC1** Unit: the layout engine places, pushes, shrinks and refuses by R38.4 to R38.6, and never overlaps or leaves the 12 x 12 grid.
+- **P29-AC2** Unit: `layout.json` round trip; an older or invalid file backs up and loads Default; a file without Songs or Transport adds them or loads Default.
+- **P29-AC3** Playwright: drag and resize snap to cells; Default, Tree and Columns presets; the AC-34 arrangement; window resize keeps the shape; restart restores.
+- **P29-AC4** Playwright: the keyboard path moves and resizes by one cell; Lock layout stops both; focus stays visible.
+- **P29-AC5** Playwright: R35, R36 and R37 pass on the separate Artist, Album, Songs and Tree widgets; the playlist view shows in Songs.
+- **P29-AC6** Footprint: R20 still passes.
+- **P29-AC7** Manual Linux and Windows: AC-34.
+
+**Verification.** Unit (P29-AC1, P29-AC2). Playwright (P29-AC3 to P29-AC5). Measurement (P29-AC6). Manual (P29-AC7).
+
 ---
 
 ## 9. Risks
@@ -3494,6 +3526,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.35 (November 13, 2026):** requirements v1.16 (R38, AC-34, owner decision 50). Added phase P29 (Not started).
 - **1.34 (November 13, 2026):** requirements v1.15 (R21 release change, owner decision 49). Added phase P28 (Done with exceptions: the first release run is open). F-20 done. F-25 proposed.
 - **1.33 (November 12, 2026):** requirements v1.14 (R37.9, AC-33, owner decision 48). P26 Done with exceptions (P26-AC6 manual Linux walkthrough open). P26 adds P26-AC7 and a D66 note. No F3 proposal.
 - **1.32 (November 12, 2026):** requirements v1.13 (R27 modes, AC-32, owner decision 47). Added phase P27 (Done with exceptions, P27-AC3 manual Linux check open). D25 changed: the shuffle and repeat modes are saved. F-24 proposed and done (`rusqlite` 0.41.1 for RUSTSEC-2026-0459).

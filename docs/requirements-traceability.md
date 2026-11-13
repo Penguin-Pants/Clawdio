@@ -1,7 +1,7 @@
 # Clawdio Requirements Traceability
 
-**Version:** 1.27, November 13, 2026 (requirements v1.15 R21 rows and DEC-49, mapped to P28; earlier: P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
-**Plan:** `docs/build-plan.md` v1.34. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
+**Version:** 1.28, November 13, 2026 (requirements v1.16 rows for R38, AC-34 and DEC-50, mapped to P29; R5, R28, R28.1 and R29 rows stay until P29 marks them Superseded (v1.16); earlier: requirements v1.15 R21 rows and DEC-49, mapped to P28; earlier: P26 Status column filled; requirements v1.14 rows for R37.9, AC-33 and DEC-48, mapped to P26; earlier: requirements v1.13 rows for R27, E-49, AC-32 and DEC-47, all mapped to P27; earlier: requirements v1.12 rows for R37, AC-31 and DEC-46, all mapped to P26; earlier: P25 Status column filled; earlier: requirements v1.11 rows for R25, R36, AC-30 and DEC-45, all mapped to P25; earlier: P24 Status column filled; earlier: requirements v1.10 rows for R7, R9.1 to R9.3, R35, AC-28 and AC-29, all mapped to P24; DEC-38 to DEC-40 added).
+**Plan:** `docs/build-plan.md` v1.35. Task IDs (`P5.3`), criterion IDs (`P5-AC4`), decisions (`D`), conflicts (`C`), owner questions (`Q`), blockers (`B`) and risks (`K`) refer to that file.
 
 ## How to read this file
 
@@ -28,7 +28,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 | Source | Rows | Done | Open | Planned with decision or owner input | Resolved conflict | Gate | Deferred, non-goal or reference | Superseded (v1.8) | Open gap |
 |---|---|---|---|---|---|---|---|---|---|
-| Requirements | 434 | 284 | 65 | 20 | 5 | 5 | 40 | 15 | 0 |
+| Requirements | 437 | 284 | 68 | 20 | 5 | 5 | 40 | 15 | 0 |
 | design.md | 78 | 60 | 6 | 1 | 10 | 0 | 1 | 0 | 0 |
 | Branding prompt | 39 | 27 | 5 | 1 | 5 | 0 | 1 | 0 | 0 |
 | Asset manifest | 18 | 14 | 3 | 0 | 1 | 0 | 0 | 0 | 0 |
@@ -40,7 +40,7 @@ Counted from the Status cells. Open: Planned, In progress, and an automatic pass
 
 ---
 
-## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.15)
+## 1. `docs/MusicPlayer_REQUIREMENTS.md` (v1.16)
 
 Rows that the UI shell rework replaces keep their v1.7 text with the status Superseded (v1.8); section 7 holds the rows that replace them.
 
@@ -205,6 +205,7 @@ Rows that the UI shell rework replaces keep their v1.7 text with the status Supe
 | R37-7 | A saved song not in the Songs list as shown does not restore | §2 R37.7 | P26.1 | P26-AC1 | UT | Done (P26, D66) |
 | R37-8 | A restored song is a selected row for R35.2 | §2 R37.8 | P26.3 | P26-AC5 | E2E | Done (P26, D66) |
 | R37-9 | At startup a current song from the R27 restore wins: the Library selects it, its artist and its album; the saved selection applies only when no song is current (v1.14) | §2 R37.9 | P26.1, P26.2, P26.3 | P26-AC1, P26-AC2, P26-AC7 | UT, IT, E2E | Done (P26, D66) |
+| R38 | Snap grid: 12 x 12, fills and scales; every widget (Library parts, Search, Transport) moves and resizes in cells; push never past row 12, shrink or refuse; minimum sizes; presets replace modes; keyboard path; layout.json version 3 with backup | §2 R38 | P29.0 to P29.6 | P29-AC1 to P29-AC7 | UT, E2E, MEAS, MAN-L, MAN-W | Planned |
 | R34-1 | Setting "When the microphone is in use": Off, Lower volume, Pause; default Off | §2 R34.1 | P20.1, P20.4 | P20-AC1, P20-AC2, P20-AC3 | UT, E2E | Done (P20) |
 | R34-2 | Trigger: any other app records from a microphone; the app never opens it; no app names | §2 R34.2 | P20.0, P20.2 | P20-AC4, P20-AC5, P20-AC7 | UT, MAN-W | Done (P20, D54); MAN-W open |
 | R34-3 | Lower volume: percentage of the current volume; default 20%, range 5% to 90%, step 5% | §2 R34.3 | P20.1, P20.3 | P20-AC1, P20-AC2 | UT | Done (P20) |
@@ -542,6 +543,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | DEC-47 | Mode restore: shuffle and repeat save with the R27 state and restore at startup | §8.47 | P27 | P27-AC1 to P27-AC3 | UT, IT, MAN-L | Done (P27; manual Linux check open) |
 | DEC-48 | Current song at startup: the Library selects the restored current song, its artist and its album; the saved selection only without a current song | §8.48 | P26 | P26-AC1, P26-AC2, P26-AC7 | UT, IT, E2E, MAN-L | Done with exceptions (P26; P26-AC6 manual Linux check open) |
 | DEC-49 | Release: one click on `main`, the portable zip only, version from the repository, release notes required; installer and Linux packages deferred | §8.49 | P28 | P28-AC1 to P28-AC3 | REV, CI | Done with exceptions (P28; P28-AC3 owner run open) |
+| DEC-50 | Snap grid replaces the docking shell; Library parts, Search and Transport become grid widgets; tabs and floating groups removed | §8.50 | P29 | P29-AC1 to P29-AC7 | UT, E2E, MAN-L | Planned |
 | DEC-A | Default: three decode failures stop playback | §8 | P7.3 | P7-AC3 | IT | Done (P7) |
 | DEC-B | Default: sidecar file is `sidecar.json` | §8 | P14.3 | P14-AC4 | IT | Done (P14) |
 | DEC-C | Default: AC-2 uses a 100 ms redraw limit | §8 | P6.8 | P6-AC6 | MEAS | Planned |
@@ -587,6 +589,7 @@ All rows have status Deferred. No task implements them. P17 and P18 reviews conf
 | AC-31 | Selection restore: Columns rows restore in view; a missing album gives the artist and "All"; Tree opens the row's artist and album | §9.31 | P26.3, P26.4 | P26-AC3, P26-AC4, P26-AC6 | E2E, MAN-L | Done with exceptions (P26, D66; P26-AC6 manual Linux check open) |
 | AC-32 | Mode restore: shuffle on and repeat one survive a restart; both off survive a restart | §9.32 | P27.2, P27.3 | P27-AC2, P27-AC3 | IT, MAN-L | Done with exceptions (P27; P27-AC3 manual Linux check open) |
 | AC-33 | Current song at startup: the playing song, its artist and its album are selected and in view; with no current song the saved artist is selected | §9.33 | P26.3, P26.4 | P26-AC7, P26-AC6 | E2E, MAN-L | Done with exceptions (P26; P26-AC6 manual Linux check open) |
+| AC-34 | Snap grid: art top right with Songs full width below; push stops at row 12; scales with the window; restores; keyboard move and resize | §9.34 | P29.4 | P29-AC3, P29-AC4, P29-AC7 | E2E, MAN-L, MAN-W | Planned |
 
 ---
 
