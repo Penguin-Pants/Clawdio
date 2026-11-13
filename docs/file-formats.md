@@ -54,7 +54,7 @@ Rules:
 
 ## `state.json`
 
-Location: the config folder, next to `settings.json`. Source: `crates/clawdio-core/src/state.rs` and `src-tauri/src/persist.rs` (P9.1, P27, R27, D25).
+Location: the config folder, next to `settings.json`. Source: `crates/clawdio-core/src/state.rs` and `src-tauri/src/persist.rs` (P9.1, P26, P27, R27, R37, D25, D66).
 
 The app writes the file atomically, as compact JSON.
 
@@ -67,11 +67,12 @@ The app writes the file atomically, as compact JSON.
 | `volume` | integer | From 0 to 100. |
 | `shuffle` | boolean | The shuffle mode (P27). Optional: a missing or unreadable value is `false`. |
 | `repeat` | string | The repeat mode: `"off"`, `"all"` or `"one"` (P27). Optional: a missing or unreadable value is `"off"`. |
+| `librarySelection` | object or `null` | The Library selection (P26, R37): `artist` (the exact artist name), `album` (`{"artist": …, "name": …}`) and `song` (a path relative to the music folder). Each is `null` for "All" or no song. Optional: a missing or unreadable value is no selection. |
 
 Example:
 
 ```json
-{"version":1,"queue":["Artist/Album/01 Song.mp3","Artist/Album/02 Song.ogg"],"current":1,"positionMs":83000,"volume":80,"shuffle":false,"repeat":"one"}
+{"version":1,"queue":["Artist/Album/01 Song.mp3","Artist/Album/02 Song.ogg"],"current":1,"positionMs":83000,"volume":80,"shuffle":false,"repeat":"one","librarySelection":{"artist":"Artist","album":{"artist":"Artist","name":"Album"},"song":"Artist/Album/02 Song.ogg"}}
 ```
 
 Rules:
@@ -79,7 +80,9 @@ Rules:
 - Saving: 2 s after a queue or state change (play, pause, seek, track change, volume, shuffle, repeat, queue edit), and at exit with the last position. Position ticks alone do not start a save. An unchanged state is not written again.
 - At start the shuffle and repeat modes apply at once; they do not wait for the library. A file from before P27 (no mode keys) keeps its queue and starts with both modes off. The version stays `1`.
 - At start the queue comes back paused at the saved position, after the cache loads. Entries not in the library wait until the startup scan ends a complete traversal; then those still missing are dropped with no message. When the current entry went, the next remaining entry is current at position 0.
-- Nothing is saved before the restore resolves. A queue change by the user before that drops the saved queue.
+- Nothing is saved before the restore resolves. A queue change by the user before that drops the saved queue. The queue and the selection are two parts: while one part waits and the other is ready, a save writes the waiting part as the file has it.
+- The selection restores after the queue. When the restored queue has a current song, the selection is that song, its artist and its album (R37.9). Else the saved selection applies: a missing artist, album or song waits for a complete traversal, then that level and the levels below it become "All" or no song. A saved song that is not under the restored artist and album is dropped.
+- A selection change by the user before the restore drops the saved selection; the saved queue stays. A new music folder drops the saved selection, and the next save writes no selection.
 - With the music folder missing, nothing is dropped and the file is not written.
 - No file, a corrupt file or an unknown `version`: the queue starts empty; a corrupt file or an unknown version writes a warning to `app.log`.
 

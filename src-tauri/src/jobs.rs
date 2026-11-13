@@ -246,7 +246,7 @@ fn run_scan(
             crate::online::cancel(app);
             // The old folder's entries leave the player first, then the index and the cache.
             // This runs even when the scan is canceled before it starts (P5-AC13).
-            app.state::<StateStore>().new_folder();
+            app.state::<StateStore>().new_folder(app);
             app.state::<PlayerHandle>().clear();
             // The old folder's playlists go; the new folder's come with the scan (P11.10).
             if let Ok(mut playlists) = app.state::<Playlists>().0.lock() {

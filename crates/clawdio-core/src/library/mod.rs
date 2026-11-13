@@ -311,6 +311,30 @@ impl LibraryIndex {
         self.albums.get(id as usize)
     }
 
+    /// The album with this exact artist and album name, only while it has a live track: a
+    /// group whose last track went stays in the maps but is hidden from the lists (D66).
+    pub fn live_album(&self, artist: &str, album: &str) -> Option<AlbumId> {
+        let artist = *self.artist_ids.get(artist)?;
+        let id = *self.album_ids.get(&(artist, album.to_owned()))?;
+        let has_track = self.albums[id as usize]
+            .tracks
+            .iter()
+            .any(|track| self.track(*track).is_some());
+        has_track.then_some(id)
+    }
+
+    /// The artist with this exact name, only while one of its albums has a live track (D66).
+    pub fn live_artist(&self, name: &str) -> Option<ArtistId> {
+        let id = *self.artist_ids.get(name)?;
+        let has_track = self.artists[id as usize].albums.iter().any(|album| {
+            self.albums[*album as usize]
+                .tracks
+                .iter()
+                .any(|track| self.track(*track).is_some())
+        });
+        has_track.then_some(id)
+    }
+
     /// Number of live tracks.
     pub fn len(&self) -> usize {
         self.paths.len()

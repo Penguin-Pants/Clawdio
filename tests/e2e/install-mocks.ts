@@ -98,6 +98,26 @@ function backup(key: string, counter: string): null {
   return count(counter);
 }
 
+/**
+ * The saved Library selection (R37): "?restore=pending" answers pending at mount, and
+ * "?restore=1,2,3" (artist, album, song; "-" for "All" or no song) answers that selection.
+ * No parameter answers none. `window.e2eHoldRestore` holds the reply until
+ * `window.e2eReleaseRestore`. Tests read the last save in `data-selection-save`.
+ */
+function selectionRestored(): unknown {
+  const value = params.get("restore");
+  const id = (text: string | undefined) => (text === undefined || text === "-" ? null : Number(text));
+  const parts = value?.split(",");
+  const answer =
+    value === null
+      ? { kind: "none" }
+      : value === "pending"
+        ? { kind: "pending" }
+        : { kind: "selection", selection: { artist: id(parts?.[0]), album: id(parts?.[1]), song: id(parts?.[2]) } };
+  if (!window.e2eHoldRestore) return answer;
+  return new Promise((resolve) => (window.e2eReleaseRestore = () => resolve(answer)));
+}
+
 /** The settings, layout and window commands, by name. */
 const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
   settings_get: () => ({ ...settings }),
@@ -118,7 +138,12 @@ const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
     sessionStorage.setItem(LAYOUT_KEY, args.json as string);
     return count("layoutSaves");
   },
-  columns_load: () => sessionStorage.getItem(COLUMNS_KEY),
+  // `e2eHoldColumns` holds the reply until `e2eReleaseColumns` (selection-restore.spec.ts).
+  columns_load: () => {
+    const text = sessionStorage.getItem(COLUMNS_KEY);
+    if (!window.e2eHoldColumns) return text;
+    return new Promise((resolve) => (window.e2eReleaseColumns = () => resolve(text)));
+  },
   columns_save: (args) => {
     sessionStorage.setItem(COLUMNS_KEY, args.json as string);
     return count("columnsSaves");
@@ -128,6 +153,11 @@ const SETTINGS_COMMANDS: Record<string, (args: Args) => unknown> = {
   "plugin:window|destroy": () => {
     document.body.dataset.destroyed = "true";
     return null;
+  },
+  library_selection_restored: () => selectionRestored(),
+  library_selection_save: (args) => {
+    document.body.dataset.selectionSave = JSON.stringify(args.selection);
+    return count("selectionSaves");
   },
   cancel_job: () => null,
   open_log_folder: () => null,
@@ -179,8 +209,13 @@ function libraryCommand(command: string, args: Args): unknown {
     }
   }
   switch (command) {
-    case "library_artists":
-      return library.artists(args.query as string).map((artist) => artist.id);
+    case "library_artists": {
+      // `e2eArtistLimit` cuts the list; `e2eHoldArtists` holds the reply (selection-restore.spec.ts).
+      const ids = library.artists(args.query as string).map((artist) => artist.id);
+      const shown = window.e2eArtistLimit === undefined ? ids : ids.slice(0, window.e2eArtistLimit);
+      if (!window.e2eHoldArtists) return shown;
+      return new Promise((resolve) => (window.e2eReleaseArtists = () => resolve(shown)));
+    }
     case "library_artist_rows":
       return library.artistRows(args.ids as number[]);
     case "library_albums":
@@ -197,8 +232,13 @@ function libraryCommand(command: string, args: Args): unknown {
       );
     case "library_rows":
       return library.rows(args.ids as number[]);
-    case "library_tree":
-      return library.tree(args.query as string);
+    case "library_tree": {
+      // `e2eArtistLimit` and `e2eHoldArtists` act on the tree too (selection-restore.spec.ts).
+      const tree = library.tree(args.query as string);
+      const shown = window.e2eArtistLimit === undefined ? tree : tree.slice(0, window.e2eArtistLimit);
+      if (!window.e2eHoldArtists) return shown;
+      return new Promise((resolve) => (window.e2eReleaseArtists = () => resolve(shown)));
+    }
     case "album_art": {
       // Tests count the art requests (P10-AC7).
       const calls = JSON.parse(document.body.dataset.artRequests ?? "[]") as number[];

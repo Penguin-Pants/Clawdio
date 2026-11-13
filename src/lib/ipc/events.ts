@@ -1,6 +1,6 @@
 // Typed event listeners (section 6.7). Payload types come from the Rust structs (D15).
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { JobProgress, PlayerSnapshot, QueueSnapshot, SettingsView } from "./commands";
+import type { JobProgress, PlayerSnapshot, QueueSnapshot, SelectionRestore, SettingsView } from "./commands";
 
 interface EventPayloads {
   "library-changed": null;
@@ -16,6 +16,8 @@ interface EventPayloads {
   "queue-changed": QueueSnapshot;
   "player-position": number;
   "settings-changed": SettingsView;
+  /** The saved Library selection resolved, or a new music folder dropped it (R37, D66). */
+  "library-selection-restored": SelectionRestore;
 }
 
 export type EventName = keyof EventPayloads;

@@ -184,6 +184,8 @@ pub fn run() -> tauri::Result<()> {
             commands::library::library_rows,
             commands::library::library_tree,
             commands::library::library_find,
+            commands::library::library_selection_save,
+            commands::library::library_selection_restored,
             commands::art::album_art,
             commands::art::set_cover,
             commands::art::album_retry_lookup,

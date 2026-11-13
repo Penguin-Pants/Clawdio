@@ -154,6 +154,28 @@ pub struct TreeRow {
     pub id: u32,
 }
 
+/// The Library selection as ids (R37, D66): `None` is "All" (Artist, Album) or no song.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct LibrarySelectionIds {
+    pub artist: Option<u32>,
+    pub album: Option<u32>,
+    pub song: Option<u32>,
+}
+
+/// The answer to `library_selection_restored` and the `library-selection-restored` event
+/// (R37, D66): the restore still waits for the library, there is nothing to restore, or the
+/// selection to apply.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+#[ts(export)]
+pub enum SelectionRestore {
+    Pending,
+    None,
+    Selection { selection: LibrarySelectionIds },
+}
+
 /// The list of a type-to-find request (R36.1, D65): the identity the webview sends for the
 /// list's ids, or the shown tree rows. No "All" row: the webview adds its offset.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

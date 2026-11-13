@@ -1,10 +1,11 @@
 # Minimalist Open Source Music Player: Requirements
 
-**Status:** Decision-complete. Version 1.13, November 12, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes.
-**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.13.
+**Status:** Decision-complete. Version 1.14, November 12, 2026. Version 1.8 is a change list for the owner's approval (UQ4 in `docs/planning/ui-shell-rework-build-plan.md`). Version 1.9 holds two owner decisions made after the rework merged. Version 1.10 adds automatic lyrics fetch and a selection that follows the playing song. Version 1.11 adds type-to-find in lists. Version 1.12 restores the Library selection at startup. Version 1.13 saves the shuffle and repeat modes. Version 1.14 restores the Library to the current song at startup.
+**Open questions:** None. Section 8 records the owner decisions of versions 1.4 to 1.14.
 
 **How to read this file**
 - `[D]` marks a detail derived from the owner's answers. The owner did not state it. It is not yet explicitly confirmed. Change any `[D]` item freely.
+- `(v1.14)` marks an item changed or added in version 1.14 (owner decision 48 in section 8).
 - `(v1.13)` marks an item changed or added in version 1.13 (owner decision 47 in section 8).
 - `(v1.12)` marks an item changed or added in version 1.12 (owner decision 46 in section 8).
 - `(v1.11)` marks an item changed or added in version 1.11 (owner decision 45 in section 8).
@@ -173,6 +174,7 @@ The closest open source player (Strawberry) has many features the owner does not
   - **R37.6 Missing.** A saved artist, album or song that is not in the library does not restore. The levels above it restore. That level and the levels below it become "All" (Artist and Album lists) or no selection (Songs). No message. Example: the artist exists and the album is gone; the artist is selected, the Album list shows "All" and no song is selected.
   - **R37.7 Not in view.** A saved song that is in the library but not in the Songs list as shown (for example, it moved to another album) does not restore. No song is selected.
   - **R37.8 Follow.** A restored song is a selected row for R35.2, so the Songs list follows the next song change.
+  - **R37.9 Current song `(v1.14)`.** When the R27 restore has a current song, the Library selects that song, its artist and its album, and the saved selection does not apply. The saved selection applies only when no song is current. R37.3 to R37.5 and R37.8 apply to the restored song too. `[D]` A queue the user changed before the restore has no restored current song, so the saved selection applies.
 
 ### Online and sidecars
 
@@ -553,6 +555,10 @@ Version 1.13 records an owner decision made on November 12, 2026:
 
 47. **Mode restore (R27):** the shuffle and repeat modes save with the R27 state and restore at startup. This replaces the earlier rule that they are not saved.
 
+Version 1.14 records an owner decision made on November 12, 2026:
+
+48. **Current song at startup (R37.9):** when a song is current after the R27 restore, the Library selects it, its artist and its album. The saved selection (R37) applies only when no song is current.
+
 Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8 export, the R20 Milestone 0 outcome, and `(v1.6)` that Windows reports a microphone in use by another app without the app opening the microphone (R34.2).
 
 ---
@@ -591,6 +597,7 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 30. **Type-to-find `(v1.11)`:** with focus on "Chemical Brothers" in the Artist list, "z" selects the first artist that starts with Z. After a pause of more than 1 s, "zz top" typed without a 1 s pause selects "ZZ Top" and playback does not toggle. After another pause of more than 1 s, "zzx" leaves "ZZ Top" selected. The same works in each R36.1 list.
 31. **Selection restore `(v1.12)`:** in Columns mode, select an artist, one of its albums and one song, then quit and start the app. The three rows show as selected and in view, and keyboard focus is where it is at a start with no saved selection. Quit, remove that album's folder and start: the artist is selected, the Album list shows "All" and no song is selected. In Tree mode, a restored song row shows inside its opened artist and album nodes, and all other nodes are closed.
 32. **Mode restore `(v1.13)`:** turn on shuffle and set repeat to one, then quit and start the app. Shuffle is on and repeat shows one. Turn shuffle off and set repeat to off, quit and start: both show off.
+33. **Current song at startup `(v1.14)`:** play a song, select another artist, then quit and start the app. The Library selects the playing song, its artist and its album, and the song row is in view. Clear the Play queue, select an artist, quit and start: that artist is selected.
 
 ---
 
@@ -613,6 +620,8 @@ Still to verify: the R13 path base after the interop test, the R14 MusicBee M3U8
 
 ## Change log
 
+- **1.14 (November 12, 2026):** the Library shows the current song at startup, with owner decision 48 (section 8).
+  - **Added:** R37.9, acceptance check 33.
 - **1.13 (November 12, 2026):** the shuffle and repeat modes save and restore, with owner decision 47 (section 8).
   - **Changed:** R27 (the modes are saved).
   - **Added:** one edge case, acceptance check 32.

@@ -4,6 +4,7 @@ import { OnlineNoticeDialog } from "@/dialogs/OnlineNoticeDialog";
 import { PlaylistDialogs } from "@/dialogs/PlaylistDialogs";
 import { SettingsDialog } from "@/dialogs/SettingsDialog";
 import { connectAppEvents } from "@/lib/app-events";
+import { startSelectionRestore } from "@/store/selection-restore";
 import { installKeyboard } from "@/lib/keyboard";
 import { commands } from "@/lib/ipc/commands";
 import { info } from "@/lib/log";
@@ -61,10 +62,15 @@ export function App() {
   }, []);
   useEffect(() => {
     const disconnect = connectAppEvents();
+    // R37: set the restore token before the first await, so a user selection always wins.
+    const stopRestore = startSelectionRestore();
     void usePlayerStore.getState().load();
     void useSettingsStore.getState().load();
     void usePlaylistsStore.getState().load();
-    return disconnect;
+    return () => {
+      stopRestore();
+      disconnect();
+    };
   }, []);
   return (
     <TooltipProvider delay={500}>

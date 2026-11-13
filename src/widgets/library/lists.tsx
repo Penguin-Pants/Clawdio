@@ -3,7 +3,7 @@ import { VirtualList } from "@/components/virtual-list";
 import { commands, type TreeArtist } from "@/lib/ipc/commands";
 import { useCommandResult, useRowCache, useSongRows } from "@/lib/ipc/hooks";
 import { shownIndex, useTypeFind } from "@/lib/type-find";
-import { selectSongs, useLibraryStore } from "@/store/library";
+import { type LibrarySelection, selectSongs, useLibraryStore } from "@/store/library";
 import { useColumnsStore } from "@/store/columns";
 import { currentTrack, usePlayerStore } from "@/store/player";
 import { addFavorites, addToPlaylist, toggleFavorite, usePlaylistsStore } from "@/store/playlists";
@@ -187,6 +187,21 @@ function albumItems(
   );
 }
 
+/**
+ * Reveals the restored row (R37.3) once the list shows the ids of the restored selection
+ * (`ready`). Each restore is handled once per mounted list; a row that is not shown is not
+ * revealed. The reveal scrolls only: focus does not move (R37.5).
+ */
+function useRestoreReveal(ready: boolean, index: number, reveal: (index: number) => void) {
+  const seq = useLibraryStore((state) => state.restoreSeq);
+  const done = useRef(0);
+  useEffect(() => {
+    if (seq === done.current || !ready) return;
+    done.current = seq;
+    if (index >= 0) reveal(index);
+  }, [seq, ready, index, reveal]);
+}
+
 /** Artist list with an "All" row first (R28). Rows load for the visible window (D14). */
 export function ArtistList() {
   const rowHeight = useRowHeight();
@@ -206,6 +221,8 @@ export function ArtistList() {
   const select = (id: number | null) => setSelection({ artist: id, album: null, song: null });
   // R36: type-to-find; the "All" row is not a name, so a hit moves one down (D65).
   const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const revealIndex = useCallback((index: number) => setReveal({ index }), []);
+  useRestoreReveal(current, selected === null ? 0 : ids.indexOf(selected) + 1, revealIndex);
   // While new ids load, the shown ids are not the ones the query gives: no find (D65).
   const onType = useTypeFind({
     list: current ? ids : null,
@@ -224,11 +241,12 @@ export function ArtistList() {
   const items = (id: number | null) =>
     rowItems(play(id), () => addScope({ artist: id, album: null }), scopeSongs({ artist: id, album: null }));
   // A search that hides the selected artist selects "All", so no hidden row filters the lists.
+  // Only the ids of the current inputs count: older ids can miss a restored artist (R37).
   useEffect(() => {
-    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
+    if (current && ids !== NO_IDS && selected !== null && !ids.includes(selected)) {
       setSelection({ artist: null, album: null, song: null });
     }
-  }, [ids, selected, setSelection]);
+  }, [current, ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -285,6 +303,8 @@ export function AlbumList() {
   const idAt = (index: number) => (index === 0 ? null : (ids[index - 1] ?? null));
   const select = (id: number | null) => setSelection({ album: id, song: null });
   const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const revealIndex = useCallback((index: number) => setReveal({ index }), []);
+  useRestoreReveal(current, selected === null ? 0 : ids.indexOf(selected) + 1, revealIndex);
   const onType = useTypeFind({
     list: current ? ids : null,
     find: (text) =>
@@ -302,10 +322,12 @@ export function AlbumList() {
   const play = (id: number | null) => (id === null ? null : () => playScope({ artist: null, album: id }));
   const items = (id: number | null) =>
     id === null ? null : albumItems(id, row(id)?.name, play(id), () => addScope({ artist: null, album: id }));
-  // A search or an artist change that hides the selected album selects "All".
+  // A search or an artist change that hides the selected album selects "All". Only the ids of
+  // the current inputs count (R37).
   useEffect(() => {
-    if (ids !== NO_IDS && selected !== null && !ids.includes(selected)) setSelection({ album: null, song: null });
-  }, [ids, selected, setSelection]);
+    if (current && ids !== NO_IDS && selected !== null && !ids.includes(selected))
+      setSelection({ album: null, song: null });
+  }, [current, ids, selected, setSelection]);
   return (
     <div ref={listRef} className="flex min-h-0 flex-1 flex-col">
       <VirtualList
@@ -433,6 +455,8 @@ export function SongTable({ view }: { view: ViewId }) {
   });
   // R35, D63: the playing song becomes the one selected row, by track id.
   const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const revealIndex = useCallback((index: number) => setReveal({ index }), []);
+  useRestoreReveal(current, active, revealIndex);
   useFollowPlaying(
     listRef,
     () => {
@@ -566,6 +590,31 @@ export function treeLines(tree: TreeArtist[], openArtists: Set<number>, openAlbu
   return lines;
 }
 
+type SetOpen = React.Dispatch<React.SetStateAction<Set<number>>>;
+
+/**
+ * Opens the artist and album of `selection`, as a mode switch does (R28, R37.4): a song opens
+ * its artist and album, an album opens its artist and itself, an artist opens itself. Other
+ * nodes do not change.
+ */
+function openSelection(tree: TreeArtist[], selection: LibrarySelection, setArtists: SetOpen, setAlbums: SetOpen) {
+  const open = (artist: number, album: number | null) => {
+    setArtists((set) => new Set(set).add(artist));
+    if (album !== null) setAlbums((set) => new Set(set).add(album));
+  };
+  if (selection.song !== null) {
+    void commands.libraryRows([selection.song]).then(
+      ([song]) => song && open(song.artistId, song.albumId),
+      () => {},
+    );
+  } else if (selection.album !== null) {
+    const owner = tree.find((artist) => artist.albums.some((album) => album.id === selection.album));
+    if (owner) open(owner.id, selection.album);
+  } else if (selection.artist !== null) {
+    open(selection.artist, null);
+  }
+}
+
 /** One expandable artist, album and song tree (R28). Song rows load for the visible window. */
 export function TreeList() {
   const rowHeight = useRowHeight();
@@ -626,6 +675,9 @@ export function TreeList() {
   // R35, D63: a song row of an open album follows like a click on it, so a later switch to
   // Columns shows its album.
   const [reveal, setReveal] = useState<{ index: number } | null>(null);
+  const revealIndex = useCallback((index: number) => setReveal({ index }), []);
+  // The restored row shows once its nodes are open (R37.3, R37.4).
+  useRestoreReveal(current && active >= 0, active, revealIndex);
   useFollowPlaying(
     listRef,
     () => {
@@ -657,22 +709,17 @@ export function TreeList() {
   useEffect(() => {
     if (opened.current || tree === NO_TREE) return;
     opened.current = true;
-    const open = (artist: number, album: number | null) => {
-      setOpenArtists((set) => new Set(set).add(artist));
-      if (album !== null) setOpenAlbums((set) => new Set(set).add(album));
-    };
-    if (selection.song !== null) {
-      void commands.libraryRows([selection.song]).then(
-        ([song]) => song && open(song.artistId, song.albumId),
-        () => {},
-      );
-    } else if (selection.album !== null) {
-      const owner = tree.find((artist) => artist.albums.some((album) => album.id === selection.album));
-      if (owner) open(owner.id, selection.album);
-    } else if (selection.artist !== null) {
-      open(selection.artist, null);
-    }
+    openSelection(tree, selection, setOpenArtists, setOpenAlbums);
   }, [tree, selection]);
+  // A restored selection opens the same nodes (R37.4), also when the tree had loaded before.
+  // Only the tree of the current inputs counts: an older one can miss the restored album.
+  const restoreSeq = useLibraryStore((state) => state.restoreSeq);
+  const restoreOpened = useRef(0);
+  useEffect(() => {
+    if (restoreSeq === restoreOpened.current || !current || tree === NO_TREE) return;
+    restoreOpened.current = restoreSeq;
+    openSelection(tree, useLibraryStore.getState().selection, setOpenArtists, setOpenAlbums);
+  }, [current, tree, restoreSeq]);
   const onRange = useCallback(
     (start: number, end: number) =>
       request(

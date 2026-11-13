@@ -76,6 +76,10 @@ interface LibraryState {
   selectedSongs: ReadonlySet<number>;
   anchor: number | null;
   frames: LibraryFrames;
+  /** Goes up each time a saved selection restores (R37), so the shown lists reveal it. */
+  restoreSeq: number;
+  /** Applies the restored selection (R37.3): the song is the only selected song and the anchor. */
+  restoreSelection: (selection: LibrarySelection) => void;
   bumpVersion: () => void;
   setMode: (mode: LibraryMode) => void;
   setSearch: (search: string) => void;
@@ -100,6 +104,14 @@ export const useLibraryStore = create<LibraryState>()((set) => ({
   mode: "columns",
   search: "",
   selection: EMPTY_SELECTION,
+  restoreSeq: 0,
+  restoreSelection: (selection) =>
+    set((state) => ({
+      selection,
+      selectedSongs: new Set(selection.song === null ? [] : [selection.song]),
+      anchor: selection.song,
+      restoreSeq: state.restoreSeq + 1,
+    })),
   setMode: (mode) => set({ mode }),
   setSearch: (search) => set({ search }),
   // A selection change that names the song selects just that song (Artist, Album, Tree, keys).
