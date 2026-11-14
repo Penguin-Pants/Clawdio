@@ -1588,6 +1588,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 - N1: one-row widgets lost their 16 px header strip; the band gets that width back (XL at the default 1200 px window again).
 - N2: the 1.1.0 release notes describe Arrange mode: 1.1.0 is merged but not yet built or published, so it ships with P30.
+- N3: CI caught the TH-1 test at 140 % text reading the band overflow (4 px) one frame before the band took its short-row padding; the band measures itself once per frame (PF-2). The test now waits for the settled band, as the P29 TH-1 test did before P29 rewrote it.
 
 **Exceptions**
 

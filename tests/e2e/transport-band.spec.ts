@@ -182,9 +182,10 @@ for (const percent of [100, 125, 140]) {
       document.documentElement.style.fontSize = `${value}%`;
     }, percent);
     await expect.poll(async () => (await bandState(page)).height).toBeCloseTo(await cellHeight(page), 0);
-    const state = await bandState(page);
-    expect(state.overflowY).toBeLessThanOrEqual(0);
-    expect(state.oneRow).toBe(true);
+    // The band measures itself once per frame (PF-2), so its short-row padding follows the new
+    // height one frame later: wait for the settled band.
+    await expect.poll(async () => (await bandState(page)).overflowY).toBeLessThanOrEqual(0);
+    expect((await bandState(page)).oneRow).toBe(true);
   });
 }
 
