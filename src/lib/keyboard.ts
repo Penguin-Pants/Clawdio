@@ -1,5 +1,6 @@
 import { commands } from "@/lib/ipc/commands";
-import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
+import { activateWidget, focusLibrarySearch, resetLayout, toggleArrange } from "@/shell/layouts";
+import { useUiStore } from "@/store/ui";
 import { findTextActive } from "./type-find";
 
 /** Reset layout shortcut (D17, R38.8). */
@@ -12,6 +13,13 @@ function letter(event: KeyboardEvent): string {
 
 export function isResetShortcut(event: KeyboardEvent): boolean {
   return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "l";
+}
+
+/** Arrange layout shortcut (owner answer Q13). */
+export const ARRANGE_SHORTCUT_LABEL = "Ctrl+Shift+A";
+
+export function isArrangeShortcut(event: KeyboardEvent): boolean {
+  return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "a";
 }
 
 /** Ctrl+F: the Library search field (R25). */
@@ -61,11 +69,12 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
 
 /**
  * Visible widget bodies in reading order of their grid cells: top to bottom, then left to right
- * (P2.12, R38.2). A widget with no layout box is skipped.
+ * (P2.12, R38.2). A widget with no layout box is skipped. In Arrange mode the bodies are inert and
+ * the covers take their place (R25, owner answer Q13).
  */
 export function widgetRegions(root: ParentNode = document): HTMLElement[] {
   return (
-    [...root.querySelectorAll<HTMLElement>("[data-widget]")]
+    [...root.querySelectorAll<HTMLElement>("[data-widget], [data-arrange]")]
       .map((element) => ({
         element,
         rect: (element.closest("[data-grid-item]") ?? element).getBoundingClientRect(),
@@ -98,13 +107,23 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
     resetLayout();
     return true;
   }
+  if (isArrangeShortcut(event) && !inMenuOrDialog(event.target)) {
+    toggleArrange();
+    return true;
+  }
+  // Esc ends Arrange mode; a running drag takes Esc first and cancels only the drag.
+  if (event.key === "Escape" && useUiStore.getState().arranging && !inMenuOrDialog(event.target)) {
+    toggleArrange();
+    return true;
+  }
   if (isSearchShortcut(event) && !inMenuOrDialog(event.target)) {
     return focusLibrarySearch(doc);
   }
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
     const region = nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey);
     // The widget becomes the active one, so the Layout menu acts on it (R38.10).
-    if (region?.dataset.widget) activateWidget(region.dataset.widget);
+    const id = region?.dataset.widget ?? region?.dataset.arrange;
+    if (id) activateWidget(id);
     region?.focus();
     return true;
   }

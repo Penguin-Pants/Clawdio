@@ -2,7 +2,7 @@
 // scale with the window, restore after a restart, and the keyboard path.
 import type { Page } from "@playwright/test";
 import { PRESETS } from "../../src/shell/presets";
-import { center, expect, gridItem, header, layoutOf, openApp, openMenu, closeMenu, test } from "./test-base";
+import { center, cover, expect, gridItem, layoutOf, openApp, openMenu, startArranging, test } from "./test-base";
 
 const DEFAULT = PRESETS.default.layout;
 
@@ -24,7 +24,7 @@ async function dragTo(page: Page, from: { x: number; y: number }, to: { x: numbe
 /** Drags a widget's header so its top left cell moves by (dx, dy) cells. */
 async function moveBy(page: Page, id: string, dx: number, dy: number) {
   const size = await cell(page);
-  const from = await center(header(page, id));
+  const from = await center(cover(page, id));
   await dragTo(page, from, { x: from.x + dx * size.w, y: from.y + dy * size.h });
   await page.mouse.up();
 }
@@ -42,6 +42,7 @@ function valid(layout: Record<string, { x: number; y: number; w: number; h: numb
 test.beforeEach(async ({ page }) => {
   await openApp(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.e2e))).toBe(true);
+  await startArranging(page);
 });
 
 test("R38.1: the grid fills the area between the header and the status line, and the page does not scroll", async ({
@@ -58,9 +59,14 @@ test("R38.1: the grid fills the area between the header and the status line, and
   expect(Math.abs((songs?.height ?? 0) - 6 * size.h)).toBeLessThanOrEqual(2);
 });
 
-test("R38.4: a header drag shows the target cells and snaps the widget to them", async ({ page }) => {
+test("R38.4, Q14: a drag anywhere on a widget shows the target cells and snaps the widget to them", async ({
+  page,
+}) => {
   const size = await cell(page);
-  const from = await center(header(page, "artist"));
+  // Not the title: a point in the lower part of the widget.
+  const box = await cover(page, "artist").boundingBox();
+  if (!box) throw new Error("no cover");
+  const from = { x: box.x + box.width / 2, y: box.y + box.height * 0.75 };
   await dragTo(page, from, { x: from.x + 1.2 * size.w, y: from.y });
   const preview = page.locator("[data-grid-preview]");
   await expect(preview).toHaveAttribute("data-grid-preview", "allowed");
@@ -101,7 +107,7 @@ test("R38.4: a drop that does not fit shows a red preview and changes nothing", 
   );
   const before = await layoutOf(page);
   const size = await cell(page);
-  const from = await center(header(page, "album"));
+  const from = await center(cover(page, "album"));
   // Album (2 x 11) onto Songs: Songs and Artist would pass row 12.
   await dragTo(page, from, { x: from.x + 4 * size.w, y: from.y });
   await expect(page.locator("[data-grid-preview]")).toHaveAttribute("data-grid-preview", "refused");
@@ -153,48 +159,115 @@ test("AC-34: art top right, Songs full width below, Album onto Artist, then resi
   expect(await layoutOf(page)).toEqual(layout);
 });
 
-test("R38.10: Alt+arrow keys move and Alt+Shift+arrow keys resize the focused widget by one cell", async ({ page }) => {
-  const nowPlaying = header(page, "nowPlaying");
+test("R38.10: arrow keys move and Shift+arrow keys resize the focused widget by one cell", async ({ page }) => {
+  const nowPlaying = cover(page, "nowPlaying");
   await nowPlaying.focus();
-  await page.keyboard.press("Alt+ArrowDown");
+  await page.keyboard.press("ArrowDown");
   expect((await layoutOf(page)).nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 5 });
-  await page.keyboard.press("Alt+Shift+ArrowUp");
+  await page.keyboard.press("Shift+ArrowUp");
   expect((await layoutOf(page)).nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 4 });
+  // Alt may be held too.
   await page.keyboard.press("Alt+ArrowLeft");
   expect((await layoutOf(page)).nowPlaying).toMatchObject({ x: 8, y: 2 });
   expect(valid(await layoutOf(page))).toBe(true);
-  // The header keeps the focus and shows it.
+  // The cover keeps the focus and shows it.
   await expect(nowPlaying).toBeFocused();
   const outline = await nowPlaying.evaluate((element) => getComputedStyle(element).outlineStyle);
   expect(outline).not.toBe("none");
 });
 
+test("Q14: every widget has 12 px edges and 20 px corners on all sides, and the left and top resize", async ({
+  page,
+}) => {
+  for (const handle of ["n", "s", "e", "w", "ne", "nw", "se", "sw"]) {
+    await expect(cover(page, "album").locator(`[data-resize='${handle}']`)).toHaveCount(1);
+  }
+  const edge = await cover(page, "album").locator("[data-resize='w']").boundingBox();
+  const corner = await cover(page, "album").locator("[data-resize='nw']").boundingBox();
+  expect(edge?.width).toBe(12);
+  expect(corner?.width).toBe(20);
+  const size = await cell(page);
+  // The Album left edge one cell right: Album is one cell narrower and keeps its right side.
+  const from = await center(cover(page, "album").locator("[data-resize='w']"));
+  await dragTo(page, from, { x: from.x + size.w, y: from.y });
+  await page.mouse.up();
+  expect((await layoutOf(page)).album).toEqual({ x: 6, y: 2, w: 3, h: 4 });
+  // The Now playing top left corner one cell down: one row shorter, the bottom stays.
+  const nw = await center(cover(page, "nowPlaying").locator("[data-resize='nw']"));
+  await dragTo(page, nw, { x: nw.x, y: nw.y + size.h });
+  await page.mouse.up();
+  expect((await layoutOf(page)).nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 4 });
+});
+
 test("R38.10: the menu moves and resizes the active widget", async ({ page }) => {
   await gridItem(page, "nowPlaying").click({ position: { x: 20, y: 40 } });
   await openMenu(page);
-  await page.getByRole("menuitem", { name: "Arrange Now playing" }).click();
+  await page.getByRole("menuitem", { name: "Move or resize Now playing" }).click();
   await page.getByRole("menuitem", { name: "Move down" }).click();
   await expect(page.getByRole("menu")).toHaveCount(0);
   expect((await layoutOf(page)).nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 5 });
   await openMenu(page);
-  await page.getByRole("menuitem", { name: "Arrange Now playing" }).click();
+  await page.getByRole("menuitem", { name: "Move or resize Now playing" }).click();
   await page.getByRole("menuitem", { name: "Shorter" }).click();
   await expect(page.getByRole("menu")).toHaveCount(0);
   expect((await layoutOf(page)).nowPlaying).toEqual({ x: 9, y: 2, w: 3, h: 4 });
 });
 
-test("R38.9: Lock layout stops header drags, resize handles and the keyboard path", async ({ page }) => {
-  await openMenu(page);
-  await page.getByRole("menuitemcheckbox", { name: "Lock layout" }).click();
-  await closeMenu(page);
-  await expect(page.locator("[data-resize]")).toHaveCount(0);
-  await moveBy(page, "nowPlaying", -2, 0);
-  await header(page, "nowPlaying").focus();
-  await page.keyboard.press("Alt+ArrowDown");
-  await page.keyboard.press("Alt+Shift+ArrowUp");
+test("Q13: outside Arrange mode nothing moves; Esc ends Arrange mode and the lists work", async ({ page }) => {
+  // The widget bodies take no input in Arrange mode.
+  await expect(gridItem(page, "songs").locator("section")).toHaveAttribute("inert", "");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(0);
+  await expect(page.locator("[data-arrange], [data-resize]")).toHaveCount(0);
+  await expect(gridItem(page, "songs").locator("section")).not.toHaveAttribute("inert", "");
+  const box = await gridItem(page, "nowPlaying").boundingBox();
+  if (!box) throw new Error("no item");
+  await dragTo(page, { x: box.x + box.width / 2, y: box.y + 12 }, { x: box.x - 300, y: box.y + 200 });
+  await page.mouse.up();
   expect(await layoutOf(page)).toEqual(DEFAULT);
-  // Lists still scroll.
-  const songs = gridItem(page, "songs").getByRole("grid", { name: "Songs" });
-  await expect(songs).toBeVisible();
-  await expect(header(page, "nowPlaying")).toBeFocused();
+  await expect(gridItem(page, "songs").getByRole("grid", { name: "Songs" })).toBeVisible();
+});
+
+test("Q14: a one-row widget keeps usable side handles at 800 x 560 and 125 % text", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 560 });
+  await page.evaluate(() => (document.documentElement.style.fontSize = "125%"));
+  for (const id of ["search", "transport"]) {
+    const box = async (handle: string) => cover(page, id).locator(`[data-resize='${handle}']`).boundingBox();
+    const [edge, top, bottom] = [await box("e"), await box("ne"), await box("se")];
+    // The part of the right edge that the corners do not cover.
+    const exposed = (edge?.height ?? 0) - (top?.height ?? 0) - (bottom?.height ?? 0);
+    expect(exposed, `${id} right edge`).toBeGreaterThanOrEqual(12);
+    // A drag in the middle of the right edge resizes.
+    const middle = await center(cover(page, id).locator("[data-resize='e']"));
+    const hit = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-resize]")?.getAttribute("data-resize"),
+      middle,
+    );
+    expect(hit).toBe("e");
+  }
+});
+
+test("Q13: ending Arrange mode during a drag cancels the drag", async ({ page }) => {
+  const from = await center(cover(page, "nowPlaying"));
+  await dragTo(page, from, { x: from.x - 200, y: from.y + 100 });
+  await expect(page.locator("[data-grid-preview]")).toHaveCount(1);
+  await page.keyboard.press("Control+Shift+A");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(0);
+  await expect(page.locator("[data-grid-preview]")).toHaveCount(0);
+  await expect(gridItem(page, "nowPlaying")).not.toHaveClass(/opacity-60/);
+  await page.mouse.up();
+  expect(await layoutOf(page)).toEqual(DEFAULT);
+});
+
+test("R25, Q13: F6 moves between the covers in Arrange mode", async ({ page }) => {
+  await page.keyboard.press("F6");
+  await expect(page.locator(":focus")).toHaveAttribute("data-arrange", "transport");
+  await page.keyboard.press("F6");
+  await expect(page.locator(":focus")).toHaveAttribute("data-arrange", "playlists");
+});
+
+test("R25, Q13: Ctrl+F in Arrange mode ends it and focuses the search field", async ({ page }) => {
+  await page.keyboard.press("Control+f");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(0);
+  await expect(page.locator('[data-widget="search"] input[type="search"]')).toBeFocused();
 });

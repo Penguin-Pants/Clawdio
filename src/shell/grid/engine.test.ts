@@ -6,6 +6,7 @@ import {
   type MinSize,
   type Rect,
   clampRect,
+  draggedRect,
   firstFree,
   hide,
   isValidLayout,
@@ -92,6 +93,24 @@ describe("snap grid engine (R38.4 to R38.7, P29-AC1)", () => {
     expect(resizeTo(layout, "songs", 9, 2, minOf)?.songs).toEqual({ x: 8, y: 0, w: 4, h: 2 });
     const taller = resizeTo(layout, "songs", 3, 3, minOf) as Layout;
     expect(taller.b).toEqual({ x: 8, y: 3, w: 2, h: 2 });
+  });
+
+  it("resizes from every edge and corner, keeping the opposite side (owner answer Q14)", () => {
+    const start = { x: 4, y: 4, w: 4, h: 4 };
+    const min = { w: 2, h: 2 };
+    expect(draggedRect(start, "e", 2, 9, min)).toEqual({ x: 4, y: 4, w: 6, h: 4 });
+    expect(draggedRect(start, "w", -2, 0, min)).toEqual({ x: 2, y: 4, w: 6, h: 4 });
+    expect(draggedRect(start, "n", 0, -3, min)).toEqual({ x: 4, y: 1, w: 4, h: 7 });
+    expect(draggedRect(start, "s", 0, 1, min)).toEqual({ x: 4, y: 4, w: 4, h: 5 });
+    expect(draggedRect(start, "nw", -1, -1, min)).toEqual({ x: 3, y: 3, w: 5, h: 5 });
+    expect(draggedRect(start, "ne", 1, -1, min)).toEqual({ x: 4, y: 3, w: 5, h: 5 });
+    expect(draggedRect(start, "sw", -1, 1, min)).toEqual({ x: 3, y: 4, w: 5, h: 5 });
+    expect(draggedRect(start, "se", 1, 1, min)).toEqual({ x: 4, y: 4, w: 5, h: 5 });
+    // Past the minimum the far side stays; past the grid edge the size stops at the edge.
+    expect(draggedRect(start, "w", 5, 0, min)).toEqual({ x: 6, y: 4, w: 2, h: 4 });
+    expect(draggedRect(start, "n", 0, -9, min)).toEqual({ x: 4, y: 0, w: 4, h: 8 });
+    expect(draggedRect(start, "se", 9, 9, min)).toEqual({ x: 4, y: 4, w: 8, h: 8 });
+    expect(draggedRect(start, "move", 9, -9, min)).toEqual({ x: 8, y: 0, w: 4, h: 4 });
   });
 
   it("clamps a dragged rectangle into the grid", () => {

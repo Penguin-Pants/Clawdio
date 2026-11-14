@@ -16,7 +16,7 @@ const DEFAULT = PRESETS.default.layout;
 const COLUMNS = PRESETS.columns.layout;
 
 const file = (widgets: unknown, extra: Record<string, unknown> = {}) =>
-  JSON.stringify({ version: LAYOUT_VERSION, locked: false, widgets, ...extra });
+  JSON.stringify({ version: LAYOUT_VERSION, widgets, ...extra });
 
 beforeEach(() => {
   resetLayout();
@@ -26,14 +26,12 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("layout.json version 3 (R38.11, P29-AC2)", () => {
-  it("round trips the widgets, the lock and the band slots", () => {
+  it("round trips the widgets and the band slots", () => {
     useGridStore.setState({ layout: COLUMNS });
-    useUiStore.getState().setLocked(true);
     const text = JSON.stringify(currentLayout());
     resetLayout();
     expect(restoreLayout(text, vi.fn())).toBe(true);
     expect(useGridStore.getState().layout).toEqual(COLUMNS);
-    expect(useUiStore.getState().locked).toBe(true);
     expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
   });
 
@@ -49,7 +47,7 @@ describe("layout.json version 3 (R38.11, P29-AC2)", () => {
       "playlists",
       "nowPlaying",
     ]);
-    expect(Object.keys(saved).sort()).toEqual(["locked", "transportSlots", "version", "widgets"]);
+    expect(Object.keys(saved).sort()).toEqual(["transportSlots", "version", "widgets"]);
   });
 
   it.each([
@@ -92,12 +90,12 @@ describe("layout.json version 3 (R38.11, P29-AC2)", () => {
     expect(isValidLayout(parsed.layout.widgets, minOf)).toBe(true);
   });
 
-  it("takes defaults for a bad lock or band slots, with warnings", () => {
-    const parsed = parseLayout(file(DEFAULT, { locked: "yes", transportSlots: 4 }));
+  it("ignores the old locked key and takes default band slots for a bad value, with a warning", () => {
+    const parsed = parseLayout(file(DEFAULT, { locked: true, transportSlots: 4 }));
     if (!("layout" in parsed)) throw new Error(parsed.reason);
-    expect(parsed.layout.locked).toBe(false);
+    expect(parsed.layout).not.toHaveProperty("locked");
     expect(parsed.layout.transportSlots).toEqual(DEFAULT_SLOTS);
-    expect(parsed.warnings.length).toBeGreaterThanOrEqual(2);
+    expect(parsed.warnings).toHaveLength(1);
   });
 
   it("saves 500 ms after a change, and at once on flush", async () => {
@@ -109,7 +107,6 @@ describe("layout.json version 3 (R38.11, P29-AC2)", () => {
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
     expect(save).toHaveBeenCalledOnce();
     expect(JSON.parse(save.mock.calls[0][0] as string).widgets).toEqual(COLUMNS);
-    useUiStore.getState().setLocked(true);
     await watcher.flush();
     expect(save).toHaveBeenCalledTimes(2);
     watcher.dispose();

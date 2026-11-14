@@ -57,9 +57,9 @@ describe("ui store (P2.7, D18)", () => {
     expect(useUiStore.getState().job).toBeNull();
   });
 
-  it("sets the lock (R38.9)", () => {
-    useUiStore.setState({ locked: false });
-    useUiStore.getState().setLocked(true);
-    expect(useUiStore.getState().locked).toBe(true);
+  it("sets Arrange mode (owner answer Q13)", () => {
+    useUiStore.setState({ arranging: false });
+    useUiStore.getState().setArranging(true);
+    expect(useUiStore.getState().arranging).toBe(true);
   });
 });

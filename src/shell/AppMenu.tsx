@@ -20,7 +20,7 @@ import { useColumnsStore } from "@/store/columns";
 import { useSettingsStore } from "@/store/settings";
 import { useUiStore } from "@/store/ui";
 import { commands } from "@/lib/ipc/commands";
-import { RESET_SHORTCUT_LABEL } from "@/lib/keyboard";
+import { ARRANGE_SHORTCUT_LABEL, RESET_SHORTCUT_LABEL } from "@/lib/keyboard";
 import {
   activeWidget,
   applyPreset,
@@ -28,6 +28,7 @@ import {
   resetLayout,
   resizeWidgetBy,
   setWidgetVisible,
+  toggleArrange,
   useGridStore,
 } from "./layouts";
 import { setMiniPlayer } from "./mini";
@@ -47,7 +48,7 @@ const ARRANGE: { label: string; run: (id: WidgetId) => void }[] = [
 ];
 
 /**
- * The menu button (P2.6, R5, R38): View (every widget, show and hide), Layout (the presets, Lock
+ * The menu button (P2.6, R5, R38): View (every widget, show and hide), Layout (the presets, Arrange
  * layout, move and resize of the active widget, the transport bar items, Reset layout), Settings
  * and Rescan.
  */
@@ -57,8 +58,7 @@ export function AppMenu() {
   const openDialog = useUiStore((state) => state.openDialog);
   const density = useColumnsStore((state) => state.density);
   const setDensity = useColumnsStore((state) => state.setDensity);
-  const locked = useUiStore((state) => state.locked);
-  const setLocked = useUiStore((state) => state.setLocked);
+  const arranging = useUiStore((state) => state.arranging);
   const hasFolder = useSettingsStore((state) => state.view.folderState === "ready");
   // The tooltip would cover the open menu, so it is off while the menu shows.
   const [open, setOpen] = useState(false);
@@ -108,12 +108,14 @@ export function AppMenu() {
               {PRESETS[id].title}
             </DropdownMenuItem>
           ))}
-          <DropdownMenuCheckboxItem checked={locked} onCheckedChange={(checked) => setLocked(checked)}>
-            Lock layout
+          {/* Arrange mode (owner answer Q13): the only state in which widgets move or resize. */}
+          <DropdownMenuCheckboxItem checked={arranging} onCheckedChange={() => toggleArrange()}>
+            Arrange layout
+            <DropdownMenuShortcut>{ARRANGE_SHORTCUT_LABEL}</DropdownMenuShortcut>
           </DropdownMenuCheckboxItem>
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger disabled={active === null || locked}>
-              {active === null ? "Arrange widget" : `Arrange ${WIDGETS[active].title}`}
+            <DropdownMenuSubTrigger disabled={active === null || !arranging}>
+              {active === null ? "Move or resize widget" : `Move or resize ${WIDGETS[active].title}`}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               {ARRANGE.map((step) => (

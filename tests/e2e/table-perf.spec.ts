@@ -3,7 +3,7 @@
 // table scrolls, sorts, resizes a column and the dock resizes. The mock stands in for the Rust
 // index: it sorts once per key set, so the gaps measure the webview, not the mock (UK4).
 import type { Page } from "@playwright/test";
-import { center, drag, expect, SONG_ROWS, songsGrid, test, widget } from "./test-base";
+import { center, drag, expect, SONG_ROWS, songsGrid, test, widget, startArranging } from "./test-base";
 
 const SIZE = 50_000;
 /**
@@ -91,7 +91,8 @@ test("TB-1 and PF-3: 50,000 rows scroll, sort and resize without a long frame", 
   await drag(page, from, { x: from.x + 60, y: from.y });
   // A grid resize: the Songs widget two cells narrower (R38.5).
   await phase(page, "grid");
-  const edge = page.locator("[data-grid-item='songs'] [data-resize='e']");
+  await startArranging(page);
+  const edge = page.locator("[data-arrange='songs'] [data-resize='e']");
   const at = await center(edge);
   await drag(page, at, { x: at.x - 200, y: at.y });
   await expect.poll(() => page.evaluate(() => window.e2e.layout().songs.w)).toBeLessThan(10);

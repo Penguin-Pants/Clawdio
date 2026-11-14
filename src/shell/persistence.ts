@@ -17,8 +17,6 @@ export const SAVE_DELAY_MS = 500;
 /** The saved object: no window size (P9-AC8). */
 export interface SavedLayout {
   version: number;
-  /** Lock layout (R38.9). */
-  locked: boolean;
   /** The band slot order and hidden set (UD20). Optional in the file: none gives the defaults. */
   transportSlots: TransportSlots;
   /** The shown widgets and their cells, 0-based from the top left (R38.2). */
@@ -47,7 +45,8 @@ export type Rejected = { reason: string; version?: number };
  * Checks a saved layout (R38.11): it must parse, have version 3 and a `widgets` object whose
  * rectangles are whole cells inside the grid, at least the widget minimum and without overlap.
  * Unknown widget ids are ignored with a warning. A missing Songs or Transport controls is added
- * where it fits; when it does not fit the file is rejected. A bad `locked` or `transportSlots`
+ * where it fits; when it does not fit the file is rejected. A `locked` key (Lock layout, removed by
+ * owner answer Q13) is ignored. A bad `transportSlots`
  * value takes its default with a warning.
  */
 export function parseLayout(text: string): { layout: SavedLayout; warnings: string[] } | Rejected {
@@ -81,12 +80,9 @@ export function parseLayout(text: string): { layout: SavedLayout; warnings: stri
     warnings.push(`the ${id} widget was missing; added`);
     widgets = next;
   }
-  let locked = false;
-  if (typeof value.locked === "boolean") locked = value.locked;
-  else warnings.push(`invalid locked ${JSON.stringify(value.locked)}; using unlocked`);
   const slots = parseSlots(value.transportSlots);
   warnings.push(...slots.warnings);
-  return { layout: { version: LAYOUT_VERSION, locked, transportSlots: slots.slots, widgets }, warnings };
+  return { layout: { version: LAYOUT_VERSION, transportSlots: slots.slots, widgets }, warnings };
 }
 
 /**
@@ -109,7 +105,6 @@ export function restoreLayout(
   for (const warning of parsed.warnings) log.warn(`layout: ${warning}`);
   const { layout } = parsed;
   useGridStore.setState({ layout: layout.widgets });
-  useUiStore.getState().setLocked(layout.locked);
   useUiStore.getState().setTransportSlots(layout.transportSlots);
   return true;
 }
@@ -120,11 +115,11 @@ export function currentLayout(): SavedLayout {
   const { layout } = useGridStore.getState();
   const widgets: Record<string, Rect> = {};
   for (const id of WIDGET_IDS) if (layout[id]) widgets[id] = layout[id];
-  return { version: LAYOUT_VERSION, locked: ui.locked, transportSlots: ui.transportSlots, widgets };
+  return { version: LAYOUT_VERSION, transportSlots: ui.transportSlots, widgets };
 }
 
 /**
- * Saves the layout 500 ms after each change of the widgets, the lock or the band slots (P9.3).
+ * Saves the layout 500 ms after each change of the widgets or the band slots (P9.3).
  * `flush` writes the current layout at once, for the window close request.
  */
 export function watchLayout(save: (json: string) => Promise<void> = (json) => commands.layoutSave(json)): {
@@ -153,7 +148,7 @@ export function watchLayout(save: (json: string) => Promise<void> = (json) => co
     if (state.layout !== previous.layout) schedule();
   });
   const uiChange = useUiStore.subscribe((state, previous) => {
-    if (state.locked !== previous.locked || state.transportSlots !== previous.transportSlots) schedule();
+    if (state.transportSlots !== previous.transportSlots) schedule();
   });
   return {
     flush: () => write(true),

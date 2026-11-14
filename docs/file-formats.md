@@ -97,7 +97,6 @@ On load, a file that fails validation is renamed to `layout.json.bak` (an older 
 | Key | Type | Meaning |
 |---|---|---|
 | `version` | integer | Schema version, `3` (R38.11). |
-| `locked` | boolean | Lock layout (R38.9). Another value loads as `false` with a log line. |
 | `transportSlots` | object | Optional (TR-10, UD20). The band slot `order` (array of `previous`, `playPause`, `next`, `nowPlaying`, `seek`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) and the `hidden` slots. `previous`, `playPause` and `next` stay together in that order (a split group joins at its first slot); `playPause` cannot be hidden. A file without it loads the default order (`nowPlaying`, `seek`, `previous`, `playPause`, `next`, `stop`, `shuffle`, `repeat`, `volume`, `queue`, `search`) with `search` hidden. A file that holds the default order from before requirements v1.9 (`previous` first) loads the new default. |
 | `widgets` | object | The shown widgets by id, each a rectangle of whole cells `{ "x", "y", "w", "h" }` in the 12 x 12 grid, 0-based from the top left (R38.2). Ids: `transport`, `search`, `artist`, `album`, `songs`, `tree`, `playlists`, `queue`, `lyrics`, `nowPlaying`. A widget that is not in the object is hidden. |
 
@@ -108,7 +107,6 @@ Example (the Default preset):
 ```json
 {
   "version": 3,
-  "locked": false,
   "transportSlots": {
     "order": ["nowPlaying", "seek", "previous", "playPause", "next", "stop", "shuffle", "repeat", "volume", "queue", "search"],
     "hidden": ["search"]
@@ -127,14 +125,14 @@ Example (the Default preset):
 
 Rules (R38.11), each with one warning in `app.log`:
 
-1. Not JSON, not an object, another `version`, or no `widgets` object: the file is backed up and Reset layout applies (Default, unlocked, the default band slots).
+1. Not JSON, not an object, another `version`, or no `widgets` object: the file is backed up and Reset layout applies (Default and the default band slots).
 2. A widget id this version does not know: it is ignored; the rest loads.
 3. A rectangle that is not exactly four whole numbers, leaves the grid, is smaller than the widget minimum (R38.6) or overlaps another widget: the file is backed up and Reset layout applies.
 4. No `songs` or no `transport`: the widget is added where it fits (as a show, R38.7). When it does not fit, the file is backed up and Reset layout applies.
-5. A bad `locked` value: `false`; the rest loads.
+5. A `locked` key (Lock layout, removed by owner answer Q13) is ignored. Arrange mode is not saved.
 6. `transportSlots`: an unknown slot id is dropped with one warning and a missing slot goes at the end. A hidden `playPause`, or a value that is not an object with `order` and `hidden` arrays, gives the default slots with one warning. The rest loads.
 
-Saving: 500 ms after a widget, lock or band slot change, and at once when the window closes. The mini player (TR-9) is not saved: the app always starts in the normal window. The measurement layout (P3.1) is not saved.
+Saving: 500 ms after a widget or band slot change, and at once when the window closes. The mini player (TR-9) is not saved: the app always starts in the normal window. The measurement layout (P3.1) is not saved.
 
 ## `columns.json`
 

@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as layouts from "@/shell/layouts";
-import { handleGlobalKey, handleSpace, isResetShortcut, isSearchShortcut, nextRegion, widgetRegions } from "./keyboard";
+import { useUiStore } from "@/store/ui";
+import {
+  handleGlobalKey,
+  handleSpace,
+  isArrangeShortcut,
+  isResetShortcut,
+  isSearchShortcut,
+  nextRegion,
+  widgetRegions,
+} from "./keyboard";
 
 function key(init: KeyboardEventInit & { target?: EventTarget }) {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
@@ -40,6 +49,14 @@ describe("isResetShortcut (D17)", () => {
   });
 });
 
+describe("isArrangeShortcut (owner answer Q13)", () => {
+  it("matches Ctrl+Shift+A by the typed letter", () => {
+    expect(isArrangeShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyA", key: "A" }))).toBe(true);
+    expect(isArrangeShortcut(key({ ctrlKey: true, code: "KeyA", key: "a" }))).toBe(false);
+    expect(isArrangeShortcut(key({ ctrlKey: true, shiftKey: true, altKey: true, code: "KeyA", key: "A" }))).toBe(false);
+  });
+});
+
 describe("isSearchShortcut (R25)", () => {
   it("matches Ctrl+F by the typed letter", () => {
     expect(isSearchShortcut(key({ ctrlKey: true, code: "KeyF", key: "f" }))).toBe(true);
@@ -70,6 +87,19 @@ describe("widgetRegions (P2.12)", () => {
     dock.append(library);
     document.body.append(dock);
     expect(widgetRegions()).toEqual([transport]);
+  });
+
+  it("in Arrange mode cycles through the covers, since the bodies are inert (R25, Q13)", () => {
+    const [songs] = regions([["songs", 0, 0]]);
+    songs.setAttribute("inert", "");
+    const cover = document.createElement("div");
+    cover.dataset.arrange = "songs";
+    cover.tabIndex = 0;
+    cover.getBoundingClientRect = () => ({ top: 0, left: 0, width: 100, height: 50 }) as DOMRect;
+    document.body.append(cover);
+    expect(widgetRegions()).toEqual([cover]);
+    expect(handleGlobalKey(key({ key: "F6" }))).toBe(true);
+    expect(document.activeElement).toBe(cover);
   });
 });
 
@@ -114,6 +144,16 @@ describe("handleGlobalKey", () => {
     const reset = vi.spyOn(layouts, "resetLayout").mockImplementation(() => {});
     expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "L" }))).toBe(true);
     expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("toggles Arrange mode on Ctrl+Shift+A, and Esc leaves it", () => {
+    useUiStore.setState({ arranging: false });
+    expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyA", key: "A" }))).toBe(true);
+    expect(useUiStore.getState().arranging).toBe(true);
+    expect(handleGlobalKey(key({ key: "Escape" }))).toBe(true);
+    expect(useUiStore.getState().arranging).toBe(false);
+    // Outside Arrange mode Esc belongs to the focused control.
+    expect(handleGlobalKey(key({ key: "Escape" }))).toBe(false);
   });
 
   it("moves focus on F6 and back on Shift+F6", () => {

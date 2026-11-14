@@ -116,12 +116,13 @@ The palette has pairs that fail WCAG 2.2 contrast. These rules (plan decision D1
 |---|---|---|
 | Widget body | | `colors.bg.surface` |
 | Cell gaps and empty cells | | `colors.border.default` |
-| Widget header, 24 px high (a 16 px strip at the left of a one-row widget) | | bottom (or right) border `colors.border.default` |
+| Widget title row, 24 px high (none on a one-row widget) | | bottom border `colors.border.default` |
 | Widget title | | `colors.text.secondary` |
-| Drag grip | Unlocked | `colors.text.muted`; hidden while the layout is locked |
+| Arrange cover (owner answer Q13) | Arrange mode | `colors.bg.canvas` at 80 %, 2 px inset ring `colors.border.strong`; grip and name (`colors.text.secondary`, `colors.text.primary`) on a `colors.bg.elevated` label |
+| Resize handle mark | Arrange mode | `colors.text.secondary`: a 4 x 32 px bar on each edge, a 10 px dot in each corner |
 | Drop preview | Allowed | 2 px dashed `colors.text.secondary` outline, 10 % fill |
 | Drop preview | Refused | 2 px `colors.brand.red` outline, 20 % fill |
-| Focus ring on a header | Keyboard focus | 2 px `colors.brand.red`, drawn inside the header |
+| Focus ring on an Arrange cover | Keyboard focus | 2 px `colors.brand.red`, drawn inside the cover |
 
 Red shows in the grid only on a refused drop preview and on focus rings.
 

@@ -2,7 +2,19 @@
 // a drag.
 import type { Page } from "@playwright/test";
 import { PRESETS } from "../../src/shell/presets";
-import { closeMenu, drag, center, expect, header, layoutOf, openApp, openMenu, test, widget } from "./test-base";
+import {
+  closeMenu,
+  drag,
+  center,
+  expect,
+  cover,
+  layoutOf,
+  openApp,
+  openMenu,
+  test,
+  widget,
+  startArranging,
+} from "./test-base";
 
 async function menuItem(page: Page, name: string) {
   await openMenu(page);
@@ -40,7 +52,8 @@ test("R38.8: each preset applies its cells", async ({ page }) => {
 
 test("R38.8: Reset layout after a drag restores Default", async ({ page }) => {
   await openApp(page);
-  const from = await center(header(page, "nowPlaying"));
+  await startArranging(page);
+  const from = await center(cover(page, "nowPlaying"));
   await drag(page, from, { x: from.x - 300, y: from.y + 150 });
   expect(await layoutOf(page)).not.toEqual(PRESETS.default.layout);
   await menuItem(page, "Reset layout Ctrl+Shift+L");

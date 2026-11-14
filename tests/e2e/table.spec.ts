@@ -303,6 +303,10 @@ test("AX-1: the header works by keyboard only", async ({ page }) => {
   await expect(songsGrid(page)).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(songsGrid(page).locator("[role='row'][aria-selected='true']")).toHaveCount(1);
+  // A focused header passes the global shortcuts on: Ctrl+Shift+A starts Arrange mode (Q13).
+  await header(page, "Time").focus();
+  await page.keyboard.press("Control+Shift+A");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(1);
 });
 
 test("UD8: the Tree widget shows no table header", async ({ page }) => {

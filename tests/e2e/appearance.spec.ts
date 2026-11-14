@@ -6,6 +6,7 @@ import {
   expectNoSeriousViolations,
   openApp,
   openMenu,
+  startArranging,
   test,
   tokenRgb,
   widget,
@@ -30,7 +31,7 @@ test("P2-AC7: grid chrome colors come from tokens and no red shows at rest", asy
   expect(await style("[data-grid-item]", "background-color")).toBe(surface);
   // The 1 px gaps between cells show the border token (R38.1).
   expect(await style("[data-grid]", "background-color")).toBe(border);
-  expect(await style("[data-widget-header]:not([class*='w-4'])", "border-bottom-color")).toBe(border);
+  expect(await style("[data-widget-header]", "border-bottom-color")).toBe(border);
   expect(await style("[data-slot='widget-title']", "color")).toBe(secondary);
 
   const reds = await Promise.all(RED_TOKENS.map((token) => tokenRgb(page, token)));
@@ -134,8 +135,6 @@ test("P2-AC14: focus indicators reach 3:1 against the adjacent color", async ({ 
   const targets: [string, Locator][] = [
     ["button", page.getByRole("button", { name: "Menu" })],
     ["input", widget(page, "search").getByRole("searchbox")],
-    ["widget header", page.locator("[data-widget-header='songs']")],
-    ["side header", page.locator("[data-widget-header='search']")],
   ];
   for (const [kind, locator] of targets) {
     await page.keyboard.press("Shift");
@@ -149,6 +148,13 @@ test("P2-AC14: focus indicators reach 3:1 against the adjacent color", async ({ 
   await expect(item).toHaveCount(1);
   expect(await focusContrast(item), "menu item").toBeGreaterThanOrEqual(3);
   await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  // The Arrange mode cover (owner answer Q13).
+  await startArranging(page);
+  const arrange = page.locator("[data-arrange='songs']");
+  await page.keyboard.press("Shift");
+  await arrange.focus();
+  expect(await focusContrast(arrange), "arrange cover").toBeGreaterThanOrEqual(3);
 });
 
 test("P2-AC15: the highlighted menu item shows in grayscale", async ({ page }) => {
