@@ -1,4 +1,13 @@
-import { type KeyboardEvent, type PointerEvent, memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type FunctionComponent,
+  type KeyboardEvent,
+  type PointerEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Icon } from "@/components/icons";
 import { commands } from "@/lib/ipc/commands";
@@ -148,6 +157,14 @@ function ArrangeCover({
 }
 
 /**
+ * A widget body that does not render again when Arrange mode or a drag changes its grid item:
+ * entering Arrange mode must not render the 50,000-row Songs table again (PF-3).
+ */
+const WidgetBody = memo(function WidgetBody({ body: Body }: { body: FunctionComponent }) {
+  return <Body />;
+});
+
+/**
  * One widget in the grid: a title row (not for one-row widgets) and its body region for F6
  * (P2.12). In Arrange mode a cover takes every pointer and key for moving and resizing.
  */
@@ -193,7 +210,7 @@ const GridItem = memo(function GridItem({
         className="min-h-0 min-w-0 flex-1 overflow-hidden focus-visible:-outline-offset-2"
       >
         {/* The mini player shows its own band (UD19); the grid copy waits off screen. */}
-        {id === "transport" && mini ? null : <Body />}
+        {id === "transport" && mini ? null : <WidgetBody body={Body} />}
       </section>
       {arranging && <ArrangeCover id={id} title={title} onStart={onStart} />}
     </div>

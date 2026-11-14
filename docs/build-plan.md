@@ -1597,7 +1597,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 7, F3 0, F4 2. Source: own audit, the e2e runs and Codex on the PR (four F2; the fourth: Ctrl+F in Arrange mode focused a field in an inert body, so it now ends Arrange mode first).
+**TWO-PASS REVIEW:** F1 0, F2 8, F3 0, F4 2. Source: own audit, the e2e runs and Codex on the PR (four F2; the fourth: Ctrl+F in Arrange mode focused a field in an inert body, so it now ends Arrange mode first). F2 from CI WebKit PF-3 (189 ms frame): entering Arrange mode rendered every widget body again, the 50,000-row table included; the bodies are memoized now (`src/shell/GridShell.test.tsx`).
 
 - F2 (fixed): a focused Songs column header stopped every key, so Ctrl+Shift+A, Ctrl+Shift+L, Ctrl+F and F6 did nothing there (`TableHeader.tsx`); found when the frame test could not start Arrange mode. The first fix let Ctrl+Enter both sort and reach the grid; every key the header handles now stops at the header. The widget name on the cover sat on the content (the transport play button); it now has a solid label. Codex: the side handles of a one-row widget were about 1 px high at 800 x 560 (0 px at 125 % text), because the edges stopped 20 px before each corner (edges now run the whole side, under corners that take at most 30 %); F6 found no region in Arrange mode because the bodies are inert, against R25 (the covers are the F6 regions now; this was first rejected as F4); ending Arrange mode during a drag left the preview and the Esc listener (the drag is cancelled now).
 - F4:
