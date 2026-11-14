@@ -265,3 +265,9 @@ test("R25, Q13: F6 moves between the covers in Arrange mode", async ({ page }) =
   await page.keyboard.press("F6");
   await expect(page.locator(":focus")).toHaveAttribute("data-arrange", "playlists");
 });
+
+test("R25, Q13: Ctrl+F in Arrange mode ends it and focuses the search field", async ({ page }) => {
+  await page.keyboard.press("Control+f");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(0);
+  await expect(page.locator('[data-widget="search"] input[type="search"]')).toBeFocused();
+});

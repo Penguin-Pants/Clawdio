@@ -9,6 +9,7 @@ import {
   activeWidget,
   applyMeasureLayout,
   applyPreset,
+  focusLibrarySearch,
   commitRect,
   moveWidgetBy,
   resetLayout,
@@ -84,6 +85,11 @@ describe("grid layout operations (R38.7 to R38.10)", () => {
     expect(useUiStore.getState().arranging).toBe(true);
     expect(useUiStore.getState().message).toBe(ARRANGE_MESSAGE);
     toggleArrange();
+    expect(useUiStore.getState().arranging).toBe(false);
+  });
+
+  it("Ctrl+F ends Arrange mode, so the search field can take the focus (R25)", () => {
+    expect(focusLibrarySearch(document)).toBe(true);
     expect(useUiStore.getState().arranging).toBe(false);
   });
 

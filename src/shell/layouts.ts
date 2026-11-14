@@ -148,11 +148,14 @@ export function applyMeasureLayout(mode: LibraryMode): void {
  */
 export function focusLibrarySearch(doc: Document = document): boolean {
   if (!setWidgetVisible("search", true)) return false;
+  // Arrange mode makes the bodies inert; the field takes the focus once it ends.
+  if (arranging()) useUiStore.getState().setArranging(false);
   useLibraryStore.getState().showPlaylist(null);
   activateWidget("search");
   const focusField = (framesLeft: number) => {
     const field = doc.querySelector<HTMLInputElement>('[data-widget="search"] input[type="search"]');
-    if (field) {
+    // A field in an inert body (Arrange mode ending) is not ready yet.
+    if (field && !field.closest("[inert]")) {
       field.focus();
       field.select();
     } else if (framesLeft > 0) {
