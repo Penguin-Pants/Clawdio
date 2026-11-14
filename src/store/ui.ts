@@ -25,13 +25,16 @@ export interface StatusJob {
 }
 
 interface UiState {
-  /** Lock layout (R38.9), saved in `layout.json`. Unlocked on a fresh install. */
-  locked: boolean;
+  /**
+   * Arrange mode (owner answer Q13): only while it is on can widgets move or resize. It replaces
+   * Lock layout (R38.9). Not saved: the app starts with it off.
+   */
+  arranging: boolean;
   /** The band slot order and hidden set (UD20, TR-10), saved in `layout.json`. */
   transportSlots: TransportSlots;
   /** Mini player mode (UD19, TR-9): the window shows the band only. Not saved. */
   mini: boolean;
-  setLocked: (locked: boolean) => void;
+  setArranging: (arranging: boolean) => void;
   setTransportSlots: (slots: TransportSlots) => void;
   setMini: (mini: boolean) => void;
   settingsOpen: boolean;
@@ -58,10 +61,10 @@ let messageTimer: ReturnType<typeof setTimeout> | undefined;
 const withJobs = (jobs: StatusJob[]) => ({ jobs, job: jobs.at(-1) ?? null });
 
 export const useUiStore = create<UiState>()((set, get) => ({
-  locked: false,
+  arranging: false,
   transportSlots: DEFAULT_SLOTS,
   mini: false,
-  setLocked: (locked) => set({ locked }),
+  setArranging: (arranging) => set({ arranging }),
   setTransportSlots: (transportSlots) => set({ transportSlots }),
   setMini: (mini) => set({ mini }),
   settingsOpen: false,

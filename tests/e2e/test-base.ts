@@ -46,9 +46,15 @@ export function gridItem(page: Page, id: string): Locator {
   return page.locator(`[data-grid-item="${id}"]`);
 }
 
-/** The header of a widget: the drag handle and the keyboard path (R38.4, R38.10). */
-export function header(page: Page, id: string): Locator {
-  return page.locator(`[data-widget-header="${id}"]`);
+/** The Arrange mode cover of a widget: drag to move, edges and corners to resize, arrow keys (Q13, Q14). */
+export function cover(page: Page, id: string): Locator {
+  return page.locator(`[data-arrange="${id}"]`);
+}
+
+/** Turns Arrange mode on with Ctrl+Shift+A and waits for the covers (owner answer Q13). */
+export async function startArranging(page: Page): Promise<void> {
+  await page.locator("body").press("Control+Shift+A");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(1);
 }
 
 /** The cells of each widget in the grid, from the app's grid store. */

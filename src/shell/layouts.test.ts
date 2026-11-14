@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useUiStore } from "@/store/ui";
 import { isValidLayout } from "./grid/engine";
 import {
+  ARRANGE_MESSAGE,
   NO_ROOM,
   activateWidget,
   activeWidget,
@@ -13,6 +14,7 @@ import {
   resetLayout,
   resizeWidgetBy,
   setWidgetVisible,
+  toggleArrange,
   useGridStore,
 } from "./layouts";
 import { PRESETS } from "./presets";
@@ -23,18 +25,17 @@ const layout = () => useGridStore.getState().layout;
 
 beforeEach(() => {
   resetLayout();
-  useUiStore.setState({ message: null });
+  // Arrange mode is on: only then can the layout change (owner answer Q13).
+  useUiStore.setState({ message: null, arranging: true });
 });
 
 describe("grid layout operations (R38.7 to R38.10)", () => {
-  it("applies presets and Reset layout applies Default, unlocked, with the default band slots", () => {
+  it("applies presets and Reset layout applies Default with the default band slots", () => {
     applyPreset("tree");
     expect(layout()).toEqual(PRESETS.tree.layout);
-    useUiStore.getState().setLocked(true);
     useUiStore.getState().setTransportSlots({ order: [...DEFAULT_SLOTS.order].reverse(), hidden: [] });
     resetLayout();
     expect(layout()).toEqual(PRESETS.default.layout);
-    expect(useUiStore.getState().locked).toBe(false);
     expect(useUiStore.getState().transportSlots).toEqual(DEFAULT_SLOTS);
   });
 
@@ -69,12 +70,21 @@ describe("grid layout operations (R38.7 to R38.10)", () => {
     expect(useUiStore.getState().message).toBe(NO_ROOM);
   });
 
-  it("Lock layout stops moves, resizes and drops (R38.9)", () => {
-    useUiStore.getState().setLocked(true);
+  it("outside Arrange mode no move, resize or drop changes the layout (owner answer Q13)", () => {
+    useUiStore.getState().setArranging(false);
     expect(moveWidgetBy("nowPlaying", 0, 1)).toBe(false);
     expect(resizeWidgetBy("nowPlaying", 0, -1)).toBe(false);
     expect(commitRect("nowPlaying", { x: 9, y: 2, w: 3, h: 5 })).toBe(false);
     expect(layout()).toEqual(PRESETS.default.layout);
+  });
+
+  it("Arrange mode toggles and says so in the status line", () => {
+    useUiStore.getState().setArranging(false);
+    toggleArrange();
+    expect(useUiStore.getState().arranging).toBe(true);
+    expect(useUiStore.getState().message).toBe(ARRANGE_MESSAGE);
+    toggleArrange();
+    expect(useUiStore.getState().arranging).toBe(false);
   });
 
   it("tracks the active widget for the menu while it is in the grid", () => {

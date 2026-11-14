@@ -165,6 +165,26 @@ export function resizeTo(
   return place(layout, id, { ...rect, ...size }, minOf);
 }
 
+/** A move, or a resize by one of the four edges or four corners (owner answer Q14). */
+export type Handle = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+/** The cells after a drag of `handle` by (dx, dy) cells: a resize stops at the minimum and the grid edge. */
+export function draggedRect(start: Rect, handle: Handle, dx: number, dy: number, min: MinSize): Rect {
+  if (handle === "move") return clampRect({ ...start, x: start.x + dx, y: start.y + dy }, min);
+  let { x, y, w, h } = start;
+  if (handle.includes("e")) w = Math.min(GRID - start.x, Math.max(min.w, start.w + dx));
+  if (handle.includes("w")) {
+    x = Math.max(0, Math.min(start.x + start.w - min.w, start.x + dx));
+    w = start.x + start.w - x;
+  }
+  if (handle.includes("s")) h = Math.min(GRID - start.y, Math.max(min.h, start.h + dy));
+  if (handle.includes("n")) {
+    y = Math.max(0, Math.min(start.y + start.h - min.h, start.y + dy));
+    h = start.y + start.h - y;
+  }
+  return { x, y, w, h };
+}
+
 /** The first rectangle of size `min` with no widget in it, top row first, then left column. */
 export function firstFree(layout: Layout, min: MinSize): Rect | null {
   const rects = Object.values(layout);

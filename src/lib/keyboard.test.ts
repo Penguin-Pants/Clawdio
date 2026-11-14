@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as layouts from "@/shell/layouts";
-import { handleGlobalKey, handleSpace, isResetShortcut, isSearchShortcut, nextRegion, widgetRegions } from "./keyboard";
+import { useUiStore } from "@/store/ui";
+import {
+  handleGlobalKey,
+  handleSpace,
+  isArrangeShortcut,
+  isResetShortcut,
+  isSearchShortcut,
+  nextRegion,
+  widgetRegions,
+} from "./keyboard";
 
 function key(init: KeyboardEventInit & { target?: EventTarget }) {
   const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
@@ -37,6 +46,14 @@ describe("isResetShortcut (D17)", () => {
     // Dvorak: the key at the QWERTY "P" position types "L".
     expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyP", key: "L" }))).toBe(true);
     expect(isResetShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "N" }))).toBe(false);
+  });
+});
+
+describe("isArrangeShortcut (owner answer Q13)", () => {
+  it("matches Ctrl+Shift+A by the typed letter", () => {
+    expect(isArrangeShortcut(key({ ctrlKey: true, shiftKey: true, code: "KeyA", key: "A" }))).toBe(true);
+    expect(isArrangeShortcut(key({ ctrlKey: true, code: "KeyA", key: "a" }))).toBe(false);
+    expect(isArrangeShortcut(key({ ctrlKey: true, shiftKey: true, altKey: true, code: "KeyA", key: "A" }))).toBe(false);
   });
 });
 
@@ -114,6 +131,16 @@ describe("handleGlobalKey", () => {
     const reset = vi.spyOn(layouts, "resetLayout").mockImplementation(() => {});
     expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyL", key: "L" }))).toBe(true);
     expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("toggles Arrange mode on Ctrl+Shift+A, and Esc leaves it", () => {
+    useUiStore.setState({ arranging: false });
+    expect(handleGlobalKey(key({ ctrlKey: true, shiftKey: true, code: "KeyA", key: "A" }))).toBe(true);
+    expect(useUiStore.getState().arranging).toBe(true);
+    expect(handleGlobalKey(key({ key: "Escape" }))).toBe(true);
+    expect(useUiStore.getState().arranging).toBe(false);
+    // Outside Arrange mode Esc belongs to the focused control.
+    expect(handleGlobalKey(key({ key: "Escape" }))).toBe(false);
   });
 
   it("moves focus on F6 and back on Shift+F6", () => {

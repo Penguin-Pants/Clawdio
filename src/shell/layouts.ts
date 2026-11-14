@@ -36,11 +36,25 @@ export function applyPreset(id: PresetId): void {
   setLayout(PRESETS[id].layout);
 }
 
-/** Reset layout (R38.8, R29): the Default preset, unlocked and the default band slots (UD20). */
+/** Reset layout (R38.8, R29): the Default preset and the default band slots (UD20). */
 export function resetLayout(): void {
   applyPreset(DEFAULT_PRESET);
-  useUiStore.getState().setLocked(false);
   useUiStore.getState().setTransportSlots(DEFAULT_SLOTS);
+}
+
+/** The status line text when Arrange mode starts. */
+export const ARRANGE_MESSAGE = "Arrange layout: drag a widget to move it, drag an edge to resize. Esc to finish";
+
+/** True while Arrange mode is on: only then can widgets move or resize (owner answer Q13). */
+function arranging(): boolean {
+  return useUiStore.getState().arranging;
+}
+
+/** Turns Arrange mode on or off (menu and Ctrl+Shift+A). Starting it says how it works. */
+export function toggleArrange(): void {
+  const on = !arranging();
+  useUiStore.getState().setArranging(on);
+  if (on) useUiStore.getState().showMessage(ARRANGE_MESSAGE);
 }
 
 /**
@@ -64,11 +78,11 @@ export function setWidgetVisible(id: WidgetId, visible: boolean): boolean {
 }
 
 /**
- * Puts a widget at `rect` after a drag (R38.4, R38.5). A refused drop changes nothing. Locked
- * layouts refuse every change (R38.9). Returns true when the layout changed.
+ * Puts a widget at `rect` after a drag (R38.4, R38.5). A refused drop changes nothing. Outside
+ * Arrange mode every change is refused. Returns true when the layout changed.
  */
 export function commitRect(id: WidgetId, rect: Rect): boolean {
-  if (useUiStore.getState().locked) return false;
+  if (!arranging()) return false;
   const next = place(useGridStore.getState().layout, id, rect, minOf);
   if (next) setLayout(next);
   return next !== null;
@@ -83,7 +97,7 @@ export function previewRect(id: WidgetId, rect: Rect): Layout | null {
 export function moveWidgetBy(id: WidgetId, dx: number, dy: number): boolean {
   const { layout } = useGridStore.getState();
   const rect = layout[id];
-  if (!rect || useUiStore.getState().locked) return false;
+  if (!rect || !arranging()) return false;
   const x = Math.min(GRID - rect.w, Math.max(0, rect.x + dx));
   const y = Math.min(GRID - rect.h, Math.max(0, rect.y + dy));
   if (x === rect.x && y === rect.y) return false;
@@ -97,7 +111,7 @@ export function moveWidgetBy(id: WidgetId, dx: number, dy: number): boolean {
 export function resizeWidgetBy(id: WidgetId, dw: number, dh: number): boolean {
   const { layout } = useGridStore.getState();
   const rect = layout[id];
-  if (!rect || useUiStore.getState().locked) return false;
+  if (!rect || !arranging()) return false;
   const next = resizeTo(layout, id, rect.w + dw, rect.h + dh, minOf);
   const same = next?.[id].w === rect.w && next?.[id].h === rect.h;
   if (!next) useUiStore.getState().showMessage(NO_ROOM);

@@ -1,5 +1,6 @@
 import { commands } from "@/lib/ipc/commands";
-import { activateWidget, focusLibrarySearch, resetLayout } from "@/shell/layouts";
+import { activateWidget, focusLibrarySearch, resetLayout, toggleArrange } from "@/shell/layouts";
+import { useUiStore } from "@/store/ui";
 import { findTextActive } from "./type-find";
 
 /** Reset layout shortcut (D17, R38.8). */
@@ -12,6 +13,13 @@ function letter(event: KeyboardEvent): string {
 
 export function isResetShortcut(event: KeyboardEvent): boolean {
   return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "l";
+}
+
+/** Arrange layout shortcut (owner answer Q13). */
+export const ARRANGE_SHORTCUT_LABEL = "Ctrl+Shift+A";
+
+export function isArrangeShortcut(event: KeyboardEvent): boolean {
+  return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && letter(event) === "a";
 }
 
 /** Ctrl+F: the Library search field (R25). */
@@ -96,6 +104,15 @@ export function nextRegion(regions: HTMLElement[], active: Element | null, backw
 export function handleGlobalKey(event: KeyboardEvent, doc: Document = document): boolean {
   if (isResetShortcut(event)) {
     resetLayout();
+    return true;
+  }
+  if (isArrangeShortcut(event) && !inMenuOrDialog(event.target)) {
+    toggleArrange();
+    return true;
+  }
+  // Esc ends Arrange mode; a running drag takes Esc first and cancels only the drag.
+  if (event.key === "Escape" && useUiStore.getState().arranging && !inMenuOrDialog(event.target)) {
+    toggleArrange();
     return true;
   }
   if (isSearchShortcut(event) && !inMenuOrDialog(event.target)) {

@@ -1,6 +1,6 @@
 # Clawdio Build Plan
 
-**Version:** 1.36, November 13, 2026 (P29, snap grid layout, Done with exceptions: the manual Linux and Windows AC-34 checks are open).
+**Version:** 1.37, November 14, 2026 (P30, Arrange mode, Done with exceptions: the manual Linux and Windows walkthrough is open).
 **Status:** In execution. Section 2 gives the phase status.
 **Scope:** Clawdio v1, as the source documents in section 3 define it, plus the requirements v1.6 additions (P19, P20), the v1.7 additions (P22, P23) the v1.10 additions (P24), the v1.11 additions (P25), the v1.12 additions (P26) and the v1.13 additions (P27).
 **Companion file:** `docs/requirements-traceability.md`. It maps each source requirement to a task, an acceptance criterion and a verification method.
@@ -14,7 +14,8 @@
 - Requirements v1.13 adds P27 (shuffle and repeat restore). Done with exceptions: the manual Linux check P27-AC3 waits on the owner. P27 depends on P25, not P26: the owner asked for it first.
 - Requirements v1.15 adds P28 (one-click Windows portable release). Done with exceptions: the first release run waits on the owner.
 - Requirements v1.16 adds P29 (snap grid layout). Done with exceptions: the manual Linux and Windows AC-34 walkthrough (P29-AC7) and the WebKit e2e run wait on the owner or CI.
-- The plan has 30 phases (P0 to P29). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P28 comes from requirements v1.15. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
+- Owner feedback on the 1.1.0 build (November 14, 2026) adds P30 (Arrange mode: drag anywhere, resize from every edge and corner; it replaces Lock layout). Done with exceptions: the manual walkthrough waits on the owner.
+- The plan has 31 phases (P0 to P30). P19, P20 and P21 come from requirements v1.6. P22 and P23 come from requirements v1.7. P24 comes from requirements v1.10. P25 comes from requirements v1.11. P26 comes from requirements v1.12. P27 comes from requirements v1.13. P28 comes from requirements v1.15. P21 repeats the release checks on the final product. P3 is a footprint gate (Milestone 0) before feature work, as R20 requires.
 - The first end-to-end player (choose a folder, see songs, play one) arrives in P4. Brand assets arrive in P1 and the themed shell in P2. Branding is part of the build from the start.
 - The UI shell rework (U0 to U7, `docs/planning/ui-shell-rework-build-plan.md`) is Done with exceptions: the Windows rows, the PF-3 reference machine and the v1.8 wording approval wait on the owner (UQ3, UQ4, UQ5).
 - Open owner items: B3, B5, the manual Windows rows of `docs/release-checklist.md`, UQ3 to UQ5 of the UI shell rework plan, and the F-proposals in section 11.
@@ -103,6 +104,7 @@ A phase is Done when all of these are true:
 | P27 | Shuffle and repeat restore | P25 | Done with exceptions |
 | P28 | One-click Windows portable release | P27 | Done with exceptions |
 | P29 | Snap grid layout | P28 | Done with exceptions |
+| P30 | Arrange mode | P29 | Done with exceptions |
 
 Status values: Not started, In progress, Done, Done with exceptions, Blocked.
 
@@ -1566,6 +1568,44 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Follow-ups:** none.
 
+#### P30. Arrange mode (November 14, 2026)
+
+- **Status:** Done with exceptions. P30.1 to P30.3 are done. P30-AC4 (manual) is open (E1).
+- **Commits:** branch `clawd/ecstatic-fermat-ne425f`, from `main` at `fb6bee4`. Messages start with `P30:`.
+- **Packages:** none.
+- **Owner answers:** Q13 and Q14 (section 5.3), after the owner tested the 1.1.0 build: the header and the 6 to 10 px handles were hard to grab.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| P30-AC1 | Pass | `src/shell/layouts.test.ts` (no change outside Arrange mode, toggle and message), `src/lib/keyboard.test.ts` (Ctrl+Shift+A, Esc), `src/shell/grid/engine.test.ts` (`draggedRect`, eight handles), `src/shell/persistence.test.ts` (no `locked`; an old `locked` key ignored). |
+| P30-AC2 | Pass (Chromium) | `tests/e2e/grid.spec.ts` (drag from the lower part of a widget, left edge and top left corner, 12 px and 20 px handles, arrow keys on the cover, nothing moves outside Arrange mode), `tests/e2e/arrange.spec.ts` (menu item and shortcut, status message, show and hide in both modes, not saved). |
+| P30-AC3 | Pass (Chromium) | `tests/e2e/table.spec.ts` "AX-1: the header works by keyboard only": Ctrl+Shift+A from a focused column header. It failed before the `TableHeader.tsx` fix. |
+| P30-AC4 | Not run (E1) | Needs a desktop session. Walkthrough in `docs/release-checklist.md` (AC-34). |
+
+**Validation:** `npm run check` (383 unit tests), `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (459 tests), the bindings check and `npm run test:e2e` in Chromium (207 tests; PF-3 longest frame 16.8 ms) pass.
+
+**Notes**
+
+- N1: one-row widgets lost their 16 px header strip; the band gets that width back (XL at the default 1200 px window again).
+- N2: the 1.1.0 release notes describe Arrange mode: 1.1.0 is merged but not yet built or published, so it ships with P30.
+
+**Exceptions**
+
+- E1: P30-AC4 needs desktop sessions (B5).
+- E2: only Chromium runs here; CI runs WebKit.
+
+**Blockers:** none.
+
+**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 3.
+
+- F2 (fixed): a focused Songs column header stopped every key, so Ctrl+Shift+A, Ctrl+Shift+L, Ctrl+F and F6 did nothing there (`TableHeader.tsx`); found when the frame test could not start Arrange mode. The first fix let Ctrl+Enter both sort and reach the grid; every key the header handles now stops at the header. The widget name on the cover sat on the content (the transport play button); it now has a solid label.
+- F4:
+  - F6 finds no region in Arrange mode, because the bodies are inert: Tab reaches each cover, and Esc returns to normal mode.
+  - The transport controls take no input in Arrange mode: by design (Q13); media keys and shortcuts still work.
+  - Ctrl+Shift+A in a text field: it has no text meaning there (select all is Ctrl+A).
+
+**Follow-ups:** none new.
+
 #### P29. Snap grid layout (November 13, 2026)
 
 - **Status:** Done with exceptions. P29.0 to P29.6 are done. P29-AC7 (manual Linux and Windows AC-34) is open (E1). The WebKit e2e project did not run here (E2).
@@ -1765,6 +1805,7 @@ Inspection on October 11, 2026, at commit `9c297ca` (branch `main`, merge of pul
 | C17 | R8 ("It never overwrites existing art") vs R8 "Set cover" ("The app saves it as `cover.jpg`") | "Set cover" on an album that already has `cover.jpg` must either overwrite or fail. | Ask, then replace atomically (D19). R8's rule applies to the automatic fetch. The owner confirmed this on October 11, 2026 (Q7). |
 | C18 | Section 5 (a cover file that fails to decode is ignored and "the online lookup still applies") vs R8 (never overwrite; no automatic retry) | When the broken file is `cover.jpg`, a fetched image cannot be saved, so every startup would look the album up again. | A broken `cover.jpg` and a corrupt `sidecar.json` make the album a non-candidate. Each is logged (D44). A broken file with another cover name does not block the lookup. |
 | C19 | `AGENTS.md` Edits rule 9 ("Mock data only in tests") vs R20 (Milestone 0 before feature work, every widget populated with test data) | At P3 the app cannot read music yet, so the spike must generate its data inside the app build. Playwright mocks run only the UI in a browser and cannot measure memory across all app processes. | Keep D35: the `fixtures` Cargo feature in `src-tauri` is an approved exception to Edits rule 9. It is off by default and never goes into a release bundle (P3.6 builds the bundles without it). P0.1 names the exception in the project rules. P6.7 deletes it (P6-AC8). The owner confirmed this on October 11, 2026. |
+| C20 | R38.4 (move by the header), R38.5 (resize by an edge or corner), R38.9 (Lock layout) vs the owner answers Q13 and Q14 (November 14, 2026) | The owner found the header and the small handles hard to use. | Owner answers win (P30): moves and resizes only in Arrange mode, a drag anywhere on a widget moves it, every edge and corner resizes it; Lock layout is removed. The requirements text is the owner's to update. |
 
 ### 5.2 Plan decisions
 
@@ -1843,6 +1884,7 @@ The sources leave these details open. The owner may change any of them. Section 
 | D69 | Show rule (R38.7, owner answer Q10): the first free area at the minimum size; else the place where the covered widgets lose the fewest cells by giving up their bottom or right cells (their top left cell stays); then the shown widget grows right, then down, into free cells. Nothing works: refused with "Not enough room in the grid: <widget> is hidden" in the status line. | Default fills all 144 cells, so a literal R38.7 never shows Play queue or Lyrics. Keeping each top left cell keeps the band and the other widgets in place; the growth gives a hidden widget its cells back. |
 | D70 | `layout.json` version 3 holds `version`, `locked`, `transportSlots` and `widgets` (0-based cells). The Rust storage (`crates/clawdio-core/src/layout.rs`) is unchanged: it stores text. One Songs widget uses the `songs.columns` column state of `columns.json`; `songs.topBottom` becomes an unknown view and is ignored. `CLAWDIO_MEASURE_MODE` keeps its values: `tree` and `columns` apply those presets, `topBottom` applies Default, and every hidden widget shows where it fits (D69). | No migration (R38.11). The measurement scripts and CI do not change. |
 | D71 | Widget chrome (P29.4): a 24 px header row with grip and title; a one-row widget (Transport controls, Search) has a 16 px grip strip at its left. The header is the keyboard focus target (role `group`, `aria-roledescription` "widget header", `aria-keyshortcuts`). Resize handles: the right edge of the header row, a 10 px bottom-right corner, and for one-row widgets the whole right and bottom edges, so list scrollbars stay free. The transport band fills its cells; a row shorter than `sizes.transportBar` uses the compact play button and art and no vertical padding. Esc cancels a drag. | R38.4, R38.5, R38.10. The band must fit one row in the 800 x 560 window (about 41 px). |
+| D72 | Arrange mode (P30): `ui.arranging`, not saved. The menu item "Arrange layout" and Ctrl+Shift+A toggle it; Esc ends it (a running drag takes Esc first and cancels only the drag). While on, each grid item shows a cover (`data-arrange`, role `group`, focusable) over its `inert` body: a pointer drag on the cover moves the widget, eight handles (12 px edges, 20 px corners, each with a visible mark) resize it, arrow keys move and Shift+arrow keys resize (Alt allowed). `draggedRect` in the engine keeps the opposite side of a left or top resize. Outside Arrange mode every change is refused and the title row is a label only; one-row widgets have no header strip. `layout.json` drops `locked` and ignores it when present. The Songs column header passes Ctrl, Alt and Meta combinations and F6 on to the window, so the global shortcuts work from a focused header. | Owner answers Q13 and Q14: bigger targets with no conflict with list scrollbars, and one concept instead of a header drag plus Lock layout. |
 
 ### 5.3 Owner confirmations
 
@@ -1862,6 +1904,8 @@ None of these blocks work. Q6 blocked P2 until the owner signed off the brand af
 | Q10 | R38.7 show with the full Default grid. | **Answered November 13, 2026:** a show may shrink other widgets toward their minimum to make room; refused only when that fails (D69). | Closed |
 | Q11 | R38.8 Columns preset cells. | **Answered November 13, 2026:** keep Now playing: Search 7 x 1, Now playing 3 x 5 at the top right, Artist 2 x 10, Album 2 x 10, Songs 3 x 10 side by side, Play queue 3 x 6 under Now playing. | Closed |
 | Q12 | R29 extras with no grid meaning: Collapse and Restore, the splitter keyboard pattern, the Playlists icon rail. | **Answered November 13, 2026:** remove Collapse and Restore and the dock splitters; keep the icon rail. | Closed |
+| Q13 | How to make moving and resizing easier (owner test of the 1.1.0 build), and how Arrange mode relates to Lock layout. | **Answered November 14, 2026:** an Arrange mode; layout changes happen only in it, and it replaces Lock layout. Bigger handles outside Arrange mode are not wanted. | Closed |
+| Q14 | Which grab areas Arrange mode gets. | **Answered November 14, 2026:** drag anywhere on the widget; resize from all four edges and all four corners with large handles. | Closed |
 
 ### 5.4 Blockers and gates
 
@@ -3390,6 +3434,29 @@ The phase has two parts with no shared code: lyrics (P24.1 to P24.7) and selecti
 
 ---
 
+### P30. Arrange mode
+
+**Objective.** Make moving and resizing widgets easy: a mode in which the whole widget is the move target and every edge and corner resizes it (owner answers Q13, Q14).
+
+**Scope.** C20, D72. R38.4, R38.5, R38.9 and R38.10 as the owner answers change them.
+
+**Depends on.** P29.
+
+**Tasks.**
+
+- **P30.1** Arrange mode state, the menu item, Ctrl+Shift+A and Esc; every layout change refused outside it; Lock layout removed (store, menu, `layout.json`).
+- **P30.2** The cover: drag anywhere to move, eight handles with visible marks, the inert body, the keyboard path on the cover; `draggedRect` for left and top resizes.
+- **P30.3** Docs: `docs/design.md`, `docs/file-formats.md`, `docs/theming-and-brand.md`, the release checklist and the 1.1.0 release notes (not yet released).
+
+**Acceptance criteria.**
+
+- **P30-AC1** Unit: no layout change outside Arrange mode; the toggle and its status message; Ctrl+Shift+A and Esc; `draggedRect` for all eight handles, the minimum and the grid edge; `layout.json` without `locked`.
+- **P30-AC2** Playwright: a drag from the middle of a widget moves it; the left edge and the top left corner resize with the opposite side kept; the handles are 12 px and 20 px; arrow keys on a cover move and Shift+arrow keys resize; outside Arrange mode nothing moves and the lists work; the mode is not saved.
+- **P30-AC3** Playwright: the global shortcuts work from a focused Songs column header.
+- **P30-AC4** Manual Linux and Windows: the AC-34 walkthrough with Arrange mode.
+
+**Verification.** Unit (P30-AC1). Playwright (P30-AC2, P30-AC3). Manual (P30-AC4).
+
 ## 10. Acceptance check coverage
 
 | Check | Subject | Verified by |
@@ -3585,6 +3652,7 @@ Result: 10 comments. 10 confirmed and fixed in 1.3.
 
 ## 13. Change log
 
+- **1.37 (November 14, 2026):** P30 Arrange mode (owner answers Q13, Q14; C20; D72). Done with exceptions (P30-AC4 manual).
 - **1.36 (November 13, 2026):** P29 Done with exceptions (P29-AC7 manual and the WebKit run open). D67 to D71, Q9 to Q12 (owner answers). F-02 done, F-12 closed, F-26 proposed.
 - **1.35 (November 13, 2026):** requirements v1.16 (R38, AC-34, owner decision 50). Added phase P29 (Not started).
 - **1.34 (November 13, 2026):** requirements v1.15 (R21 release change, owner decision 49). Added phase P28 (Done with exceptions: the first release run is open). F-20 done. F-25 proposed.

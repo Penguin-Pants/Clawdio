@@ -103,16 +103,22 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
   const openMenu = (id: ColumnId, anchor: HTMLElement) => setMenu({ id, anchor });
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, index: number, id: ColumnId) => {
-    // The grid's own keys (row moves) must not see header keys.
-    event.stopPropagation();
     const key = event.key;
-    if ((key === "F10" && event.shiftKey) || key === "ContextMenu") {
+    // The grid's own keys (row moves) must not see header keys: a key the header handles stops
+    // here, and so does every key without Ctrl, Alt or Meta. The global shortcuts (Ctrl, Alt or
+    // Meta combinations and F6: Reset layout, Arrange layout, Ctrl+F) go on to the window.
+    const handled = () => {
+      event.stopPropagation();
       event.preventDefault();
+    };
+    if (!(event.ctrlKey || event.altKey || event.metaKey || key === "F6")) event.stopPropagation();
+    if ((key === "F10" && event.shiftKey) || key === "ContextMenu") {
+      handled();
       openMenu(id, event.currentTarget);
       return;
     }
     if (key === "ArrowLeft" || key === "ArrowRight") {
-      event.preventDefault();
+      handled();
       const step = key === "ArrowLeft" ? -1 : 1;
       if (event.ctrlKey) change((current) => resizeColumn(current, id, current.widths[id] + step * RESIZE_STEP));
       else if (event.shiftKey) {
@@ -122,13 +128,13 @@ export function TableHeader({ view, state, columns, template, onFocusBody }: Hea
       return;
     }
     if (key === "Home" || key === "End") {
-      event.preventDefault();
+      handled();
       focusCell(key === "Home" ? 0 : columns.length - 1);
     } else if (key === "Enter" || key === " ") {
-      event.preventDefault();
+      handled();
       change((current) => toggleSort(current, id, event.shiftKey));
     } else if (key === "ArrowDown") {
-      event.preventDefault();
+      handled();
       onFocusBody();
     }
   };
