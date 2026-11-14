@@ -17,7 +17,7 @@ files, their lock files and the notes for the current app version before merge.
 
 ## Steps
 
-1. **Release PR.** Set the new version in the four files, run `npm install` and `cargo check` so the lock files follow, and add `docs/release-notes/<version>.md`. Merge the PR into `main` once CI is green.
+1. **Release PR.** Set the new version in the four files, run `npm install` and `cargo check` so the lock files follow, run `npm run licenses` (needs `cargo-about`) so `THIRD_PARTY_LICENSES_RUST.html` names the app crates at the new version, and add `docs/release-notes/<version>.md`. The CI `licenses` job fails when that file still names the old version. Merge the PR into `main` once CI is green.
 2. **Build.** In GitHub, open Actions > "Release" > "Run workflow" on `main`. The workflow:
    1. checks the version files, refuses a version that already has a release and needs the release notes;
    2. runs `npm run check` and `cargo test --workspace` on Windows;
