@@ -1582,7 +1582,7 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 | P30-AC3 | Pass (Chromium) | `tests/e2e/table.spec.ts` "AX-1: the header works by keyboard only": Ctrl+Shift+A from a focused column header. It failed before the `TableHeader.tsx` fix. |
 | P30-AC4 | Not run (E1) | Needs a desktop session. Walkthrough in `docs/release-checklist.md` (AC-34). |
 
-**Validation:** `npm run check` (383 unit tests), `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (459 tests), the bindings check and `npm run test:e2e` in Chromium (207 tests; PF-3 longest frame 16.8 ms) pass.
+**Validation:** `npm run check` (384 unit tests), `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace` (459 tests), the bindings check and `npm run test:e2e` in Chromium (210 tests; PF-3 longest frame 16.8 ms) pass.
 
 **Notes**
 
@@ -1596,11 +1596,10 @@ Each phase adds one entry here when it ends: date, commit range, criteria result
 
 **Blockers:** none.
 
-**TWO-PASS REVIEW:** F1 0, F2 3, F3 0, F4 3.
+**TWO-PASS REVIEW:** F1 0, F2 6, F3 0, F4 2. Source: own audit, the e2e runs and Codex on the PR (three F2).
 
-- F2 (fixed): a focused Songs column header stopped every key, so Ctrl+Shift+A, Ctrl+Shift+L, Ctrl+F and F6 did nothing there (`TableHeader.tsx`); found when the frame test could not start Arrange mode. The first fix let Ctrl+Enter both sort and reach the grid; every key the header handles now stops at the header. The widget name on the cover sat on the content (the transport play button); it now has a solid label.
+- F2 (fixed): a focused Songs column header stopped every key, so Ctrl+Shift+A, Ctrl+Shift+L, Ctrl+F and F6 did nothing there (`TableHeader.tsx`); found when the frame test could not start Arrange mode. The first fix let Ctrl+Enter both sort and reach the grid; every key the header handles now stops at the header. The widget name on the cover sat on the content (the transport play button); it now has a solid label. Codex: the side handles of a one-row widget were about 1 px high at 800 x 560 (0 px at 125 % text), because the edges stopped 20 px before each corner (edges now run the whole side, under corners that take at most 30 %); F6 found no region in Arrange mode because the bodies are inert, against R25 (the covers are the F6 regions now; this was first rejected as F4); ending Arrange mode during a drag left the preview and the Esc listener (the drag is cancelled now).
 - F4:
-  - F6 finds no region in Arrange mode, because the bodies are inert: Tab reaches each cover, and Esc returns to normal mode.
   - The transport controls take no input in Arrange mode: by design (Q13); media keys and shortcuts still work.
   - Ctrl+Shift+A in a text field: it has no text meaning there (select all is Ctrl+A).
 

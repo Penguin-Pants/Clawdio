@@ -227,3 +227,41 @@ test("Q13: outside Arrange mode nothing moves; Esc ends Arrange mode and the lis
   expect(await layoutOf(page)).toEqual(DEFAULT);
   await expect(gridItem(page, "songs").getByRole("grid", { name: "Songs" })).toBeVisible();
 });
+
+test("Q14: a one-row widget keeps usable side handles at 800 x 560 and 125 % text", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 560 });
+  await page.evaluate(() => (document.documentElement.style.fontSize = "125%"));
+  for (const id of ["search", "transport"]) {
+    const box = async (handle: string) => cover(page, id).locator(`[data-resize='${handle}']`).boundingBox();
+    const [edge, top, bottom] = [await box("e"), await box("ne"), await box("se")];
+    // The part of the right edge that the corners do not cover.
+    const exposed = (edge?.height ?? 0) - (top?.height ?? 0) - (bottom?.height ?? 0);
+    expect(exposed, `${id} right edge`).toBeGreaterThanOrEqual(12);
+    // A drag in the middle of the right edge resizes.
+    const middle = await center(cover(page, id).locator("[data-resize='e']"));
+    const hit = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-resize]")?.getAttribute("data-resize"),
+      middle,
+    );
+    expect(hit).toBe("e");
+  }
+});
+
+test("Q13: ending Arrange mode during a drag cancels the drag", async ({ page }) => {
+  const from = await center(cover(page, "nowPlaying"));
+  await dragTo(page, from, { x: from.x - 200, y: from.y + 100 });
+  await expect(page.locator("[data-grid-preview]")).toHaveCount(1);
+  await page.keyboard.press("Control+Shift+A");
+  await expect(page.locator("[data-grid][data-arranging]")).toHaveCount(0);
+  await expect(page.locator("[data-grid-preview]")).toHaveCount(0);
+  await expect(gridItem(page, "nowPlaying")).not.toHaveClass(/opacity-60/);
+  await page.mouse.up();
+  expect(await layoutOf(page)).toEqual(DEFAULT);
+});
+
+test("R25, Q13: F6 moves between the covers in Arrange mode", async ({ page }) => {
+  await page.keyboard.press("F6");
+  await expect(page.locator(":focus")).toHaveAttribute("data-arrange", "transport");
+  await page.keyboard.press("F6");
+  await expect(page.locator(":focus")).toHaveAttribute("data-arrange", "playlists");
+});

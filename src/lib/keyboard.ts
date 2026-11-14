@@ -69,11 +69,12 @@ export function isPlaybackSpace(event: KeyboardEvent): boolean {
 
 /**
  * Visible widget bodies in reading order of their grid cells: top to bottom, then left to right
- * (P2.12, R38.2). A widget with no layout box is skipped.
+ * (P2.12, R38.2). A widget with no layout box is skipped. In Arrange mode the bodies are inert and
+ * the covers take their place (R25, owner answer Q13).
  */
 export function widgetRegions(root: ParentNode = document): HTMLElement[] {
   return (
-    [...root.querySelectorAll<HTMLElement>("[data-widget]")]
+    [...root.querySelectorAll<HTMLElement>("[data-widget], [data-arrange]")]
       .map((element) => ({
         element,
         rect: (element.closest("[data-grid-item]") ?? element).getBoundingClientRect(),
@@ -121,7 +122,8 @@ export function handleGlobalKey(event: KeyboardEvent, doc: Document = document):
   if (event.key === "F6" && !event.ctrlKey && !event.altKey && !event.metaKey && !inMenuOrDialog(event.target)) {
     const region = nextRegion(widgetRegions(doc), doc.activeElement, event.shiftKey);
     // The widget becomes the active one, so the Layout menu acts on it (R38.10).
-    if (region?.dataset.widget) activateWidget(region.dataset.widget);
+    const id = region?.dataset.widget ?? region?.dataset.arrange;
+    if (id) activateWidget(id);
     region?.focus();
     return true;
   }

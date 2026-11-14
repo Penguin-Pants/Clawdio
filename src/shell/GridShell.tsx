@@ -85,16 +85,21 @@ function onArrangeKey(id: WidgetId, event: KeyboardEvent) {
   else moveWidgetBy(id, step[0], step[1]);
 }
 
-/** The resize handles: 12 px edges and 20 px corners, each with a visible mark. */
+/**
+ * The resize handles: 12 px edges along the whole side and 20 px corners on top of their ends,
+ * each with a visible mark. A corner takes at most 30 % of a short or narrow widget, so a one-row
+ * widget keeps the middle of its side edges (about 41 px high at 800 x 560).
+ */
+const CORNER = "size-5 max-h-[30%] max-w-[30%]";
 const HANDLES: { handle: Exclude<Handle, "move">; className: string; mark: string }[] = [
-  { handle: "n", className: "inset-x-5 top-0 h-3 cursor-ns-resize", mark: "h-1 w-8" },
-  { handle: "s", className: "inset-x-5 bottom-0 h-3 cursor-ns-resize", mark: "h-1 w-8" },
-  { handle: "w", className: "inset-y-5 left-0 w-3 cursor-ew-resize", mark: "h-8 max-h-full w-1" },
-  { handle: "e", className: "inset-y-5 right-0 w-3 cursor-ew-resize", mark: "h-8 max-h-full w-1" },
-  { handle: "nw", className: "top-0 left-0 size-5 cursor-nwse-resize", mark: "size-2.5" },
-  { handle: "ne", className: "top-0 right-0 size-5 cursor-nesw-resize", mark: "size-2.5" },
-  { handle: "sw", className: "bottom-0 left-0 size-5 cursor-nesw-resize", mark: "size-2.5" },
-  { handle: "se", className: "right-0 bottom-0 size-5 cursor-nwse-resize", mark: "size-2.5" },
+  { handle: "n", className: "inset-x-0 top-0 h-3 cursor-ns-resize", mark: "h-1 w-8" },
+  { handle: "s", className: "inset-x-0 bottom-0 h-3 cursor-ns-resize", mark: "h-1 w-8" },
+  { handle: "w", className: "inset-y-0 left-0 w-3 cursor-ew-resize", mark: "h-8 max-h-[40%] w-1" },
+  { handle: "e", className: "inset-y-0 right-0 w-3 cursor-ew-resize", mark: "h-8 max-h-[40%] w-1" },
+  { handle: "nw", className: `top-0 left-0 ${CORNER} cursor-nwse-resize`, mark: "size-2.5" },
+  { handle: "ne", className: `top-0 right-0 ${CORNER} cursor-nesw-resize`, mark: "size-2.5" },
+  { handle: "sw", className: `bottom-0 left-0 ${CORNER} cursor-nesw-resize`, mark: "size-2.5" },
+  { handle: "se", className: `right-0 bottom-0 ${CORNER} cursor-nwse-resize`, mark: "size-2.5" },
 ];
 
 /**
@@ -207,10 +212,18 @@ export function GridShell() {
   const arranging = useUiStore((state) => state.arranging);
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  // Cancels the running drag: Arrange mode can end while the button is down (Ctrl+Shift+A, the
+  // menu), and the cover that holds the pointer then leaves the page.
+  const cancelDrag = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     void startArrangement();
+    return () => cancelDrag.current?.();
   }, []);
+
+  useEffect(() => {
+    if (!arranging) cancelDrag.current?.();
+  }, [arranging]);
 
   // Stable for the memoized items: a drag step renders the preview, not every widget body.
   const onStart = useCallback((id: WidgetId, handle: Handle, event: PointerEvent<HTMLElement>) => {
@@ -243,6 +256,7 @@ export function GridShell() {
       setDrag(current);
     };
     const finish = (drop: boolean) => {
+      cancelDrag.current = null;
       target.removeEventListener("pointermove", onMove);
       target.removeEventListener("pointerup", onUp);
       target.removeEventListener("pointercancel", onCancel);
@@ -263,6 +277,7 @@ export function GridShell() {
     target.addEventListener("pointerup", onUp);
     target.addEventListener("pointercancel", onCancel);
     window.addEventListener("keydown", onKey, true);
+    cancelDrag.current = () => finish(false);
   }, []);
 
   return (

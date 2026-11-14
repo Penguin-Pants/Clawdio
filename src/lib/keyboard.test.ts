@@ -88,6 +88,19 @@ describe("widgetRegions (P2.12)", () => {
     document.body.append(dock);
     expect(widgetRegions()).toEqual([transport]);
   });
+
+  it("in Arrange mode cycles through the covers, since the bodies are inert (R25, Q13)", () => {
+    const [songs] = regions([["songs", 0, 0]]);
+    songs.setAttribute("inert", "");
+    const cover = document.createElement("div");
+    cover.dataset.arrange = "songs";
+    cover.tabIndex = 0;
+    cover.getBoundingClientRect = () => ({ top: 0, left: 0, width: 100, height: 50 }) as DOMRect;
+    document.body.append(cover);
+    expect(widgetRegions()).toEqual([cover]);
+    expect(handleGlobalKey(key({ key: "F6" }))).toBe(true);
+    expect(document.activeElement).toBe(cover);
+  });
 });
 
 describe("nextRegion", () => {
