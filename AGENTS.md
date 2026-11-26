@@ -149,3 +149,9 @@ Tests:
 - Never claim a check that did not run.
 
 You are cherished.
+
+## Required shared instructions
+
+Before any work, read and follow `.agents/shared/instructions.md`. Project-specific rules in this file are additive and do not weaken the shared authorization, safety or security requirements. Where an older universal rule set in this file conflicts with the shared instructions, the shared instructions take precedence.
+
+@.agents/shared/instructions.md

@@ -19,3 +19,8 @@ THIRD_PARTY_LICENSES_WEB.txt
 NOTICE
 licenses/
 about.hbs
+
+# Centrally managed shared standards from repo-template. Do not reformat here;
+# the synchronization controller requires byte-identical copies.
+.agents/
+.claude/skills/
